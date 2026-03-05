@@ -1,0 +1,23 @@
+# Binaries
+bin/
+dist/
+spec-cli
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test artifacts
+*.test
+*.out
+coverage.out
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+.agents
+skills-lock.json
+spec
