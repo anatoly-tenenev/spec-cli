@@ -1,0 +1,25 @@
+{
+  "id": "0003_validate_warnings_as_errors",
+  "description": "validate returns exit code 1 when warnings are treated as errors",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate",
+    "--warnings-as-errors"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

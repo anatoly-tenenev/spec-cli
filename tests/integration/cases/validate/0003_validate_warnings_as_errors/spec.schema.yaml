@@ -1,0 +1,14 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    meta:
+      required_fields:
+        - name: owner
+          type: entity_ref
+        - name: status
+          type: string
+          value: "<auto>"
+    content:
+      required_sections:
+        - goal

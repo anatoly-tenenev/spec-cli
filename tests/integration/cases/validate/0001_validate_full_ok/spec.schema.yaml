@@ -1,0 +1,20 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    meta:
+      required_fields:
+        - name: owner
+          type: string
+          enum:
+            - platform
+            - core
+        - name: priority
+          type: integer
+        - name: status
+          type: string
+          value: approved
+    content:
+      required_sections:
+        - goal
+        - scope
