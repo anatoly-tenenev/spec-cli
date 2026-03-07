@@ -1,6 +1,9 @@
 package model
 
-import domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+import (
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
+	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+)
 
 type Options struct {
 	TypeFilters      map[string]struct{}
@@ -16,16 +19,41 @@ type SchemaEntityType struct {
 	Name             string
 	IDPrefix         string
 	RequiredFields   []RequiredFieldRule
-	RequiredSections []string
+	RequiredSections []RequiredSectionRule
+	PathPattern      PathPatternRule
 }
 
 type RequiredFieldRule struct {
-	Name              string
-	Type              string
-	Enum              []any
-	HasValue          bool
-	Value             any
-	ValueIsExpression bool
+	Name             string
+	Type             string
+	RefTypes         []string
+	Enum             []any
+	HasValue         bool
+	Value            any
+	Required         bool
+	RequiredWhen     bool
+	RequiredWhenExpr *expressions.Expression
+	RequiredWhenPath string
+}
+
+type RequiredSectionRule struct {
+	Name             string
+	Required         bool
+	RequiredWhen     bool
+	RequiredWhenExpr *expressions.Expression
+	RequiredWhenPath string
+}
+
+type PathPatternRule struct {
+	Cases []PathPatternCase
+}
+
+type PathPatternCase struct {
+	Use      string
+	HasWhen  bool
+	When     bool
+	WhenExpr *expressions.Expression
+	WhenPath string
 }
 
 type WorkspaceCandidate struct {
@@ -42,8 +70,9 @@ type CheckedEntity struct {
 }
 
 type ValidationRun struct {
-	CandidateEntities int
-	CheckedEntities   int
-	EntitiesValid     int
-	Issues            []domainvalidation.Issue
+	CandidateEntities   int
+	CheckedEntities     int
+	EntitiesValid       int
+	ValidatorConformant bool
+	Issues              []domainvalidation.Issue
 }

@@ -17,12 +17,13 @@
 
 ### Общие документы
 
-- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map): entrypoint-цепочка, слои, расположение use-case модулей и правило обязательной актуализации индекса при изменениях кода.
+- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, с обязательной актуализацией при изменениях кода.
 
 ### 001 Base
 
 - [001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md) — спецификация прототипа CLI (`validate`, `query`, `add`, `update`), контрактные инварианты, архитектурные рамки, DoD.
 - [001-base/SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION_RU.md](./001-base/SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION_RU.md) — базовая реализация команды `spec-cli validate` для MVP (границы, пайплайн, деградация по `expressions`/`entity_ref`, формат `json/ndjson`).
+- [001-base/SPEC_UTILITY_CLI_VALIDATE_EXPRESSIONS_IMPLEMENTATION_PLAN_RU.md](./001-base/SPEC_UTILITY_CLI_VALIDATE_EXPRESSIONS_IMPLEMENTATION_PLAN_RU.md) — план поэтапной реализации полной поддержки `expressions` в `spec-cli validate` (compiler/evaluator/context, диагностики, тест-план, критерии готовности).
 
 ### 002 Integration
 

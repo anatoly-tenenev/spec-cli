@@ -2,13 +2,15 @@ version: "0.0.3"
 entity:
   doc:
     id_prefix: DOC
+    path_pattern: "entity.md"
     meta:
-      required_fields:
-        - name: owner
-          type: entity_ref
+      fields:
         - name: status
-          type: string
-          value: "<auto>"
+          required_when:
+            eq?: [meta.slug, "never-required"]
+          schema:
+            type: string
+            const: approved
     content:
-      required_sections:
-        - goal
+      sections:
+        - name: goal

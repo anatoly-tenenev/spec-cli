@@ -1,0 +1,41 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SRV
+    path_pattern: "services/{slug}/index.md"
+    meta:
+      fields:
+        - name: tier
+          schema:
+            type: string
+            enum:
+              - core
+              - edge
+    content:
+      sections:
+        - name: goal
+  feature:
+    id_prefix: FEAT
+    path_pattern:
+      cases:
+        - when:
+            exists: meta.owner
+          use: "{ref:owner:dir_path}/features/{slug}.md"
+        - use: "features/{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          schema:
+            type: entity_ref
+            refTypes: [service]
+        - name: owner_slug
+          required: false
+          required_when:
+            eq?: [ref.owner.type, "service"]
+          schema:
+            type: string
+            const: api
+    content:
+      sections:
+        - name: goal

@@ -3,6 +3,9 @@ package engine
 import (
 	"fmt"
 	"os"
+	pathpkg "path"
+	"path/filepath"
+	"sort"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
@@ -10,43 +13,73 @@ import (
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
-func RunValidation(candidates []model.WorkspaceCandidate, schema model.ValidationSchema, opts model.Options) (model.ValidationRun, *domainerrors.AppError) {
+type parsedCandidate struct {
+	Candidate       model.WorkspaceCandidate
+	RelativePath    string
+	Frontmatter     map[string]any
+	Sections        map[string]string
+	DuplicateLabels []string
+	TypeName        string
+	HasType         bool
+	TypeKnown       bool
+	TypeSpec        model.SchemaEntityType
+	ID              string
+	HasID           bool
+	Slug            string
+	HasSlug         bool
+	ParseErr        error
+}
+
+func RunValidation(
+	candidates []model.WorkspaceCandidate,
+	schema model.ValidationSchema,
+	opts model.Options,
+	workspaceRoot string,
+) (model.ValidationRun, *domainerrors.AppError) {
 	run := model.ValidationRun{
-		CandidateEntities: len(candidates),
-		Issues:            make([]domainvalidation.Issue, 0),
+		CandidateEntities:   len(candidates),
+		ValidatorConformant: true,
+		Issues:              make([]domainvalidation.Issue, 0),
 	}
+
+	parsed, parseErr := parseCandidates(candidates, schema, workspaceRoot)
+	if parseErr != nil {
+		return model.ValidationRun{}, parseErr
+	}
+
+	idTargetIndex := buildResolvedTargetIndex(parsed)
 
 	checked := make([]model.CheckedEntity, 0, len(candidates))
 	ids := map[string][]int{}
 	slugsByType := map[string]map[string][]int{}
 	suffixByType := map[string]map[int][]int{}
-
 	stopAfterCurrent := false
 
-	for _, candidate := range candidates {
+	for _, candidate := range parsed {
 		if stopAfterCurrent {
 			break
 		}
 
 		entity := model.CheckedEntity{}
 		run.CheckedEntities++
-
-		raw, err := os.ReadFile(candidate.Path)
-		if err != nil {
-			return model.ValidationRun{}, domainerrors.New(
-				domainerrors.CodeWriteFailed,
-				"failed to read workspace document",
-				map[string]any{"reason": err.Error()},
-			)
+		if candidate.HasType {
+			entity.Type = candidate.TypeName
+		}
+		if candidate.HasID {
+			entity.ID = candidate.ID
+		}
+		if candidate.HasSlug {
+			entity.Slug = candidate.Slug
 		}
 
-		frontmatter, body, parseErr := workspace.ParseFrontmatter(raw)
-		if parseErr != nil {
+		checkedIndex := len(checked)
+
+		if candidate.ParseErr != nil {
 			addIssue(&run.Issues, &entity, domainvalidation.Issue{
 				Code:        "frontmatter.invalid",
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
-				Message:     parseErr.Error(),
+				Message:     candidate.ParseErr.Error(),
 				StandardRef: "10.2",
 			})
 			checked = append(checked, entity)
@@ -56,10 +89,7 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 			continue
 		}
 
-		sections, duplicateLabels := workspace.ExtractSectionLabels(body)
-
-		typeName, hasType := workspace.ReadStringField(frontmatter, "type")
-		if !hasType {
+		if !candidate.HasType {
 			addIssue(&run.Issues, &entity, domainvalidation.Issue{
 				Code:        "builtin.type_missing",
 				Level:       domainvalidation.LevelError,
@@ -68,24 +98,18 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 				StandardRef: "5.3",
 				Field:       "frontmatter.type",
 			})
-		} else {
-			entity.Type = typeName
-		}
-
-		typeSpec, typeKnown := schema.Entity[typeName]
-		if hasType && !typeKnown {
+		} else if !candidate.TypeKnown {
 			addIssue(&run.Issues, &entity, domainvalidation.Issue{
 				Code:        "builtin.type_unknown",
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
-				Message:     fmt.Sprintf("entity type '%s' is not declared in schema", typeName),
+				Message:     fmt.Sprintf("entity type '%s' is not declared in schema", candidate.TypeName),
 				StandardRef: "5.3",
 				Field:       "frontmatter.type",
 			})
 		}
 
-		id, hasID := workspace.ReadStringField(frontmatter, "id")
-		if !hasID {
+		if !candidate.HasID {
 			addIssue(&run.Issues, &entity, domainvalidation.Issue{
 				Code:        "builtin.id_missing",
 				Level:       domainvalidation.LevelError,
@@ -95,33 +119,30 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 				Field:       "frontmatter.id",
 			})
 		} else {
-			entity.ID = id
-			ids[id] = append(ids[id], len(checked))
-		}
-
-		if hasID && typeKnown {
-			suffix, hasSuffix := parseIDSuffix(id, typeSpec.IDPrefix)
-			if !hasSuffix {
-				addIssue(&run.Issues, &entity, domainvalidation.Issue{
-					Code:        "builtin.id_format_invalid",
-					Level:       domainvalidation.LevelError,
-					Class:       "InstanceError",
-					Message:     fmt.Sprintf("id must match '%s-<number>'", typeSpec.IDPrefix),
-					StandardRef: "7.3",
-					Field:       "frontmatter.id",
-				})
-			} else {
-				entity.HasSuffix = true
-				entity.IDSuffix = suffix
-				if _, exists := suffixByType[typeName]; !exists {
-					suffixByType[typeName] = map[int][]int{}
+			ids[candidate.ID] = append(ids[candidate.ID], checkedIndex)
+			if candidate.TypeKnown {
+				suffix, hasSuffix := parseIDSuffix(candidate.ID, candidate.TypeSpec.IDPrefix)
+				if !hasSuffix {
+					addIssue(&run.Issues, &entity, domainvalidation.Issue{
+						Code:        "builtin.id_format_invalid",
+						Level:       domainvalidation.LevelError,
+						Class:       "InstanceError",
+						Message:     fmt.Sprintf("id must match '%s-<number>'", candidate.TypeSpec.IDPrefix),
+						StandardRef: "7.3",
+						Field:       "frontmatter.id",
+					})
+				} else {
+					entity.HasSuffix = true
+					entity.IDSuffix = suffix
+					if _, exists := suffixByType[candidate.TypeName]; !exists {
+						suffixByType[candidate.TypeName] = map[int][]int{}
+					}
+					suffixByType[candidate.TypeName][suffix] = append(suffixByType[candidate.TypeName][suffix], checkedIndex)
 				}
-				suffixByType[typeName][suffix] = append(suffixByType[typeName][suffix], len(checked))
 			}
 		}
 
-		slug, hasSlug := workspace.ReadStringField(frontmatter, "slug")
-		if !hasSlug {
+		if !candidate.HasSlug {
 			addIssue(&run.Issues, &entity, domainvalidation.Issue{
 				Code:        "builtin.slug_missing",
 				Level:       domainvalidation.LevelError,
@@ -131,8 +152,7 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 				Field:       "frontmatter.slug",
 			})
 		} else {
-			entity.Slug = slug
-			if !slugPattern.MatchString(slug) {
+			if !slugPattern.MatchString(candidate.Slug) {
 				addIssue(&run.Issues, &entity, domainvalidation.Issue{
 					Code:        "builtin.slug_format_invalid",
 					Level:       domainvalidation.LevelError,
@@ -143,23 +163,34 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 				})
 			}
 
-			if typeKnown {
-				if _, exists := slugsByType[typeName]; !exists {
-					slugsByType[typeName] = map[string][]int{}
+			if candidate.TypeKnown {
+				if _, exists := slugsByType[candidate.TypeName]; !exists {
+					slugsByType[candidate.TypeName] = map[string][]int{}
 				}
-				slugsByType[typeName][slug] = append(slugsByType[typeName][slug], len(checked))
+				slugsByType[candidate.TypeName][candidate.Slug] = append(slugsByType[candidate.TypeName][candidate.Slug], checkedIndex)
 			}
 		}
 
-		validateDateField(&run.Issues, &entity, frontmatter, "created_date", "11.3")
-		validateDateField(&run.Issues, &entity, frontmatter, "updated_date", "11.3")
+		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "created_date", "11.3")
+		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "updated_date", "11.3")
 
-		if typeKnown {
-			validateAllowedFrontmatterKeys(&run.Issues, &entity, frontmatter, typeSpec)
-			validateRequiredFields(&run.Issues, &entity, frontmatter, typeSpec)
-			validateRequiredSections(&run.Issues, &entity, sections, duplicateLabels, typeSpec)
+		if candidate.TypeKnown {
+			validateAllowedFrontmatterKeys(&run.Issues, &entity, candidate.Frontmatter, candidate.TypeSpec)
+
+			resolvedRefs := resolveEntityReferences(
+				&run.Issues,
+				&entity,
+				candidate.Frontmatter,
+				candidate.TypeSpec,
+				idTargetIndex,
+			)
+			context := buildRuntimeExpressionContext(candidate.Frontmatter, candidate.TypeSpec, resolvedRefs)
+
+			validateRequiredFields(&run.Issues, &entity, candidate.Frontmatter, candidate.TypeSpec, context)
+			validateRequiredSections(&run.Issues, &entity, candidate.Sections, candidate.DuplicateLabels, candidate.TypeSpec, context)
+			validatePathPattern(&run.Issues, &entity, candidate.RelativePath, candidate.TypeSpec, context)
 		} else {
-			for _, label := range duplicateLabels {
+			for _, label := range candidate.DuplicateLabels {
 				addIssue(&run.Issues, &entity, domainvalidation.Issue{
 					Code:        "content.section_label_duplicate",
 					Level:       domainvalidation.LevelError,
@@ -178,6 +209,13 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 
 	appendGlobalUniquenessIssues(&run.Issues, checked, ids, slugsByType, suffixByType)
 
+	for _, issue := range run.Issues {
+		if issue.Class == "ProfileError" {
+			run.ValidatorConformant = false
+			break
+		}
+	}
+
 	valid := 0
 	for _, entity := range checked {
 		if !entity.HasError {
@@ -187,4 +225,101 @@ func RunValidation(candidates []model.WorkspaceCandidate, schema model.Validatio
 	run.EntitiesValid = valid
 
 	return run, nil
+}
+
+func parseCandidates(
+	candidates []model.WorkspaceCandidate,
+	schema model.ValidationSchema,
+	workspaceRoot string,
+) ([]parsedCandidate, *domainerrors.AppError) {
+	parsed := make([]parsedCandidate, 0, len(candidates))
+
+	for _, candidate := range candidates {
+		raw, err := os.ReadFile(candidate.Path)
+		if err != nil {
+			return nil, domainerrors.New(
+				domainerrors.CodeWriteFailed,
+				"failed to read workspace document",
+				map[string]any{"reason": err.Error()},
+			)
+		}
+
+		relativePath, relErr := filepath.Rel(workspaceRoot, candidate.Path)
+		if relErr != nil {
+			return nil, domainerrors.New(
+				domainerrors.CodeWriteFailed,
+				"failed to resolve workspace-relative path",
+				map[string]any{"reason": relErr.Error()},
+			)
+		}
+		relativePath = filepath.ToSlash(relativePath)
+
+		entry := parsedCandidate{
+			Candidate:    candidate,
+			RelativePath: relativePath,
+		}
+
+		frontmatter, body, parseErr := workspace.ParseFrontmatter(raw)
+		if parseErr != nil {
+			entry.ParseErr = parseErr
+			parsed = append(parsed, entry)
+			continue
+		}
+
+		entry.Frontmatter = frontmatter
+		entry.Sections, entry.DuplicateLabels = workspace.ExtractSectionLabels(body)
+
+		entry.TypeName, entry.HasType = workspace.ReadStringField(frontmatter, "type")
+		if entry.HasType {
+			typeSpec, exists := schema.Entity[entry.TypeName]
+			entry.TypeKnown = exists
+			if exists {
+				entry.TypeSpec = typeSpec
+			}
+		}
+
+		entry.ID, entry.HasID = workspace.ReadStringField(frontmatter, "id")
+		entry.Slug, entry.HasSlug = workspace.ReadStringField(frontmatter, "slug")
+
+		parsed = append(parsed, entry)
+	}
+
+	return parsed, nil
+}
+
+func buildResolvedTargetIndex(parsed []parsedCandidate) map[string][]resolvedEntityRef {
+	index := map[string][]resolvedEntityRef{}
+
+	for _, entity := range parsed {
+		if entity.ParseErr != nil || !entity.HasType || !entity.TypeKnown || !entity.HasID || !entity.HasSlug {
+			continue
+		}
+
+		dirPath := pathpkg.Dir(normalizeRelativePath(entity.RelativePath))
+		if dirPath == "." {
+			dirPath = ""
+		}
+
+		target := resolvedEntityRef{
+			ID:      entity.ID,
+			Type:    entity.TypeName,
+			Slug:    entity.Slug,
+			DirPath: dirPath,
+		}
+		index[entity.ID] = append(index[entity.ID], target)
+	}
+
+	for _, targets := range index {
+		sort.Slice(targets, func(i int, j int) bool {
+			if targets[i].Type != targets[j].Type {
+				return targets[i].Type < targets[j].Type
+			}
+			if targets[i].Slug != targets[j].Slug {
+				return targets[i].Slug < targets[j].Slug
+			}
+			return targets[i].DirPath < targets[j].DirPath
+		})
+	}
+
+	return index
 }

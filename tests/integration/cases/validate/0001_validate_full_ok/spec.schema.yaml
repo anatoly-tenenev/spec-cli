@@ -2,19 +2,23 @@ version: "0.0.3"
 entity:
   doc:
     id_prefix: DOC
+    path_pattern: "{slug}.md"
     meta:
-      required_fields:
+      fields:
         - name: owner
-          type: string
-          enum:
-            - platform
-            - core
+          schema:
+            type: string
+            enum:
+              - platform
+              - core
         - name: priority
-          type: integer
+          schema:
+            type: integer
         - name: status
-          type: string
-          value: approved
+          schema:
+            type: string
+            const: approved
     content:
-      required_sections:
-        - goal
-        - scope
+      sections:
+        - name: goal
+        - name: scope

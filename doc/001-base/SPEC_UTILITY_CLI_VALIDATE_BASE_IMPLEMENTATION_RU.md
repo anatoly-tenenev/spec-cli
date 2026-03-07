@@ -19,8 +19,8 @@
 - чтение Markdown-документов и строгий парсинг frontmatter;
 - проверки:
   - встроенные поля (`type`, `id`, `slug`, `created_date`, `updated_date`);
-  - `meta.required_fields` (без вычисляемых выражений);
-  - `content.required_sections`;
+  - `meta.fields` (по `schema.type/schema.enum/schema.const` и `required/required_when` без вычисления expression-объектов);
+  - `content.sections` (по `required/required_when` без вычисления expression-объектов);
   - уникальность `id`, числового suffix `id` в рамках типа, `slug` в рамках типа;
 - формирование `summary`, `issues[]`, `result_state`, exit code;
 - вывод `--format json` и `--format ndjson`.
@@ -56,7 +56,7 @@ spec-cli validate [options]
 ### 3.2. Фиксированный режим выполнения в MVP
 
 - Всегда выполняется полная валидация workspace (`full`).
-- Проверка контента (`content.required_sections`) всегда включена.
+- Проверка контента (`content.sections`) всегда включена.
 - Частичная/инкрементальная валидация в этом MVP отсутствует.
 
 ### 3.3. Покрытие (`summary.coverage`)
@@ -147,12 +147,13 @@ spec-cli validate [options]
 - числовой suffix `id` парсится как целое >= 0;
 - `slug`: строка, формат `^[a-z0-9]+(?:-[a-z0-9]+)*$`;
 - `created_date`, `updated_date`: формат `YYYY-MM-DD`;
-- `meta.required_fields`:
-  - поле присутствует;
+- `meta.fields`:
+  - обязательность считается по модели `required/required_when` (11.5/11.6), где expression в `required_when` в MVP не вычисляется;
   - тип совпадает строго;
   - `enum` (если задан) содержит значение;
-  - `value` проверяется только если literal (без `<...>`);
-- `content.required_sections`:
+  - `schema.const` проверяется только если literal (без `<...>`);
+- `content.sections`:
+  - обязательность секций считается по модели `required/required_when` (11.5/11.6), где expression в `required_when` в MVP не вычисляется;
   - обязательные секции присутствуют;
   - дубли section-label внутри документа считаются ошибкой.
 
@@ -192,7 +193,7 @@ spec-cli validate [options]
 
 ### 6.1. Expressions
 
-Если правило требует вычисления выражения (`<...>` в `value`/шаблоне), MVP:
+Если правило требует вычисления выражения (`<...>` в `schema.const` или expression-объект в `required_when`), MVP:
 
 - не вычисляет выражение;
 - создает issue:
@@ -257,7 +258,7 @@ runValidate(args):
 - `validation/document_parser.*`
   - frontmatter parser + markdown sections extractor.
 - `validation/rules_builtin.*`
-  - `type/id/slug/date`, `meta.required_fields`, `content.required_sections`.
+  - `type/id/slug/date`, `meta.fields`, `content.sections`.
 - `validation/rules_global.*`
   - уникальность `id`/suffix/slug.
 - `validation/unsupported_rules.*`
