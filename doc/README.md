@@ -15,6 +15,10 @@
 - `../spec/SPEC_STANDARD_RU_REVISED_V3.md` — рабочая спецификация из директории `spec/`.
 - Примечание: директория `spec/` находится в `.gitignore`, это ожидаемое поведение для локального рабочего артефакта.
 
+### Общие документы
+
+- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map): entrypoint-цепочка, слои, расположение use-case модулей и правило обязательной актуализации индекса при изменениях кода.
+
 ### 001 Base
 
 - [001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md) — спецификация прототипа CLI (`validate`, `query`, `add`, `update`), контрактные инварианты, архитектурные рамки, DoD.
