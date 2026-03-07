@@ -1,6 +1,6 @@
 {
-  "id": "0005_validate_path_pattern_strict_missing",
-  "description": "validate reports strict missing operand in path_pattern.cases.when without fallback",
+  "id": "validate_70_0001_validate_slug_duplicate_by_type_ndjson",
+  "description": "validate returns issues for missing id and duplicate slug",
   "command": "validate",
   "args": [
     "--workspace",
@@ -8,7 +8,7 @@
     "--schema",
     "${SCHEMA}",
     "--format",
-    "json",
+    "ndjson",
     "validate"
   ],
   "expect": {

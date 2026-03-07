@@ -1,6 +1,6 @@
 {
-  "id": "0004_validate_required_when_expressions",
-  "description": "validate evaluates required_when expressions for metadata fields and content sections",
+  "id": "validate_40_0002_validate_required_when_in_safe_missing_false_json",
+  "description": "validate keeps field optional when required_when uses in? with missing operand",
   "command": "validate",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 0,
     "response_file": "response.json",
     "stderr_file": ""
   },

@@ -1,0 +1,24 @@
+{
+  "id": "validate_50_0001_validate_path_pattern_strict_missing_no_fallback",
+  "description": "validate reports strict missing operand in path_pattern.cases.when without fallback",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

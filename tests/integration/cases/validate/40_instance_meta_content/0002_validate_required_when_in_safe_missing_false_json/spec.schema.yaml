@@ -1,0 +1,23 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          schema:
+            type: string
+            enum:
+              - core
+              - platform
+        - name: checklist
+          required: false
+          required_when:
+            in?: [meta.owner, [core]]
+          schema:
+            type: string
+    content:
+      sections:
+        - name: goal

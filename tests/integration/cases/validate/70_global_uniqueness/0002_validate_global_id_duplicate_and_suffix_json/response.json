@@ -1,0 +1,37 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "full",
+  "summary": {
+    "schema_valid": true,
+    "validator_conformant": true,
+    "entities_scanned": 2,
+    "entities_valid": 0,
+    "errors": 2,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 2,
+      "checked_entities": 2,
+      "skipped_entities": 0
+    }
+  },
+  "issues": [
+    {
+      "code": "global.id_duplicate",
+      "level": "error",
+      "class": "InstanceError",
+      "message": "id 'DOC-1' is duplicated",
+      "standard_ref": "11.1",
+      "field": "frontmatter.id"
+    },
+    {
+      "code": "global.id_suffix_duplicate_by_type",
+      "level": "error",
+      "class": "InstanceError",
+      "message": "id numeric suffix '1' is duplicated for type 'doc'",
+      "standard_ref": "7.3",
+      "field": "frontmatter.id"
+    }
+  ]
+}

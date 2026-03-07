@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -34,17 +35,12 @@ type integrationCase struct {
 
 func TestValidateCases(t *testing.T) {
 	caseRoot := filepath.Join("cases", "validate")
-	entries, err := os.ReadDir(caseRoot)
+	caseDirs, err := listValidateCaseDirs(caseRoot)
 	if err != nil {
-		t.Fatalf("read cases directory: %v", err)
+		t.Fatalf("list validate case directories: %v", err)
 	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		caseDir := filepath.Join(caseRoot, entry.Name())
+	for _, caseDir := range caseDirs {
 		testCase, err := loadCase(caseDir)
 		if err != nil {
 			t.Fatalf("load case %s: %v", caseDir, err)
@@ -55,6 +51,44 @@ func TestValidateCases(t *testing.T) {
 			runCase(t, caseDir, tc)
 		})
 	}
+}
+
+func listValidateCaseDirs(caseRoot string) ([]string, error) {
+	groupEntries, err := os.ReadDir(caseRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	groupNames := make([]string, 0, len(groupEntries))
+	for _, entry := range groupEntries {
+		if entry.IsDir() {
+			groupNames = append(groupNames, entry.Name())
+		}
+	}
+	sort.Strings(groupNames)
+
+	caseDirs := make([]string, 0)
+	for _, groupName := range groupNames {
+		groupDir := filepath.Join(caseRoot, groupName)
+		caseEntries, err := os.ReadDir(groupDir)
+		if err != nil {
+			return nil, fmt.Errorf("read group directory %s: %w", groupDir, err)
+		}
+
+		caseNames := make([]string, 0, len(caseEntries))
+		for _, entry := range caseEntries {
+			if entry.IsDir() {
+				caseNames = append(caseNames, entry.Name())
+			}
+		}
+		sort.Strings(caseNames)
+
+		for _, caseName := range caseNames {
+			caseDirs = append(caseDirs, filepath.Join(groupDir, caseName))
+		}
+	}
+
+	return caseDirs, nil
 }
 
 func loadCase(caseDir string) (integrationCase, error) {

@@ -1,0 +1,27 @@
+{
+  "id": "validate_30_0001_validate_type_filter_fail_fast_json",
+  "description": "validate applies --type filter and stops after first failing entity when --fail-fast is enabled",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate",
+    "--type",
+    "doc",
+    "--fail-fast"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}
