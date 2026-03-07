@@ -40,7 +40,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, candidateErr
 	}
 
-	run, runErr := engine.RunValidation(candidates, loadedSchema, opts)
+	run, runErr := engine.RunValidation(candidates, loadedSchema, opts, workspacePath)
 	if runErr != nil {
 		return responses.CommandOutput{}, runErr
 	}
@@ -50,6 +50,9 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	issues = append(issues, run.Issues...)
 
 	errorCount, warningCount := engine.CountIssuesByLevel(issues)
+	schemaValid := countSchemaErrors(issues) == 0
+	validatorConformant := run.ValidatorConformant && !hasProfileIssues(issues)
+
 	resultState := responses.ResultStateValid
 	if errorCount > 0 {
 		resultState = responses.ResultStateInvalid
@@ -59,8 +62,8 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	coverageComplete := skippedEntities == 0
 
 	summary := map[string]any{
-		"schema_valid":         true,
-		"validator_conformant": true,
+		"schema_valid":         schemaValid,
+		"validator_conformant": validatorConformant,
 		"entities_scanned":     run.CheckedEntities,
 		"entities_valid":       run.EntitiesValid,
 		"errors":               errorCount,
@@ -105,4 +108,23 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		NDJSON:   ndjsonResponse,
 		ExitCode: exitCode,
 	}, nil
+}
+
+func countSchemaErrors(issues []domainvalidation.Issue) int {
+	count := 0
+	for _, issue := range issues {
+		if issue.Class == "SchemaError" && issue.Level == domainvalidation.LevelError {
+			count++
+		}
+	}
+	return count
+}
+
+func hasProfileIssues(issues []domainvalidation.Issue) bool {
+	for _, issue := range issues {
+		if issue.Class == "ProfileError" {
+			return true
+		}
+	}
+	return false
 }

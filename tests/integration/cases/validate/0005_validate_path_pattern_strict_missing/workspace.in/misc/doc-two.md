@@ -1,10 +1,9 @@
 ---
 type: doc
-id: DOC-7
-slug: warnings-only
+id: DOC-2
+slug: doc-two
 created_date: 2026-03-01
 updated_date: 2026-03-01
-status: approved
 ---
 
 ## Goal {#goal}

@@ -7,7 +7,7 @@
     "entities_scanned": 1,
     "entities_valid": 1,
     "errors": 0,
-    "warnings": 2,
+    "warnings": 1,
     "coverage": {
       "mode": "strict",
       "complete": true,
@@ -18,20 +18,12 @@
   },
   "issues": [
     {
-      "code": "profile.entity_ref_not_supported",
+      "code": "schema.required_when.required_not_explicit",
       "level": "warning",
-      "class": "ProfileError",
-      "message": "entity_ref is not supported for required field 'owner'",
-      "standard_ref": "6.3",
-      "field": "schema.entity.doc.meta.required_fields.owner"
-    },
-    {
-      "code": "profile.expression_not_supported",
-      "level": "warning",
-      "class": "ProfileError",
-      "message": "expressions are not supported for required field 'status'",
-      "standard_ref": "11.6",
-      "field": "schema.entity.doc.meta.required_fields.status.value"
+      "class": "SchemaError",
+      "message": "required_when is set without explicit required; effective required=false is applied",
+      "standard_ref": "11.5",
+      "field": "schema.entity.doc.meta.fields[0].required"
     }
   ]
 }

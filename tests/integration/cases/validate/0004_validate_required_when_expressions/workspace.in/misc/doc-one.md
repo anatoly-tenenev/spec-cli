@@ -1,10 +1,11 @@
 ---
 type: doc
-id: DOC-7
-slug: warnings-only
+id: DOC-1
+slug: doc-one
 created_date: 2026-03-01
 updated_date: 2026-03-01
 status: approved
+owner: platform
 ---
 
 ## Goal {#goal}

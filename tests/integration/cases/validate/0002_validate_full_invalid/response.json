@@ -8,7 +8,8 @@
       "message": "built-in field 'id' is required",
       "standard_ref": "11.1",
       "entity": {
-        "type": "doc"
+        "type": "doc",
+        "slug": "duplicate"
       },
       "field": "frontmatter.id"
     }
