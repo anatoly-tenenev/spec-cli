@@ -194,11 +194,16 @@
 - `tests/integration`
   - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов из `tests/integration/cases/validate/*`.
+    - Data-first запуск интеграционных кейсов `validate` из двухуровневой структуры `tests/integration/cases/validate/<group>/<case>`.
+    - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
     - Проверка `exit_code`, `stderr` и `json/ndjson` ответа против golden-ожиданий.
   - Подпакеты:
-    - `tests/integration/cases/validate/*` — входные/ожидаемые артефакты кейсов.
+    - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json/ndjson`, `warnings-as-errors`, exit code).
+    - `tests/integration/cases/validate/40_instance_meta_content/*` — проверки `meta.fields` и `content.sections` с `required_when`.
+    - `tests/integration/cases/validate/50_path_pattern_expr/*` — сценарии `path_pattern.cases[].when` и strict/safe семантики.
+    - `tests/integration/cases/validate/60_entity_ref_context/*` — сценарии `entity_ref`, `ref.*`, `ref.dir_path`.
+    - `tests/integration/cases/validate/70_global_uniqueness/*` — глобальные проверки уникальности (`slug`/`id`) и смешанные invalid-сценарии.
 
 ## Текущий статус команд
 

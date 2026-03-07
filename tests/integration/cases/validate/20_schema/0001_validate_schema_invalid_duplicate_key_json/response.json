@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains duplicate keys",
+    "exit_code": 4,
+    "details": {
+      "key": "entity"
+    }
+  }
+}

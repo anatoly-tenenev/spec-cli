@@ -9,10 +9,19 @@
 
 - Интеграционные тесты строятся как `data-first`: кейс описывается файлами.
 - Go-тесты и раннер минимальны: загрузить кейс, выполнить CLI, сравнить ожидаемое.
+- Интеграционные тесты являются **black-box контрактными**: проверяется только наблюдаемое поведение CLI.
 - Кейсы сгруппированы **по командам**: `validate`, `query`, `add`, `update`.
+- Для `validate` используется дополнительная доменная группировка `group -> case` (строго 2 уровня).
 - Каждый кейс содержит входной workspace, схему, ожидаемый ответ CLI.
 - Для модифицирующих команд (`add`, `update`) кейс дополнительно содержит ожидаемый `workspace.out`.
 - Каталог с кейсами располагается отдельно от обычных `testdata`: `tests/integration/cases`.
+
+### 1.1. Black-box границы (обязательно)
+
+- Кейс формулируется через публичный контракт: `args` -> `stdout/stderr` -> `exit_code` (и `workspace.out` для mutating-команд).
+- В сценариях и ожиданиях запрещены предположения о внутренней архитектуре/реализации (слои, переиспользование движков, порядок внутренних шагов).
+- Каждое значимое контрактное поведение должно иметь **прямой** интеграционный кейс.
+- Косвенное покрытие через другой сценарий не считается достаточным доказательством контрактного поведения.
 
 ## 2. Каноническое расположение
 
@@ -29,11 +38,12 @@ tests/
 
     cases/
       validate/
-        <XXXX_case-id>/
-          case.json
-          spec.schema.yaml
-          workspace.in/
-          response.json
+        <GG_group-name>/
+          <NNNN_case-id>/
+            case.json
+            spec.schema.yaml
+            workspace.in/
+            response.json
 
       query/
         <XXXX_case-id>/
@@ -61,7 +71,12 @@ tests/
 
 ## 3. Контракт директории кейса
 
-Директория `tests/integration/cases/<command>/<XXXX_case-id>/` обязана содержать:
+Директория кейса обязана содержать:
+
+- для `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_case-id>/`;
+- для `query|add|update`: `tests/integration/cases/<command>/<XXXX_case-id>/`.
+
+Содержимое директории кейса:
 
 - `case.json` — мета-описание запуска и проверок.
 - `spec.schema.yaml` — схема, с которой запускается команда.
@@ -150,6 +165,8 @@ tests/
 - обязательные инварианты контракта (`result_state`, `error.*`, `record_type`, `revision` по сценарию);
 - `exit_code`.
 
+Раннер не должен использовать внутренние диагностические сигналы реализации, которые недоступны внешнему пользователю CLI.
+
 Допускается нормализация нестабильных значений (например, временные поля), но только явным правилом в `runner/normalize.go`.
 
 ### 6.2 Workspace
@@ -162,7 +179,7 @@ tests/
 
 ## 7. Нейминг кейсов
 
-Формат имени директории кейса:
+Базовый формат имени директории кейса:
 
 `<XXXX>_<case-id>`
 
@@ -171,13 +188,31 @@ tests/
 - `XXXX` — обязательный 4-значный числовой префикс (`0001`, `0002`, ...);
 - `<case-id>` — смысловой идентификатор сценария.
 
+Для `validate` используется дополнительный уровень группы:
+
+- директория группы: `<GG>_<group-name>`;
+- директория кейса внутри группы: `<NNNN>_<case-id>`;
+- `GG` — двузначный код группы (`10`, `20`, ...), `NNNN` — 4-значный порядковый номер внутри группы.
+
+Коды групп `validate`:
+
+- `10_contract`
+- `20_schema`
+- `30_instance_builtin`
+- `40_instance_meta_content`
+- `50_path_pattern_expr`
+- `60_entity_ref_context`
+- `70_global_uniqueness`
+- `80_profile_conformance`
+
 Рекомендуемый формат `case-id`:
 
 `<intent>_<scope>_<expected>`
 
 Примеры:
 
-- `0001_validate_full_ok_minimal`
+- `10_contract/0001_validate_full_ok_json`
+- `40_instance_meta_content/0001_validate_required_when_meta_and_sections`
 - `0002_query_by_tag_valid`
 - `0101_add_doc_valid_minimal`
 - `0203_update_title_conflict_invalid`
@@ -188,6 +223,7 @@ tests/
 - только `lower_snake_case`;
 - имя должно отражать ожидаемое поведение;
 - имя стабильно во времени (используется в логах и CI-репортах).
+- рекомендованный формат `case.json.id` для `validate`: `validate_<GG>_<NNNN>_<case-id>`.
 
 ## 8. Минимальный набор кейсов (first pass)
 
@@ -217,7 +253,9 @@ tests/
 
 ## 10. Checklist на новый кейс
 
-1. Создать директорию `tests/integration/cases/<command>/<XXXX_case-id>/`.
+1. Создать директорию кейса:
+   - `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_case-id>/`;
+   - `query|add|update`: `tests/integration/cases/<command>/<XXXX_case-id>/`.
 2. Добавить `case.json`.
 3. Добавить `spec.schema.yaml`.
 4. Подготовить `workspace.in/`.

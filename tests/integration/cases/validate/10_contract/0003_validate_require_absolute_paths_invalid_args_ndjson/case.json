@@ -1,0 +1,25 @@
+{
+  "id": "validate_10_0003_validate_require_absolute_paths_invalid_args_ndjson",
+  "description": "validate returns INVALID_ARGS in ndjson when --require-absolute-paths rejects relative workspace",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    ".",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "ndjson",
+    "--require-absolute-paths",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

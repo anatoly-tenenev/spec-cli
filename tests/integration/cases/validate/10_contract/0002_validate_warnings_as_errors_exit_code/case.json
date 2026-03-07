@@ -1,5 +1,5 @@
 {
-  "id": "0003_validate_warnings_as_errors",
+  "id": "validate_10_0002_validate_warnings_as_errors_exit_code",
   "description": "validate returns exit code 1 when warnings are treated as errors",
   "command": "validate",
   "args": [

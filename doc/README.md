@@ -27,4 +27,5 @@
 
 ### 002 Integration
 
-- [002-integration/INTEGRATION_CASES_LAYOUT_RU.md](./002-integration/INTEGRATION_CASES_LAYOUT_RU.md) — data-first структура интеграционных кейсов, layout `tests/integration/cases`, контракт содержимого кейса (`case.json`, `spec.schema.yaml`, `workspace.in/out`, `response.json`), правило именования директорий кейсов с числовым префиксом `XXXX_`.
+- [002-integration/INTEGRATION_CASES_LAYOUT_RU.md](./002-integration/INTEGRATION_CASES_LAYOUT_RU.md) — data-first и black-box контрактная структура интеграционных кейсов, layout `tests/integration/cases`, контракт содержимого кейса (`case.json`, `spec.schema.yaml`, `workspace.in/out`, `response.json`), включая двухуровневую группировку `validate/<group>/<case>`.
+- [002-integration/VALIDATE_STANDARD_COVERAGE_BACKLOG_RU.md](./002-integration/VALIDATE_STANDARD_COVERAGE_BACKLOG_RU.md) — чеклист недостающих интеграционных кейсов `validate` для покрытия локального стандарта (`schema/workspace/response` для каждого `group/case-id`, с приоритетами P0/P1).
