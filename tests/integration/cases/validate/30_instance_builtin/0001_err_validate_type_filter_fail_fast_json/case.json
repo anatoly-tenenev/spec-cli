@@ -1,6 +1,6 @@
 {
-  "id": "validate_50_0003_validate_path_pattern_eq_safe_branches_json",
-  "description": "validate applies path_pattern eq? for true branch and safe missing fallback branch",
+  "id": "validate_30_0001_err_validate_type_filter_fail_fast_json",
+  "description": "validate applies --type filter and stops after first failing entity when --fail-fast is enabled",
   "command": "validate",
   "args": [
     "--workspace",
@@ -9,10 +9,13 @@
     "${SCHEMA}",
     "--format",
     "json",
-    "validate"
+    "validate",
+    "--type",
+    "doc",
+    "--fail-fast"
   ],
   "expect": {
-    "exit_code": 0,
+    "exit_code": 1,
     "response_file": "response.json",
     "stderr_file": ""
   },

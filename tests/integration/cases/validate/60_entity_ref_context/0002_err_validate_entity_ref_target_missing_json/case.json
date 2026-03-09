@@ -1,6 +1,6 @@
 {
-  "id": "validate_10_0001_validate_full_ok_json",
-  "description": "validate succeeds for workspace with one well-formed entity",
+  "id": "validate_60_0002_err_validate_entity_ref_target_missing_json",
+  "description": "validate reports missing entity_ref target when referenced id is absent",
   "command": "validate",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 0,
+    "exit_code": 1,
     "response_file": "response.json",
     "stderr_file": ""
   },

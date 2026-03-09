@@ -1,5 +1,5 @@
 {
-  "id": "validate_50_0001_validate_path_pattern_strict_missing_schema_invalid",
+  "id": "validate_50_0001_err_validate_path_pattern_strict_missing_no_fallback",
   "description": "validate returns schema error for strict path_pattern.when operand that can be missing",
   "command": "validate",
   "args": [
