@@ -1,5 +1,5 @@
 {
-  "id": "validate_20_0001_validate_schema_invalid_duplicate_key_json",
+  "id": "validate_20_0001_err_validate_schema_invalid_duplicate_key_json",
   "description": "validate returns schema error when schema contains duplicate keys",
   "command": "validate",
   "args": [

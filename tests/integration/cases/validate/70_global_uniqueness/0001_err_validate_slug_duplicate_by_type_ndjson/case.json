@@ -1,19 +1,18 @@
 {
-  "id": "validate_10_0003_validate_require_absolute_paths_invalid_args_ndjson",
-  "description": "validate returns INVALID_ARGS in ndjson when --require-absolute-paths rejects relative workspace",
+  "id": "validate_70_0001_err_validate_slug_duplicate_by_type_ndjson",
+  "description": "validate returns issues for missing id and duplicate slug",
   "command": "validate",
   "args": [
     "--workspace",
-    ".",
+    "${WORKSPACE}",
     "--schema",
     "${SCHEMA}",
     "--format",
     "ndjson",
-    "--require-absolute-paths",
     "validate"
   ],
   "expect": {
-    "exit_code": 2,
+    "exit_code": 1,
     "response_file": "response.json",
     "stderr_file": ""
   },

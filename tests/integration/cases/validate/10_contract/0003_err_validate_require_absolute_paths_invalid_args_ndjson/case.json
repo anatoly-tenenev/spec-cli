@@ -1,18 +1,19 @@
 {
-  "id": "validate_50_0002_validate_path_pattern_placeholder_missing_schema_invalid",
-  "description": "validate returns schema error for path_pattern placeholder with potentially missing source without guard",
+  "id": "validate_10_0003_err_validate_require_absolute_paths_invalid_args_ndjson",
+  "description": "validate returns INVALID_ARGS in ndjson when --require-absolute-paths rejects relative workspace",
   "command": "validate",
   "args": [
     "--workspace",
-    "${WORKSPACE}",
+    ".",
     "--schema",
     "${SCHEMA}",
     "--format",
-    "json",
+    "ndjson",
+    "--require-absolute-paths",
     "validate"
   ],
   "expect": {
-    "exit_code": 4,
+    "exit_code": 2,
     "response_file": "response.json",
     "stderr_file": ""
   },

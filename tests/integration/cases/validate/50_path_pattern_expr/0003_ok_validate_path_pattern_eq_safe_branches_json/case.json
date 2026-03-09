@@ -1,6 +1,6 @@
 {
-  "id": "validate_40_0001_validate_required_when_meta_and_sections",
-  "description": "validate evaluates required_when expressions for metadata fields and content sections",
+  "id": "validate_50_0003_ok_validate_path_pattern_eq_safe_branches_json",
+  "description": "validate applies path_pattern eq? for true branch and safe missing fallback branch",
   "command": "validate",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 0,
     "response_file": "response.json",
     "stderr_file": ""
   },

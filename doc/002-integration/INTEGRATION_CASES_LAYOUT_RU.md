@@ -39,7 +39,7 @@ tests/
     cases/
       validate/
         <GG_group-name>/
-          <NNNN_case-id>/
+          <NNNN_outcome_case-id>/
             case.json
             spec.schema.yaml
             workspace.in/
@@ -73,7 +73,7 @@ tests/
 
 Директория кейса обязана содержать:
 
-- для `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_case-id>/`;
+- для `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_outcome_case-id>/`;
 - для `query|add|update`: `tests/integration/cases/<command>/<XXXX_case-id>/`.
 
 Содержимое директории кейса:
@@ -191,7 +191,8 @@ tests/
 Для `validate` используется дополнительный уровень группы:
 
 - директория группы: `<GG>_<group-name>`;
-- директория кейса внутри группы: `<NNNN>_<case-id>`;
+- директория кейса внутри группы: `<NNNN>_<outcome>_<case-id>`;
+- `outcome` — обязательный маркер ожидаемого результата (`ok` или `err`);
 - `GG` — двузначный код группы (`10`, `20`, ...), `NNNN` — 4-значный порядковый номер внутри группы.
 
 Коды групп `validate`:
@@ -211,8 +212,8 @@ tests/
 
 Примеры:
 
-- `10_contract/0001_validate_full_ok_json`
-- `40_instance_meta_content/0001_validate_required_when_meta_and_sections`
+- `10_contract/0001_ok_validate_full_ok_json`
+- `40_instance_meta_content/0001_err_validate_required_when_meta_and_sections`
 - `0002_query_by_tag_valid`
 - `0101_add_doc_valid_minimal`
 - `0203_update_title_conflict_invalid`
@@ -223,7 +224,8 @@ tests/
 - только `lower_snake_case`;
 - имя должно отражать ожидаемое поведение;
 - имя стабильно во времени (используется в логах и CI-репортах).
-- рекомендованный формат `case.json.id` для `validate`: `validate_<GG>_<NNNN>_<case-id>`.
+- для `validate` обязательный префикс исхода: `<NNNN>_ok_...` при `expect.exit_code=0`, `<NNNN>_err_...` при `expect.exit_code!=0`.
+- рекомендованный формат `case.json.id` для `validate`: `validate_<GG>_<NNNN>_<outcome>_<case-id>`.
 
 ## 8. Минимальный набор кейсов (first pass)
 
@@ -254,7 +256,7 @@ tests/
 ## 10. Checklist на новый кейс
 
 1. Создать директорию кейса:
-   - `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_case-id>/`;
+   - `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_outcome_case-id>/`;
    - `query|add|update`: `tests/integration/cases/<command>/<XXXX_case-id>/`.
 2. Добавить `case.json`.
 3. Добавить `spec.schema.yaml`.

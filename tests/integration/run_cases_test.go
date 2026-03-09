@@ -45,6 +45,9 @@ func TestValidateCases(t *testing.T) {
 		if err != nil {
 			t.Fatalf("load case %s: %v", caseDir, err)
 		}
+		if err := validateCaseNaming(caseDir, testCase); err != nil {
+			t.Fatalf("validate case naming %s: %v", caseDir, err)
+		}
 
 		tc := testCase
 		t.Run(tc.ID, func(t *testing.T) {
@@ -103,6 +106,58 @@ func loadCase(caseDir string) (integrationCase, error) {
 		return integrationCase{}, fmt.Errorf("decode case.json: %w", err)
 	}
 	return testCase, nil
+}
+
+func validateCaseNaming(caseDir string, testCase integrationCase) error {
+	caseName := filepath.Base(caseDir)
+	caseParts := strings.SplitN(caseName, "_", 3)
+	if len(caseParts) != 3 {
+		return fmt.Errorf("case directory must match <NNNN>_<ok|err>_<case-id>, got %q", caseName)
+	}
+
+	caseNumber := caseParts[0]
+	if len(caseNumber) != 4 || !isDigits(caseNumber) {
+		return fmt.Errorf("case directory must start with 4-digit number, got %q", caseName)
+	}
+
+	outcome := caseParts[1]
+	switch outcome {
+	case "ok":
+		if testCase.Expect.ExitCode != 0 {
+			return fmt.Errorf("case outcome prefix %q requires exit_code 0, got %d", outcome, testCase.Expect.ExitCode)
+		}
+	case "err":
+		if testCase.Expect.ExitCode == 0 {
+			return fmt.Errorf("case outcome prefix %q requires non-zero exit_code", outcome)
+		}
+	default:
+		return fmt.Errorf("case outcome prefix must be ok|err, got %q", outcome)
+	}
+
+	groupName := filepath.Base(filepath.Dir(caseDir))
+	groupParts := strings.SplitN(groupName, "_", 2)
+	if len(groupParts) != 2 || len(groupParts[0]) != 2 || !isDigits(groupParts[0]) {
+		return fmt.Errorf("group directory must match <GG>_<group-name>, got %q", groupName)
+	}
+
+	expectedID := fmt.Sprintf("validate_%s_%s", groupParts[0], caseName)
+	if testCase.ID != expectedID {
+		return fmt.Errorf("case id mismatch: expected %q, got %q", expectedID, testCase.ID)
+	}
+
+	return nil
+}
+
+func isDigits(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, symbol := range value {
+		if symbol < '0' || symbol > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func runCase(t *testing.T, caseDir string, testCase integrationCase) {

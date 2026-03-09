@@ -194,12 +194,15 @@
 - `tests/integration`
   - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate` из двухуровневой структуры `tests/integration/cases/validate/<group>/<case>`.
+    - Data-first запуск интеграционных кейсов `validate` из двухуровневой структуры `tests/integration/cases/validate/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
+    - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code` и `case.json.id`.
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
     - Проверка `exit_code`, `stderr` и `json/ndjson` ответа против golden-ожиданий.
   - Подпакеты:
     - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json/ndjson`, `warnings-as-errors`, exit code).
+    - `tests/integration/cases/validate/20_schema/*` — schema-level сценарии и ошибки загрузки/валидации схемы.
+    - `tests/integration/cases/validate/30_instance_builtin/*` — built-in проверки entity и fail-fast/фильтрация по type.
     - `tests/integration/cases/validate/40_instance_meta_content/*` — проверки `meta.fields` и `content.sections` с `required_when`.
     - `tests/integration/cases/validate/50_path_pattern_expr/*` — сценарии `path_pattern.cases[].when` и strict/safe семантики.
     - `tests/integration/cases/validate/60_entity_ref_context/*` — сценарии `entity_ref`, `ref.*`, `ref.dir_path`.
