@@ -36,7 +36,7 @@
       "level": "error",
       "class": "InstanceError",
       "message": "metadata field 'owner' is not in enum",
-      "standard_ref": "12.2",
+      "standard_ref": "12.3",
       "entity": {
         "type": "doc",
         "slug": "duplicate"

@@ -1,6 +1,6 @@
 {
-  "id": "validate_50_0002_validate_path_pattern_placeholder_unresolved_json",
-  "description": "validate reports unresolved meta placeholder in path_pattern when optional field is missing",
+  "id": "validate_50_0002_validate_path_pattern_placeholder_missing_schema_invalid",
+  "description": "validate returns schema error for path_pattern placeholder with potentially missing source without guard",
   "command": "validate",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 4,
     "response_file": "response.json",
     "stderr_file": ""
   },

@@ -62,7 +62,7 @@ func validateRequiredFields(
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
 				Message:     fmt.Sprintf("metadata field '%s' is not in enum", rule.Name),
-				StandardRef: "12.2",
+				StandardRef: "12.3",
 				Field:       fmt.Sprintf("frontmatter.%s", rule.Name),
 			})
 		}
