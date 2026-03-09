@@ -56,36 +56,41 @@ func Parse(
 		}
 		usePattern = strings.TrimSpace(usePattern)
 		issues = append(issues, validateTemplate(typeName, idx, usePattern, fieldsByName)...)
+		usePath := fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].use", typeName, idx)
 
 		pathCase := model.PathPatternCase{Use: usePattern, WhenPath: fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].when", typeName, idx)}
 		rawWhen, hasWhen := caseMap["when"]
 		if !hasWhen {
 			unconditionalIndexes = append(unconditionalIndexes, idx)
-			cases = append(cases, pathCase)
-			continue
-		}
-
-		pathCase.HasWhen = true
-		switch typed := rawWhen.(type) {
-		case bool:
-			pathCase.When = typed
-		case map[string]any:
-			expression, compileIssues := expressions.Compile(typed, pathCase.WhenPath, compileContext)
-			if len(compileIssues) > 0 {
-				for _, compileIssue := range compileIssues {
-					issues = append(issues, fromCompileIssue(compileIssue))
+		} else {
+			pathCase.HasWhen = true
+			switch typed := rawWhen.(type) {
+			case bool:
+				pathCase.When = typed
+			case map[string]any:
+				expression, compileIssues := expressions.Compile(typed, pathCase.WhenPath, compileContext)
+				if len(compileIssues) > 0 {
+					for _, compileIssue := range compileIssues {
+						issues = append(issues, fromCompileIssue(compileIssue))
+					}
+				} else {
+					pathCase.WhenExpr = expression
 				}
-			} else {
-				pathCase.WhenExpr = expression
+			default:
+				return model.PathPatternRule{}, nil, domainerrors.New(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("%s must be boolean or expression object", pathCase.WhenPath),
+					nil,
+				)
 			}
-		default:
-			return model.PathPatternRule{}, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("%s must be boolean or expression object", pathCase.WhenPath),
-				nil,
-			)
 		}
 
+		if strictErr := validateStrictWhenOperands(typeName, idx, pathCase, fieldsByName); strictErr != nil {
+			return model.PathPatternRule{}, nil, strictErr
+		}
+		if placeholderErr := validateTemplatePlaceholderAvailability(typeName, idx, usePattern, usePath, pathCase, fieldsByName); placeholderErr != nil {
+			return model.PathPatternRule{}, nil, placeholderErr
+		}
 		cases = append(cases, pathCase)
 	}
 
@@ -253,6 +258,281 @@ func validateTemplate(
 	}
 
 	return issues
+}
+
+type strictReferenceUsage struct {
+	Operator  expressions.Operator
+	Reference expressions.Reference
+}
+
+func validateStrictWhenOperands(
+	typeName string,
+	caseIndex int,
+	pathCase model.PathPatternCase,
+	fieldsByName map[string]model.RequiredFieldRule,
+) *domainerrors.AppError {
+	if pathCase.WhenExpr == nil {
+		return nil
+	}
+
+	for _, usage := range collectStrictReferenceUsages(pathCase.WhenExpr) {
+		if !referencePotentiallyMissing(usage.Reference, fieldsByName) {
+			continue
+		}
+
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf(
+				"schema.entity.%s.path_pattern.cases[%d].when uses strict operator '%s' with potentially missing operand '%s'",
+				typeName,
+				caseIndex,
+				usage.Operator,
+				usage.Reference.Raw,
+			),
+			map[string]any{
+				"field":    pathCase.WhenPath,
+				"operator": string(usage.Operator),
+				"operand":  usage.Reference.Raw,
+			},
+		)
+	}
+
+	return nil
+}
+
+func collectStrictReferenceUsages(expression *expressions.Expression) []strictReferenceUsage {
+	if expression == nil {
+		return nil
+	}
+
+	usages := make([]strictReferenceUsage, 0)
+	switch expression.Operator {
+	case expressions.OpEq, expressions.OpIn:
+		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.Operands)...)
+		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.ListOperands)...)
+	case expressions.OpAll, expressions.OpAny:
+		for _, subexpression := range expression.Subexpressions {
+			usages = append(usages, collectStrictReferenceUsages(subexpression)...)
+		}
+	case expressions.OpNot:
+		usages = append(usages, collectStrictReferenceUsages(expression.Subexpression)...)
+	}
+	return usages
+}
+
+func collectStrictReferenceUsagesFromOperands(operator expressions.Operator, operands []expressions.Operand) []strictReferenceUsage {
+	usages := make([]strictReferenceUsage, 0)
+	for _, operand := range operands {
+		if operand.Reference == nil {
+			continue
+		}
+		usages = append(usages, strictReferenceUsage{
+			Operator:  operator,
+			Reference: *operand.Reference,
+		})
+	}
+	return usages
+}
+
+func validateTemplatePlaceholderAvailability(
+	typeName string,
+	caseIndex int,
+	template string,
+	usePath string,
+	pathCase model.PathPatternCase,
+	fieldsByName map[string]model.RequiredFieldRule,
+) *domainerrors.AppError {
+	placeholders, err := extractPlaceholders(template)
+	if err != nil {
+		return nil
+	}
+
+	for _, token := range placeholders {
+		reference, hasReference := placeholderReference(token)
+		if !hasReference {
+			continue
+		}
+		if !referencePotentiallyMissing(reference, fieldsByName) {
+			continue
+		}
+		if pathPatternCaseGuaranteesReference(pathCase, reference, fieldsByName) {
+			continue
+		}
+
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf(
+				"schema.entity.%s.path_pattern.cases[%d].use placeholder '{%s}' references potentially missing value without static guard",
+				typeName,
+				caseIndex,
+				token,
+			),
+			map[string]any{
+				"field":       usePath,
+				"placeholder": token,
+			},
+		)
+	}
+
+	return nil
+}
+
+func placeholderReference(token string) (expressions.Reference, bool) {
+	switch token {
+	case "id", "slug", "created_date", "updated_date":
+		return expressions.Reference{}, false
+	}
+
+	if strings.HasPrefix(token, "meta:") {
+		field := strings.TrimPrefix(token, "meta:")
+		return expressions.Reference{
+			Kind:  expressions.ReferenceMeta,
+			Field: field,
+			Raw:   "meta." + field,
+		}, true
+	}
+
+	if strings.HasPrefix(token, "ref:") {
+		parts := strings.Split(token, ":")
+		if len(parts) != 3 {
+			return expressions.Reference{}, false
+		}
+		return expressions.Reference{
+			Kind:  expressions.ReferenceRef,
+			Field: parts[1],
+			Part:  parts[2],
+			Raw:   "ref." + parts[1] + "." + parts[2],
+		}, true
+	}
+
+	return expressions.Reference{}, false
+}
+
+func referencePotentiallyMissing(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) bool {
+	switch reference.Kind {
+	case expressions.ReferenceMeta:
+		if isBuiltinMetaField(reference.Field) {
+			return false
+		}
+
+		rule, exists := fieldsByName[reference.Field]
+		if !exists {
+			return false
+		}
+		if rule.Type == "entity_ref" {
+			return true
+		}
+		if !rule.Required {
+			return true
+		}
+		return rule.RequiredWhen || rule.RequiredWhenExpr != nil
+	case expressions.ReferenceRef:
+		_, exists := fieldsByName[reference.Field]
+		return exists
+	default:
+		return true
+	}
+}
+
+func pathPatternCaseGuaranteesReference(
+	pathCase model.PathPatternCase,
+	reference expressions.Reference,
+	fieldsByName map[string]model.RequiredFieldRule,
+) bool {
+	if !pathCase.HasWhen {
+		return false
+	}
+
+	if pathCase.WhenExpr == nil {
+		return !pathCase.When
+	}
+
+	targetKey := presenceKeyForReference(reference, fieldsByName)
+	return expressionGuaranteesReference(pathCase.WhenExpr, targetKey, fieldsByName)
+}
+
+func expressionGuaranteesReference(
+	expression *expressions.Expression,
+	targetKey string,
+	fieldsByName map[string]model.RequiredFieldRule,
+) bool {
+	if expression == nil || targetKey == "" {
+		return false
+	}
+
+	switch expression.Operator {
+	case expressions.OpExists:
+		if expression.ExistsRef == nil {
+			return false
+		}
+		return presenceKeyForReference(*expression.ExistsRef, fieldsByName) == targetKey
+	case expressions.OpEq, expressions.OpEqSafe, expressions.OpIn, expressions.OpInSafe:
+		return operandsContainPresenceKey(expression.Operands, targetKey, fieldsByName) ||
+			operandsContainPresenceKey(expression.ListOperands, targetKey, fieldsByName)
+	case expressions.OpAll:
+		for _, subexpression := range expression.Subexpressions {
+			if expressionGuaranteesReference(subexpression, targetKey, fieldsByName) {
+				return true
+			}
+		}
+		return false
+	case expressions.OpAny:
+		if len(expression.Subexpressions) == 0 {
+			return false
+		}
+		for _, subexpression := range expression.Subexpressions {
+			if !expressionGuaranteesReference(subexpression, targetKey, fieldsByName) {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+func operandsContainPresenceKey(
+	operands []expressions.Operand,
+	targetKey string,
+	fieldsByName map[string]model.RequiredFieldRule,
+) bool {
+	for _, operand := range operands {
+		if operand.Reference == nil {
+			continue
+		}
+		if presenceKeyForReference(*operand.Reference, fieldsByName) == targetKey {
+			return true
+		}
+	}
+	return false
+}
+
+func presenceKeyForReference(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) string {
+	switch reference.Kind {
+	case expressions.ReferenceMeta:
+		if isBuiltinMetaField(reference.Field) {
+			return "builtin:" + reference.Field
+		}
+
+		rule, exists := fieldsByName[reference.Field]
+		if exists && rule.Type == "entity_ref" {
+			return "entity_ref:" + reference.Field
+		}
+		return "meta:" + reference.Field
+	case expressions.ReferenceRef:
+		return "entity_ref:" + reference.Field
+	default:
+		return ""
+	}
+}
+
+func isBuiltinMetaField(name string) bool {
+	switch name {
+	case "type", "id", "slug", "created_date", "updated_date":
+		return true
+	default:
+		return false
+	}
 }
 
 func extractPlaceholders(template string) ([]string, error) {

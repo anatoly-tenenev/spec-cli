@@ -9,7 +9,7 @@
 
 ## 1. Базовый шаблон ожиданий
 
-### 1.1 SchemaError-кейсы (`20_schema`)
+### 1.1 SchemaError-кейсы (базово `20_schema`)
 
 - `exit_code`: `4`.
 - `response.json`:
@@ -17,8 +17,10 @@
   - `error.code = "SCHEMA_INVALID"`;
   - `error.exit_code = 4`;
   - `error.message` не пустой.
+- `workspace.in`: по умолчанию минимальный (`.keep`), если сценарий не требует отдельных входных файлов.
+- При группировке кейсов по фиче допускается размещение SchemaError-сценариев вне `20_schema` (например, в `50_path_pattern_expr`).
 
-### 1.2 InstanceError-кейсы (`30+`)
+### 1.2 InstanceError-кейсы (runtime)
 
 - `exit_code`: `1`.
 - `response.json`:
@@ -44,7 +46,7 @@
 
 - Цель: закрытая модель ключей верхнего уровня схемы.
 - `spec.schema.yaml`: добавить запрещенный верхнеуровневый ключ (`extra: true` или `x-extra: true`) вместе с валидными `version/entity`.
-- `workspace.in`: один валидный `.md` документ.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `4`, `14.4`.
 
@@ -52,7 +54,7 @@
 
 - Цель: запрет лишних ключей в `entity.<type_name>`.
 - `spec.schema.yaml`: в `entity.doc` добавить `unknown_key: value`.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `5.2`, `14.4`.
 
@@ -60,7 +62,7 @@
 
 - Цель: глобальная уникальность `id_prefix` между типами.
 - `spec.schema.yaml`: два типа с одинаковым `id_prefix`.
-- `workspace.in`: пусто или один валидный файл.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `7.3`, `14.4`.
 
@@ -68,7 +70,7 @@
 
 - Цель: безусловный `cases`-кейс должен быть последним.
 - `spec.schema.yaml`: `path_pattern.cases` с кейсом без `when` не в конце.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `8.3`, `14.4`.
 
@@ -76,7 +78,7 @@
 
 - Цель: в `cases` должен быть ровно один безусловный кейс.
 - `spec.schema.yaml`: только условные кейсы (ни одного без `when`) или два безусловных.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `8.3`, `14.4`.
 
@@ -84,7 +86,7 @@
 
 - Цель: запрет неподдерживаемых `{...}`.
 - `spec.schema.yaml`: `path_pattern: "docs/{unknown}.md"` или `const: "{bad:token}"`.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `9.1`, `12.2`, `14.4`.
 
@@ -92,7 +94,7 @@
 
 - Цель: запрет `required: true` вместе с `required_when`.
 - `spec.schema.yaml`: поле `meta.fields[]` или `content.sections[]` с этой комбинацией.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `11.5`, `14.4`.
 
@@ -100,7 +102,7 @@
 
 - Цель: валидатор выражений `required_when`.
 - `spec.schema.yaml`: `required_when: { xor: [...] }` или неверная кардинальность `eq`.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `11.6`, `14.4`.
 
@@ -108,7 +110,7 @@
 
 - Цель: запрет `schema.type: object`.
 - `spec.schema.yaml`: `meta.fields[].schema.type: object`.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `12.2`, `14.4`.
 
@@ -116,7 +118,7 @@
 
 - Цель: `refTypes` должен ссылаться на существующий тип.
 - `spec.schema.yaml`: `schema.type: entity_ref`, `refTypes: [ghost_type]`.
-- `workspace.in`: один валидный `.md`.
+- `workspace.in`: минимальный (`.keep`).
 - `response.json`: шаблон SchemaError.
 - `standard_ref`: `12.2`, `14.4`.
 
@@ -230,9 +232,9 @@
 ### 3.5 `50_path_pattern_expr/0005_validate_path_pattern_strict_in_missing_error_json`
 
 - `spec.schema.yaml`: `path_pattern.cases[].when` использует строгий `in` по опциональному полю.
-- `workspace.in`: операнд отсутствует.
-- `response.json`: шаблон InstanceError (`when_evaluation_failed`).
-- `standard_ref`: `11.6`, `8.4`, `14.4`.
+- `workspace.in`: минимальный (`.keep`).
+- `response.json`: шаблон SchemaError (`SCHEMA_INVALID`, `exit_code=4`).
+- `standard_ref`: `11.6`, `14.4`.
 
 ### 3.6 `50_path_pattern_expr/0006_validate_path_pattern_object_extra_key_schema_error_json`
 
@@ -267,11 +269,93 @@
 - `response.json`: каноничный NDJSON-массив в стабильном порядке (`issue...`, затем `summary`).
 - `standard_ref`: `6.5`, `14.3`.
 
+### 3.11 `10_contract/0003_validate_schema_error_ndjson_single_error_record`
+
+- Цель: зафиксировать NDJSON-контракт для schema-level ошибки.
+- `spec.schema.yaml`: заведомо невалидная схема (например, duplicate key на root).
+- `workspace.in`: минимальный (`.keep`).
+- `response.json`: массив из одной записи с `record_type = "error"`, `result_state = "invalid"`, `error.code = "SCHEMA_INVALID"`, `error.exit_code = 4`.
+- `standard_ref`: `14.3`, `14.4`.
+
+### 3.12 `10_contract/0004_validate_instance_error_ndjson_issue_then_summary_contract`
+
+- Цель: зафиксировать NDJSON-контракт для runtime invalid-сценария.
+- `spec.schema.yaml`: валидная схема.
+- `workspace.in`: один `.md` с минимум двумя instance-нарушениями.
+- `response.json`: каноничный NDJSON-массив в порядке `issue...`, затем ровно один `summary` с `result_state = "invalid"`.
+- `standard_ref`: `14.3`, `14.4`.
+
+### 3.13 `10_contract/0005_validate_fail_fast_stops_after_first_issue_json`
+
+- Цель: зафиксировать поведение `--fail-fast` как публичный контракт.
+- `spec.schema.yaml`: валидная схема.
+- `workspace.in`: сущность с несколькими потенциальными нарушениями.
+- `args`: запуск с `--fail-fast`.
+- `response.json`: `errors = 1`, массив `issues` содержит только первую диагностику по детерминированному порядку.
+- `standard_ref`: `14.3`, `14.4`.
+
+### 3.14 `10_contract/0006_validate_type_filter_coverage_counters_json`
+
+- Цель: проверить контракт счетчиков покрытия при `--type` фильтрации.
+- `spec.schema.yaml`: минимум два типа (`doc`, `service`).
+- `workspace.in`: файлы обоих типов.
+- `args`: запуск с `--type doc`.
+- `response.json`: корректные `candidate_entities`, `checked_entities`, `skipped_entities` и согласованный `summary`.
+- `standard_ref`: `14.3`, `14.4`.
+
+### 3.15 `20_schema/0012_validate_schema_path_pattern_case_not_object_json`
+
+- Цель: `path_pattern.cases[]` должен содержать только объекты-кейсы.
+- `spec.schema.yaml`: один из элементов `cases[]` задать как scalar/list.
+- `workspace.in`: минимальный (`.keep`).
+- `response.json`: шаблон SchemaError (`SCHEMA_INVALID`, `exit_code=4`).
+- `standard_ref`: `8.3`, `14.4`.
+
+### 3.16 `20_schema/0013_validate_schema_path_pattern_use_blank_string_json`
+
+- Цель: `cases[].use` должен быть непустой строкой после trim.
+- `spec.schema.yaml`: `use: "   "` в одном из кейсов.
+- `workspace.in`: минимальный (`.keep`).
+- `response.json`: шаблон SchemaError (`SCHEMA_INVALID`, `exit_code=4`).
+- `standard_ref`: `8.3`, `14.4`.
+
+### 3.17 `20_schema/0014_validate_schema_path_pattern_ref_placeholder_invalid_part_json`
+
+- Цель: запрет неподдерживаемой части в `{ref:<field>:<part>}`.
+- `spec.schema.yaml`: пример `{ref:owner:unknown_part}` при корректном `entity_ref` поле.
+- `workspace.in`: минимальный (`.keep`).
+- `response.json`: шаблон SchemaError (`SCHEMA_INVALID`, `exit_code=4`).
+- `standard_ref`: `8.5`, `14.4`.
+
+### 3.18 `40_instance_meta_content/0007_validate_required_when_eval_error_instance_json`
+
+- Цель: зафиксировать runtime-ошибку вычисления `required_when`.
+- `spec.schema.yaml`: `required_when` со strict-оператором по потенциально отсутствующему операнду.
+- `workspace.in`: операнд отсутствует у сущности.
+- `response.json`: шаблон InstanceError с кодом ошибки вычисления выражения (`instance.expression.missing_operand_strict` в контексте `required_when`).
+- `standard_ref`: `11.6`, `14.4`.
+
+### 3.19 `50_path_pattern_expr/0008_validate_path_pattern_safe_in_missing_operand_fallback_json`
+
+- Цель: `in?` по отсутствующему операнду должен безопасно возвращать `false` и переводить в fallback-кейс.
+- `spec.schema.yaml`: `path_pattern.cases[].when` с `in?` и корректным безусловным fallback.
+- `workspace.in`: сущность без операнда, путь соответствует fallback-шаблону.
+- `response.json`: `result_state = "valid"`, `errors = 0`.
+- `standard_ref`: `11.6`, `8.4`, `14.4`.
+
+### 3.20 `80_profile_conformance/0002_validate_json_issue_order_stable_json`
+
+- Цель: зафиксировать стабильный порядок `issues` в обычном JSON-ответе.
+- `spec.schema.yaml` и `workspace.in`: несколько однотипных нарушений в разных файлах/сущностях.
+- `response.json`: каноничный JSON с детерминированным порядком `issues`.
+- `standard_ref`: `6.5`, `14.3`.
+
 ## 4. Рекомендуемый порядок реализации
 
 1. Закрыть все `20_schema` P0-кейсы.
 2. Закрыть `30_instance_builtin` P0-кейсы.
 3. Закрыть `40/50/60` P0-кейсы.
-4. Добавить `80_profile_conformance/0001...` и зафиксировать минимальные conformance-гарантии.
-5. Довести P1-кейсы.
-
+4. Добавить контрактные кейсы `10_contract/0003..0006` для NDJSON/summary/fail-fast/coverage.
+5. Добавить edge-cases `20_schema/0012..0014` и `50_path_pattern_expr/0008`.
+6. Добавить conformance-кейсы `80_profile_conformance/0001..0002`.
+7. Довести оставшиеся P1-кейсы.
