@@ -1,0 +1,34 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "builtin.type_unknown",
+      "entity": {
+        "id": "UNK-1",
+        "slug": "unknown",
+        "type": "unknown"
+      },
+      "field": "frontmatter.type",
+      "level": "error",
+      "message": "entity type 'unknown' is not declared in schema",
+      "standard_ref": "5.3"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 1,
+      "checked_entities": 1,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 1,
+    "entities_valid": 0,
+    "errors": 1,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

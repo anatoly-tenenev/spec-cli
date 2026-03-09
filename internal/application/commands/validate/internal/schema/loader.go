@@ -65,6 +65,9 @@ func Load(path string) (model.ValidationSchema, []domainvalidation.Issue, *domai
 			map[string]any{"reason": err.Error()},
 		)
 	}
+	if keyErr := validateTopLevelKeys(decoded); keyErr != nil {
+		return model.ValidationSchema{}, nil, keyErr
+	}
 
 	entityRaw, ok := support.ToStringMap(decoded["entity"])
 	if !ok || len(entityRaw) == 0 {
@@ -103,6 +106,43 @@ func Load(path string) (model.ValidationSchema, []domainvalidation.Issue, *domai
 		loaded.Entity[typeName] = entityType
 		issues = append(issues, typeIssues...)
 	}
+	if schemaIssue, hasSchemaIssue := firstSchemaError(issues); hasSchemaIssue {
+		return model.ValidationSchema{}, nil, domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			schemaIssue.Message,
+			map[string]any{
+				"code":         schemaIssue.Code,
+				"field":        schemaIssue.Field,
+				"standard_ref": schemaIssue.StandardRef,
+			},
+		)
+	}
 
 	return loaded, issues, nil
+}
+
+func validateTopLevelKeys(values map[string]any) *domainerrors.AppError {
+	for key := range values {
+		switch key {
+		case "version", "entity", "description":
+			continue
+		default:
+			return domainerrors.New(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("schema has unsupported top-level key '%s'", key),
+				nil,
+			)
+		}
+	}
+	return nil
+}
+
+func firstSchemaError(issues []domainvalidation.Issue) (domainvalidation.Issue, bool) {
+	for _, issue := range issues {
+		if issue.Class != "SchemaError" || issue.Level != domainvalidation.LevelError {
+			continue
+		}
+		return issue, true
+	}
+	return domainvalidation.Issue{}, false
 }

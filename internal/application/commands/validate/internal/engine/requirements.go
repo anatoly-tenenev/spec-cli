@@ -114,7 +114,17 @@ func validateRequiredSections(
 			continue
 		}
 
-		if _, exists := sections[sectionRule.Name]; exists {
+		if title, exists := sections[sectionRule.Name]; exists {
+			if sectionRule.HasTitle && title != sectionRule.Title {
+				addIssue(issues, entity, domainvalidation.Issue{
+					Code:        "content.section_title_mismatch",
+					Level:       domainvalidation.LevelError,
+					Class:       "InstanceError",
+					Message:     fmt.Sprintf("section '%s' title must be '%s'", sectionRule.Name, sectionRule.Title),
+					StandardRef: "13.2",
+					Field:       fmt.Sprintf("content.sections.%s.title", sectionRule.Name),
+				})
+			}
 			continue
 		}
 

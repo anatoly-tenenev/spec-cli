@@ -1,0 +1,16 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          required_when:
+            eq: [meta.created_date, "2026-03-01"]
+          schema:
+            type: string
+    content:
+      sections:
+        - name: goal

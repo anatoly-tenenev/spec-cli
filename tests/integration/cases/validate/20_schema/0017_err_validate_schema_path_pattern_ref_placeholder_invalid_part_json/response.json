@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "details": {
+      "field": "schema.entity.feature.path_pattern.cases[0].use",
+      "placeholder": "ref:owner:unknown_part"
+    },
+    "exit_code": 4,
+    "message": "schema.entity.feature.path_pattern.cases[0].use placeholder '{ref:owner:unknown_part}' references potentially missing value without static guard"
+  },
+  "result_state": "invalid"
+}

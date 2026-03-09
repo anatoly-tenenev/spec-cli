@@ -1,0 +1,13 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "unsupported expression operator 'xor'",
+    "exit_code": 4,
+    "details": {
+      "code": "schema.expression.invalid_operator",
+      "field": "schema.entity.doc.meta.fields[0].required_when",
+      "standard_ref": "11.6"
+    }
+  }
+}

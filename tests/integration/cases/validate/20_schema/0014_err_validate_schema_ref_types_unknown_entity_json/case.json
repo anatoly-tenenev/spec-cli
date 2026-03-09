@@ -1,0 +1,24 @@
+{
+  "id": "validate_20_0014_err_validate_schema_ref_types_unknown_entity_json",
+  "description": "validate returns schema error when refTypes references unknown entity type",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

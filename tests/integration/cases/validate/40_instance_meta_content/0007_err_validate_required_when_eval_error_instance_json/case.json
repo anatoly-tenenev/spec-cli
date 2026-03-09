@@ -1,0 +1,24 @@
+{
+  "id": "validate_40_0007_err_validate_required_when_eval_error_instance_json",
+  "description": "validate returns instance expression error when strict required_when evaluates with missing operand",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

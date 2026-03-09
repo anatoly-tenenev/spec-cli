@@ -1,0 +1,6 @@
+version: 0.0.2
+entity:
+  doc:
+    id_prefix: "DOC"
+    path_pattern: "{slug}.md"
+    unknown_key: true

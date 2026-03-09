@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema has unsupported top-level key 'x-extra'",
+    "exit_code": 4
+  }
+}

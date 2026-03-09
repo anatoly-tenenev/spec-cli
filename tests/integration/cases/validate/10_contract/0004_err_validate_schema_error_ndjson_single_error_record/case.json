@@ -1,0 +1,24 @@
+{
+  "id": "validate_10_0004_err_validate_schema_error_ndjson_single_error_record",
+  "description": "validate returns single error ndjson record for schema-level error",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "ndjson",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

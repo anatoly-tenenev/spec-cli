@@ -1,0 +1,15 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "details": {
+      "id_prefix": "DOC",
+      "types": [
+        "doc",
+        "service"
+      ]
+    },
+    "exit_code": 4,
+    "message": "schema contains duplicated id_prefix across entity types"
+  },
+  "result_state": "invalid"
+}

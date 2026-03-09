@@ -1,0 +1,6 @@
+version: 0.0.2
+x-extra: true
+entity:
+  doc:
+    id_prefix: "DOC"
+    path_pattern: "{slug}.md"

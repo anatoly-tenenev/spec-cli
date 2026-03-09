@@ -44,6 +44,9 @@ func Parse(
 				nil,
 			)
 		}
+		if keyErr := validateCaseKeys(typeName, idx, caseMap); keyErr != nil {
+			return model.PathPatternRule{}, nil, keyErr
+		}
 
 		useRaw, hasUse := caseMap["use"]
 		usePattern, ok := useRaw.(string)
@@ -131,6 +134,9 @@ func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
 	case []any:
 		return typed, nil
 	case map[string]any:
+		if keyErr := validatePathPatternObjectKeys(typeName, typed); keyErr != nil {
+			return nil, keyErr
+		}
 		rawCases, exists := typed["cases"]
 		if !exists {
 			return nil, domainerrors.New(
@@ -155,6 +161,36 @@ func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
 			nil,
 		)
 	}
+}
+
+func validatePathPatternObjectKeys(typeName string, values map[string]any) *domainerrors.AppError {
+	for key := range values {
+		if key == "cases" {
+			continue
+		}
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.path_pattern has unsupported key '%s'", typeName, key),
+			nil,
+		)
+	}
+	return nil
+}
+
+func validateCaseKeys(typeName string, caseIndex int, values map[string]any) *domainerrors.AppError {
+	for key := range values {
+		switch key {
+		case "use", "when":
+			continue
+		default:
+			return domainerrors.New(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d] has unsupported key '%s'", typeName, caseIndex, key),
+				nil,
+			)
+		}
+	}
+	return nil
 }
 
 func validateTemplate(
@@ -260,11 +296,6 @@ func validateTemplate(
 	return issues
 }
 
-type strictReferenceUsage struct {
-	Operator  expressions.Operator
-	Reference expressions.Reference
-}
-
 func validateStrictWhenOperands(
 	typeName string,
 	caseIndex int,
@@ -275,7 +306,7 @@ func validateStrictWhenOperands(
 		return nil
 	}
 
-	for _, usage := range collectStrictReferenceUsages(pathCase.WhenExpr) {
+	for _, usage := range expressions.CollectStrictReferenceUsages(pathCase.WhenExpr) {
 		if !referencePotentiallyMissing(usage.Reference, fieldsByName) {
 			continue
 		}
@@ -300,40 +331,6 @@ func validateStrictWhenOperands(
 	return nil
 }
 
-func collectStrictReferenceUsages(expression *expressions.Expression) []strictReferenceUsage {
-	if expression == nil {
-		return nil
-	}
-
-	usages := make([]strictReferenceUsage, 0)
-	switch expression.Operator {
-	case expressions.OpEq, expressions.OpIn:
-		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.Operands)...)
-		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.ListOperands)...)
-	case expressions.OpAll, expressions.OpAny:
-		for _, subexpression := range expression.Subexpressions {
-			usages = append(usages, collectStrictReferenceUsages(subexpression)...)
-		}
-	case expressions.OpNot:
-		usages = append(usages, collectStrictReferenceUsages(expression.Subexpression)...)
-	}
-	return usages
-}
-
-func collectStrictReferenceUsagesFromOperands(operator expressions.Operator, operands []expressions.Operand) []strictReferenceUsage {
-	usages := make([]strictReferenceUsage, 0)
-	for _, operand := range operands {
-		if operand.Reference == nil {
-			continue
-		}
-		usages = append(usages, strictReferenceUsage{
-			Operator:  operator,
-			Reference: *operand.Reference,
-		})
-	}
-	return usages
-}
-
 func validateTemplatePlaceholderAvailability(
 	typeName string,
 	caseIndex int,
@@ -347,6 +344,8 @@ func validateTemplatePlaceholderAvailability(
 		return nil
 	}
 
+	guardKeys := collectCaseGuardKeys(pathCase, fieldsByName)
+	potentialKeys := map[string]struct{}{}
 	for _, token := range placeholders {
 		reference, hasReference := placeholderReference(token)
 		if !hasReference {
@@ -355,7 +354,9 @@ func validateTemplatePlaceholderAvailability(
 		if !referencePotentiallyMissing(reference, fieldsByName) {
 			continue
 		}
-		if pathPatternCaseGuaranteesReference(pathCase, reference, fieldsByName) {
+		targetKey := presenceKeyForReference(reference, fieldsByName)
+		potentialKeys[targetKey] = struct{}{}
+		if _, guarded := guardKeys[targetKey]; guarded {
 			continue
 		}
 
@@ -370,6 +371,25 @@ func validateTemplatePlaceholderAvailability(
 			map[string]any{
 				"field":       usePath,
 				"placeholder": token,
+			},
+		)
+	}
+
+	for guardKey := range guardKeys {
+		if _, required := potentialKeys[guardKey]; required {
+			continue
+		}
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf(
+				"schema.entity.%s.path_pattern.cases[%d].when contains unused exists guard '%s'",
+				typeName,
+				caseIndex,
+				guardKey,
+			),
+			map[string]any{
+				"field": pathCase.WhenPath,
+				"guard": guardKey,
 			},
 		)
 	}
@@ -434,77 +454,30 @@ func referencePotentiallyMissing(reference expressions.Reference, fieldsByName m
 	}
 }
 
-func pathPatternCaseGuaranteesReference(
+func collectCaseGuardKeys(
 	pathCase model.PathPatternCase,
-	reference expressions.Reference,
 	fieldsByName map[string]model.RequiredFieldRule,
-) bool {
-	if !pathCase.HasWhen {
-		return false
+) map[string]struct{} {
+	guards := map[string]struct{}{}
+	if !pathCase.HasWhen || pathCase.WhenExpr == nil {
+		return guards
 	}
 
-	if pathCase.WhenExpr == nil {
-		return !pathCase.When
-	}
-
-	targetKey := presenceKeyForReference(reference, fieldsByName)
-	return expressionGuaranteesReference(pathCase.WhenExpr, targetKey, fieldsByName)
-}
-
-func expressionGuaranteesReference(
-	expression *expressions.Expression,
-	targetKey string,
-	fieldsByName map[string]model.RequiredFieldRule,
-) bool {
-	if expression == nil || targetKey == "" {
-		return false
-	}
-
-	switch expression.Operator {
+	switch pathCase.WhenExpr.Operator {
 	case expressions.OpExists:
-		if expression.ExistsRef == nil {
-			return false
+		if pathCase.WhenExpr.ExistsRef != nil {
+			guards[presenceKeyForReference(*pathCase.WhenExpr.ExistsRef, fieldsByName)] = struct{}{}
 		}
-		return presenceKeyForReference(*expression.ExistsRef, fieldsByName) == targetKey
-	case expressions.OpEq, expressions.OpEqSafe, expressions.OpIn, expressions.OpInSafe:
-		return operandsContainPresenceKey(expression.Operands, targetKey, fieldsByName) ||
-			operandsContainPresenceKey(expression.ListOperands, targetKey, fieldsByName)
 	case expressions.OpAll:
-		for _, subexpression := range expression.Subexpressions {
-			if expressionGuaranteesReference(subexpression, targetKey, fieldsByName) {
-				return true
+		for _, subexpression := range pathCase.WhenExpr.Subexpressions {
+			if subexpression == nil || subexpression.Operator != expressions.OpExists || subexpression.ExistsRef == nil {
+				continue
 			}
+			guards[presenceKeyForReference(*subexpression.ExistsRef, fieldsByName)] = struct{}{}
 		}
-		return false
-	case expressions.OpAny:
-		if len(expression.Subexpressions) == 0 {
-			return false
-		}
-		for _, subexpression := range expression.Subexpressions {
-			if !expressionGuaranteesReference(subexpression, targetKey, fieldsByName) {
-				return false
-			}
-		}
-		return true
-	default:
-		return false
 	}
-}
 
-func operandsContainPresenceKey(
-	operands []expressions.Operand,
-	targetKey string,
-	fieldsByName map[string]model.RequiredFieldRule,
-) bool {
-	for _, operand := range operands {
-		if operand.Reference == nil {
-			continue
-		}
-		if presenceKeyForReference(*operand.Reference, fieldsByName) == targetKey {
-			return true
-		}
-	}
-	return false
+	return guards
 }
 
 func presenceKeyForReference(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) string {

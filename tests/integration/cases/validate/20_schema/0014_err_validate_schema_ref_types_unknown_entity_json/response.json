@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "exit_code": 4,
+    "message": "schema.entity.doc.meta.fields[0].schema.refTypes references unknown entity type 'ghost_type'"
+  },
+  "result_state": "invalid"
+}

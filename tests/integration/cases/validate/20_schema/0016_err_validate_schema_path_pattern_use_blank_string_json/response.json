@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "exit_code": 4,
+    "message": "schema.entity.doc.path_pattern.cases[1].use must be non-empty string"
+  },
+  "result_state": "invalid"
+}

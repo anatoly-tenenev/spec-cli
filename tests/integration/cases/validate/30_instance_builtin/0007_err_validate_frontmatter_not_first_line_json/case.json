@@ -1,0 +1,24 @@
+{
+  "id": "validate_30_0007_err_validate_frontmatter_not_first_line_json",
+  "description": "validate returns instance error when frontmatter does not start on first line",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema.entity.doc.path_pattern.cases[0] has unsupported key 'note'",
+    "exit_code": 4
+  }
+}

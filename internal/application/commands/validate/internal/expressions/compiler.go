@@ -64,6 +64,11 @@ type CompileIssue struct {
 	StandardRef string
 }
 
+type StrictReferenceUsage struct {
+	Operator  Operator
+	Reference Reference
+}
+
 func Compile(raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
 	expression, issues := compileExpression(raw, path, ctx)
 	if len(issues) > 0 {
@@ -393,6 +398,40 @@ func mergeIssues(left []CompileIssue, right []CompileIssue) []CompileIssue {
 	issues = append(issues, left...)
 	issues = append(issues, right...)
 	return issues
+}
+
+func CollectStrictReferenceUsages(expression *Expression) []StrictReferenceUsage {
+	if expression == nil {
+		return nil
+	}
+
+	usages := make([]StrictReferenceUsage, 0)
+	switch expression.Operator {
+	case OpEq, OpIn:
+		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.Operands)...)
+		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.ListOperands)...)
+	case OpAll, OpAny:
+		for _, subexpression := range expression.Subexpressions {
+			usages = append(usages, CollectStrictReferenceUsages(subexpression)...)
+		}
+	case OpNot:
+		usages = append(usages, CollectStrictReferenceUsages(expression.Subexpression)...)
+	}
+	return usages
+}
+
+func collectStrictReferenceUsagesFromOperands(operator Operator, operands []Operand) []StrictReferenceUsage {
+	usages := make([]StrictReferenceUsage, 0)
+	for _, operand := range operands {
+		if operand.Reference == nil {
+			continue
+		}
+		usages = append(usages, StrictReferenceUsage{
+			Operator:  operator,
+			Reference: *operand.Reference,
+		})
+	}
+	return usages
 }
 
 func newIssue(code string, message string, field string) CompileIssue {

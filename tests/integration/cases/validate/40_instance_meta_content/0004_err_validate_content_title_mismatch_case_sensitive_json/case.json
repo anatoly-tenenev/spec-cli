@@ -1,0 +1,24 @@
+{
+  "id": "validate_40_0004_err_validate_content_title_mismatch_case_sensitive_json",
+  "description": "validate returns instance error when section title differs by case from schema title",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}
