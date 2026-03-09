@@ -38,6 +38,8 @@ type RequiredFieldRule struct {
 
 type RequiredSectionRule struct {
 	Name             string
+	HasTitle         bool
+	Title            string
 	Required         bool
 	RequiredWhen     bool
 	RequiredWhenExpr *expressions.Expression

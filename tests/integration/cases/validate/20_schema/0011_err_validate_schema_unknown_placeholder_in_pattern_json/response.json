@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "details": {
+      "code": "schema.path_pattern.invalid_placeholder",
+      "field": "schema.entity.doc.path_pattern.cases[0].use",
+      "standard_ref": "9"
+    },
+    "exit_code": 4,
+    "message": "unsupported placeholder '{unknown}'"
+  },
+  "result_state": "invalid"
+}

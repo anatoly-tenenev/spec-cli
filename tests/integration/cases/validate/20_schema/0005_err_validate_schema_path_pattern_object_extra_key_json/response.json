@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema.entity.doc.path_pattern has unsupported key 'mode'",
+    "exit_code": 4
+  }
+}

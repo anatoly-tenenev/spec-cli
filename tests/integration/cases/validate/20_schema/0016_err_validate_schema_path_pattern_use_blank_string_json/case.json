@@ -1,0 +1,24 @@
+{
+  "id": "validate_20_0016_err_validate_schema_path_pattern_use_blank_string_json",
+  "description": "validate returns schema error when path_pattern use is blank string",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

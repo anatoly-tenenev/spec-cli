@@ -1,0 +1,28 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "frontmatter.invalid",
+      "level": "error",
+      "message": "frontmatter must start with '---' on the first line",
+      "standard_ref": "10.2"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 1,
+      "checked_entities": 1,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 1,
+    "entities_valid": 0,
+    "errors": 1,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

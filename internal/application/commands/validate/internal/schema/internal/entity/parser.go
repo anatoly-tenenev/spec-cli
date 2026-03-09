@@ -9,6 +9,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	pathpattern "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern"
+	schemachecks "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/schemachecks"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -30,6 +31,10 @@ func ParseType(
 	typeSet map[string]struct{},
 	usedPrefixes map[string]string,
 ) (model.SchemaEntityType, []domainvalidation.Issue, *domainerrors.AppError) {
+	if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s", typeName), typeConfig, "id_prefix", "path_pattern", "meta", "content", "description"); keyErr != nil {
+		return model.SchemaEntityType{}, nil, keyErr
+	}
+
 	idPrefix, idPrefixErr := parseIDPrefix(typeName, typeConfig["id_prefix"], usedPrefixes)
 	if idPrefixErr != nil {
 		return model.SchemaEntityType{}, nil, idPrefixErr
@@ -39,16 +44,15 @@ func ParseType(
 	if requiredFieldErr != nil {
 		return model.SchemaEntityType{}, nil, requiredFieldErr
 	}
-
-	expressionContext := buildExpressionContext(requiredFields)
-	requiredSections, sectionIssues, requiredSectionsErr := parseRequiredSections(typeName, typeConfig["content"], expressionContext)
-	if requiredSectionsErr != nil {
-		return model.SchemaEntityType{}, nil, requiredSectionsErr
-	}
-
 	fieldByName := make(map[string]model.RequiredFieldRule, len(requiredFields))
 	for _, fieldRule := range requiredFields {
 		fieldByName[fieldRule.Name] = fieldRule
+	}
+
+	expressionContext := buildExpressionContext(requiredFields)
+	requiredSections, sectionIssues, requiredSectionsErr := parseRequiredSections(typeName, typeConfig["content"], expressionContext, fieldByName)
+	if requiredSectionsErr != nil {
+		return model.SchemaEntityType{}, nil, requiredSectionsErr
 	}
 
 	pathRule, pathIssues, pathErr := pathpattern.Parse(typeName, typeConfig["path_pattern"], expressionContext, fieldByName)
@@ -117,6 +121,9 @@ func parseRequiredFields(
 			nil,
 		)
 	}
+	if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.meta", typeName), metaMap, "fields"); keyErr != nil {
+		return nil, nil, keyErr
+	}
 
 	rawFields, exists := metaMap["fields"]
 	if !exists || rawFields == nil {
@@ -145,6 +152,9 @@ func parseRequiredFields(
 				fmt.Sprintf("schema.entity.%s.meta.fields[%d] must be an object", typeName, idx),
 				nil,
 			)
+		}
+		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.meta.fields[%d]", typeName, idx), rawRule, "name", "required", "required_when", "description", "schema"); keyErr != nil {
+			return nil, nil, keyErr
 		}
 
 		name, ok := rawRule["name"].(string)
@@ -180,6 +190,9 @@ func parseRequiredFields(
 				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema must be an object", typeName, idx),
 				nil,
 			)
+		}
+		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema", typeName, idx), schemaRaw, "type", "const", "enum", "refTypes"); keyErr != nil {
+			return nil, nil, keyErr
 		}
 
 		ruleTypeRaw, hasType := schemaRaw["type"]
@@ -275,6 +288,29 @@ func parseRequiredFields(
 		rules[idx].RequiredWhenExpr = requiredWhenExpr
 		issues = append(issues, requiredIssues...)
 	}
+	fieldsByName := make(map[string]model.RequiredFieldRule, len(rules))
+	for _, rule := range rules {
+		fieldsByName[rule.Name] = rule
+	}
+	for idx, rule := range rules {
+		if usage, hasUsage := schemachecks.StrictMissingUsageInRequiredWhen(rule.RequiredWhenExpr, fieldsByName); hasUsage {
+			message := fmt.Sprintf(
+				"schema.entity.%s.meta.fields[%d].required_when uses strict operator '%s' with potentially missing operand '%s'",
+				typeName,
+				idx,
+				usage.Operator,
+				usage.Operand.Raw,
+			)
+			issues = append(issues, domainvalidation.Issue{
+				Code:        "schema.required_when.strict_potentially_missing",
+				Level:       domainvalidation.LevelError,
+				Class:       "SchemaError",
+				Message:     message,
+				StandardRef: "11.6",
+				Field:       rule.RequiredWhenPath,
+			})
+		}
+	}
 
 	return rules, issues, nil
 }
@@ -327,6 +363,7 @@ func parseRequiredSections(
 	typeName string,
 	rawContent any,
 	compileContext expressions.CompileContext,
+	fieldsByName map[string]model.RequiredFieldRule,
 ) ([]model.RequiredSectionRule, []domainvalidation.Issue, *domainerrors.AppError) {
 	if rawContent == nil {
 		return nil, nil, nil
@@ -339,6 +376,9 @@ func parseRequiredSections(
 			fmt.Sprintf("schema.entity.%s.content must be a mapping", typeName),
 			nil,
 		)
+	}
+	if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.content", typeName), contentMap, "sections"); keyErr != nil {
+		return nil, nil, keyErr
 	}
 
 	rawSections, exists := contentMap["sections"]
@@ -369,6 +409,9 @@ func parseRequiredSections(
 				nil,
 			)
 		}
+		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.content.sections[%d]", typeName, idx), rawRule, "name", "required", "required_when", "title", "description"); keyErr != nil {
+			return nil, nil, keyErr
+		}
 
 		name, ok := rawRule["name"].(string)
 		if !ok || strings.TrimSpace(name) == "" {
@@ -392,6 +435,18 @@ func parseRequiredSections(
 			Name:             name,
 			RequiredWhenPath: fmt.Sprintf("schema.entity.%s.content.sections[%d].required_when", typeName, idx),
 		}
+		if rawTitle, hasTitle := rawRule["title"]; hasTitle {
+			title, ok := rawTitle.(string)
+			if !ok || strings.TrimSpace(title) == "" {
+				return nil, nil, domainerrors.New(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.content.sections[%d].title must be non-empty string", typeName, idx),
+					nil,
+				)
+			}
+			rule.HasTitle = true
+			rule.Title = strings.TrimSpace(title)
+		}
 		rules = append(rules, rule)
 		rawRules = append(rawRules, rawRule)
 	}
@@ -409,6 +464,25 @@ func parseRequiredSections(
 		rules[idx].RequiredWhen = requiredWhenLiteral
 		rules[idx].RequiredWhenExpr = requiredWhenExpr
 		issues = append(issues, requiredIssues...)
+	}
+	for idx, rule := range rules {
+		if usage, hasUsage := schemachecks.StrictMissingUsageInRequiredWhen(rule.RequiredWhenExpr, fieldsByName); hasUsage {
+			message := fmt.Sprintf(
+				"schema.entity.%s.content.sections[%d].required_when uses strict operator '%s' with potentially missing operand '%s'",
+				typeName,
+				idx,
+				usage.Operator,
+				usage.Operand.Raw,
+			)
+			issues = append(issues, domainvalidation.Issue{
+				Code:        "schema.required_when.strict_potentially_missing",
+				Level:       domainvalidation.LevelError,
+				Class:       "SchemaError",
+				Message:     message,
+				StandardRef: "11.6",
+				Field:       rule.RequiredWhenPath,
+			})
+		}
 	}
 
 	return rules, issues, nil

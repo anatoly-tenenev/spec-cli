@@ -1,0 +1,47 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "builtin.date_missing",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "frontmatter.created_date",
+      "level": "error",
+      "message": "built-in field 'created_date' is required",
+      "standard_ref": "11.3"
+    },
+    {
+      "class": "InstanceError",
+      "code": "instance.expression.missing_operand_strict",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "schema.entity.doc.meta.fields[0].required_when",
+      "level": "error",
+      "message": "failed to evaluate required_when for metadata field 'owner': operator 'eq' received missing operand",
+      "standard_ref": "11.6"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 1,
+      "checked_entities": 1,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 1,
+    "entities_valid": 0,
+    "errors": 2,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

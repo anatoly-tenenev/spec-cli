@@ -1,0 +1,30 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        - name: profile
+          required: true
+          schema:
+            type: string
+            enum: [core, edge, platform]
+        - name: flag
+          required: true
+          schema:
+            type: boolean
+        - name: owner
+          required: false
+          required_when:
+            all:
+              - any:
+                  - eq?: [meta.profile, "core"]
+                  - eq?: [meta.profile, "edge"]
+              - not:
+                  eq?: [meta.flag, true]
+          schema:
+            type: string
+    content:
+      sections:
+        - name: goal

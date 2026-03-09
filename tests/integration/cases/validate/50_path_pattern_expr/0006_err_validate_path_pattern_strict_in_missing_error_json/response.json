@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "details": {
+      "field": "schema.entity.doc.path_pattern.cases[0].when",
+      "operand": "meta.owner",
+      "operator": "in"
+    },
+    "exit_code": 4,
+    "message": "schema.entity.doc.path_pattern.cases[0].when uses strict operator 'in' with potentially missing operand 'meta.owner'"
+  },
+  "result_state": "invalid"
+}

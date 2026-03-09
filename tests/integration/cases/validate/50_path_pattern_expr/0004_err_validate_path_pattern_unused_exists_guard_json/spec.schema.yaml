@@ -1,0 +1,17 @@
+version: 0.0.2
+entity:
+  doc:
+    id_prefix: "DOC"
+    path_pattern:
+      cases:
+        - when:
+            exists: meta.owner
+          use: "docs/{slug}.md"
+        - use: "{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          schema:
+            type: string
+            enum: [core, edge]

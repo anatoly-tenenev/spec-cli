@@ -1,0 +1,34 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "frontmatter.field_not_allowed",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "frontmatter.extra_meta",
+      "level": "error",
+      "message": "field 'extra_meta' is not allowed by schema",
+      "standard_ref": "12.3"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 1,
+      "checked_entities": 1,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 1,
+    "entities_valid": 0,
+    "errors": 1,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

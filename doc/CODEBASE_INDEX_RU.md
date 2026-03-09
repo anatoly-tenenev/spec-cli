@@ -63,7 +63,8 @@
   - Entry point: `internal/application/commands/validate/internal/schema/loader.go` — `Load`.
   - Ответственность:
     - Чтение schema-файла и parse YAML/JSON в AST.
-    - Проверка root mapping и duplicate keys.
+    - Проверка root mapping, duplicate keys и closed-world верхнего уровня (`version/entity/description`).
+    - Ранний fail-fast на `SchemaError` уровня `error` с возвратом `SCHEMA_INVALID` до runtime-прохода.
     - Делегирование разбора `entity.<type>` в подпакет entity.
   - Подпакеты:
     - `validate/internal/schema/internal/entity` — разбор правил на уровне типа.
@@ -72,18 +73,22 @@
   - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/parser.go` — `ParseType`.
   - Ответственность:
     - Парсинг `id_prefix` и контроль уникальности префиксов между типами.
+    - Проверка closed-world ключей для `entity.<type>`, `meta`, `meta.fields[]`, `meta.fields[].schema`, `content`, `content.sections[]`.
     - Парсинг `meta.fields` (`type`, `enum`, `const`, `refTypes`, `required_when`).
     - Парсинг `content.sections` и условий обязательности.
+    - Статическая проверка strict-операторов `eq/in` в `required_when` на potentially-missing операндах.
     - Сборка expression context и агрегация schema issues.
   - Подпакеты:
     - `validate/internal/schema/internal/entity/internal/pathpattern` — разбор и проверки `path_pattern`.
+    - `validate/internal/schema/internal/entity/internal/schemachecks` — переиспользуемые schema-check helpers (closed-world keysets, strict required_when missing analysis).
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern`
   - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern/parser.go` — `Parse`.
   - Ответственность:
     - Нормализация `path_pattern` из форм `string | list | object`.
+    - Проверка closed-world ключей `path_pattern`-объекта и `cases[]`.
     - Compile-time разбор `cases[].when` выражений.
-    - Проверка placeholders (`meta:*`, `ref:*`) и правила единственного unconditional-case в конце.
+    - Проверка placeholders (`meta:*`, `ref:*`), strict-операторов в `when`, статических `exists` guard и правила единственного unconditional-case в конце.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/validate/internal/workspace`

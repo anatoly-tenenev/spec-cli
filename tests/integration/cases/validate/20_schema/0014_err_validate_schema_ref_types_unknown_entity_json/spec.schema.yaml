@@ -1,0 +1,15 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          schema:
+            type: entity_ref
+            refTypes: [ghost_type]
+    content:
+      sections:
+        - name: goal

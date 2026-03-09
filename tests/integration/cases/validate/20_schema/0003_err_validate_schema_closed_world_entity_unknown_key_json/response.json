@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema.entity.doc has unsupported key 'unknown_key'",
+    "exit_code": 4
+  }
+}

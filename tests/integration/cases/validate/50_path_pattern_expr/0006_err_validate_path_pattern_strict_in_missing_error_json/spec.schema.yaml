@@ -1,0 +1,20 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern:
+      cases:
+        - when:
+            in: [meta.owner, [core, edge]]
+          use: "core/{slug}.md"
+        - use: "misc/{slug}.md"
+    meta:
+      fields:
+        - name: owner
+          required: false
+          schema:
+            type: string
+            enum: [core, edge]
+    content:
+      sections:
+        - name: goal

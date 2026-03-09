@@ -1,0 +1,14 @@
+[
+  {
+    "error": {
+      "code": "SCHEMA_INVALID",
+      "details": {
+        "key": "doc"
+      },
+      "exit_code": 4,
+      "message": "schema contains duplicate keys"
+    },
+    "record_type": "error",
+    "result_state": "invalid"
+  }
+]
