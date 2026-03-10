@@ -6,5 +6,4 @@ var Default = []string{
 	"add",
 	"update",
 	"format:json",
-	"format:ndjson",
 }

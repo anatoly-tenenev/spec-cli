@@ -3,8 +3,7 @@ package requests
 type OutputFormat string
 
 const (
-	FormatJSON   OutputFormat = "json"
-	FormatNDJSON OutputFormat = "ndjson"
+	FormatJSON OutputFormat = "json"
 )
 
 type GlobalOptions struct {

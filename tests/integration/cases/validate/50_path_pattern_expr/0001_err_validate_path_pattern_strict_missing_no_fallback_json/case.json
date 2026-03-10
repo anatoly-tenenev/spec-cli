@@ -1,6 +1,6 @@
 {
-  "id": "validate_70_0001_err_validate_slug_duplicate_by_type_ndjson",
-  "description": "validate returns issues for missing id and duplicate slug",
+  "id": "validate_50_0001_err_validate_path_pattern_strict_missing_no_fallback_json",
+  "description": "validate returns schema error for strict path_pattern.when operand that can be missing",
   "command": "validate",
   "args": [
     "--workspace",
@@ -8,11 +8,11 @@
     "--schema",
     "${SCHEMA}",
     "--format",
-    "ndjson",
+    "json",
     "validate"
   ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 4,
     "response_file": "response.json",
     "stderr_file": ""
   },

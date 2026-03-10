@@ -1,6 +1,6 @@
-[
-  {
-    "issue": {
+{
+  "issues": [
+    {
       "class": "InstanceError",
       "code": "builtin.slug_missing",
       "entity": {
@@ -12,10 +12,7 @@
       "message": "built-in field 'slug' is required",
       "standard_ref": "11.2"
     },
-    "record_type": "issue"
-  },
-  {
-    "issue": {
+    {
       "class": "InstanceError",
       "code": "instance.path_pattern.placeholder_unresolved",
       "entity": {
@@ -26,10 +23,7 @@
       "message": "path_pattern placeholder '{slug}' is missing",
       "standard_ref": "8.5"
     },
-    "record_type": "issue"
-  },
-  {
-    "issue": {
+    {
       "class": "InstanceError",
       "code": "builtin.slug_missing",
       "entity": {
@@ -41,10 +35,7 @@
       "message": "built-in field 'slug' is required",
       "standard_ref": "11.2"
     },
-    "record_type": "issue"
-  },
-  {
-    "issue": {
+    {
       "class": "InstanceError",
       "code": "instance.path_pattern.placeholder_unresolved",
       "entity": {
@@ -54,27 +45,23 @@
       "level": "error",
       "message": "path_pattern placeholder '{slug}' is missing",
       "standard_ref": "8.5"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 2,
+      "checked_entities": 2,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
     },
-    "record_type": "issue"
+    "entities_scanned": 2,
+    "entities_valid": 0,
+    "errors": 4,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
   },
-  {
-    "record_type": "summary",
-    "result_state": "invalid",
-    "summary": {
-      "coverage": {
-        "candidate_entities": 2,
-        "checked_entities": 2,
-        "complete": true,
-        "mode": "strict",
-        "skipped_entities": 0
-      },
-      "entities_scanned": 2,
-      "entities_valid": 0,
-      "errors": 4,
-      "schema_valid": true,
-      "validator_conformant": true,
-      "warnings": 0
-    },
-    "validation_scope": "full"
-  }
-]
+  "validation_scope": "full"
+}

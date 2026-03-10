@@ -25,7 +25,7 @@
   - Ответственность:
     - Сборка приложения и регистрация handlers (`validate`, `query`, `add`, `update`) через command bus.
     - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`).
-    - Единый рендеринг успешных и ошибочных ответов в `json`/`ndjson`.
+    - Единый рендеринг успешных и ошибочных ответов в `json`.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commandbus`
@@ -41,7 +41,7 @@
   - Ответственность:
     - Оркестрация пайплайна `validate`: parse options -> normalize paths -> load schema -> scan workspace -> run engine.
     - Объединение schema issues и instance issues в единый результат.
-    - Формирование контрактных `json/ndjson` ответов и `ExitCode` с учётом `--warnings-as-errors`.
+    - Формирование контрактного `json`-ответа и `ExitCode` с учётом `--warnings-as-errors`.
   - Подпакеты:
     - `validate/internal/options` — parse/norm опций команды.
     - `validate/internal/schema` — загрузка и compile-time проверка схемы.
@@ -119,7 +119,7 @@
   - Entry point: `internal/application/commands/query/handler.go` — `NewHandler`, `(*Handler).Handle`.
   - Ответственность:
     - Обработка прототипа команды `query`.
-    - Возврат стабильного пустого результата (`items`, `page`, `summary`) в `json/ndjson`.
+    - Возврат стабильного пустого результата (`items`, `page`) в `json`.
     - Валидация неподдержанных аргументов (`--help`).
   - Подпакеты: отсутствуют.
 
@@ -141,14 +141,14 @@
   - Entry point: `internal/contracts/requests/options.go` — публичный API типов `OutputFormat`, `GlobalOptions`, `Command` (функции отсутствуют).
   - Ответственность:
     - Контракт глобальных опций и командного запроса.
-    - Единый enum форматов вывода (`json`, `ndjson`).
+    - Единый enum форматов вывода (`json`).
     - Передача запроса между CLI, bus и handlers.
   - Подпакеты: отсутствуют.
 
 - `internal/contracts/responses`
   - Entry point: `internal/contracts/responses/types.go` — публичный API типов `ResultState`, `CommandOutput` (функции отсутствуют).
   - Ответственность:
-    - Контракт ответа команды для `json/ndjson`.
+    - Контракт ответа команды для `json`.
     - Единый enum `result_state`.
     - Транспорт `ExitCode` из use-case в CLI.
   - Подпакеты: отсутствуют.
@@ -182,13 +182,6 @@
     - Отключение HTML-escaping для machine-stable вывода.
   - Подпакеты: отсутствуют.
 
-- `internal/output/ndjsonwriter`
-  - Entry point: `internal/output/ndjsonwriter/writer.go` — `New`, `(*Writer).Write`.
-  - Ответственность:
-    - Построчная запись NDJSON records в `io.Writer`.
-    - Отключение HTML-escaping для machine-stable вывода.
-  - Подпакеты: отсутствуют.
-
 - `internal/output/errormap`
   - Entry point: `internal/output/errormap/mapper.go` — `ResultStateForCode`.
   - Ответственность:
@@ -203,9 +196,9 @@
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code` и `case.json.id`.
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
-    - Проверка `exit_code`, `stderr` и `json/ndjson` ответа против golden-ожиданий.
+    - Проверка `exit_code`, `stderr` и `json`-ответа против golden-ожиданий.
   - Подпакеты:
-    - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json/ndjson`, `warnings-as-errors`, exit code).
+    - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json`, `warnings-as-errors`, exit code).
     - `tests/integration/cases/validate/20_schema/*` — schema-level сценарии и ошибки загрузки/валидации схемы.
     - `tests/integration/cases/validate/30_instance_builtin/*` — built-in проверки entity и fail-fast/фильтрация по type.
     - `tests/integration/cases/validate/40_instance_meta_content/*` — проверки `meta.fields` и `content.sections` с `required_when`.
@@ -215,7 +208,7 @@
 
 ## Текущий статус команд
 
-- `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json/ndjson контракт сохранен).
+- `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json-контракт).
 - `query` — прототип ответа без полноценного движка запросов.
 - `add` — scaffold, возвращает `NOT_IMPLEMENTED`.
 - `update` — scaffold, возвращает `NOT_IMPLEMENTED`.

@@ -1,6 +1,6 @@
 {
-  "id": "validate_10_0002_err_validate_warnings_as_errors_exit_code",
-  "description": "validate returns exit code 1 when warnings are treated as errors",
+  "id": "validate_40_0001_err_validate_required_when_meta_and_sections_json",
+  "description": "validate evaluates required_when expressions for metadata fields and content sections",
   "command": "validate",
   "args": [
     "--workspace",
@@ -9,8 +9,7 @@
     "${SCHEMA}",
     "--format",
     "json",
-    "validate",
-    "--warnings-as-errors"
+    "validate"
   ],
   "expect": {
     "exit_code": 1,

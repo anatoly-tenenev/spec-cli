@@ -16,7 +16,6 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	"github.com/anatoly-tenenev/spec-cli/internal/output/jsonwriter"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/ndjsonwriter"
 )
 
 type App struct {
@@ -44,7 +43,7 @@ func NewApp(stdout, stderr io.Writer, now func() time.Time) *App {
 func (a *App) Run(ctx context.Context, args []string) int {
 	globalOpts, commandName, commandArgs, parseErr := parseGlobalOptions(args)
 	if parseErr != nil {
-		a.writeError(globalOpts.Format, parseErr)
+		a.writeError(parseErr)
 		return parseErr.ExitCode
 	}
 
@@ -54,17 +53,17 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		Global: globalOpts,
 	})
 	if runErr != nil {
-		a.writeError(globalOpts.Format, runErr)
+		a.writeError(runErr)
 		return runErr.ExitCode
 	}
 
-	if err := a.writeSuccess(globalOpts.Format, result); err != nil {
+	if err := a.writeSuccess(result); err != nil {
 		internalErr := domainerrors.New(
 			domainerrors.CodeInternalError,
 			fmt.Sprintf("failed to render output: %v", err),
 			nil,
 		)
-		a.writeError(globalOpts.Format, internalErr)
+		a.writeError(internalErr)
 		return internalErr.ExitCode
 	}
 
@@ -75,30 +74,11 @@ func (a *App) Run(ctx context.Context, args []string) int {
 	return 0
 }
 
-func (a *App) writeSuccess(format requests.OutputFormat, result responses.CommandOutput) error {
-	switch format {
-	case requests.FormatNDJSON:
-		writer := ndjsonwriter.New(a.stdout)
-		records := result.NDJSON
-		if len(records) == 0 {
-			records = []map[string]any{{
-				"record_type":  "result",
-				"result_state": result.JSON["result_state"],
-				"result":       result.JSON,
-			}}
-		}
-		for _, record := range records {
-			if err := writer.Write(record); err != nil {
-				return err
-			}
-		}
-		return nil
-	default:
-		return jsonwriter.New(a.stdout).Write(result.JSON)
-	}
+func (a *App) writeSuccess(result responses.CommandOutput) error {
+	return jsonwriter.New(a.stdout).Write(result.JSON)
 }
 
-func (a *App) writeError(format requests.OutputFormat, appErr *domainerrors.AppError) {
+func (a *App) writeError(appErr *domainerrors.AppError) {
 	state := errormap.ResultStateForCode(appErr.Code)
 	errorPayload := map[string]any{
 		"code":      appErr.Code,
@@ -109,23 +89,11 @@ func (a *App) writeError(format requests.OutputFormat, appErr *domainerrors.AppE
 		errorPayload["details"] = appErr.Details
 	}
 
-	switch format {
-	case requests.FormatNDJSON:
-		record := map[string]any{
-			"record_type":  "error",
-			"result_state": state,
-			"error":        errorPayload,
-		}
-		if err := ndjsonwriter.New(a.stdout).Write(record); err != nil {
-			_, _ = fmt.Fprintf(a.stderr, "failed to write ndjson error: %v\n", err)
-		}
-	default:
-		payload := map[string]any{
-			"result_state": state,
-			"error":        errorPayload,
-		}
-		if err := jsonwriter.New(a.stdout).Write(payload); err != nil {
-			_, _ = fmt.Fprintf(a.stderr, "failed to write json error: %v\n", err)
-		}
+	payload := map[string]any{
+		"result_state": state,
+		"error":        errorPayload,
+	}
+	if err := jsonwriter.New(a.stdout).Write(payload); err != nil {
+		_, _ = fmt.Fprintf(a.stderr, "failed to write json error: %v\n", err)
 	}
 }
