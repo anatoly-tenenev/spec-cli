@@ -42,17 +42,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		"page":         page,
 	}
 
-	ndjsonResponse := []map[string]any{
-		{
-			"record_type":  "summary",
-			"result_state": responses.ResultStateValid,
-			"matched":      0,
-			"page":         page,
-		},
-	}
-
 	return responses.CommandOutput{
-		JSON:   jsonResponse,
-		NDJSON: ndjsonResponse,
+		JSON: jsonResponse,
 	}, nil
 }

@@ -213,7 +213,7 @@ tests/
 Примеры:
 
 - `10_contract/0001_ok_validate_full_ok_json`
-- `40_instance_meta_content/0001_err_validate_required_when_meta_and_sections`
+- `40_instance_meta_content/0001_err_validate_required_when_meta_and_sections_json`
 - `0002_query_by_tag_valid`
 - `0101_add_doc_valid_minimal`
 - `0203_update_title_conflict_invalid`
@@ -225,6 +225,7 @@ tests/
 - имя должно отражать ожидаемое поведение;
 - имя стабильно во времени (используется в логах и CI-репортах).
 - для `validate` обязательный префикс исхода: `<NNNN>_ok_...` при `expect.exit_code=0`, `<NNNN>_err_...` при `expect.exit_code!=0`.
+- для кейсов с `--format json` имя директории кейса должно оканчиваться на `_json`.
 - рекомендованный формат `case.json.id` для `validate`: `validate_<GG>_<NNNN>_<outcome>_<case-id>`.
 
 ## 8. Минимальный набор кейсов (first pass)

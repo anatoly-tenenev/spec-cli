@@ -134,6 +134,14 @@ func validateCaseNaming(caseDir string, testCase integrationCase) error {
 		return fmt.Errorf("case outcome prefix must be ok|err, got %q", outcome)
 	}
 
+	format, err := caseOutputFormat(testCase.Args)
+	if err != nil {
+		return err
+	}
+	if format == "json" && !strings.HasSuffix(caseName, "_json") {
+		return fmt.Errorf("case directory for --format json must end with _json, got %q", caseName)
+	}
+
 	groupName := filepath.Base(filepath.Dir(caseDir))
 	groupParts := strings.SplitN(groupName, "_", 2)
 	if len(groupParts) != 2 || len(groupParts[0]) != 2 || !isDigits(groupParts[0]) {
@@ -160,6 +168,27 @@ func isDigits(value string) bool {
 	return true
 }
 
+func caseOutputFormat(args []string) (string, error) {
+	for idx := 0; idx < len(args); idx++ {
+		if args[idx] != "--format" {
+			continue
+		}
+		if idx+1 >= len(args) {
+			return "", fmt.Errorf("case args: --format requires a value")
+		}
+
+		format := args[idx+1]
+		switch format {
+		case "json":
+			return format, nil
+		default:
+			return "", fmt.Errorf("case args: unsupported --format value %q", format)
+		}
+	}
+
+	return "json", nil
+}
+
 func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	t.Helper()
 
@@ -175,7 +204,6 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	}
 
 	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
-	format := outputFormat(args)
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -193,7 +221,7 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	}
 
 	assertStderr(t, caseDir, testCase, stderr.String())
-	assertResponse(t, caseDir, testCase, format, stdout.Bytes())
+	assertResponse(t, caseDir, testCase, stdout.Bytes())
 }
 
 func assertStderr(t *testing.T, caseDir string, testCase integrationCase, actualStderr string) {
@@ -216,7 +244,7 @@ func assertStderr(t *testing.T, caseDir string, testCase integrationCase, actual
 	}
 }
 
-func assertResponse(t *testing.T, caseDir string, testCase integrationCase, format string, actualOutput []byte) {
+func assertResponse(t *testing.T, caseDir string, testCase integrationCase, actualOutput []byte) {
 	t.Helper()
 
 	expectedRaw, err := os.ReadFile(filepath.Join(caseDir, testCase.Expect.ResponseFile))
@@ -224,12 +252,12 @@ func assertResponse(t *testing.T, caseDir string, testCase integrationCase, form
 		t.Fatalf("read expected response: %v", err)
 	}
 
-	actualValue, err := parseActualResponse(format, actualOutput)
+	actualValue, err := parseJSON(actualOutput)
 	if err != nil {
 		t.Fatalf("decode actual response: %v", err)
 	}
 
-	expectedValue, err := parseExpectedResponse(format, expectedRaw)
+	expectedValue, err := parseJSON(expectedRaw)
 	if err != nil {
 		t.Fatalf("decode expected response: %v", err)
 	}
@@ -243,65 +271,12 @@ func assertResponse(t *testing.T, caseDir string, testCase integrationCase, form
 	}
 }
 
-func parseActualResponse(format string, raw []byte) (any, error) {
-	switch format {
-	case "ndjson":
-		return parseNDJSON(raw)
-	default:
-		var value any
-		if err := json.Unmarshal(raw, &value); err != nil {
-			return nil, err
-		}
-		return value, nil
-	}
-}
-
-func parseExpectedResponse(format string, raw []byte) (any, error) {
+func parseJSON(raw []byte) (any, error) {
 	var value any
-	if format == "ndjson" {
-		value = []any{}
-	}
 	if err := json.Unmarshal(raw, &value); err != nil {
 		return nil, err
 	}
 	return value, nil
-}
-
-func parseNDJSON(raw []byte) ([]any, error) {
-	trimmed := strings.TrimSpace(string(raw))
-	if trimmed == "" {
-		return []any{}, nil
-	}
-
-	lines := strings.Split(trimmed, "\n")
-	records := make([]any, 0, len(lines))
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		var record any
-		if err := json.Unmarshal([]byte(line), &record); err != nil {
-			return nil, err
-		}
-		records = append(records, record)
-	}
-
-	return records, nil
-}
-
-func outputFormat(args []string) string {
-	format := "json"
-	for idx, arg := range args {
-		if arg == "--format" && idx+1 < len(args) {
-			format = args[idx+1]
-			continue
-		}
-		if strings.HasPrefix(arg, "--format=") {
-			format = strings.TrimPrefix(arg, "--format=")
-		}
-	}
-	return format
 }
 
 func replacePlaceholders(args []string, workspace string, schema string) []string {

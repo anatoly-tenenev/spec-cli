@@ -79,12 +79,12 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 				return opts, "", nil, err
 			}
 			switch requests.OutputFormat(v) {
-			case requests.FormatJSON, requests.FormatNDJSON:
+			case requests.FormatJSON:
 				opts.Format = requests.OutputFormat(v)
 			default:
 				return opts, "", nil, domainerrors.New(
 					domainerrors.CodeInvalidArgs,
-					"--format must be one of: json, ndjson",
+					"--format must be one of: json",
 					map[string]any{"value": v},
 				)
 			}

@@ -1,6 +1,6 @@
 {
-  "id": "validate_10_0004_err_validate_schema_error_ndjson_single_error_record",
-  "description": "validate returns single error ndjson record for schema-level error",
+  "id": "validate_10_0004_err_validate_schema_error_json_single_error_payload_json",
+  "description": "validate returns single error json payload for schema-level error",
   "command": "validate",
   "args": [
     "--workspace",
@@ -8,7 +8,7 @@
     "--schema",
     "${SCHEMA}",
     "--format",
-    "ndjson",
+    "json",
     "validate"
   ],
   "expect": {

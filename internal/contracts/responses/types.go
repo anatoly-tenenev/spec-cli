@@ -13,6 +13,5 @@ const (
 
 type CommandOutput struct {
 	JSON     map[string]any
-	NDJSON   []map[string]any
 	ExitCode int
 }

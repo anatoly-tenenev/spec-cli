@@ -84,20 +84,6 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		"issues":           issues,
 	}
 
-	ndjsonResponse := make([]map[string]any, 0, len(issues)+1)
-	for _, issue := range issues {
-		ndjsonResponse = append(ndjsonResponse, map[string]any{
-			"record_type": "issue",
-			"issue":       issue,
-		})
-	}
-	ndjsonResponse = append(ndjsonResponse, map[string]any{
-		"record_type":      "summary",
-		"result_state":     resultState,
-		"validation_scope": "full",
-		"summary":          summary,
-	})
-
 	exitCode := 0
 	if errorCount > 0 || (opts.WarningsAsErrors && warningCount > 0) {
 		exitCode = 1
@@ -105,7 +91,6 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 
 	return responses.CommandOutput{
 		JSON:     jsonResponse,
-		NDJSON:   ndjsonResponse,
 		ExitCode: exitCode,
 	}, nil
 }
