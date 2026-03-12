@@ -5,10 +5,10 @@ entity:
     path_pattern: "docs/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}
   service:
     id_prefix: DOC
     path_pattern: "services/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}

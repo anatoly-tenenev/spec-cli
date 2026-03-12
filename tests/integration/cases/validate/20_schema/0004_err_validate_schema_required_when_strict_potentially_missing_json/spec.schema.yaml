@@ -5,12 +5,12 @@ entity:
     path_pattern: "{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
             type: string
             enum: [core, edge]
-        - name: reviewer
+        reviewer:
           required: false
           required_when:
             eq: [meta.owner, core]

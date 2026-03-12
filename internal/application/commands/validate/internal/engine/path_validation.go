@@ -135,8 +135,11 @@ func resolvePathPlaceholder(token string, context runtimeExpressionContext) (str
 		return stringifyPathValue(value, token)
 	}
 
-	if strings.HasPrefix(token, "meta:") {
-		fieldName := strings.TrimPrefix(token, "meta:")
+	if strings.HasPrefix(token, "meta.") {
+		fieldName := strings.TrimPrefix(token, "meta.")
+		if fieldName == "" || strings.Contains(fieldName, ".") {
+			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
+		}
 		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: fieldName, Raw: "meta." + fieldName})
 		if !exists {
 			return "", fmt.Errorf("path_pattern placeholder '{%s}' is missing", token)
@@ -144,12 +147,15 @@ func resolvePathPlaceholder(token string, context runtimeExpressionContext) (str
 		return stringifyPathValue(value, token)
 	}
 
-	if strings.HasPrefix(token, "ref:") {
-		parts := strings.Split(token, ":")
+	if strings.HasPrefix(token, "refs.") {
+		parts := strings.Split(token, ".")
 		if len(parts) != 3 {
 			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
 		}
-		reference := expressions.Reference{Kind: expressions.ReferenceRef, Field: parts[1], Part: parts[2], Raw: "ref." + parts[1] + "." + parts[2]}
+		if parts[1] == "" {
+			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
+		}
+		reference := expressions.Reference{Kind: expressions.ReferenceRefs, Field: parts[1], Part: parts[2], Raw: "refs." + parts[1] + "." + parts[2]}
 		value, exists := context.ResolveReference(reference)
 		if !exists {
 			return "", fmt.Errorf("path_pattern placeholder '{%s}' is missing", token)

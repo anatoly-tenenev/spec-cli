@@ -15,7 +15,10 @@ import (
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
-var idPrefixPattern = regexp.MustCompile(`^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$`)
+var (
+	idPrefixPattern = regexp.MustCompile(`^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$`)
+	schemaKeyNameRE = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`)
+)
 
 var builtinMetaSpecs = map[string]expressions.MetaFieldSpec{
 	"type":         {Type: "string", Comparable: true},
@@ -130,68 +133,47 @@ func parseRequiredFields(
 		return nil, nil, nil
 	}
 
-	rawItems, ok := support.ToSlice(rawFields)
+	rawByName, ok := support.ToStringMap(rawFields)
 	if !ok {
 		return nil, nil, domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.meta.fields must be a list", typeName),
+			fmt.Sprintf("schema.entity.%s.meta.fields must be a mapping", typeName),
 			nil,
 		)
 	}
 
-	rules := make([]model.RequiredFieldRule, 0, len(rawItems))
-	rawRules := make([]map[string]any, 0, len(rawItems))
+	fieldNames := support.SortedMapKeys(rawByName)
+	rules := make([]model.RequiredFieldRule, 0, len(fieldNames))
+	rawRules := make([]map[string]any, 0, len(fieldNames))
 	issues := make([]domainvalidation.Issue, 0)
-	usedNames := map[string]struct{}{}
 
-	for idx, item := range rawItems {
-		rawRule, ok := support.ToStringMap(item)
-		if !ok {
-			return nil, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d] must be an object", typeName, idx),
-				nil,
-			)
-		}
-		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.meta.fields[%d]", typeName, idx), rawRule, "name", "required", "required_when", "description", "schema"); keyErr != nil {
+	for _, fieldName := range fieldNames {
+		if keyErr := validateMetaFieldName(typeName, fieldName); keyErr != nil {
 			return nil, nil, keyErr
 		}
 
-		name, ok := rawRule["name"].(string)
-		if !ok || strings.TrimSpace(name) == "" {
+		fieldPath := fmt.Sprintf("schema.entity.%s.meta.fields.%s", typeName, fieldName)
+		rawRule, ok := support.ToStringMap(rawByName[fieldName])
+		if !ok {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].name must be non-empty string", typeName, idx),
+				fmt.Sprintf("%s must be an object", fieldPath),
 				nil,
 			)
 		}
-		name = strings.TrimSpace(name)
-
-		if _, isBuiltin := builtinMetaSpecs[name]; isBuiltin {
-			return nil, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields cannot redefine built-in field '%s'", typeName, name),
-				nil,
-			)
+		if keyErr := schemachecks.EnsureOnlyKeys(fieldPath, rawRule, "required", "required_when", "description", "schema"); keyErr != nil {
+			return nil, nil, keyErr
 		}
-		if _, exists := usedNames[name]; exists {
-			return nil, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields has duplicate field '%s'", typeName, name),
-				nil,
-			)
-		}
-		usedNames[name] = struct{}{}
 
 		schemaRaw, ok := support.ToStringMap(rawRule["schema"])
 		if !ok {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema must be an object", typeName, idx),
+				fmt.Sprintf("%s.schema must be an object", fieldPath),
 				nil,
 			)
 		}
-		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema", typeName, idx), schemaRaw, "type", "const", "enum", "refTypes"); keyErr != nil {
+		if keyErr := schemachecks.EnsureOnlyKeys(fieldPath+".schema", schemaRaw, "type", "const", "enum", "refTypes"); keyErr != nil {
 			return nil, nil, keyErr
 		}
 
@@ -200,7 +182,7 @@ func parseRequiredFields(
 		if !hasType || !ok || strings.TrimSpace(ruleType) == "" {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.type must be non-empty string", typeName, idx),
+				fmt.Sprintf("%s.schema.type must be non-empty string", fieldPath),
 				nil,
 			)
 		}
@@ -208,15 +190,15 @@ func parseRequiredFields(
 		if !support.IsSupportedRuleType(ruleType) {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.type uses unsupported type", typeName, idx),
+				fmt.Sprintf("%s.schema.type uses unsupported type", fieldPath),
 				map[string]any{"type": ruleType},
 			)
 		}
 
 		rule := model.RequiredFieldRule{
-			Name:             name,
+			Name:             fieldName,
 			Type:             ruleType,
-			RequiredWhenPath: fmt.Sprintf("schema.entity.%s.meta.fields[%d].required_when", typeName, idx),
+			RequiredWhenPath: fieldPath + ".required_when",
 		}
 
 		if enumRaw, exists := schemaRaw["enum"]; exists {
@@ -224,7 +206,7 @@ func parseRequiredFields(
 			if !ok || len(enumValues) == 0 {
 				return nil, nil, domainerrors.New(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.enum must be a non-empty list", typeName, idx),
+					fmt.Sprintf("%s.schema.enum must be a non-empty list", fieldPath),
 					nil,
 				)
 			}
@@ -232,7 +214,7 @@ func parseRequiredFields(
 				if !support.MatchesRuleType(enumValue, ruleType) {
 					return nil, nil, domainerrors.New(
 						domainerrors.CodeSchemaInvalid,
-						fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.enum[%d] does not match declared type", typeName, idx, enumIndex),
+						fmt.Sprintf("%s.schema.enum[%d] does not match declared type", fieldPath, enumIndex),
 						nil,
 					)
 				}
@@ -244,7 +226,7 @@ func parseRequiredFields(
 			if !support.MatchesRuleType(value, ruleType) {
 				return nil, nil, domainerrors.New(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.const does not match declared type", typeName, idx),
+					fmt.Sprintf("%s.schema.const does not match declared type", fieldPath),
 					nil,
 				)
 			}
@@ -255,7 +237,7 @@ func parseRequiredFields(
 		if ruleType == "entity_ref" {
 			refTypesRaw, hasRefTypes := schemaRaw["refTypes"]
 			if hasRefTypes {
-				refTypes, refTypesErr := parseRefTypes(typeName, idx, refTypesRaw, typeSet)
+				refTypes, refTypesErr := parseRefTypes(typeName, fieldName, refTypesRaw, typeSet)
 				if refTypesErr != nil {
 					return nil, nil, refTypesErr
 				}
@@ -264,7 +246,7 @@ func parseRequiredFields(
 		} else if _, hasRefTypes := schemaRaw["refTypes"]; hasRefTypes {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.refTypes is allowed only for type entity_ref", typeName, idx),
+				fmt.Sprintf("%s.schema.refTypes is allowed only for type entity_ref", fieldPath),
 				nil,
 			)
 		}
@@ -275,9 +257,10 @@ func parseRequiredFields(
 
 	compileContext := buildExpressionContext(rules)
 	for idx := range rules {
+		fieldPath := fmt.Sprintf("schema.entity.%s.meta.fields.%s", typeName, rules[idx].Name)
 		required, requiredWhenLiteral, requiredWhenExpr, requiredIssues, requiredErr := parseRequiredConstraint(
 			rawRules[idx],
-			fmt.Sprintf("schema.entity.%s.meta.fields[%d]", typeName, idx),
+			fieldPath,
 			compileContext,
 		)
 		if requiredErr != nil {
@@ -292,12 +275,12 @@ func parseRequiredFields(
 	for _, rule := range rules {
 		fieldsByName[rule.Name] = rule
 	}
-	for idx, rule := range rules {
+	for _, rule := range rules {
 		if usage, hasUsage := schemachecks.StrictMissingUsageInRequiredWhen(rule.RequiredWhenExpr, fieldsByName); hasUsage {
 			message := fmt.Sprintf(
-				"schema.entity.%s.meta.fields[%d].required_when uses strict operator '%s' with potentially missing operand '%s'",
+				"schema.entity.%s.meta.fields.%s.required_when uses strict operator '%s' with potentially missing operand '%s'",
 				typeName,
-				idx,
+				rule.Name,
 				usage.Operator,
 				usage.Operand.Raw,
 			)
@@ -315,12 +298,31 @@ func parseRequiredFields(
 	return rules, issues, nil
 }
 
-func parseRefTypes(typeName string, index int, raw any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
+func validateMetaFieldName(typeName string, fieldName string) *domainerrors.AppError {
+	if !schemaKeyNameRE.MatchString(fieldName) {
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields has invalid field name '%s'", typeName, fieldName),
+			nil,
+		)
+	}
+
+	if _, isBuiltin := builtinMetaSpecs[fieldName]; isBuiltin {
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields cannot redefine built-in field '%s'", typeName, fieldName),
+			nil,
+		)
+	}
+	return nil
+}
+
+func parseRefTypes(typeName string, fieldName string, raw any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
 	rawItems, ok := raw.([]any)
 	if !ok || len(rawItems) == 0 {
 		return nil, domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.refTypes must be a non-empty list", typeName, index),
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes must be a non-empty list", typeName, fieldName),
 			nil,
 		)
 	}
@@ -332,7 +334,7 @@ func parseRefTypes(typeName string, index int, raw any, typeSet map[string]struc
 		if !ok || strings.TrimSpace(value) == "" {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.refTypes[%d] must be non-empty string", typeName, index, idx),
+				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes[%d] must be non-empty string", typeName, fieldName, idx),
 				nil,
 			)
 		}
@@ -340,14 +342,14 @@ func parseRefTypes(typeName string, index int, raw any, typeSet map[string]struc
 		if _, exists := seen[value]; exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.refTypes contains duplicate '%s'", typeName, index, value),
+				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes contains duplicate '%s'", typeName, fieldName, value),
 				nil,
 			)
 		}
 		if _, exists := typeSet[value]; !exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields[%d].schema.refTypes references unknown entity type '%s'", typeName, index, value),
+				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes references unknown entity type '%s'", typeName, fieldName, value),
 				nil,
 			)
 		}
@@ -386,61 +388,48 @@ func parseRequiredSections(
 		return nil, nil, nil
 	}
 
-	rawItems, ok := support.ToSlice(rawSections)
-	if !ok || len(rawItems) == 0 {
+	rawByName, ok := support.ToStringMap(rawSections)
+	if !ok || len(rawByName) == 0 {
 		return nil, nil, domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.content.sections must be a non-empty list", typeName),
+			fmt.Sprintf("schema.entity.%s.content.sections must be a non-empty mapping", typeName),
 			nil,
 		)
 	}
 
-	rules := make([]model.RequiredSectionRule, 0, len(rawItems))
-	rawRules := make([]map[string]any, 0, len(rawItems))
+	sectionNames := support.SortedMapKeys(rawByName)
+	rules := make([]model.RequiredSectionRule, 0, len(sectionNames))
+	rawRules := make([]map[string]any, 0, len(sectionNames))
 	issues := make([]domainvalidation.Issue, 0)
-	seen := map[string]struct{}{}
 
-	for idx, item := range rawItems {
-		rawRule, ok := support.ToStringMap(item)
-		if !ok {
-			return nil, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.content.sections[%d] must be an object", typeName, idx),
-				nil,
-			)
-		}
-		if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s.content.sections[%d]", typeName, idx), rawRule, "name", "required", "required_when", "title", "description"); keyErr != nil {
+	for _, sectionName := range sectionNames {
+		if keyErr := validateSectionName(typeName, sectionName); keyErr != nil {
 			return nil, nil, keyErr
 		}
 
-		name, ok := rawRule["name"].(string)
-		if !ok || strings.TrimSpace(name) == "" {
+		sectionPath := fmt.Sprintf("schema.entity.%s.content.sections.%s", typeName, sectionName)
+		rawRule, ok := support.ToStringMap(rawByName[sectionName])
+		if !ok {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.content.sections[%d].name must be non-empty string", typeName, idx),
+				fmt.Sprintf("%s must be an object", sectionPath),
 				nil,
 			)
 		}
-		name = strings.TrimSpace(name)
-		if _, exists := seen[name]; exists {
-			return nil, nil, domainerrors.New(
-				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.content.sections contains duplicate '%s'", typeName, name),
-				nil,
-			)
+		if keyErr := schemachecks.EnsureOnlyKeys(sectionPath, rawRule, "required", "required_when", "title", "description"); keyErr != nil {
+			return nil, nil, keyErr
 		}
-		seen[name] = struct{}{}
 
 		rule := model.RequiredSectionRule{
-			Name:             name,
-			RequiredWhenPath: fmt.Sprintf("schema.entity.%s.content.sections[%d].required_when", typeName, idx),
+			Name:             sectionName,
+			RequiredWhenPath: sectionPath + ".required_when",
 		}
 		if rawTitle, hasTitle := rawRule["title"]; hasTitle {
 			title, ok := rawTitle.(string)
 			if !ok || strings.TrimSpace(title) == "" {
 				return nil, nil, domainerrors.New(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.content.sections[%d].title must be non-empty string", typeName, idx),
+					fmt.Sprintf("%s.title must be non-empty string", sectionPath),
 					nil,
 				)
 			}
@@ -452,9 +441,10 @@ func parseRequiredSections(
 	}
 
 	for idx := range rules {
+		sectionPath := fmt.Sprintf("schema.entity.%s.content.sections.%s", typeName, rules[idx].Name)
 		required, requiredWhenLiteral, requiredWhenExpr, requiredIssues, requiredErr := parseRequiredConstraint(
 			rawRules[idx],
-			fmt.Sprintf("schema.entity.%s.content.sections[%d]", typeName, idx),
+			sectionPath,
 			compileContext,
 		)
 		if requiredErr != nil {
@@ -465,12 +455,12 @@ func parseRequiredSections(
 		rules[idx].RequiredWhenExpr = requiredWhenExpr
 		issues = append(issues, requiredIssues...)
 	}
-	for idx, rule := range rules {
+	for _, rule := range rules {
 		if usage, hasUsage := schemachecks.StrictMissingUsageInRequiredWhen(rule.RequiredWhenExpr, fieldsByName); hasUsage {
 			message := fmt.Sprintf(
-				"schema.entity.%s.content.sections[%d].required_when uses strict operator '%s' with potentially missing operand '%s'",
+				"schema.entity.%s.content.sections.%s.required_when uses strict operator '%s' with potentially missing operand '%s'",
 				typeName,
-				idx,
+				rule.Name,
 				usage.Operator,
 				usage.Operand.Raw,
 			)
@@ -486,6 +476,17 @@ func parseRequiredSections(
 	}
 
 	return rules, issues, nil
+}
+
+func validateSectionName(typeName string, sectionName string) *domainerrors.AppError {
+	if !schemaKeyNameRE.MatchString(sectionName) {
+		return domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.content.sections has invalid section name '%s'", typeName, sectionName),
+			nil,
+		)
+	}
+	return nil
 }
 
 func parseRequiredConstraint(

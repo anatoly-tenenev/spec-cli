@@ -1,6 +1,6 @@
 {
   "id": "validate_50_0004_err_validate_path_pattern_unused_exists_guard_json",
-  "description": "validate returns schema error for exists guard that is not required by placeholders",
+  "description": "validate returns schema error when refs placeholder is guarded by invalid exists meta.<field>",
   "command": "validate",
   "args": [
     "--workspace",

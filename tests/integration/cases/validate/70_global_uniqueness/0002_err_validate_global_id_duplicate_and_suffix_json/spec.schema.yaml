@@ -5,4 +5,4 @@ entity:
     path_pattern: "{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}

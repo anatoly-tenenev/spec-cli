@@ -61,14 +61,11 @@ func referencePotentiallyMissing(reference expressions.Reference, fieldsByName m
 		if !exists {
 			return false
 		}
-		if rule.Type == "entity_ref" {
-			return true
-		}
 		if !rule.Required {
 			return true
 		}
 		return rule.RequiredWhen || rule.RequiredWhenExpr != nil
-	case expressions.ReferenceRef:
+	case expressions.ReferenceRefs:
 		_, exists := fieldsByName[reference.Field]
 		return exists
 	default:

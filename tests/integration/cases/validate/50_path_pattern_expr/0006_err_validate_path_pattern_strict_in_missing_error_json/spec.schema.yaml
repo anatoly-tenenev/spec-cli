@@ -10,11 +10,11 @@ entity:
         - use: "misc/{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
             type: string
             enum: [core, edge]
     content:
       sections:
-        - name: goal
+        goal: {}

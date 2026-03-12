@@ -184,7 +184,7 @@ func RunValidation(
 				candidate.TypeSpec,
 				idTargetIndex,
 			)
-			context := buildRuntimeExpressionContext(candidate.Frontmatter, candidate.TypeSpec, resolvedRefs)
+			context := buildRuntimeExpressionContext(candidate.Frontmatter, resolvedRefs)
 
 			validateRequiredFields(&run.Issues, &entity, candidate.Frontmatter, candidate.TypeSpec, context)
 			validateRequiredSections(&run.Issues, &entity, candidate.Sections, candidate.DuplicateLabels, candidate.TypeSpec, context)

@@ -8,4 +8,4 @@ entity:
         - bad_case
     content:
       sections:
-        - name: goal
+        goal: {}

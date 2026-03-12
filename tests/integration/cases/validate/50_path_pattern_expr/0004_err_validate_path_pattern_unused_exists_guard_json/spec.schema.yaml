@@ -6,12 +6,11 @@ entity:
       cases:
         - when:
             exists: meta.owner
-          use: "docs/{slug}.md"
+          use: "docs/{refs.owner.id}/{slug}.md"
         - use: "{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
-            type: string
-            enum: [core, edge]
+            type: entity_ref

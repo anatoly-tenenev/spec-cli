@@ -5,11 +5,11 @@ entity:
     path_pattern: "docs/{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: true
           required_when: true
           schema:
             type: string
     content:
       sections:
-        - name: goal
+        goal: {}

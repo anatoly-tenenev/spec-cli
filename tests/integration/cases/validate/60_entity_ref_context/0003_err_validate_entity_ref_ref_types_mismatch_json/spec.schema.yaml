@@ -5,23 +5,23 @@ entity:
     path_pattern: "services/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}
   domain:
     id_prefix: DOM
     path_pattern: "domains/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}
   feature:
     id_prefix: FEAT
     path_pattern: "features/{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
             type: entity_ref
             refTypes: [service]
     content:
       sections:
-        - name: goal
+        goal: {}

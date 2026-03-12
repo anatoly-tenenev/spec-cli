@@ -23,7 +23,7 @@ type ReferenceKind string
 
 const (
 	ReferenceMeta ReferenceKind = "meta"
-	ReferenceRef  ReferenceKind = "ref"
+	ReferenceRefs ReferenceKind = "refs"
 )
 
 type Reference struct {
@@ -321,22 +321,21 @@ func compileReferenceOperand(raw any, path string, ctx CompileContext, requireCo
 		return &Reference{Kind: ReferenceMeta, Field: field, Raw: text}, nil
 	}
 
-	if strings.HasPrefix(text, "ref.") {
+	if strings.HasPrefix(text, "refs.") {
 		parts := strings.Split(text, ".")
-		if len(parts) != 3 {
+		if len(parts) != 2 && len(parts) != 3 {
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",
-				"ref reference must have format ref.<field>.<part>",
+				"refs reference must have format refs.<field> or refs.<field>.<part>",
 				path,
 			)}
 		}
 
 		field := parts[1]
-		part := parts[2]
 		if field == "" {
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",
-				"ref reference must include a field name",
+				"refs reference must include a field name",
 				path,
 			)}
 		}
@@ -345,33 +344,45 @@ func compileReferenceOperand(raw any, path string, ctx CompileContext, requireCo
 		if !exists || !spec.EntityRef {
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",
-				fmt.Sprintf("ref field '%s' is not declared as entity_ref", field),
+				fmt.Sprintf("refs field '%s' is not declared as entity_ref", field),
 				path,
 			)}
 		}
 
+		if len(parts) == 2 {
+			if requireComparable {
+				return nil, []CompileIssue{newIssue(
+					"schema.expression.invalid_reference",
+					"refs.<field> is allowed only for exists operator",
+					path,
+				)}
+			}
+			return &Reference{Kind: ReferenceRefs, Field: field, Raw: text}, nil
+		}
+
+		part := parts[2]
 		switch part {
 		case "id", "type", "slug", "dir_path":
 		default:
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",
-				fmt.Sprintf("unsupported ref part '%s'", part),
+				fmt.Sprintf("unsupported refs part '%s'", part),
 				path,
 			)}
 		}
 
-		return &Reference{Kind: ReferenceRef, Field: field, Part: part, Raw: text}, nil
+		return &Reference{Kind: ReferenceRefs, Field: field, Part: part, Raw: text}, nil
 	}
 
 	return nil, []CompileIssue{newIssue(
 		"schema.expression.invalid_reference",
-		"reference must use meta.<field> or ref.<field>.<part> syntax",
+		"reference must use meta.<field>, refs.<field>, or refs.<field>.<part> syntax",
 		path,
 	)}
 }
 
 func seemsReference(value string) bool {
-	return strings.HasPrefix(value, "meta.") || strings.HasPrefix(value, "ref.")
+	return strings.HasPrefix(value, "meta.") || strings.HasPrefix(value, "refs.") || strings.HasPrefix(value, "ref.")
 }
 
 func isScalarLiteral(value any) bool {

@@ -1,6 +1,6 @@
 {
   "id": "validate_60_0001_ok_validate_entity_ref_dir_path_required_when_json",
-  "description": "validate resolves entity_ref and uses ref.dir_path in path_pattern and required_when",
+  "description": "validate resolves entity_ref and uses refs.dir_path in path_pattern and required_when",
   "command": "validate",
   "args": [
     "--workspace",

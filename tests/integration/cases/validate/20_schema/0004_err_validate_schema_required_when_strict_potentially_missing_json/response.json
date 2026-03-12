@@ -2,11 +2,11 @@
   "result_state": "invalid",
   "error": {
     "code": "SCHEMA_INVALID",
-    "message": "schema.entity.doc.meta.fields[1].required_when uses strict operator 'eq' with potentially missing operand 'meta.owner'",
+    "message": "schema.entity.doc.meta.fields.reviewer.required_when uses strict operator 'eq' with potentially missing operand 'meta.owner'",
     "exit_code": 4,
     "details": {
       "code": "schema.required_when.strict_potentially_missing",
-      "field": "schema.entity.doc.meta.fields[1].required_when",
+      "field": "schema.entity.doc.meta.fields.reviewer.required_when",
       "standard_ref": "11.6"
     }
   }
