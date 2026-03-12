@@ -9,4 +9,4 @@ entity:
           use: "draft/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}

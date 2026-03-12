@@ -217,8 +217,18 @@ func validateTemplate(
 			continue
 		}
 
-		if strings.HasPrefix(token, "meta:") {
-			fieldName := strings.TrimPrefix(token, "meta:")
+		if strings.HasPrefix(token, "meta.") {
+			fieldName := strings.TrimPrefix(token, "meta.")
+			if fieldName == "" || strings.Contains(fieldName, ".") {
+				issues = append(issues, schemaIssue(
+					"schema.path_pattern.invalid_placeholder",
+					fmt.Sprintf("meta placeholder '%s' must use format meta.<field>", token),
+					path,
+					"8.5",
+				))
+				continue
+			}
+
 			rule, exists := fieldsByName[fieldName]
 			if !exists {
 				issues = append(issues, schemaIssue(
@@ -229,13 +239,17 @@ func validateTemplate(
 				))
 				continue
 			}
+			if rule.Type == "entity_ref" {
+				continue
+			}
 			if !(rule.Type == "string" || rule.Type == "integer" || rule.Type == "boolean" || rule.Type == "null") {
 				issues = append(issues, schemaIssue(
 					"schema.expression.invalid_reference",
-					fmt.Sprintf("meta placeholder '%s' requires field type string|integer|boolean|null", token),
+					fmt.Sprintf("meta placeholder '%s' requires field type string|integer|boolean|null|entity_ref", token),
 					path,
 					"8.5",
 				))
+				continue
 			}
 			if len(rule.Enum) == 0 {
 				issues = append(issues, schemaIssue(
@@ -248,12 +262,12 @@ func validateTemplate(
 			continue
 		}
 
-		if strings.HasPrefix(token, "ref:") {
-			parts := strings.Split(token, ":")
+		if strings.HasPrefix(token, "refs.") {
+			parts := strings.Split(token, ".")
 			if len(parts) != 3 {
 				issues = append(issues, schemaIssue(
 					"schema.path_pattern.invalid_placeholder",
-					fmt.Sprintf("ref placeholder '%s' must use format ref:<field>:<part>", token),
+					fmt.Sprintf("refs placeholder '%s' must use format refs.<field>.<part>", token),
 					path,
 					"8.5",
 				))
@@ -262,11 +276,20 @@ func validateTemplate(
 
 			fieldName := parts[1]
 			part := parts[2]
+			if fieldName == "" {
+				issues = append(issues, schemaIssue(
+					"schema.path_pattern.invalid_placeholder",
+					fmt.Sprintf("refs placeholder '%s' must include field name", token),
+					path,
+					"8.5",
+				))
+				continue
+			}
 			rule, exists := fieldsByName[fieldName]
 			if !exists || rule.Type != "entity_ref" {
 				issues = append(issues, schemaIssue(
 					"schema.expression.invalid_reference",
-					fmt.Sprintf("ref placeholder '%s' requires entity_ref field '%s'", token, fieldName),
+					fmt.Sprintf("refs placeholder '%s' requires entity_ref field '%s'", token, fieldName),
 					path,
 					"8.5",
 				))
@@ -277,7 +300,7 @@ func validateTemplate(
 			default:
 				issues = append(issues, schemaIssue(
 					"schema.path_pattern.invalid_placeholder",
-					fmt.Sprintf("unsupported ref placeholder part '%s'", part),
+					fmt.Sprintf("unsupported refs placeholder part '%s'", part),
 					path,
 					"8.5",
 				))
@@ -345,7 +368,6 @@ func validateTemplatePlaceholderAvailability(
 	}
 
 	guardKeys := collectCaseGuardKeys(pathCase, fieldsByName)
-	potentialKeys := map[string]struct{}{}
 	for _, token := range placeholders {
 		reference, hasReference := placeholderReference(token)
 		if !hasReference {
@@ -355,7 +377,9 @@ func validateTemplatePlaceholderAvailability(
 			continue
 		}
 		targetKey := presenceKeyForReference(reference, fieldsByName)
-		potentialKeys[targetKey] = struct{}{}
+		if targetKey == "" {
+			continue
+		}
 		if _, guarded := guardKeys[targetKey]; guarded {
 			continue
 		}
@@ -375,25 +399,6 @@ func validateTemplatePlaceholderAvailability(
 		)
 	}
 
-	for guardKey := range guardKeys {
-		if _, required := potentialKeys[guardKey]; required {
-			continue
-		}
-		return domainerrors.New(
-			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf(
-				"schema.entity.%s.path_pattern.cases[%d].when contains unused exists guard '%s'",
-				typeName,
-				caseIndex,
-				guardKey,
-			),
-			map[string]any{
-				"field": pathCase.WhenPath,
-				"guard": guardKey,
-			},
-		)
-	}
-
 	return nil
 }
 
@@ -403,8 +408,11 @@ func placeholderReference(token string) (expressions.Reference, bool) {
 		return expressions.Reference{}, false
 	}
 
-	if strings.HasPrefix(token, "meta:") {
-		field := strings.TrimPrefix(token, "meta:")
+	if strings.HasPrefix(token, "meta.") {
+		field := strings.TrimPrefix(token, "meta.")
+		if field == "" || strings.Contains(field, ".") {
+			return expressions.Reference{}, false
+		}
 		return expressions.Reference{
 			Kind:  expressions.ReferenceMeta,
 			Field: field,
@@ -412,16 +420,24 @@ func placeholderReference(token string) (expressions.Reference, bool) {
 		}, true
 	}
 
-	if strings.HasPrefix(token, "ref:") {
-		parts := strings.Split(token, ":")
+	if strings.HasPrefix(token, "refs.") {
+		parts := strings.Split(token, ".")
 		if len(parts) != 3 {
 			return expressions.Reference{}, false
 		}
+		if parts[1] == "" {
+			return expressions.Reference{}, false
+		}
+		switch parts[2] {
+		case "id", "type", "slug", "dir_path":
+		default:
+			return expressions.Reference{}, false
+		}
 		return expressions.Reference{
-			Kind:  expressions.ReferenceRef,
+			Kind:  expressions.ReferenceRefs,
 			Field: parts[1],
 			Part:  parts[2],
-			Raw:   "ref." + parts[1] + "." + parts[2],
+			Raw:   "refs." + parts[1] + "." + parts[2],
 		}, true
 	}
 
@@ -439,14 +455,11 @@ func referencePotentiallyMissing(reference expressions.Reference, fieldsByName m
 		if !exists {
 			return false
 		}
-		if rule.Type == "entity_ref" {
-			return true
-		}
 		if !rule.Required {
 			return true
 		}
 		return rule.RequiredWhen || rule.RequiredWhenExpr != nil
-	case expressions.ReferenceRef:
+	case expressions.ReferenceRefs:
 		_, exists := fieldsByName[reference.Field]
 		return exists
 	default:
@@ -481,19 +494,16 @@ func collectCaseGuardKeys(
 }
 
 func presenceKeyForReference(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) string {
+	_ = fieldsByName
+
 	switch reference.Kind {
 	case expressions.ReferenceMeta:
 		if isBuiltinMetaField(reference.Field) {
 			return "builtin:" + reference.Field
 		}
-
-		rule, exists := fieldsByName[reference.Field]
-		if exists && rule.Type == "entity_ref" {
-			return "entity_ref:" + reference.Field
-		}
 		return "meta:" + reference.Field
-	case expressions.ReferenceRef:
-		return "entity_ref:" + reference.Field
+	case expressions.ReferenceRefs:
+		return "refs:" + reference.Field
 	default:
 		return ""
 	}

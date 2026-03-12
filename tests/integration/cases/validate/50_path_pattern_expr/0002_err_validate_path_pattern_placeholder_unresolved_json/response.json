@@ -2,11 +2,11 @@
   "result_state": "invalid",
   "error": {
     "code": "SCHEMA_INVALID",
-    "message": "schema.entity.doc.path_pattern.cases[0].use placeholder '{meta:owner}' references potentially missing value without static guard",
+    "message": "schema.entity.doc.path_pattern.cases[0].use placeholder '{meta.owner}' references potentially missing value without static guard",
     "exit_code": 4,
     "details": {
       "field": "schema.entity.doc.path_pattern.cases[0].use",
-      "placeholder": "meta:owner"
+      "placeholder": "meta.owner"
     }
   }
 }

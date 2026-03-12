@@ -5,20 +5,20 @@ entity:
     path_pattern: "{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           schema:
             type: string
             enum:
               - platform
               - core
-        - name: priority
+        priority:
           schema:
             type: integer
-        - name: status
+        status:
           schema:
             type: string
             const: approved
     content:
       sections:
-        - name: goal
-        - name: scope
+        goal: {}
+        scope: {}

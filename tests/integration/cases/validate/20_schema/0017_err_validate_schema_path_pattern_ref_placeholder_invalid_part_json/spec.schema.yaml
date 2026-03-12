@@ -5,17 +5,17 @@ entity:
     path_pattern: "services/{slug}.md"
     content:
       sections:
-        - name: goal
+        goal: {}
   feature:
     id_prefix: FEAT
-    path_pattern: "features/{ref:owner:unknown_part}/{slug}.md"
+    path_pattern: "features/{refs.owner.unknown_part}/{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
             type: entity_ref
             refTypes: [service]
     content:
       sections:
-        - name: goal
+        goal: {}

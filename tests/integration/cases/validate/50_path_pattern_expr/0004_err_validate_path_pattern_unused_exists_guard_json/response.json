@@ -2,11 +2,11 @@
   "result_state": "invalid",
   "error": {
     "code": "SCHEMA_INVALID",
-    "message": "schema.entity.doc.path_pattern.cases[0].when contains unused exists guard 'meta:owner'",
+    "message": "schema.entity.doc.path_pattern.cases[0].use placeholder '{refs.owner.id}' references potentially missing value without static guard",
     "exit_code": 4,
     "details": {
-      "field": "schema.entity.doc.path_pattern.cases[0].when",
-      "guard": "meta:owner"
+      "field": "schema.entity.doc.path_pattern.cases[0].use",
+      "placeholder": "refs.owner.id"
     }
   }
 }

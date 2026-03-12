@@ -5,7 +5,7 @@ entity:
     path_pattern: "entity.md"
     meta:
       fields:
-        - name: status
+        status:
           required_when:
             eq?: [meta.slug, "never-required"]
           schema:
@@ -13,4 +13,4 @@ entity:
             const: approved
     content:
       sections:
-        - name: goal
+        goal: {}

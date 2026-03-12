@@ -5,16 +5,16 @@ entity:
     path_pattern: "docs/{slug}.md"
     meta:
       fields:
-        - name: profile
+        profile:
           required: true
           schema:
             type: string
             enum: [core, edge, platform]
-        - name: flag
+        flag:
           required: true
           schema:
             type: boolean
-        - name: owner
+        owner:
           required: false
           required_when:
             all:
@@ -27,4 +27,4 @@ entity:
             type: string
     content:
       sections:
-        - name: goal
+        goal: {}

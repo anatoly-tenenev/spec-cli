@@ -21,7 +21,7 @@
         "slug": "intro",
         "type": "doc"
       },
-      "field": "schema.entity.doc.meta.fields[0].required_when",
+      "field": "schema.entity.doc.meta.fields.owner.required_when",
       "level": "error",
       "message": "failed to evaluate required_when for metadata field 'owner': operator 'eq' received missing operand",
       "standard_ref": "11.6"

@@ -5,7 +5,7 @@ entity:
     path_pattern: "docs/{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           required_when:
             eq: [meta.created_date, "2026-03-01"]
@@ -13,4 +13,4 @@ entity:
             type: string
     content:
       sections:
-        - name: goal
+        goal: {}

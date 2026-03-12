@@ -10,20 +10,20 @@ entity:
         - use: "misc/{slug}.md"
     meta:
       fields:
-        - name: status
+        status:
           schema:
             type: string
             enum:
               - draft
               - approved
-        - name: owner
+        owner:
           required: false
           schema:
             type: string
             enum:
               - core
               - platform
-        - name: test_file
+        test_file:
           required: false
           required_when:
             in: [meta.status, [approved]]
@@ -31,8 +31,8 @@ entity:
             type: string
     content:
       sections:
-        - name: goal
-        - name: scope
+        goal: {}
+        scope:
           required: false
           required_when:
             eq?: [meta.status, "approved"]

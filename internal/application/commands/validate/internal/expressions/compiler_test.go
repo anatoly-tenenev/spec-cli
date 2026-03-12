@@ -11,14 +11,32 @@ func TestCompile_Success(t *testing.T) {
 	expression, issues := Compile(map[string]any{
 		"all": []any{
 			map[string]any{"eq": []any{"meta.status", "approved"}},
-			map[string]any{"eq?": []any{"ref.owner.type", "service"}},
+			map[string]any{"eq?": []any{"refs.owner.type", "service"}},
+			map[string]any{"exists": "refs.owner"},
 		},
-	}, "schema.entity.doc.meta.fields[0].required_when", context)
+	}, "schema.entity.doc.meta.fields.status.required_when", context)
 	if len(issues) > 0 {
 		t.Fatalf("expected no compile issues, got: %+v", issues)
 	}
 	if expression == nil {
 		t.Fatalf("expected compiled expression")
+	}
+}
+
+func TestCompile_RefsShorthandRejectedInComparableOperator(t *testing.T) {
+	context := CompileContext{MetaFields: map[string]MetaFieldSpec{
+		"owner": {Type: "entity_ref", Comparable: true, EntityRef: true},
+	}}
+
+	expression, issues := Compile(map[string]any{"eq": []any{"refs.owner", "SRV-1"}}, "schema.path", context)
+	if expression != nil {
+		t.Fatalf("expected nil expression for invalid refs shorthand operand")
+	}
+	if len(issues) != 1 {
+		t.Fatalf("expected single issue, got %d", len(issues))
+	}
+	if issues[0].Code != "schema.expression.invalid_reference" {
+		t.Fatalf("unexpected issue code: %s", issues[0].Code)
 	}
 }
 

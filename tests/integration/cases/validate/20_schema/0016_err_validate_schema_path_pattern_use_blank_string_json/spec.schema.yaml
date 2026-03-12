@@ -9,4 +9,4 @@ entity:
         - use: "   "
     content:
       sections:
-        - name: goal
+        goal: {}

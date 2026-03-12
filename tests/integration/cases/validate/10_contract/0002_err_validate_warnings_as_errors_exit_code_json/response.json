@@ -23,7 +23,7 @@
       "class": "SchemaError",
       "message": "required_when is set without explicit required; effective required=false is applied",
       "standard_ref": "11.5",
-      "field": "schema.entity.doc.meta.fields[0].required"
+      "field": "schema.entity.doc.meta.fields.status.required"
     }
   ]
 }

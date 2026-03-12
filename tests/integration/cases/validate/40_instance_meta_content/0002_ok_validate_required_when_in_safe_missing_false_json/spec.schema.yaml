@@ -5,14 +5,14 @@ entity:
     path_pattern: "{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           schema:
             type: string
             enum:
               - core
               - platform
-        - name: checklist
+        checklist:
           required: false
           required_when:
             in?: [meta.owner, [core]]
@@ -20,4 +20,4 @@ entity:
             type: string
     content:
       sections:
-        - name: goal
+        goal: {}

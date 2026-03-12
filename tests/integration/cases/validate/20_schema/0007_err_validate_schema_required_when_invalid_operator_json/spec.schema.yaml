@@ -5,7 +5,7 @@ entity:
     path_pattern: "{slug}.md"
     meta:
       fields:
-        - name: owner
+        owner:
           required: false
           required_when:
             xor: [meta.slug, core]

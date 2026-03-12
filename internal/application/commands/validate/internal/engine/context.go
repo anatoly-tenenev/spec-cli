@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 )
 
 type resolvedEntityRef struct {
@@ -15,15 +14,13 @@ type resolvedEntityRef struct {
 }
 
 type runtimeExpressionContext struct {
-	metaValues      map[string]any
-	metaPresence    map[string]bool
-	entityRefFields map[string]struct{}
-	refs            map[string]resolvedEntityRef
+	metaValues   map[string]any
+	metaPresence map[string]bool
+	refs         map[string]resolvedEntityRef
 }
 
 func buildRuntimeExpressionContext(
 	frontmatter map[string]any,
-	typeSpec model.SchemaEntityType,
 	resolvedRefs map[string]resolvedEntityRef,
 ) runtimeExpressionContext {
 	metaValues := make(map[string]any, len(frontmatter))
@@ -36,41 +33,16 @@ func buildRuntimeExpressionContext(
 		}
 		metaValues[key] = value
 	}
-
-	entityRefFields := make(map[string]struct{})
-	for _, fieldRule := range typeSpec.RequiredFields {
-		if fieldRule.Type != "entity_ref" {
-			continue
-		}
-		entityRefFields[fieldRule.Name] = struct{}{}
-		if resolved, exists := resolvedRefs[fieldRule.Name]; exists {
-			metaValues[fieldRule.Name] = resolved.ID
-			metaPresence[fieldRule.Name] = true
-			continue
-		}
-		metaPresence[fieldRule.Name] = false
-		delete(metaValues, fieldRule.Name)
-	}
-
 	return runtimeExpressionContext{
-		metaValues:      metaValues,
-		metaPresence:    metaPresence,
-		entityRefFields: entityRefFields,
-		refs:            resolvedRefs,
+		metaValues:   metaValues,
+		metaPresence: metaPresence,
+		refs:         resolvedRefs,
 	}
 }
 
 func (context runtimeExpressionContext) ResolveReference(reference expressions.Reference) (any, bool) {
 	switch reference.Kind {
 	case expressions.ReferenceMeta:
-		if _, isEntityRefField := context.entityRefFields[reference.Field]; isEntityRefField {
-			resolved, exists := context.refs[reference.Field]
-			if !exists {
-				return nil, false
-			}
-			return resolved.ID, true
-		}
-
 		presence, exists := context.metaPresence[reference.Field]
 		if !exists || !presence {
 			return nil, false
@@ -81,10 +53,14 @@ func (context runtimeExpressionContext) ResolveReference(reference expressions.R
 			return nil, false
 		}
 		return value, true
-	case expressions.ReferenceRef:
+	case expressions.ReferenceRefs:
 		resolved, exists := context.refs[reference.Field]
 		if !exists {
 			return nil, false
+		}
+
+		if reference.Part == "" {
+			return true, true
 		}
 
 		switch reference.Part {

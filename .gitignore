@@ -21,3 +21,4 @@ coverage.out
 .agents
 skills-lock.json
 spec
+tmp
