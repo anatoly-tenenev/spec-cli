@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "ENTITY_TYPE_UNKNOWN",
+    "message": "unknown entity type: ghost",
+    "exit_code": 2,
+    "details": {
+      "entity_type": "ghost"
+    }
+  }
+}

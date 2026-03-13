@@ -1,0 +1,15 @@
+{
+  "id": "query_20_0001_ok_query_select_merge_and_null_json",
+  "description": "query_20_0001_ok_query_select_merge_and_null_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--type","feature","--select","type","--select","id","--select","meta.status","--select","refs.owner","--select","content.sections.summary","--sort","id:asc"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

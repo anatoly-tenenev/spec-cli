@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "type mismatch for field 'meta.score': expected number",
+    "exit_code": 2
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "FEAT-2",
+      "slug": "login",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-3",
+      "slug": "orphan",
+      "type": "feature"
+    }
+  ],
+  "matched": 2,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 2
+  },
+  "result_state": "valid"
+}

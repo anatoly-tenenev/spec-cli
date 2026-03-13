@@ -22,6 +22,7 @@
 ### 001 Base
 
 - [001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md) — спецификация прототипа CLI (`validate`, `query`, `add`, `update`), контрактные инварианты, архитектурные рамки, DoD.
+- [001-base/QUERY_IMPLEMENTATION_PLAN_RU.md](./001-base/QUERY_IMPLEMENTATION_PLAN_RU.md) — детальный план реализации команды `spec-cli query` на стандартной схеме (`entity/meta.fields/content.sections`): CLI-контракт, read-namespace, фильтрация (включая ограничения `where-json` для `content.sections.*` и запрет `content.raw`), сортировка, пагинация, JSON-ответ и тест-план.
 - [001-base/SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION_RU.md](./001-base/SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION_RU.md) — базовая реализация команды `spec-cli validate` для MVP (границы, пайплайн, деградация по `expressions`/`entity_ref`, формат `json`).
 - [001-base/SPEC_UTILITY_CLI_VALIDATE_EXPRESSIONS_IMPLEMENTATION_PLAN_RU.md](./001-base/SPEC_UTILITY_CLI_VALIDATE_EXPRESSIONS_IMPLEMENTATION_PLAN_RU.md) — план поэтапной реализации полной поддержки `expressions` в `spec-cli validate` (compiler/evaluator/context, диагностики, тест-план, критерии готовности).
 - [001-base/SPEC_UTILITY_CLI_VALIDATE_COMPLETION_PLAN_RU_2026-03-09.md](./001-base/SPEC_UTILITY_CLI_VALIDATE_COMPLETION_PLAN_RU_2026-03-09.md) — финальный план завершения реализации `spec-cli validate` (закрытие `expressions` и `entity_ref`, статические проверки схемы, конформантность `validator_conformant`, этапы hardening и тестирования).

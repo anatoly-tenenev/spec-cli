@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0031_ok_query_where_contains_array_tags_feature_json",
+  "description": "QRY-WHERE-12 adapted with current tag values",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"meta.tags\",\"op\":\"contains\",\"value\":\"billing\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

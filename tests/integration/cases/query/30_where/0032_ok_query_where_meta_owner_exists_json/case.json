@@ -1,0 +1,23 @@
+{
+  "id": "query_30_0032_ok_query_where_meta_owner_exists_json",
+  "description": "QRY-WHERE-05 adapted to entity_ref owner",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"field\":\"meta.owner\",\"op\":\"exists\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

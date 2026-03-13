@@ -1,0 +1,25 @@
+{
+  "id": "query_10_0007_ok_query_type_filter_multiple_order_independent_json",
+  "description": "QRY-HAPPY-04 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "service",
+    "--type",
+    "feature"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

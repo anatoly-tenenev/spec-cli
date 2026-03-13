@@ -1,0 +1,43 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "slug": "retry-window",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-2",
+      "slug": "login",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-3",
+      "slug": "orphan",
+      "type": "feature"
+    },
+    {
+      "id": "SVC-1",
+      "slug": "api",
+      "type": "service"
+    },
+    {
+      "id": "SVC-2",
+      "slug": "billing",
+      "type": "service"
+    }
+  ],
+  "matched": 5,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 5
+  },
+  "result_state": "valid"
+}

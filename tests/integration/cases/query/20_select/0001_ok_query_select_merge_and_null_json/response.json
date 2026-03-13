@@ -1,0 +1,36 @@
+{
+  "result_state": "valid",
+  "items": [
+    {
+      "type": "feature",
+      "id": "FEAT-1",
+      "meta": {"status": "active"},
+      "refs": {"owner": {"type": "service", "id": "SVC-2", "slug": "billing"}},
+      "content": {"sections": {"summary": "Retry window for outbound requests."}}
+    },
+    {
+      "type": "feature",
+      "id": "FEAT-2",
+      "meta": {"status": "draft"},
+      "refs": {"owner": {"type": "service", "id": "SVC-1", "slug": "api"}},
+      "content": {"sections": {"summary": null}}
+    },
+    {
+      "type": "feature",
+      "id": "FEAT-3",
+      "meta": {"status": "deprecated"},
+      "refs": {"owner": null},
+      "content": {"sections": {"summary": "Legacy flow."}}
+    }
+  ],
+  "matched": 3,
+  "page": {
+    "mode": "offset",
+    "limit": 100,
+    "offset": 0,
+    "returned": 3,
+    "has_more": false,
+    "next_offset": null,
+    "effective_sort": ["id:asc", "type:asc", "id:asc"]
+  }
+}

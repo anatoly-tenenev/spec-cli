@@ -1,0 +1,15 @@
+{
+  "id": "query_30_0001_ok_query_where_and_eq_json",
+  "description": "query_30_0001_ok_query_where_and_eq_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"op\":\"and\",\"filters\":[{\"field\":\"type\",\"op\":\"eq\",\"value\":\"feature\"},{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"active\"}]}"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

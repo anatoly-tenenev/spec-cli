@@ -1,0 +1,15 @@
+{
+  "id": "query_10_0004_err_query_limit_invalid_json",
+  "description": "query_10_0004_err_query_limit_invalid_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--limit","-1"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

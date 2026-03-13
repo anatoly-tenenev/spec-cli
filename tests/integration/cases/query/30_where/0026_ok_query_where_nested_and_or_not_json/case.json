@@ -1,0 +1,23 @@
+{
+  "id": "query_30_0026_ok_query_where_nested_and_or_not_json",
+  "description": "QRY-WHERE-17 adapted: refs.container.id -> refs.owner.id",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"op\":\"and\",\"filters\":[{\"field\":\"type\",\"op\":\"eq\",\"value\":\"feature\"},{\"op\":\"or\",\"filters\":[{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"draft\"},{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"deprecated\"}]},{\"op\":\"not\",\"filter\":{\"field\":\"refs.owner.id\",\"op\":\"eq\",\"value\":\"SVC-1\"}}]}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

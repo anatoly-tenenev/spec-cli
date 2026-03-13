@@ -34,10 +34,20 @@ type integrationCase struct {
 }
 
 func TestValidateCases(t *testing.T) {
-	caseRoot := filepath.Join("cases", "validate")
-	caseDirs, err := listValidateCaseDirs(caseRoot)
+	runCommandCases(t, "validate")
+}
+
+func TestQueryCases(t *testing.T) {
+	runCommandCases(t, "query")
+}
+
+func runCommandCases(t *testing.T, command string) {
+	t.Helper()
+
+	caseRoot := filepath.Join("cases", command)
+	caseDirs, err := listCommandCaseDirs(caseRoot)
 	if err != nil {
-		t.Fatalf("list validate case directories: %v", err)
+		t.Fatalf("list %s case directories: %v", command, err)
 	}
 
 	for _, caseDir := range caseDirs {
@@ -45,7 +55,7 @@ func TestValidateCases(t *testing.T) {
 		if err != nil {
 			t.Fatalf("load case %s: %v", caseDir, err)
 		}
-		if err := validateCaseNaming(caseDir, testCase); err != nil {
+		if err := validateCaseNaming(command, caseDir, testCase); err != nil {
 			t.Fatalf("validate case naming %s: %v", caseDir, err)
 		}
 
@@ -56,7 +66,7 @@ func TestValidateCases(t *testing.T) {
 	}
 }
 
-func listValidateCaseDirs(caseRoot string) ([]string, error) {
+func listCommandCaseDirs(caseRoot string) ([]string, error) {
 	groupEntries, err := os.ReadDir(caseRoot)
 	if err != nil {
 		return nil, err
@@ -108,7 +118,7 @@ func loadCase(caseDir string) (integrationCase, error) {
 	return testCase, nil
 }
 
-func validateCaseNaming(caseDir string, testCase integrationCase) error {
+func validateCaseNaming(command string, caseDir string, testCase integrationCase) error {
 	caseName := filepath.Base(caseDir)
 	caseParts := strings.SplitN(caseName, "_", 3)
 	if len(caseParts) != 3 {
@@ -148,9 +158,13 @@ func validateCaseNaming(caseDir string, testCase integrationCase) error {
 		return fmt.Errorf("group directory must match <GG>_<group-name>, got %q", groupName)
 	}
 
-	expectedID := fmt.Sprintf("validate_%s_%s", groupParts[0], caseName)
+	expectedID := fmt.Sprintf("%s_%s_%s", command, groupParts[0], caseName)
 	if testCase.ID != expectedID {
 		return fmt.Errorf("case id mismatch: expected %q, got %q", expectedID, testCase.ID)
+	}
+
+	if testCase.Command != command {
+		return fmt.Errorf("case command mismatch: expected %q, got %q", command, testCase.Command)
 	}
 
 	return nil

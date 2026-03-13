@@ -1,0 +1,37 @@
+{
+  "items": [
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "owner": null
+      }
+    },
+    {
+      "id": "FEAT-2",
+      "meta": {
+        "owner": "SVC-1"
+      }
+    },
+    {
+      "id": "FEAT-1",
+      "meta": {
+        "owner": "SVC-2"
+      }
+    }
+  ],
+  "matched": 3,
+  "page": {
+    "effective_sort": [
+      "meta.owner:asc",
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 3
+  },
+  "result_state": "valid"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0009_ok_query_sort_meta_owner_missing_first_json",
+  "description": "QRY-SORT-03 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--select",
+    "meta.owner",
+    "--sort",
+    "meta.owner:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

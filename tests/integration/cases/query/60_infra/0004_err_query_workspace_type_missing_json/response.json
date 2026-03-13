@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "WRITE_FAILED",
+    "exit_code": 3,
+    "message": "failed to determine entity type"
+  },
+  "result_state": "invalid"
+}

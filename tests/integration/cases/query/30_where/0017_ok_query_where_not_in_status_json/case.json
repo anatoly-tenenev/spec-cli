@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0017_ok_query_where_not_in_status_json",
+  "description": "QRY-WHERE-04 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"meta.status\",\"op\":\"not_in\",\"value\":[\"draft\"]}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

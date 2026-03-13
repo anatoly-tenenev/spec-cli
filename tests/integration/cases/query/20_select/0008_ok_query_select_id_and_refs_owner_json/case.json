@@ -1,0 +1,27 @@
+{
+  "id": "query_20_0008_ok_query_select_id_and_refs_owner_json",
+  "description": "QRY-SELECT-07 adapted: refs.container -> refs.owner",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"FEAT-1\"}",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

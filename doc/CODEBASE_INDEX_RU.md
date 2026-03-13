@@ -12,6 +12,7 @@
 2. `internal/application/commandbus/bus.go` — `(*Bus).Dispatch`.
 3. `internal/application/commands/<command>/handler.go` — `(*Handler).Handle`.
 4. Для `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
+5. Для `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
 
 ## Состояние Binary Entrypoint
 
@@ -118,9 +119,51 @@
 - `internal/application/commands/query`
   - Entry point: `internal/application/commands/query/handler.go` — `NewHandler`, `(*Handler).Handle`.
   - Ответственность:
-    - Обработка прототипа команды `query`.
-    - Возврат стабильного пустого результата (`items`, `page`) в `json`.
-    - Валидация неподдержанных аргументов (`--help`).
+    - Оркестрация пайплайна `query`: parse options -> normalize paths -> load schema -> build schema index -> build query plan -> load workspace views -> execute query.
+    - Формирование контрактного `json`-ответа (`items`, `matched`, `page`) и `help`-ответа для `query --help`.
+    - Единый вход для маппинга доменных ошибок (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, schema/read errors).
+  - Подпакеты:
+    - `query/internal/options` — parse/norm опций команды (`--type`, `--where-json`, `--select`, `--sort`, `--limit`, `--offset`).
+    - `query/internal/schema` — загрузка стандартной схемы (`schema.entity`) и построение `QuerySchemaIndex` (selectors/sort/filter/type metadata).
+    - `query/internal/workspace` — scan `.md`, parse frontmatter/content, build full read-view и resolve `refs.<field>`.
+    - `query/internal/engine` — planner (select/sort/filter bind), evaluator `where-json`, сортировка, пагинация, projection, help text.
+    - `query/internal/model` — внутренние структуры запроса/плана/индекса/AST/ответа.
+    - `query/internal/support` — pure helper-функции для YAML, коллекций, literal/value операций.
+
+- `internal/application/commands/query/internal/options`
+  - Entry point: `internal/application/commands/query/internal/options/parse.go` — `Parse`; `internal/application/commands/query/internal/options/paths.go` — `NormalizePaths`.
+  - Ответственность:
+    - Парсинг query-опций, defaults (`limit=100`, `offset=0`) и базовая валидация синтаксиса `--sort`.
+    - Централизованный возврат `INVALID_ARGS` для неизвестных/неполных аргументов.
+    - Нормализация `workspace/schema` путей в абсолютные с учётом `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/query/internal/schema`
+  - Entry point: `internal/application/commands/query/internal/schema/loader.go` — `Load`; `internal/application/commands/query/internal/schema/index.go` — `BuildIndex`.
+  - Ответственность:
+    - Чтение schema-файла, parse YAML/JSON, duplicate-key checks и минимальная валидация shape `entity`.
+    - Парсинг metadata/read/content для каждого entity type.
+    - Построение `QuerySchemaIndex`: допустимые `entity_type`, selectors, sort/filter leaf-поля, типы полей и enum-ограничения.
+    - Валидация read-selectors (`meta.*`, `refs.<field>.*`, `content.sections.*`) и конфликтов типов между entity types.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/query/internal/workspace`
+  - Entry point: `internal/application/commands/query/internal/workspace/loader.go` — `LoadEntities`.
+  - Ответственность:
+    - Детерминированный scan `.md` файлов workspace и parse entity frontmatter/body.
+    - Формирование full read-view (`type/id/slug/revision/created_date/updated_date/meta/refs/content.raw/content.sections`).
+    - Построение глобального `id`-индекса и resolve `refs.<field>` в expanded object (`type/id/slug`).
+    - Нормализация YAML значений (`time.Time` -> `YYYY-MM-DD`) и вычисление opaque `revision` (`sha256:<hex>`).
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/query/internal/engine`
+  - Entry point: `internal/application/commands/query/internal/engine/planner.go` — `BuildPlan`.
+  - Ответственность:
+    - Валидация type filters (`ENTITY_TYPE_UNKNOWN`) и build select-tree projector.
+    - Parse -> bind typed AST для `--where-json` с проверкой `field/op/value`, type compatibility и enum.
+    - Build effective sort (default + hidden tail), deterministic sorting с обработкой отсутствующих значений.
+    - Выполнение pipeline filter/sort/paginate/project и сборка page-метаданных (`matched`, `returned`, `has_more`, `next_offset`, `effective_sort`).
+    - Генерация подробного help-текста `query` в фиксированных секциях `Command/Syntax/Options/Rules/Examples/Schema`.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/add`
@@ -190,11 +233,11 @@
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate` из двухуровневой структуры `tests/integration/cases/validate/<group>/<NNNN_outcome_case-id>`.
+    - Data-first запуск интеграционных кейсов `validate` и `query` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
-    - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code` и `case.json.id`.
+    - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
     - Проверка `exit_code`, `stderr` и `json`-ответа против golden-ожиданий.
   - Подпакеты:
@@ -205,10 +248,14 @@
     - `tests/integration/cases/validate/50_path_pattern_expr/*` — сценарии `path_pattern.cases[].when` и strict/safe семантики.
     - `tests/integration/cases/validate/60_entity_ref_context/*` — сценарии `entity_ref`, `ref.*`, `ref.dir_path`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` — глобальные проверки уникальности (`slug`/`id`) и смешанные invalid-сценарии.
+    - `tests/integration/cases/query/10_basic/*` — базовые сценарии `query` (default output, `--type`, ошибки аргументов).
+    - `tests/integration/cases/query/20_select/*` — projection/selector сценарии (`--select`, merge, null для отсутствующих секций, invalid selector).
+    - `tests/integration/cases/query/30_where/*` — `--where-json` happy/negative сценарии (ops, logical forms, type/enum validation).
+    - `tests/integration/cases/query/40_sort_pagination/*` — сортировка (`effective_sort`, hidden tail) и offset-pagination границы.
 
 ## Текущий статус команд
 
 - `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json-контракт).
-- `query` — прототип ответа без полноценного движка запросов.
+- `query` — реализован read-only pipeline (index из стандартной схемы `entity`, `where-json`, projection, deterministic sort, offset pagination, json-contract).
 - `add` — scaffold, возвращает `NOT_IMPLEMENTED`.
 - `update` — scaffold, возвращает `NOT_IMPLEMENTED`.
