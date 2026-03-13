@@ -1,0 +1,17 @@
+{
+  "items": [],
+  "matched": 5,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 2,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 6,
+    "returned": 0
+  },
+  "result_state": "valid"
+}

@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "exit_code": 2,
+    "message": "logical op 'and' requires non-empty array 'filters'"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "query_40_0012_ok_query_page_limit_offset_outside_json",
+  "description": "QRY-PAGE-04 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--limit",
+    "2",
+    "--offset",
+    "6"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

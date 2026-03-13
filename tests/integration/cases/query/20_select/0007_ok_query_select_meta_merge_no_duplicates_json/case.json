@@ -1,0 +1,27 @@
+{
+  "id": "query_20_0007_ok_query_select_meta_merge_no_duplicates_json",
+  "description": "QRY-SELECT-05 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "meta",
+    "--select",
+    "meta.status"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

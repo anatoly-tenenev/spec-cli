@@ -1,0 +1,23 @@
+{
+  "id": "query_10_0006_ok_query_where_no_match_json",
+  "description": "QRY-HAPPY-02 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"NOPE-1\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "query_30_0014_err_query_where_content_section_eq_forbidden_json",
+  "description": "query_30_0014_err_query_where_content_section_eq_forbidden_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"content.sections.summary\",\"op\":\"eq\",\"value\":\"Retry window for outbound requests.\"}"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

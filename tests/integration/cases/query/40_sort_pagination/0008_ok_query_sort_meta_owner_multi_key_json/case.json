@@ -1,0 +1,35 @@
+{
+  "id": "query_40_0008_ok_query_sort_meta_owner_multi_key_json",
+  "description": "QRY-SORT-02 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"meta.owner\",\"op\":\"exists\"}",
+    "--select",
+    "id",
+    "--select",
+    "meta.owner",
+    "--select",
+    "created_date",
+    "--sort",
+    "meta.owner:asc",
+    "--sort",
+    "created_date:desc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

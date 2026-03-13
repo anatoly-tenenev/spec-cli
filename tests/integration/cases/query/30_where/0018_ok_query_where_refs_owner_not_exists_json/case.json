@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0018_ok_query_where_refs_owner_not_exists_json",
+  "description": "QRY-WHERE-06 adapted: refs.container.id -> refs.owner.id",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"refs.owner.id\",\"op\":\"not_exists\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

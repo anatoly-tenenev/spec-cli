@@ -1,0 +1,37 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "meta": {
+        "status": "active"
+      }
+    },
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "status": "deprecated"
+      }
+    },
+    {
+      "id": "FEAT-2",
+      "meta": {
+        "status": "draft"
+      }
+    }
+  ],
+  "matched": 3,
+  "page": {
+    "effective_sort": [
+      "meta.status:asc",
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 3
+  },
+  "result_state": "valid"
+}

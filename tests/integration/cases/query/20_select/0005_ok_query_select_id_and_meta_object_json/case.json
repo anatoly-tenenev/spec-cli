@@ -1,0 +1,27 @@
+{
+  "id": "query_20_0005_ok_query_select_id_and_meta_object_json",
+  "description": "QRY-SELECT-03 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"FEAT-1\"}",
+    "--select",
+    "id",
+    "--select",
+    "meta"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

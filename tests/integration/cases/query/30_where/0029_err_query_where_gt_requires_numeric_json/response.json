@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "exit_code": 2,
+    "message": "operator 'gt' requires numeric value for field 'meta.score'"
+  },
+  "result_state": "invalid"
+}

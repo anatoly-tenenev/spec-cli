@@ -45,6 +45,8 @@ func ExitCodeFor(code Code) int {
 	switch code {
 	case CodeInvalidArgs, CodeInvalidQuery:
 		return 2
+	case CodeEntityTypeUnknown:
+		return 2
 	case CodeWriteFailed:
 		return 3
 	case CodeSchemaNotFound, CodeSchemaParseError, CodeSchemaInvalid:

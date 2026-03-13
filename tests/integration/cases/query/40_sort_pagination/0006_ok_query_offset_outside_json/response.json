@@ -1,0 +1,14 @@
+{
+  "result_state": "valid",
+  "items": [],
+  "matched": 5,
+  "page": {
+    "mode": "offset",
+    "limit": 100,
+    "offset": 10,
+    "returned": 0,
+    "has_more": false,
+    "next_offset": null,
+    "effective_sort": ["type:asc", "id:asc"]
+  }
+}

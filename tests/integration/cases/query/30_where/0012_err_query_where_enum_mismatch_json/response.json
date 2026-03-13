@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "value is not allowed by enum for field 'meta.status'",
+    "exit_code": 2
+  }
+}

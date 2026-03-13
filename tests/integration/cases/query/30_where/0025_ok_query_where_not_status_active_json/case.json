@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0025_ok_query_where_not_status_active_json",
+  "description": "QRY-WHERE-16 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"op\":\"not\",\"filter\":{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"active\"}}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -3,6 +3,10 @@ package query
 import (
 	"context"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/engine"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/options"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/schema"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/workspace"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -15,34 +19,67 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
-	for _, arg := range request.Args {
-		if arg == "--help" || arg == "-h" {
-			return responses.CommandOutput{}, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"--help is not implemented yet",
-				nil,
-			)
-		}
+	opts, parseErr := options.Parse(request.Args)
+	if parseErr != nil {
+		return responses.CommandOutput{}, parseErr
 	}
 
-	page := map[string]any{
-		"mode":           "offset",
-		"limit":          100,
-		"offset":         0,
-		"returned":       0,
-		"has_more":       false,
-		"next_offset":    nil,
-		"effective_sort": []string{"type:asc", "id:asc"},
+	workspacePath, schemaPath, pathErr := options.NormalizePaths(request.Global)
+	if pathErr != nil {
+		return responses.CommandOutput{}, pathErr
 	}
 
-	jsonResponse := map[string]any{
-		"result_state": responses.ResultStateValid,
-		"items":        []any{},
-		"matched":      0,
-		"page":         page,
+	loadedSchema, schemaErr := schema.Load(schemaPath)
+	if schemaErr != nil {
+		return responses.CommandOutput{}, schemaErr
 	}
+
+	schemaIndex, schemaIndexErr := schema.BuildIndex(loadedSchema)
+	if schemaIndexErr != nil {
+		return responses.CommandOutput{}, schemaIndexErr
+	}
+
+	if opts.Help {
+		helpText := engine.BuildHelpText(schemaIndex, schemaPath, loadedSchema.RawText)
+		return responses.CommandOutput{
+			JSON: map[string]any{
+				"result_state": responses.ResultStateValid,
+				"command":      "query",
+				"syntax":       "spec-cli query [options]",
+				"help":         helpText,
+				"schema": map[string]any{
+					"effective_path": schemaPath,
+				},
+			},
+		}, nil
+	}
+
+	plan, planErr := engine.BuildPlan(opts, schemaIndex)
+	if planErr != nil {
+		return responses.CommandOutput{}, planErr
+	}
+
+	entities, workspaceErr := workspace.LoadEntities(workspacePath, schemaIndex, opts.TypeFilters)
+	if workspaceErr != nil {
+		return responses.CommandOutput{}, workspaceErr
+	}
+
+	queryResult := engine.Execute(plan, entities)
 
 	return responses.CommandOutput{
-		JSON: jsonResponse,
+		JSON: map[string]any{
+			"result_state": queryResult.ResultState,
+			"items":        queryResult.Items,
+			"matched":      queryResult.Matched,
+			"page": map[string]any{
+				"mode":           queryResult.Page.Mode,
+				"limit":          queryResult.Page.Limit,
+				"offset":         queryResult.Page.Offset,
+				"returned":       queryResult.Page.Returned,
+				"has_more":       queryResult.Page.HasMore,
+				"next_offset":    queryResult.Page.NextOffset,
+				"effective_sort": queryResult.Page.EffectiveSort,
+			},
+		},
 	}, nil
 }

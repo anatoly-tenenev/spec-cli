@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "meta": {
+        "owner": "SVC-2",
+        "score": 9.5,
+        "status": "active",
+        "tags": [
+          "reliability",
+          "billing"
+        ]
+      }
+    }
+  ],
+  "matched": 1,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 1
+  },
+  "result_state": "valid"
+}

@@ -1,0 +1,16 @@
+{
+  "result_state": "valid",
+  "items": [
+    {"type": "feature", "id": "FEAT-1", "slug": "retry-window"}
+  ],
+  "matched": 1,
+  "page": {
+    "mode": "offset",
+    "limit": 100,
+    "offset": 0,
+    "returned": 1,
+    "has_more": false,
+    "next_offset": null,
+    "effective_sort": ["type:asc", "id:asc"]
+  }
+}

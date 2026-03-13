@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0007_ok_query_sort_meta_status_hidden_tail_json",
+  "description": "QRY-SORT-01 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--select",
+    "meta.status",
+    "--sort",
+    "meta.status:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

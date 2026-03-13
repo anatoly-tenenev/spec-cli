@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "value": "-1"
+    },
+    "exit_code": 2,
+    "message": "--offset must be an integer >= 0"
+  },
+  "result_state": "invalid"
+}

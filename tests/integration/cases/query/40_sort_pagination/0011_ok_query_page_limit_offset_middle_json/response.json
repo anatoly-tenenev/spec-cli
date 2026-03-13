@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "FEAT-3",
+      "slug": "orphan",
+      "type": "feature"
+    },
+    {
+      "id": "SVC-1",
+      "slug": "api",
+      "type": "service"
+    }
+  ],
+  "matched": 5,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": true,
+    "limit": 2,
+    "mode": "offset",
+    "next_offset": 4,
+    "offset": 2,
+    "returned": 2
+  },
+  "result_state": "valid"
+}

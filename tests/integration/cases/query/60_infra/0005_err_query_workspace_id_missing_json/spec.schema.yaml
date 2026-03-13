@@ -1,0 +1,18 @@
+version: "1"
+entity:
+  feature:
+    meta:
+      fields:
+        owner:
+          schema:
+            type: entity_ref
+        status:
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: false
+  service:
+    meta:
+      fields: {}

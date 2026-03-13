@@ -1,0 +1,15 @@
+{
+  "id": "query_10_0005_err_query_unknown_option_json",
+  "description": "query_10_0005_err_query_unknown_option_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--unknown"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

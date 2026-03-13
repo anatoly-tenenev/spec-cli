@@ -1,0 +1,21 @@
+{
+  "id": "query_60_0001_err_query_workspace_missing_json",
+  "description": "QRY-INFRA-01 adapted: deterministic missing workspace path",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "/__spec_cli_tests__/missing-workspace",
+    "--schema",
+    "${SCHEMA}",
+    "query"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

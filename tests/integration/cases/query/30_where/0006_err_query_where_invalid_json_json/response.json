@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "--where-json must be valid JSON",
+    "exit_code": 2
+  }
+}

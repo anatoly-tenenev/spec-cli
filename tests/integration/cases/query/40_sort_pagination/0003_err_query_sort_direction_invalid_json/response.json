@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "invalid sort direction in --sort: id:up",
+    "exit_code": 2
+  }
+}

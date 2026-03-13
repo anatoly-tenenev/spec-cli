@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0023_ok_query_where_content_section_exists_json",
+  "description": "QRY-WHERE-13 adapted to current fixtures",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"content.sections.implementation\",\"op\":\"exists\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

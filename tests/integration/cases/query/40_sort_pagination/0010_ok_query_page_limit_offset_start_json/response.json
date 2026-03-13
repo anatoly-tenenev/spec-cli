@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "slug": "retry-window",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-2",
+      "slug": "login",
+      "type": "feature"
+    }
+  ],
+  "matched": 5,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": true,
+    "limit": 2,
+    "mode": "offset",
+    "next_offset": 2,
+    "offset": 0,
+    "returned": 2
+  },
+  "result_state": "valid"
+}

@@ -1,0 +1,13 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "field 'content.raw' is not allowed in where-json",
+    "exit_code": 2,
+    "details": {
+      "arg": "--where-json",
+      "reason": "forbidden_field",
+      "field": "content.raw"
+    }
+  }
+}
