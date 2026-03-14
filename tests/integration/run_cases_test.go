@@ -48,6 +48,10 @@ func TestQueryCases(t *testing.T) {
 	runCommandCases(t, "query")
 }
 
+func TestGetCases(t *testing.T) {
+	runCommandCases(t, "get")
+}
+
 func runCommandCases(t *testing.T, command string) {
 	t.Helper()
 

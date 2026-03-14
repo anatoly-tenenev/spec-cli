@@ -13,6 +13,7 @@
 3. `internal/application/commands/<command>/handler.go` — `(*Handler).Handle`.
 4. Для `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 5. Для `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
+6. Для `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
 
 ## Состояние Binary Entrypoint
 
@@ -25,7 +26,7 @@
 - `internal/cli`
   - Entry point: `internal/cli/app.go` — `NewApp`, `(*App).Run`.
   - Ответственность:
-    - Сборка приложения и регистрация handlers (`validate`, `query`, `add`, `update`) через command bus.
+    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`) через command bus.
     - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`).
     - Единый рендеринг успешных и ошибочных ответов в `json`.
   - Подпакеты: отсутствуют.
@@ -211,6 +212,71 @@
     - Генерация подробного help-текста `query` в фиксированных секциях `Command/Syntax/Options/Rules/Examples/Schema`.
   - Подпакеты: отсутствуют.
 
+- `internal/application/commands/get`
+  - Entry point: `internal/application/commands/get/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Ответственность:
+    - Оркестрация пайплайна `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
+    - Формирование контрактного `json`-ответа (`result_state`, `target`, `entity`) для single-entity read.
+    - Единая обработка доменных ошибок (`INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`).
+  - Подпакеты:
+    - `get/internal/options` — parse/norm опций команды (`--id`, повторяемый `--select`) и нормализация путей.
+    - `get/internal/schema` — загрузка схемы и построение read-model (`entity types`, `meta/ref/sections`, `allowed selectors`) с schema-ошибками.
+    - `get/internal/workspace` — deterministic scan `.md`, locator target по быстрому извлечению `id`, strict parse target frontmatter/body, extraction `content.sections`, `revision`.
+    - `get/internal/engine` — selector plan/tree, projection с absent-policy и special-case `content.sections.<name> = null`, build read-view (`meta`, `refs`, `content`), blocking-policy для запрошенных `refs/sections`.
+    - `get/internal/model` — внутренние структуры опций, read-model, selector plan и parsed target.
+    - `get/internal/support` — pure helper-функции для YAML/maps/deep-copy/validation-issues.
+
+- `internal/application/commands/get/internal/options`
+  - Entry point: `internal/application/commands/get/internal/options/parse.go` — `Parse`; `internal/application/commands/get/internal/options/paths.go` — `NormalizePaths`.
+  - Ответственность:
+    - Парсинг get-опций (`--id`, `--select`) и обязательность `--id`.
+    - Валидация неизвестных/неполных аргументов с `INVALID_ARGS`.
+    - Нормализация `workspace/schema` путей в абсолютные с учётом `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/get/internal/schema`
+  - Entry point: `internal/application/commands/get/internal/schema/loader.go` — `LoadReadModel`.
+  - Ответственность:
+    - Чтение schema-файла, parse YAML/JSON, duplicate-key checks и базовая валидация shape `entity`.
+    - Построение read-model по `schema.entity`: `meta fields`, `entity_ref fields`, `content.sections` для каждого типа.
+    - Формирование канонического whitelist selector-ов (`built-in`, `meta.*`, `refs.*`, `content.raw`, `content.sections.*`).
+    - Возврат `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` с `validation.issues`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/get/internal/workspace`
+  - Entry point: `internal/application/commands/get/internal/workspace/reader.go` — `LocateByID`, `ReadTarget`.
+  - Ответственность:
+    - Детерминированный scan `.md` файлов workspace и локатор target по точному `id` без полной валидации workspace.
+    - Разделение статусов locator-а: not found (`ENTITY_NOT_FOUND`), ambiguous (`TARGET_AMBIGUOUS`), single target.
+    - Strict parse target frontmatter/body, проверка `type/id`, вычисление `revision` и extraction sections.
+    - Построение `id`-индекса parseable сущностей для расширения `refs`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/get/internal/engine`
+  - Entry point: `internal/application/commands/get/internal/engine/plan.go` — `BuildSelectorPlan`; `internal/application/commands/get/internal/engine/entity.go` — `BuildEntityView`.
+  - Ответственность:
+    - Валидация selector-ов по schema read-model и построение терминального select-tree.
+    - Классификация требований запроса (`refs`, `content.raw`, `content.sections`, required leafs) и null-policy для `content.sections.<name>`.
+    - Сбор read-view target-сущности (`meta`, expanded `refs`, `content`) с blocking-policy для невычислимых запрошенных `refs/sections`.
+    - Projection поддерева ответа без включения невыбранных веток.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/get/internal/model`
+  - Entry point: `internal/application/commands/get/internal/model/types.go` — публичные для пакета типы модели (функции отсутствуют).
+  - Ответственность:
+    - Типы опций команды (`Options`).
+    - Типы selector-плана (`SelectNode`, `SelectorPlan`).
+    - Типы schema read-model (`ReadModel`, `EntityTypeSpec`) и workspace read (`LocateResult`, `ParsedTarget`, `EntityIdentity`).
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/get/internal/support`
+  - Entry point: `internal/application/commands/get/internal/support/yaml.go` — `FirstContentNode`, `FindDuplicateMappingKey`, `ToStringMap`; `internal/application/commands/get/internal/support/collections.go` — `SortedMapKeys`; `internal/application/commands/get/internal/support/values.go` — `DeepCopy`, `ValidationIssue`, `WithValidationIssues`.
+  - Ответственность:
+    - Вспомогательные функции для YAML AST и duplicate-key checks.
+    - Стабильная сортировка map-ключей.
+    - Deep-copy и сборка `validation.issues` payload для доменных ошибок.
+  - Подпакеты: отсутствуют.
+
 - `internal/application/commands/add`
   - Entry point: `internal/application/commands/add/handler.go` — `NewHandler`, `(*Handler).Handle`.
   - Ответственность:
@@ -278,9 +344,9 @@
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate` и `query` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Data-first запуск интеграционных кейсов `validate`, `query`, `get` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
@@ -297,10 +363,15 @@
     - `tests/integration/cases/query/20_select/*` — projection/selector сценарии (`--select`, merge, null для отсутствующих секций, invalid selector).
     - `tests/integration/cases/query/30_where/*` — `--where-json` happy/negative сценарии (ops, logical forms, type/enum validation).
     - `tests/integration/cases/query/40_sort_pagination/*` — сортировка (`effective_sort`, hidden tail) и offset-pagination границы.
+    - `tests/integration/cases/get/10_contract/*` — контракт `get` (`default projection`, invalid args/selectors, schema errors, readable-invalid target).
+    - `tests/integration/cases/get/20_select/*` — выборка селекторов `get` (`meta/refs/content.sections`, null-policy для отсутствующей секции).
+    - `tests/integration/cases/get/30_lookup/*` — поиск target по `id` (`not found`, duplicate id, unrelated invalid docs).
+    - `tests/integration/cases/get/40_blocking/*` — blocking read-failures (`frontmatter parse`, unresolved requested ref, duplicate section labels).
 
 ## Текущий статус команд
 
 - `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json-контракт).
 - `query` — реализован read-only pipeline (index из стандартной схемы `entity`, `where-json`, projection, deterministic sort, offset pagination, json-contract).
+- `get` — реализован baseline read-one pipeline (target lookup по `id`, schema-driven selectors, tolerant target read, refs/content projection, json-контракт).
 - `add` — scaffold, возвращает `NOT_IMPLEMENTED`.
 - `update` — scaffold, возвращает `NOT_IMPLEMENTED`.

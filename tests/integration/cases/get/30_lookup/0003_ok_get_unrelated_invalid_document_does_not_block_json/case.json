@@ -1,0 +1,15 @@
+{
+  "id": "get_30_0003_ok_get_unrelated_invalid_document_does_not_block_json",
+  "description": "get_30_0003_ok_get_unrelated_invalid_document_does_not_block_json",
+  "command": "get",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","get","--id","FEAT-8"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "get_10_0005_err_get_schema_parse_invalid_yaml_json",
+  "description": "get_10_0005_err_get_schema_parse_invalid_yaml_json",
+  "command": "get",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","get","--id","FEAT-8"],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

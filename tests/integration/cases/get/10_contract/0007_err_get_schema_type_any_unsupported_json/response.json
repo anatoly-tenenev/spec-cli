@@ -1,0 +1,21 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "details": {
+      "type": "any",
+      "validation": {
+        "issues": [
+          {
+            "class": "SchemaError",
+            "level": "error",
+            "message": "schema.entity.feature.meta.fields.status.schema.type uses unsupported type",
+            "standard_ref": "7"
+          }
+        ]
+      }
+    },
+    "exit_code": 4,
+    "message": "schema.entity.feature.meta.fields.status.schema.type uses unsupported type"
+  },
+  "result_state": "invalid"
+}

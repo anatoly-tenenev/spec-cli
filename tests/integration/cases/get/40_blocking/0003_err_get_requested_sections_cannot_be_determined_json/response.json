@@ -1,0 +1,21 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "section": "summary",
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "level": "error",
+            "message": "section label 'summary' is duplicated",
+            "standard_ref": "8.3"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "failed to compute requested content sections"
+  },
+  "result_state": "invalid"
+}

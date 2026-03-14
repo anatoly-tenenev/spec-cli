@@ -1,0 +1,21 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "field": "container",
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "level": "error",
+            "message": "requested refs field 'container' cannot be computed deterministically",
+            "standard_ref": "6"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "failed to compute requested refs field"
+  },
+  "result_state": "invalid"
+}

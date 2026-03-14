@@ -1,0 +1,22 @@
+{
+  "entity": {
+    "content": {
+      "sections": {
+        "summary": "Retry window for outbound requests."
+      }
+    },
+    "meta": {
+      "status": "active"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

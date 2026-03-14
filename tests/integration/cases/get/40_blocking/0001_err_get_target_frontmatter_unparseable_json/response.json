@@ -1,0 +1,20 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "level": "error",
+            "message": "frontmatter closing delimiter ('---' or '...') is missing",
+            "standard_ref": "10.2"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "failed to parse target frontmatter"
+  },
+  "result_state": "invalid"
+}

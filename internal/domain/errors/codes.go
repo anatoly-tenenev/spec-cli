@@ -15,6 +15,7 @@ const (
 	CodeIDConflict        Code = "ID_CONFLICT"
 	CodeSlugConflict      Code = "SLUG_CONFLICT"
 	CodeInvalidQuery      Code = "INVALID_QUERY"
+	CodeReadFailed        Code = "READ_FAILED"
 	CodeWriteFailed       Code = "WRITE_FAILED"
 	CodeInternalError     Code = "INTERNAL_ERROR"
 

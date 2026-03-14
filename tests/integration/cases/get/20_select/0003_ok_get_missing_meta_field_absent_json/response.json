@@ -1,0 +1,13 @@
+{
+  "entity": {
+    "meta": {
+      "container": "SVC-1",
+      "score": 9.5
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}
