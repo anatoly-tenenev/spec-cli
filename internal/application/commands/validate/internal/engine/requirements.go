@@ -45,7 +45,7 @@ func validateRequiredFields(
 			continue
 		}
 
-		if rule.Type != "any" && !support.MatchesRuleType(value, rule.Type) {
+		if !support.MatchesRuleType(value, rule.Type) {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_type_mismatch",
 				Level:       domainvalidation.LevelError,

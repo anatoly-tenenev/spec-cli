@@ -228,7 +228,10 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 		)
 	}
 
-	fieldKind := schemaTypeToFieldKind(rawType, schemaNode)
+	fieldKind, kindErr := schemaTypeToFieldKind(entityTypeName, fieldName, rawType, schemaNode)
+	if kindErr != nil {
+		return Field{}, kindErr
+	}
 	isEntityRef := strings.TrimSpace(rawType) == "entity_ref"
 
 	field := Field{
@@ -254,22 +257,33 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 	return field, nil
 }
 
-func schemaTypeToFieldKind(rawType string, rawFieldSchema map[string]any) model.SchemaFieldKind {
-	switch strings.TrimSpace(rawType) {
+func schemaTypeToFieldKind(
+	entityTypeName string,
+	fieldName string,
+	rawType string,
+	rawFieldSchema map[string]any,
+) (model.SchemaFieldKind, *domainerrors.AppError) {
+	normalizedType := strings.TrimSpace(rawType)
+
+	switch normalizedType {
 	case "integer", "number":
-		return model.FieldKindNumber
+		return model.FieldKindNumber, nil
 	case "boolean":
-		return model.FieldKindBoolean
+		return model.FieldKindBoolean, nil
 	case "array":
-		return model.FieldKindArray
+		return model.FieldKindArray, nil
 	case "string":
 		if format, ok := rawFieldSchema["format"].(string); ok && strings.TrimSpace(format) == "date" {
-			return model.FieldKindDate
+			return model.FieldKindDate, nil
 		}
-		return model.FieldKindString
+		return model.FieldKindString, nil
 	case "entity_ref":
-		return model.FieldKindString
+		return model.FieldKindString, nil
 	default:
-		return model.FieldKindAny
+		return "", domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.type uses unsupported type", entityTypeName, fieldName),
+			map[string]any{"type": normalizedType},
+		)
 	}
 }

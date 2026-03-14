@@ -1,0 +1,21 @@
+{
+  "id": "query_60_0006_err_query_schema_type_any_unsupported_json",
+  "description": "QRY-INFRA-06: schema.type any is unsupported",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

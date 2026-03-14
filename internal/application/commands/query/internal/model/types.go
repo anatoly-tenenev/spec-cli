@@ -32,7 +32,6 @@ const (
 	FieldKindNumber  SchemaFieldKind = "number"
 	FieldKindArray   SchemaFieldKind = "array"
 	FieldKindBoolean SchemaFieldKind = "boolean"
-	FieldKindAny     SchemaFieldKind = "any"
 )
 
 type SchemaFieldSpec struct {

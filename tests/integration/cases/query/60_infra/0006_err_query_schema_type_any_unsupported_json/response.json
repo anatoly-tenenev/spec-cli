@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema.entity.doc.meta.fields.payload.schema.type uses unsupported type",
+    "exit_code": 4,
+    "details": {
+      "type": "any"
+    }
+  }
+}
