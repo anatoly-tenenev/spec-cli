@@ -16,6 +16,7 @@ const (
 	CodeSlugConflict           Code = "SLUG_CONFLICT"
 	CodeWriteContractViolation Code = "WRITE_CONTRACT_VIOLATION"
 	CodeValidationFailed       Code = "VALIDATION_FAILED"
+	CodeConcurrencyConflict    Code = "CONCURRENCY_CONFLICT"
 	CodeInvalidQuery           Code = "INVALID_QUERY"
 	CodeReadFailed             Code = "READ_FAILED"
 	CodeWriteFailed            Code = "WRITE_FAILED"

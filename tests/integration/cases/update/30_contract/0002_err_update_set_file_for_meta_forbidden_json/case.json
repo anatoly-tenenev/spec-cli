@@ -1,0 +1,29 @@
+{
+  "id": "update_30_0002_err_update_set_file_for_meta_forbidden_json",
+  "description": "update_30_0002_err_update_set_file_for_meta_forbidden_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set-file",
+    "meta.status=${WORKSPACE}/input/meta-status.txt"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-11"
+  }
+}

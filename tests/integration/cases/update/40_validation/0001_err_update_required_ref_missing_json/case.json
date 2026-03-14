@@ -1,0 +1,29 @@
+{
+  "id": "update_40_0001_err_update_required_ref_missing_json",
+  "description": "update_40_0001_err_update_required_ref_missing_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--unset",
+    "refs.container"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-11"
+  }
+}

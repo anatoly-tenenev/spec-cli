@@ -1,0 +1,1 @@
+{"error":{"code":"WRITE_CONTRACT_VIOLATION","details":{"path":"meta.unknown"},"exit_code":1,"message":"write path 'meta.unknown' is not allowed"},"result_state":"invalid"}

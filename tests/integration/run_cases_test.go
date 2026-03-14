@@ -71,6 +71,10 @@ func TestAddCases(t *testing.T) {
 	runCommandCases(t, "add")
 }
 
+func TestUpdateCases(t *testing.T) {
+	runCommandCases(t, "update")
+}
+
 func runCommandCases(t *testing.T, command string) {
 	t.Helper()
 
@@ -414,7 +418,6 @@ func ensureRepoRoot() (string, error) {
 	}
 	return cachedRepoRoot, nil
 }
-
 
 func assertStderr(t *testing.T, caseDir string, testCase integrationCase, actualStderr string) {
 	t.Helper()

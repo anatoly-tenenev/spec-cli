@@ -1,0 +1,1 @@
+{"error":{"code":"WRITE_CONTRACT_VIOLATION","details":{"path":"meta.status"},"exit_code":1,"message":"--set-file is not allowed for path 'meta.status'"},"result_state":"invalid"}

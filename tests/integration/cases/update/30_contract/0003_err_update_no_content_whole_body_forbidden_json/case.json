@@ -1,0 +1,29 @@
+{
+  "id": "update_30_0003_err_update_no_content_whole_body_forbidden_json",
+  "description": "update_30_0003_err_update_no_content_whole_body_forbidden_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "NOTE-1",
+    "--content-file",
+    "${WORKSPACE}/input/body-valid.md"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-11"
+  }
+}

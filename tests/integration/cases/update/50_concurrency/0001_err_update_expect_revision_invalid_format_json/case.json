@@ -1,0 +1,31 @@
+{
+  "id": "update_50_0001_err_update_expect_revision_invalid_format_json",
+  "description": "update_50_0001_err_update_expect_revision_invalid_format_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "meta.status=active",
+    "--expect-revision",
+    "bad-token"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-11"
+  }
+}

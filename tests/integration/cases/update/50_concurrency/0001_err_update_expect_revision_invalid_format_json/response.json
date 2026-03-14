@@ -1,0 +1,1 @@
+{"error":{"code":"INVALID_ARGS","details":{"revision":"bad-token"},"exit_code":2,"message":"--expect-revision token has invalid format"},"result_state":"invalid"}
