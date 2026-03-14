@@ -1,6 +1,18 @@
 {
   "error": {
     "code": "WRITE_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "level": "error",
+            "message": "built-in field 'id' is required",
+            "standard_ref": "11.1"
+          }
+        ]
+      }
+    },
     "exit_code": 3,
     "message": "failed to determine entity id"
   },

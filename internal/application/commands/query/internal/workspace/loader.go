@@ -3,6 +3,7 @@ package workspace
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -31,6 +33,13 @@ type parsedEntity struct {
 	Sections    map[string]string
 	RawContent  string
 }
+
+const (
+	queryWorkspaceFrontmatterStandardRef = "10.2"
+	queryWorkspaceTypeStandardRef        = "5.3"
+	queryWorkspaceIDStandardRef          = "11.1"
+	queryWorkspaceSlugStandardRef        = "11.2"
+)
 
 func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilters []string) ([]model.EntityView, *domainerrors.AppError) {
 	markdownFiles, scanErr := scanMarkdownFiles(workspacePath)
@@ -128,34 +137,38 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 
 	frontmatter, body, parseErr := parseFrontmatter(raw)
 	if parseErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+		return nil, newWorkspaceValidationError(
 			"failed to parse workspace document",
+			parseErr.Error(),
+			queryWorkspaceFrontmatterStandardRef,
 			nil,
 		)
 	}
 
 	typeName, ok := readStringField(frontmatter, "type")
 	if !ok {
-		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+		return nil, newWorkspaceValidationError(
 			"failed to determine entity type",
+			requiredBuiltinFieldMessage("type"),
+			queryWorkspaceTypeStandardRef,
 			nil,
 		)
 	}
 	id, ok := readStringField(frontmatter, "id")
 	if !ok {
-		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+		return nil, newWorkspaceValidationError(
 			"failed to determine entity id",
+			requiredBuiltinFieldMessage("id"),
+			queryWorkspaceIDStandardRef,
 			nil,
 		)
 	}
 	slug, ok := readStringField(frontmatter, "slug")
 	if !ok {
-		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+		return nil, newWorkspaceValidationError(
 			"failed to determine entity slug",
+			requiredBuiltinFieldMessage("slug"),
+			queryWorkspaceSlugStandardRef,
 			nil,
 		)
 	}
@@ -257,4 +270,22 @@ func sectionsToAnyMap(sections map[string]string) map[string]any {
 		mapped[name] = value
 	}
 	return mapped
+}
+
+func requiredBuiltinFieldMessage(field string) string {
+	return fmt.Sprintf("built-in field '%s' is required", field)
+}
+
+func newWorkspaceValidationError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
+	issue := support.ValidationIssue(
+		support.ValidationIssueLevelError,
+		support.ValidationIssueClassInstanceError,
+		issueMessage,
+		standardRef,
+	)
+	return domainerrors.New(
+		domainerrors.CodeWriteFailed,
+		message,
+		support.WithValidationIssues(details, issue),
+	)
 }

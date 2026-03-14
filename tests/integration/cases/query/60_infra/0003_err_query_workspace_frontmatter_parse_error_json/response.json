@@ -1,6 +1,18 @@
 {
   "error": {
     "code": "WRITE_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "level": "error",
+            "message": "frontmatter closing delimiter ('---' or '...') is missing",
+            "standard_ref": "10.2"
+          }
+        ]
+      }
+    },
     "exit_code": 3,
     "message": "failed to parse workspace document"
   },

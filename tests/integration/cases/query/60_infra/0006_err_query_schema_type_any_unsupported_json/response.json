@@ -5,7 +5,17 @@
     "message": "schema.entity.doc.meta.fields.payload.schema.type uses unsupported type",
     "exit_code": 4,
     "details": {
-      "type": "any"
+      "type": "any",
+      "validation": {
+        "issues": [
+          {
+            "class": "SchemaError",
+            "level": "error",
+            "message": "schema.entity.doc.meta.fields.payload.schema.type uses unsupported type",
+            "standard_ref": "7"
+          }
+        ]
+      }
     }
   }
 }

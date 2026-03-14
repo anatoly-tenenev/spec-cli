@@ -101,7 +101,7 @@ func BuildIndex(loaded LoadedSchema) (model.QuerySchemaIndex, *domainerrors.AppE
 	}
 
 	if len(index.EntityTypes) == 0 {
-		return model.QuerySchemaIndex{}, domainerrors.New(
+		return model.QuerySchemaIndex{}, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			"schema.entity must be non-empty",
 			nil,
@@ -128,7 +128,7 @@ func addFieldSpec(index map[string]model.SchemaFieldSpec, candidate model.Schema
 		return nil
 	}
 	if existing.Kind != candidate.Kind {
-		return domainerrors.New(
+		return newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("field '%s' has conflicting types across schema.entity", candidate.Path),
 			nil,
