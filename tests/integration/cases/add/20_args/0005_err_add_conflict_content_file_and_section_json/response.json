@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "whole-body input cannot be combined with content.sections.* write-paths"
+  },
+  "result_state": "invalid"
+}

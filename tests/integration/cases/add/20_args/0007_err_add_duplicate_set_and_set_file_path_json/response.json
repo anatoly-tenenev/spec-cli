@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "path": "content.sections.summary"
+    },
+    "exit_code": 2,
+    "message": "duplicate write path: content.sections.summary"
+  },
+  "result_state": "invalid"
+}

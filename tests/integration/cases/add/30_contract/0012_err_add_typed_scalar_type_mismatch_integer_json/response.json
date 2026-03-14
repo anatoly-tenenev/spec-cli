@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "actual_type": "boolean",
+      "expected_type": "integer",
+      "path": "meta.priority"
+    },
+    "exit_code": 1,
+    "message": "value for path 'meta.priority' does not match schema type 'integer'"
+  },
+  "result_state": "invalid"
+}

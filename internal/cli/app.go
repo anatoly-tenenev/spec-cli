@@ -31,7 +31,7 @@ func NewApp(stdout, stderr io.Writer, now func() time.Time) *App {
 	bus.Register("validate", validate.NewHandler())
 	bus.Register("query", query.NewHandler())
 	bus.Register("get", get.NewHandler())
-	bus.Register("add", add.NewHandler())
+	bus.Register("add", add.NewHandler(now))
 	bus.Register("update", update.NewHandler())
 
 	return &App{

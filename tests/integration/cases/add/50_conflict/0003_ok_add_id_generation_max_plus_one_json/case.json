@@ -1,0 +1,35 @@
+{
+  "id": "add_50_0003_ok_add_id_generation_max_plus_one_json",
+  "description": "add_50_0003_ok_add_id_generation_max_plus_one_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "gap-new",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "content.sections.summary=generated after gap"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

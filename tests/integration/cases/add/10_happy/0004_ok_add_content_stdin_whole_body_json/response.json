@@ -1,0 +1,32 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nRetry window rules.\n\n## Implementation {#implementation}\nImplementation details.",
+      "sections": {
+        "implementation": "Implementation details.",
+        "summary": "Retry window rules."
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:bb340148045c6d04218f714b8a78941e74f06abbb4331d21fd6717eb957875f1",
+    "slug": "content-stdin",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

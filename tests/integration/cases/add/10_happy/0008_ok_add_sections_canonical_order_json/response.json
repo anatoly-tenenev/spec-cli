@@ -1,0 +1,32 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nSummary text\n\n## Implementation {#implementation}\nImplementation text",
+      "sections": {
+        "implementation": "Implementation text",
+        "summary": "Summary text"
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:6a14b3f520e9aaf76014b0dae3d8833686219a6d177db0d1a02f97c434c00655",
+    "slug": "section-order",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

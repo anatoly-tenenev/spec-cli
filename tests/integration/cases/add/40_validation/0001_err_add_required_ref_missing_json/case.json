@@ -1,0 +1,33 @@
+{
+  "id": "add_40_0001_err_add_required_ref_missing_json",
+  "description": "add_40_0001_err_add_required_ref_missing_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "missing-ref",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "content.sections.summary=Missing ref"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

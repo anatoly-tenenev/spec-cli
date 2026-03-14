@@ -1,0 +1,31 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\ngenerated after gap",
+      "sections": {
+        "summary": "generated after gap"
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:10cce21b00a8585e128f89db4ec27ce0f8b0d6aa7c9e056f3dc29342cfca2552",
+    "slug": "gap-new",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

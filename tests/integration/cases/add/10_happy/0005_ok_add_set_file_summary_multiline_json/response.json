@@ -1,0 +1,31 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nLine one.\nLine two.",
+      "sections": {
+        "summary": "Line one.\nLine two."
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:951203e9a87ceb5991e4f9814acc5e430ff300e29ff1a6867e03430f2190e71d",
+    "slug": "set-file-summary",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

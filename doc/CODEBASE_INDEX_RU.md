@@ -280,8 +280,74 @@
 - `internal/application/commands/add`
   - Entry point: `internal/application/commands/add/handler.go` — `NewHandler`, `(*Handler).Handle`.
   - Ответственность:
-    - Scaffold команды `add`.
-    - Возврат доменной ошибки `NOT_IMPLEMENTED`.
+    - Оркестрация пайплайна `add`: parse options -> normalize paths -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
+    - Преобразование доменных ошибок `INVALID_ARGS`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema/read-write ошибок в единый JSON envelope.
+    - Передача внедряемого `Clock` для детерминированной генерации `created_date`/`updated_date`.
+  - Подпакеты:
+    - `add/internal/options` — parse/norm опций `add` (`--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`) с конфликтами, дубликатами path и absolute-path policy.
+    - `add/internal/schema` — загрузка raw schema и построение локального write-контракта для `add` (`meta.*`, `refs.*`, `content.sections.*`, `set-file allowlist`, `path_pattern`, `meta/content rules`).
+    - `add/internal/workspace` — deterministic snapshot workspace (`id`/`slug`/suffix индексы, existing paths, parseable entity identities, `dir_path` контекст для `entity_ref`).
+    - `add/internal/engine` — применение write-операций, typed YAML parsing для `--set`, canonical body/frontmatter serialization, `path_pattern`/expression evaluation, full candidate validation, `revision`, dry-run и атомарная запись.
+    - `add/internal/model` — внутренние типы use-case (`Options`, `WriteOperation`, schema/snapshot/candidate модели).
+    - `add/internal/support` — helpers для YAML AST, deep copy/literal compare, stable collections и error-details `validation.issues`.
+
+- `internal/application/commands/add/internal/options`
+  - Entry point: `internal/application/commands/add/internal/options/parse.go` — `Parse`; `internal/application/commands/add/internal/options/paths.go` — `NormalizePaths`.
+  - Ответственность:
+    - Парсинг и базовая валидация аргументов `add` (`--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`).
+    - Выявление request-level конфликтов (`whole-body` vs `content.sections.*`, дубли path, взаимоисключающие флаги).
+    - Нормализация `workspace/schema` и файловых path аргументов с учетом `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/add/internal/schema`
+  - Entry point: `internal/application/commands/add/internal/schema/loader.go` — `Load`.
+  - Ответственность:
+    - Чтение schema-файла, parse YAML/JSON, duplicate-key checks и top-level validation.
+    - Оркестрация разбора `entity.<type>` и сборки `AddSchema`.
+    - Нормативная классификация schema-ошибок в `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
+  - Подпакеты:
+    - `add/internal/schema/internal/entity` — parse `id_prefix`, `path_pattern`, `meta.fields`, `content.sections` и построение локального write-контракта (`allowWritePaths`, `allowSetFilePaths`) для `add`.
+
+- `internal/application/commands/add/internal/workspace`
+  - Entry point: `internal/application/commands/add/internal/workspace/snapshot.go` — `BuildSnapshot`; `internal/application/commands/add/internal/workspace/frontmatter.go` — `ParseFrontmatter`; `internal/application/commands/add/internal/workspace/sections.go` — `ExtractSections`.
+  - Ответственность:
+    - Детерминированный scan `.md` файлов и построение snapshot-индексов (`entitiesByID`, `slugsByType`, `maxSuffixByType`, `existingPaths`).
+    - Tolerant parse frontmatter для формирования identity/meta контекста существующих сущностей.
+    - Выделение labeled sections и детекция duplicate labels для full validation кандидата.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/add/internal/engine`
+  - Entry point: `internal/application/commands/add/internal/engine/execute.go` — `Execute`.
+  - Ответственность:
+    - Оркестрация create-pipeline: apply writes -> build candidate -> resolve refs/path -> validate -> serialize -> write/dry-run response.
+    - Единая маршрутизация доменных ошибок `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, `WRITE_FAILED`, `INTERNAL_ERROR`.
+    - Сборка контрактного payload `entity` и итогового `result_state=valid`.
+  - Подпакеты:
+    - `add/internal/engine/internal/writes` — применение write-операций (`--set`, `--set-file`, whole-body), typed YAML parsing, guard rails write-контракта и build markdown body.
+    - `add/internal/engine/internal/refresolve` — резолв `entity_ref` по workspace snapshot и диагностика `missing|ambiguous|type_mismatch`.
+    - `add/internal/engine/internal/pathcalc` — evaluation `path_pattern` (`when`-выражения, placeholder interpolation, normalization и guard от выхода за workspace).
+    - `add/internal/engine/internal/validation` — full instance-validation кандидата (builtin/meta/content/global rules), сортировка issues и сборка `VALIDATION_FAILED`.
+    - `add/internal/engine/internal/markdown` — canonical frontmatter/body serialization и вычисление `revision` (`sha256:*`).
+    - `add/internal/engine/internal/storage` — filesystem checks (`path conflict`) и атомарная запись файла.
+    - `add/internal/engine/internal/payload` — формирование публичного `entity` payload (`meta`, `refs`, `content.sections`).
+    - `add/internal/engine/internal/expr` — интерпретатор schema-выражений (`exists|eq|eq?|in|in?|all|any|not`).
+    - `add/internal/engine/internal/lookup` — lookup-адаптер значений кандидата для expression/path evaluation (`type`, `meta.*`, `refs.*`).
+    - `add/internal/engine/internal/issues` — фабрика `domainvalidation.Issue` с entity-контекстом.
+
+- `internal/application/commands/add/internal/model`
+  - Entry point: `internal/application/commands/add/internal/model/types.go` — публичные для пакета структуры состояния команды (функции отсутствуют).
+  - Ответственность:
+    - Типы опций и write-операций.
+    - Типы schema/snapshot/candidate моделей.
+    - Общие структуры для передачи данных между `options -> schema -> workspace -> engine`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/add/internal/support`
+  - Entry point: `internal/application/commands/add/internal/support/yaml.go` — `FirstContentNode`, `FindDuplicateMappingKey`, `ParseYAMLValue`, `EncodeYAMLNode`; `collections.go` — `SortedMapKeys`, `SortedUniqueStrings`; `values.go` — `NormalizeValue`, `LiteralEqual`, `WithValidationIssues`.
+  - Ответственность:
+    - YAML AST helpers и value-level YAML parsing для typed scalar входа.
+    - Нормализация/сравнение значений для validation и expression evaluation.
+    - Унифицированная сборка деталей `validation.issues` для error-envelope.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/update`
@@ -344,13 +410,14 @@
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate`, `query`, `get` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
     - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
     - Проверка `exit_code`, `stderr` и `json`-ответа против golden-ожиданий.
+    - Для mutating-сценариев проверка `workspace.out` (полный набор файлов + содержимое) против фактического состояния workspace после команды.
   - Подпакеты:
     - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json`, `warnings-as-errors`, exit code).
     - `tests/integration/cases/validate/20_schema/*` — schema-level сценарии и ошибки загрузки/валидации схемы.
@@ -367,11 +434,16 @@
     - `tests/integration/cases/get/20_select/*` — выборка селекторов `get` (`meta/refs/content.sections`, null-policy для отсутствующей секции).
     - `tests/integration/cases/get/30_lookup/*` — поиск target по `id` (`not found`, duplicate id, unrelated invalid docs).
     - `tests/integration/cases/get/40_blocking/*` — blocking read-failures (`frontmatter parse`, unresolved requested ref, duplicate section labels).
+    - `tests/integration/cases/add/10_happy/*` — happy-path `add` (`created`, `dry-run`, deterministic `id max+1`, canonical serialization, `revision`).
+    - `tests/integration/cases/add/20_args/*` — CLI-ошибки `add` (`missing required args`, конфликт whole-body и section writes).
+    - `tests/integration/cases/add/30_contract/*` — write-contract ошибки (`unknown path`, `set-file` вне section paths, запрет built-in writes).
+    - `tests/integration/cases/add/40_validation/*` — full validation-fail для кандидата (`required`/`required_when` на итоговой сущности).
+    - `tests/integration/cases/add/50_conflict/*` — workspace-конфликт canonical path (`PATH_CONFLICT`) без изменения файловой системы.
 
 ## Текущий статус команд
 
 - `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json-контракт).
 - `query` — реализован read-only pipeline (index из стандартной схемы `entity`, `where-json`, projection, deterministic sort, offset pagination, json-contract).
 - `get` — реализован baseline read-one pipeline (target lookup по `id`, schema-driven selectors, tolerant target read, refs/content projection, json-контракт).
-- `add` — scaffold, возвращает `NOT_IMPLEMENTED`.
+- `add` — реализован baseline create pipeline (raw-schema write-contract, pre-write full validation, deterministic `id/date/revision`, dry-run и атомарная запись, json-контракт).
 - `update` — scaffold, возвращает `NOT_IMPLEMENTED`.

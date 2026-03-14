@@ -1,0 +1,45 @@
+{
+  "id": "add_10_0002_ok_add_typed_values_yaml_literals_json",
+  "description": "add_10_0002_ok_add_typed_values_yaml_literals_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "typed-values",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "meta.priority=1",
+    "--set",
+    "meta.enabled=true",
+    "--set",
+    "meta.optional_note=null",
+    "--set",
+    "meta.literal_code=\"001\"",
+    "--set",
+    "meta.literal_word=\"true\"",
+    "--set",
+    "content.sections.summary=Typed values"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

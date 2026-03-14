@@ -8,16 +8,18 @@ const (
 	CodeSchemaParseError Code = "SCHEMA_PARSE_ERROR"
 	CodeSchemaInvalid    Code = "SCHEMA_INVALID"
 
-	CodeEntityTypeUnknown Code = "ENTITY_TYPE_UNKNOWN"
-	CodeEntityNotFound    Code = "ENTITY_NOT_FOUND"
-	CodeTargetAmbiguous   Code = "TARGET_AMBIGUOUS"
-	CodePathConflict      Code = "PATH_CONFLICT"
-	CodeIDConflict        Code = "ID_CONFLICT"
-	CodeSlugConflict      Code = "SLUG_CONFLICT"
-	CodeInvalidQuery      Code = "INVALID_QUERY"
-	CodeReadFailed        Code = "READ_FAILED"
-	CodeWriteFailed       Code = "WRITE_FAILED"
-	CodeInternalError     Code = "INTERNAL_ERROR"
+	CodeEntityTypeUnknown      Code = "ENTITY_TYPE_UNKNOWN"
+	CodeEntityNotFound         Code = "ENTITY_NOT_FOUND"
+	CodeTargetAmbiguous        Code = "TARGET_AMBIGUOUS"
+	CodePathConflict           Code = "PATH_CONFLICT"
+	CodeIDConflict             Code = "ID_CONFLICT"
+	CodeSlugConflict           Code = "SLUG_CONFLICT"
+	CodeWriteContractViolation Code = "WRITE_CONTRACT_VIOLATION"
+	CodeValidationFailed       Code = "VALIDATION_FAILED"
+	CodeInvalidQuery           Code = "INVALID_QUERY"
+	CodeReadFailed             Code = "READ_FAILED"
+	CodeWriteFailed            Code = "WRITE_FAILED"
+	CodeInternalError          Code = "INTERNAL_ERROR"
 
 	CodeNotImplemented Code = "NOT_IMPLEMENTED"
 )
@@ -48,7 +50,7 @@ func ExitCodeFor(code Code) int {
 		return 2
 	case CodeEntityTypeUnknown:
 		return 2
-	case CodeWriteFailed:
+	case CodeReadFailed, CodeWriteFailed:
 		return 3
 	case CodeSchemaNotFound, CodeSchemaParseError, CodeSchemaInvalid:
 		return 4

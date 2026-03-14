@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "ENTITY_TYPE_UNKNOWN",
+    "details": {
+      "entity_type": "unknown"
+    },
+    "exit_code": 2,
+    "message": "unknown entity type: unknown"
+  },
+  "result_state": "invalid"
+}

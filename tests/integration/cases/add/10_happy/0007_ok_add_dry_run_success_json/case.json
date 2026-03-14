@@ -1,0 +1,36 @@
+{
+  "id": "add_10_0007_ok_add_dry_run_success_json",
+  "description": "add_10_0007_ok_add_dry_run_success_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "dry-run-summary",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "content.sections.summary=Dry run summary",
+    "--dry-run"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

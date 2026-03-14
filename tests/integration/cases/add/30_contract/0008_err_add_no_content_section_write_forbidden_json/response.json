@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "path": "content.sections.summary"
+    },
+    "exit_code": 1,
+    "message": "write path 'content.sections.summary' is not allowed"
+  },
+  "result_state": "invalid"
+}

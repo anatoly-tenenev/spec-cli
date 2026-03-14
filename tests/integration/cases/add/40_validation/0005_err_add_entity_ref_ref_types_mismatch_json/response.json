@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.entity_ref_type_mismatch",
+            "entity": {
+              "id": "FEAT-5",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.container",
+            "level": "error",
+            "message": "entity_ref 'container' points to type 'note' outside refTypes",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

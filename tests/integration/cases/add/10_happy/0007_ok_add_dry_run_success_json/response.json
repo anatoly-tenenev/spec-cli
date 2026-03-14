@@ -1,0 +1,31 @@
+{
+  "created": true,
+  "dry_run": true,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nDry run summary",
+      "sections": {
+        "summary": "Dry run summary"
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:05644af2e6589033fd3ea2b3b1c03a9c7cf74c5e331dcbf20320b73de223fc4d",
+    "slug": "dry-run-summary",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

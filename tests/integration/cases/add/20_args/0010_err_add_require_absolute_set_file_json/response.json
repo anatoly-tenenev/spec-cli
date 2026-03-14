@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "path": "content.sections.summary"
+    },
+    "exit_code": 2,
+    "message": "--set-file path must be absolute when --require-absolute-paths is enabled"
+  },
+  "result_state": "invalid"
+}

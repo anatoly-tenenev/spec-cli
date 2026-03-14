@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
-	"strconv"
 	"strings"
+	"sync"
 	"testing"
-	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/cli"
+	integrationrunner "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/runner"
 )
 
 type integrationCase struct {
@@ -33,12 +35,25 @@ type integrationCase struct {
 		AssertOutput bool                  `json:"assert_output"`
 		Permissions  []workspacePermission `json:"permissions"`
 	} `json:"workspace"`
+	Runtime struct {
+		FixedNowUTC string `json:"fixed_now_utc"`
+		StdinFile   string `json:"stdin_file"`
+	} `json:"runtime"`
 }
 
 type workspacePermission struct {
 	Path string `json:"path"`
 	Mode string `json:"mode"`
 }
+
+var (
+	buildCLIBinaryOnce sync.Once
+	cliBinaryPath      string
+	cliBinaryBuildErr  error
+	repoRootOnce       sync.Once
+	cachedRepoRoot     string
+	repoRootErr        error
+)
 
 func TestValidateCases(t *testing.T) {
 	runCommandCases(t, "validate")
@@ -50,6 +65,10 @@ func TestQueryCases(t *testing.T) {
 
 func TestGetCases(t *testing.T) {
 	runCommandCases(t, "get")
+}
+
+func TestAddCases(t *testing.T) {
+	runCommandCases(t, "add")
 }
 
 func runCommandCases(t *testing.T, command string) {
@@ -222,9 +241,15 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	if err := copyDir(filepath.Join(caseDir, testCase.Workspace.InputDir), workspacePath); err != nil {
 		t.Fatalf("copy workspace.in: %v", err)
 	}
-	if err := applyWorkspacePermissions(workspacePath, testCase.Workspace.Permissions); err != nil {
-		t.Fatalf("apply workspace permissions: %v", err)
+	restorePermissions := func() {}
+	if len(testCase.Workspace.Permissions) > 0 {
+		rollback, err := integrationrunner.ApplyWorkspacePermissions(workspacePath, toRunnerPermissions(testCase.Workspace.Permissions))
+		if err != nil {
+			t.Fatalf("apply workspace permissions: %v", err)
+		}
+		restorePermissions = rollback
 	}
+	defer restorePermissions()
 
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
 	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
@@ -232,25 +257,164 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	}
 
 	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
+	stdinValue := ""
+	if strings.TrimSpace(testCase.Runtime.StdinFile) != "" {
+		stdinRaw, readErr := os.ReadFile(filepath.Join(caseDir, testCase.Runtime.StdinFile))
+		if readErr != nil {
+			t.Fatalf("read stdin file: %v", readErr)
+		}
+		stdinValue = string(stdinRaw)
+	}
 
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	app := cli.NewApp(&stdout, &stderr, time.Now)
-	exitCode := app.Run(context.Background(), args)
+	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, stdinValue)
+	if runErr != nil {
+		t.Fatalf("execute cli process: %v", runErr)
+	}
 
-	if exitCode != testCase.Expect.ExitCode {
+	if execResult.ExitCode != testCase.Expect.ExitCode {
 		t.Fatalf(
 			"exit code mismatch:\nexpected: %d\nactual: %d\nstdout:\n%s\nstderr:\n%s",
 			testCase.Expect.ExitCode,
-			exitCode,
-			stdout.String(),
-			stderr.String(),
+			execResult.ExitCode,
+			execResult.Stdout,
+			execResult.Stderr,
 		)
 	}
 
-	assertStderr(t, caseDir, testCase, stderr.String())
-	assertResponse(t, caseDir, testCase, stdout.Bytes())
+	assertStderr(t, caseDir, testCase, execResult.Stderr)
+	assertResponse(t, caseDir, testCase, []byte(execResult.Stdout))
+	assertWorkspaceOutput(t, caseDir, testCase, workspacePath)
 }
+
+type cliExecResult struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int
+}
+
+func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdinValue string) (cliExecResult, error) {
+	binaryPath, binErr := ensureCLIBinary()
+	if binErr != nil {
+		return cliExecResult{}, binErr
+	}
+	repoRoot, rootErr := ensureRepoRoot()
+	if rootErr != nil {
+		return cliExecResult{}, rootErr
+	}
+
+	cmd := exec.CommandContext(ctx, binaryPath, args...)
+	cmd.Dir = repoRoot
+
+	env := append([]string{}, os.Environ()...)
+	if strings.TrimSpace(fixedNowUTC) != "" {
+		env = append(env, "SPEC_CLI_FIXED_NOW_UTC="+strings.TrimSpace(fixedNowUTC))
+	}
+	cmd.Env = env
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if stdinValue != "" {
+		cmd.Stdin = strings.NewReader(stdinValue)
+	}
+
+	if err := cmd.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			return cliExecResult{}, err
+		}
+		return cliExecResult{
+			Stdout:   stdout.String(),
+			Stderr:   stderr.String(),
+			ExitCode: exitErr.ExitCode(),
+		}, nil
+	}
+
+	return cliExecResult{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		ExitCode: 0,
+	}, nil
+}
+
+func ensureCLIBinary() (string, error) {
+	buildCLIBinaryOnce.Do(func() {
+		repoRoot, rootErr := ensureRepoRoot()
+		if rootErr != nil {
+			cliBinaryBuildErr = rootErr
+			return
+		}
+
+		tempDir, err := os.MkdirTemp("", "spec-cli-integration-bin-*")
+		if err != nil {
+			cliBinaryBuildErr = err
+			return
+		}
+
+		binPath := filepath.Join(tempDir, "spec-cli")
+		if runtime.GOOS == "windows" {
+			binPath += ".exe"
+		}
+		buildCmd := exec.Command("go", "build", "-o", binPath, "./cmd/spec-cli")
+		buildCmd.Dir = repoRoot
+		goCache := filepath.Join(repoRoot, "tmp", "go-build")
+		goModCache := filepath.Join(repoRoot, "tmp", "go-mod")
+		if mkErr := os.MkdirAll(goCache, 0o755); mkErr != nil {
+			cliBinaryBuildErr = mkErr
+			return
+		}
+		if mkErr := os.MkdirAll(goModCache, 0o755); mkErr != nil {
+			cliBinaryBuildErr = mkErr
+			return
+		}
+		buildCmd.Env = append([]string{}, os.Environ()...)
+		buildCmd.Env = append(buildCmd.Env, "GOCACHE="+goCache, "GOMODCACHE="+goModCache)
+		buildOutput, err := buildCmd.CombinedOutput()
+		if err != nil {
+			cliBinaryBuildErr = fmt.Errorf("go build failed: %w\n%s", err, string(buildOutput))
+			return
+		}
+
+		cliBinaryPath = binPath
+	})
+
+	if cliBinaryBuildErr != nil {
+		return "", cliBinaryBuildErr
+	}
+	return cliBinaryPath, nil
+}
+
+func ensureRepoRoot() (string, error) {
+	repoRootOnce.Do(func() {
+		workingDir, err := os.Getwd()
+		if err != nil {
+			repoRootErr = err
+			return
+		}
+
+		current := workingDir
+		for {
+			if _, statErr := os.Stat(filepath.Join(current, "go.mod")); statErr == nil {
+				cachedRepoRoot = current
+				return
+			}
+
+			parent := filepath.Dir(current)
+			if parent == current {
+				repoRootErr = fmt.Errorf("failed to find repository root from %s", workingDir)
+				return
+			}
+			current = parent
+		}
+	})
+
+	if repoRootErr != nil {
+		return "", repoRootErr
+	}
+	return cachedRepoRoot, nil
+}
+
 
 func assertStderr(t *testing.T, caseDir string, testCase integrationCase, actualStderr string) {
 	t.Helper()
@@ -290,6 +454,9 @@ func assertResponse(t *testing.T, caseDir string, testCase integrationCase, actu
 		t.Fatalf("decode expected response: %v", err)
 	}
 
+	actualValue = integrationrunner.NormalizeResponseValue(actualValue)
+	expectedValue = integrationrunner.NormalizeResponseValue(expectedValue)
+
 	if !reflect.DeepEqual(actualValue, expectedValue) {
 		t.Fatalf(
 			"response mismatch:\nexpected:\n%s\nactual:\n%s",
@@ -297,6 +464,65 @@ func assertResponse(t *testing.T, caseDir string, testCase integrationCase, actu
 			mustJSON(actualValue),
 		)
 	}
+}
+
+func assertWorkspaceOutput(t *testing.T, caseDir string, testCase integrationCase, actualWorkspacePath string) {
+	t.Helper()
+
+	if !testCase.Workspace.AssertOutput {
+		return
+	}
+	if strings.TrimSpace(testCase.Workspace.OutputDir) == "" {
+		t.Fatalf("workspace.output_dir is required when assert_output=true")
+	}
+
+	expectedWorkspacePath := filepath.Join(caseDir, testCase.Workspace.OutputDir)
+	expectedFiles, err := collectWorkspaceFiles(expectedWorkspacePath)
+	if err != nil {
+		t.Fatalf("collect expected workspace.out files: %v", err)
+	}
+
+	actualFiles, err := collectWorkspaceFiles(actualWorkspacePath)
+	if err != nil {
+		t.Fatalf("collect actual workspace files: %v", err)
+	}
+
+	if !reflect.DeepEqual(expectedFiles, actualFiles) {
+		t.Fatalf(
+			"workspace output mismatch:\nexpected:\n%s\nactual:\n%s",
+			mustJSON(expectedFiles),
+			mustJSON(actualFiles),
+		)
+	}
+}
+
+func collectWorkspaceFiles(root string) (map[string]string, error) {
+	files := map[string]string{}
+
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		files[filepath.ToSlash(relative)] = string(raw)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
 func parseJSON(raw []byte) (any, error) {
@@ -318,37 +544,6 @@ func replacePlaceholders(args []string, workspace string, schema string) []strin
 		replaced[idx] = replacer.Replace(arg)
 	}
 	return replaced
-}
-
-func applyWorkspacePermissions(workspaceRoot string, permissions []workspacePermission) error {
-	for _, permission := range permissions {
-		cleanPath := filepath.Clean(permission.Path)
-		if cleanPath == "." || cleanPath == "" {
-			return fmt.Errorf("permission path must not be empty")
-		}
-		if filepath.IsAbs(cleanPath) {
-			return fmt.Errorf("permission path must be relative: %s", permission.Path)
-		}
-
-		targetPath := filepath.Join(workspaceRoot, cleanPath)
-		relative, relErr := filepath.Rel(workspaceRoot, targetPath)
-		if relErr != nil {
-			return fmt.Errorf("resolve permission path %s: %w", permission.Path, relErr)
-		}
-		if relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-			return fmt.Errorf("permission path escapes workspace: %s", permission.Path)
-		}
-
-		parsedMode, parseErr := strconv.ParseUint(permission.Mode, 8, 32)
-		if parseErr != nil {
-			return fmt.Errorf("invalid permission mode %q: %w", permission.Mode, parseErr)
-		}
-
-		if err := os.Chmod(targetPath, os.FileMode(parsedMode)); err != nil {
-			return fmt.Errorf("chmod %s to %s: %w", targetPath, permission.Mode, err)
-		}
-	}
-	return nil
 }
 
 func copyDir(from string, to string) error {
@@ -387,4 +582,15 @@ func mustJSON(value any) string {
 		return fmt.Sprintf("marshal error: %v", err)
 	}
 	return string(raw)
+}
+
+func toRunnerPermissions(permissions []workspacePermission) []integrationrunner.WorkspacePermission {
+	out := make([]integrationrunner.WorkspacePermission, 0, len(permissions))
+	for _, permission := range permissions {
+		out = append(out, integrationrunner.WorkspacePermission{
+			Path: permission.Path,
+			Mode: permission.Mode,
+		})
+	}
+	return out
 }

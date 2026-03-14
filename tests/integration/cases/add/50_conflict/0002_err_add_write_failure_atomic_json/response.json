@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_FAILED",
+    "details": {
+      "reason": "open /var/folders/_t/z52_jkln68v9x0pzrnyfrgy40000gn/T/spec-cli-add-case-3239646484/workspace/services/ledger-api/features/.spec-cli-add-2281482948.tmp: permission denied"
+    },
+    "exit_code": 3,
+    "message": "failed to create temporary file"
+  },
+  "result_state": "invalid"
+}

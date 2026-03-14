@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "path": "meta.priority",
+      "reason": "failed to parse value as yaml: yaml: line 1: did not find expected node content"
+    },
+    "exit_code": 1,
+    "message": "failed to parse value for path 'meta.priority'"
+  },
+  "result_state": "invalid"
+}

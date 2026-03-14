@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "builtin.slug_format_invalid",
+            "entity": {
+              "id": "FEAT-5",
+              "slug": "Retry Window",
+              "type": "feature"
+            },
+            "field": "frontmatter.slug",
+            "level": "error",
+            "message": "slug must match ^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "standard_ref": "11.2"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "PATH_CONFLICT",
+    "details": {
+      "path": "services/ledger-api/features/idempotency-keys.md"
+    },
+    "exit_code": 1,
+    "message": "canonical entity path already exists"
+  },
+  "result_state": "invalid"
+}

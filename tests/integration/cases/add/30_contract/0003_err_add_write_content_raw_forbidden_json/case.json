@@ -1,0 +1,31 @@
+{
+  "id": "add_30_0003_err_add_write_content_raw_forbidden_json",
+  "description": "add_30_0003_err_add_write_content_raw_forbidden_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "content.raw=text"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

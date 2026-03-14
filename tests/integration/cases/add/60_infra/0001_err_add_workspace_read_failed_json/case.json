@@ -1,0 +1,41 @@
+{
+  "id": "add_60_0001_err_add_workspace_read_failed_json",
+  "description": "add_60_0001_err_add_workspace_read_failed_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "content.sections.summary=x"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false,
+    "permissions": [
+      {
+        "path": "docs/broken.md",
+        "mode": "0000"
+      }
+    ]
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

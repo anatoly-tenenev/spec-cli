@@ -1,0 +1,35 @@
+{
+  "id": "add_40_0008_err_add_path_pattern_dependency_with_bad_ref_json",
+  "description": "add_40_0008_err_add_path_pattern_dependency_with_bad_ref_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "meta.status=active",
+    "--set",
+    "refs.container=SVC-999",
+    "--set",
+    "content.sections.summary=x"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

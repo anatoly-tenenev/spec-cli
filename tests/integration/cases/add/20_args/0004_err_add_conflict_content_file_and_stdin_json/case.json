@@ -1,0 +1,37 @@
+{
+  "id": "add_20_0004_err_add_conflict_content_file_and_stdin_json",
+  "description": "add_20_0004_err_add_conflict_content_file_and_stdin_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--content-file",
+    "${WORKSPACE}/input/body-valid.md",
+    "--content-stdin"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10",
+    "stdin_file": "stdin.txt"
+  }
+}

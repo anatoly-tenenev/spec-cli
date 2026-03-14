@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "reason": "open /var/folders/_t/z52_jkln68v9x0pzrnyfrgy40000gn/T/spec-cli-add-case-4242628231/workspace/docs/broken.md: permission denied"
+    },
+    "exit_code": 3,
+    "message": "failed to read workspace document"
+  },
+  "result_state": "invalid"
+}

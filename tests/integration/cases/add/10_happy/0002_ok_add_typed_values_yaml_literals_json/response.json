@@ -1,0 +1,36 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nTyped values",
+      "sections": {
+        "summary": "Typed values"
+      }
+    },
+    "created_date": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "enabled": true,
+      "literal_code": "001",
+      "literal_word": "true",
+      "optional_note": null,
+      "priority": 1,
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:f68dcca7cb3ff94a2154261d6781af3587f6b354025b9ff9e7e56fe4030388ef",
+    "slug": "typed-values",
+    "type": "feature",
+    "updated_date": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

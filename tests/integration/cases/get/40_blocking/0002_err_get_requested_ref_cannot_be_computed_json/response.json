@@ -14,7 +14,7 @@
         ]
       }
     },
-    "exit_code": 1,
+    "exit_code": 3,
     "message": "failed to compute requested refs field"
   },
   "result_state": "invalid"
