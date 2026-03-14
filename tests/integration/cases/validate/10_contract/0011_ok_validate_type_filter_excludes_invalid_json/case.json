@@ -1,0 +1,26 @@
+{
+  "id": "validate_10_0011_ok_validate_type_filter_excludes_invalid_json",
+  "description": "validate with --type service excludes invalid doc entities",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate",
+    "--type",
+    "service"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

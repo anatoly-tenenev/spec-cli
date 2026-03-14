@@ -1,0 +1,34 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "content.required_missing",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "bad",
+        "type": "doc"
+      },
+      "field": "content.sections.goal",
+      "level": "error",
+      "message": "required section 'goal' is missing",
+      "standard_ref": "13.2"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 3,
+      "checked_entities": 3,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 3,
+    "entities_valid": 2,
+    "errors": 1,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

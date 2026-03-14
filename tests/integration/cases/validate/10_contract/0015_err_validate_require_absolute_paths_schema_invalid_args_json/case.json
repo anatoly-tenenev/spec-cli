@@ -1,0 +1,25 @@
+{
+  "id": "validate_10_0015_err_validate_require_absolute_paths_schema_invalid_args_json",
+  "description": "validate returns INVALID_ARGS in json when --require-absolute-paths rejects relative schema",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "spec.schema.yaml",
+    "--format",
+    "json",
+    "--require-absolute-paths",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

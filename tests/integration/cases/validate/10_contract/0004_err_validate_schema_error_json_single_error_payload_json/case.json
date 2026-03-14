@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0004_err_validate_schema_error_json_single_error_payload_json",
-  "description": "validate returns single error json payload for schema-level error",
+  "description": "validate returns schema-level diagnostics in standard validate result payload",
   "command": "validate",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 4,
+    "exit_code": 1,
     "response_file": "response.json",
     "stderr_file": ""
   },

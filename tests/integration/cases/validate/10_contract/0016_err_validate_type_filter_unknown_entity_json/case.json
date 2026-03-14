@@ -1,0 +1,26 @@
+{
+  "id": "validate_10_0016_err_validate_type_filter_unknown_entity_json",
+  "description": "validate returns ENTITY_TYPE_UNKNOWN when --type references unknown schema entity",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate",
+    "--type",
+    "unknown"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

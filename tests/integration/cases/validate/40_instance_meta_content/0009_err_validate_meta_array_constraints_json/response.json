@@ -1,0 +1,60 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "meta.required_array_max_items",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "frontmatter.tags",
+      "level": "error",
+      "message": "metadata field 'tags' must contain at most 3 items",
+      "standard_ref": "12.3"
+    },
+    {
+      "class": "InstanceError",
+      "code": "meta.required_array_items_mismatch",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "frontmatter.tags",
+      "level": "error",
+      "message": "metadata field 'tags' item at index 2 must be of type 'string'",
+      "standard_ref": "12.3"
+    },
+    {
+      "class": "InstanceError",
+      "code": "meta.required_array_unique_items",
+      "entity": {
+        "id": "DOC-1",
+        "slug": "intro",
+        "type": "doc"
+      },
+      "field": "frontmatter.tags",
+      "level": "error",
+      "message": "metadata field 'tags' must contain unique items",
+      "standard_ref": "12.3"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 1,
+      "checked_entities": 1,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 1,
+    "entities_valid": 0,
+    "errors": 3,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

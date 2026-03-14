@@ -1,0 +1,24 @@
+{
+  "id": "validate_30_0014_err_validate_frontmatter_missing_closing_delimiter_json",
+  "description": "validate returns instance error when frontmatter closing delimiter is missing",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

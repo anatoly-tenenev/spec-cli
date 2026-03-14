@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_NOT_FOUND",
+    "message": "schema file is not readable",
+    "exit_code": 4,
+    "details": {
+      "reason": "open missing.schema.yaml: no such file or directory"
+    }
+  }
+}

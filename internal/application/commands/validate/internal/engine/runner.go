@@ -47,7 +47,21 @@ func RunValidation(
 		return model.ValidationRun{}, parseErr
 	}
 
-	idTargetIndex := buildResolvedTargetIndex(parsed)
+	refIndexSource := parsed
+	if len(opts.TypeFilters) > 0 {
+		referenceCandidates, referenceErr := workspace.BuildCandidateSet(workspaceRoot, nil)
+		if referenceErr != nil {
+			return model.ValidationRun{}, referenceErr
+		}
+
+		referenceParsed, referenceParseErr := parseCandidates(referenceCandidates, schema, workspaceRoot)
+		if referenceParseErr != nil {
+			return model.ValidationRun{}, referenceParseErr
+		}
+		refIndexSource = referenceParsed
+	}
+
+	idTargetIndex := buildResolvedTargetIndex(refIndexSource)
 
 	checked := make([]model.CheckedEntity, 0, len(candidates))
 	ids := map[string][]int{}
@@ -240,7 +254,7 @@ func parseCandidates(
 			return nil, domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read workspace document",
-				map[string]any{"reason": err.Error()},
+				nil,
 			)
 		}
 

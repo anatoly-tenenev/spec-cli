@@ -1,13 +1,29 @@
 {
   "result_state": "invalid",
-  "error": {
-    "code": "SCHEMA_INVALID",
-    "message": "unsupported expression operator 'xor'",
-    "exit_code": 4,
-    "details": {
-      "code": "schema.expression.invalid_operator",
-      "field": "schema.entity.doc.meta.fields.owner.required_when",
-      "standard_ref": "11.6"
+  "validation_scope": "full",
+  "summary": {
+    "schema_valid": false,
+    "validator_conformant": true,
+    "entities_scanned": 0,
+    "entities_valid": 0,
+    "errors": 1,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 0,
+      "checked_entities": 0,
+      "skipped_entities": 0
     }
-  }
+  },
+  "issues": [
+    {
+      "code": "schema.expression.invalid_operator",
+      "level": "error",
+      "class": "SchemaError",
+      "message": "unsupported expression operator 'xor'",
+      "standard_ref": "11.6",
+      "field": "schema.entity.doc.meta.fields.owner.required_when"
+    }
+  ]
 }

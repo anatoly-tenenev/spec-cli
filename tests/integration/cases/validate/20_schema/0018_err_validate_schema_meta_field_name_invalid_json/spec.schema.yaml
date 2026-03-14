@@ -1,0 +1,13 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        bad field:
+          schema:
+            type: string
+    content:
+      sections:
+        goal: {}

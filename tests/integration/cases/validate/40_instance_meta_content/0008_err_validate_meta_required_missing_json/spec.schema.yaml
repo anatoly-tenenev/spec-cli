@@ -1,0 +1,17 @@
+version: "0.0.3"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: true
+          schema:
+            type: string
+            enum:
+              - core
+              - platform
+    content:
+      sections:
+        goal: {}

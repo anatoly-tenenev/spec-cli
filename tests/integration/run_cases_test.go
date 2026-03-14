@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -27,10 +28,16 @@ type integrationCase struct {
 		StderrFile   string `json:"stderr_file"`
 	} `json:"expect"`
 	Workspace struct {
-		InputDir     string `json:"input_dir"`
-		OutputDir    string `json:"output_dir"`
-		AssertOutput bool   `json:"assert_output"`
+		InputDir     string                `json:"input_dir"`
+		OutputDir    string                `json:"output_dir"`
+		AssertOutput bool                  `json:"assert_output"`
+		Permissions  []workspacePermission `json:"permissions"`
 	} `json:"workspace"`
+}
+
+type workspacePermission struct {
+	Path string `json:"path"`
+	Mode string `json:"mode"`
 }
 
 func TestValidateCases(t *testing.T) {
@@ -211,6 +218,9 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 	if err := copyDir(filepath.Join(caseDir, testCase.Workspace.InputDir), workspacePath); err != nil {
 		t.Fatalf("copy workspace.in: %v", err)
 	}
+	if err := applyWorkspacePermissions(workspacePath, testCase.Workspace.Permissions); err != nil {
+		t.Fatalf("apply workspace permissions: %v", err)
+	}
 
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
 	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
@@ -304,6 +314,37 @@ func replacePlaceholders(args []string, workspace string, schema string) []strin
 		replaced[idx] = replacer.Replace(arg)
 	}
 	return replaced
+}
+
+func applyWorkspacePermissions(workspaceRoot string, permissions []workspacePermission) error {
+	for _, permission := range permissions {
+		cleanPath := filepath.Clean(permission.Path)
+		if cleanPath == "." || cleanPath == "" {
+			return fmt.Errorf("permission path must not be empty")
+		}
+		if filepath.IsAbs(cleanPath) {
+			return fmt.Errorf("permission path must be relative: %s", permission.Path)
+		}
+
+		targetPath := filepath.Join(workspaceRoot, cleanPath)
+		relative, relErr := filepath.Rel(workspaceRoot, targetPath)
+		if relErr != nil {
+			return fmt.Errorf("resolve permission path %s: %w", permission.Path, relErr)
+		}
+		if relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			return fmt.Errorf("permission path escapes workspace: %s", permission.Path)
+		}
+
+		parsedMode, parseErr := strconv.ParseUint(permission.Mode, 8, 32)
+		if parseErr != nil {
+			return fmt.Errorf("invalid permission mode %q: %w", permission.Mode, parseErr)
+		}
+
+		if err := os.Chmod(targetPath, os.FileMode(parsedMode)); err != nil {
+			return fmt.Errorf("chmod %s to %s: %w", targetPath, permission.Mode, err)
+		}
+	}
+	return nil
 }
 
 func copyDir(from string, to string) error {

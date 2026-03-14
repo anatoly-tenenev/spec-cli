@@ -1,0 +1,26 @@
+{
+  "id": "validate_10_0008_ok_validate_happy_type_feature_json",
+  "description": "validate succeeds with --type feature on mixed valid workspace",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate",
+    "--type",
+    "feature"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

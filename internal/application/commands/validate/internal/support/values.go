@@ -9,7 +9,7 @@ var expressionPlaceholderPattern = regexp.MustCompile(`<[^<>]+>`)
 
 func IsSupportedRuleType(value string) bool {
 	switch value {
-	case "any", "string", "integer", "number", "boolean", "null", "entity_ref":
+	case "any", "string", "integer", "number", "boolean", "null", "entity_ref", "array":
 		return true
 	default:
 		return false
@@ -40,6 +40,9 @@ func MatchesRuleType(value any, expected string) bool {
 		return ok
 	case "null":
 		return value == nil
+	case "array":
+		_, ok := value.([]any)
+		return ok
 	default:
 		return false
 	}

@@ -30,6 +30,13 @@ type RequiredFieldRule struct {
 	Enum             []any
 	HasValue         bool
 	Value            any
+	HasItemType      bool
+	ItemType         string
+	UniqueItems      bool
+	HasMinItems      bool
+	MinItems         int
+	HasMaxItems      bool
+	MaxItems         int
 	Required         bool
 	RequiredWhen     bool
 	RequiredWhenExpr *expressions.Expression

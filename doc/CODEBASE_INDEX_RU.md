@@ -16,8 +16,9 @@
 
 ## Состояние Binary Entrypoint
 
-- Директория `cmd/spec-cli` существует, но в текущем состоянии не содержит Go-файлов и функции `main`.
-- Команды `make build`/`make run` уже нацелены на `./cmd/spec-cli`; для рабочего бинарника нужен `cmd/spec-cli/main.go` с вызовом `cli.NewApp(...).Run(...)`.
+- Entry point бинарника: `cmd/spec-cli/main.go` — `main`.
+- `main` инициализирует `cli.NewApp(os.Stdout, os.Stderr, time.Now)` и завершает процесс через `os.Exit(app.Run(context.Background(), os.Args[1:]))`.
+- Команды `make build`/`make run` используют пакет `./cmd/spec-cli` и собирают единый бинарник `spec-cli`.
 
 ## Карта слоёв
 
@@ -73,15 +74,59 @@
 - `internal/application/commands/validate/internal/schema/internal/entity`
   - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/parser.go` — `ParseType`.
   - Ответственность:
+    - Проверка closed-world ключей на уровне `entity.<type>` (`id_prefix`, `path_pattern`, `meta`, `content`, `description`).
     - Парсинг `id_prefix` и контроль уникальности префиксов между типами.
-    - Проверка closed-world ключей для `entity.<type>`, `meta`, `meta.fields[]`, `meta.fields[].schema`, `content`, `content.sections[]`.
-    - Парсинг `meta.fields` (`type`, `enum`, `const`, `refTypes`, `required_when`).
-    - Парсинг `content.sections` и условий обязательности.
-    - Статическая проверка strict-операторов `eq/in` в `required_when` на potentially-missing операндах.
-    - Сборка expression context и агрегация schema issues.
+    - Оркестрация разбора `meta.fields`, `content.sections`, `path_pattern` через специализированные подпакеты.
+    - Сборка map полей и compile context для выражений и агрегация schema issues из подпакетов.
   - Подпакеты:
+    - `validate/internal/schema/internal/entity/internal/metafields` — parse и compile-time проверки `meta.fields` и `meta.fields[].schema`.
+    - `validate/internal/schema/internal/entity/internal/sections` — parse и compile-time проверки `content.sections`.
+    - `validate/internal/schema/internal/entity/internal/requiredconstraint` — единый разбор `required`/`required_when` (bool или expression).
+    - `validate/internal/schema/internal/entity/internal/expressioncontext` — сборка compile context для выражений и маппинг compile issues в schema issues.
+    - `validate/internal/schema/internal/entity/internal/names` — валидация имен schema-ключей для `meta.fields` и `content.sections`.
     - `validate/internal/schema/internal/entity/internal/pathpattern` — разбор и проверки `path_pattern`.
     - `validate/internal/schema/internal/entity/internal/schemachecks` — переиспользуемые schema-check helpers (closed-world keysets, strict required_when missing analysis).
+
+- `internal/application/commands/validate/internal/schema/internal/entity/internal/metafields`
+  - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/metafields/parser.go` — `Parse`.
+  - Ответственность:
+    - Проверка структуры `meta` и closed-world ключей (`meta`, `meta.fields[]`, `meta.fields[].schema`).
+    - Парсинг field schema (`type`, `enum`, `const`, `refTypes`, `items`, `uniqueItems`, `minItems`, `maxItems`) с type-check и валидацией ссылок на entity types.
+    - Разбор `required`/`required_when` для каждого поля через `requiredconstraint.Parse`.
+    - Статическая проверка strict-операторов `eq/in` в `required_when` на potentially-missing операндах.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/validate/internal/schema/internal/entity/internal/sections`
+  - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/sections/parser.go` — `Parse`.
+  - Ответственность:
+    - Проверка структуры `content.sections` и closed-world ключей section-правил.
+    - Парсинг section-правил (`title`, `required`, `required_when`) с валидацией форматов.
+    - Разбор `required`/`required_when` для секций через `requiredconstraint.Parse`.
+    - Статическая проверка strict-операторов `eq/in` в `required_when` на potentially-missing операндах.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/validate/internal/schema/internal/entity/internal/requiredconstraint`
+  - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/requiredconstraint/parser.go` — `Parse`.
+  - Ответственность:
+    - Единый parse правил обязательности `required` и `required_when` для полей/секций.
+    - Компиляция expression-формы `required_when` и возврат compile issues в schema issue-формате.
+    - Применение инвариантов `required=true` + `required_when` (ошибка) и implicit `required=false` при `required_when` без явного `required` (warning).
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext`
+  - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext/context.go` — `Build`, `FromCompileIssue`, `IsBuiltinMetaField`.
+  - Ответственность:
+    - Описание builtin meta-полей для compile context (`type`, `id`, `slug`, `created_date`, `updated_date`).
+    - Сборка `expressions.CompileContext` из builtin meta и schema-defined `meta.fields`.
+    - Маппинг compile issues expressions-компилятора в доменный формат schema issues.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/validate/internal/schema/internal/entity/internal/names`
+  - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/names/validate.go` — `ValidateMetaFieldName`, `ValidateSectionName`.
+  - Ответственность:
+    - Валидация регулярного формата имен `meta.fields` и `content.sections`.
+    - Запрет переопределения builtin meta-полей в `meta.fields`.
+  - Подпакеты: отсутствуют.
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern`
   - Entry point: `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern/parser.go` — `Parse`.

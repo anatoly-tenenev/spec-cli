@@ -13,13 +13,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Load(path string) (model.ValidationSchema, []domainvalidation.Issue, *domainerrors.AppError) {
+func Load(path string, sourcePath string) (model.ValidationSchema, []domainvalidation.Issue, *domainerrors.AppError) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return model.ValidationSchema{}, nil, domainerrors.New(
 			domainerrors.CodeSchemaNotFound,
 			"schema file is not readable",
-			map[string]any{"reason": err.Error()},
+			map[string]any{"reason": schemaReadErrorReason(err, path, sourcePath)},
 		)
 	}
 
@@ -119,6 +119,15 @@ func Load(path string) (model.ValidationSchema, []domainvalidation.Issue, *domai
 	}
 
 	return loaded, issues, nil
+}
+
+func schemaReadErrorReason(err error, absolutePath string, sourcePath string) string {
+	reason := err.Error()
+	sourcePath = strings.TrimSpace(sourcePath)
+	if sourcePath == "" {
+		return reason
+	}
+	return strings.Replace(reason, absolutePath, sourcePath, 1)
 }
 
 func validateTopLevelKeys(values map[string]any) *domainerrors.AppError {

@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "WRITE_FAILED",
+    "message": "failed to read workspace document",
+    "exit_code": 3
+  }
+}

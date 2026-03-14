@@ -1,0 +1,30 @@
+{
+  "id": "validate_10_0018_err_validate_workspace_document_read_error_json",
+  "description": "validate returns WRITE_FAILED when a workspace document is not readable",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false,
+    "permissions": [
+      {
+        "path": "docs/broken.md",
+        "mode": "0000"
+      }
+    ]
+  }
+}

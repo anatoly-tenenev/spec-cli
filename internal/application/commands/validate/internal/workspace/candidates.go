@@ -49,7 +49,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 			return nil, domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read workspace document",
-				map[string]any{"reason": err.Error()},
+				nil,
 			)
 		}
 

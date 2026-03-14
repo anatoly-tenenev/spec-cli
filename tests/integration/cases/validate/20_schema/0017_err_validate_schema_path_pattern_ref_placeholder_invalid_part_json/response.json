@@ -1,13 +1,29 @@
 {
-  "error": {
-    "code": "SCHEMA_INVALID",
-    "details": {
-      "code": "schema.path_pattern.invalid_placeholder",
-      "field": "schema.entity.feature.path_pattern.cases[0].use",
-      "standard_ref": "8.5"
-    },
-    "exit_code": 4,
-    "message": "unsupported refs placeholder part 'unknown_part'"
+  "result_state": "invalid",
+  "validation_scope": "full",
+  "summary": {
+    "schema_valid": false,
+    "validator_conformant": true,
+    "entities_scanned": 0,
+    "entities_valid": 0,
+    "errors": 1,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 0,
+      "checked_entities": 0,
+      "skipped_entities": 0
+    }
   },
-  "result_state": "invalid"
+  "issues": [
+    {
+      "code": "schema.path_pattern.invalid_placeholder",
+      "level": "error",
+      "class": "SchemaError",
+      "message": "unsupported refs placeholder part 'unknown_part'",
+      "standard_ref": "8.5",
+      "field": "schema.entity.feature.path_pattern.cases[0].use"
+    }
+  ]
 }

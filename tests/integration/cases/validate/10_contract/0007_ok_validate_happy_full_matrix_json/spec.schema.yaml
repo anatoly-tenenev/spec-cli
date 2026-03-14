@@ -1,0 +1,21 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SRV
+    path_pattern: "services/{slug}.md"
+    content:
+      sections:
+        goal: {}
+  feature:
+    id_prefix: FEAT
+    path_pattern: "features/{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: false
+          schema:
+            type: entity_ref
+            refTypes: [service]
+    content:
+      sections:
+        goal: {}

@@ -1,0 +1,27 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SRV
+    path_pattern: "services/{slug}.md"
+    content:
+      sections:
+        goal: {}
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: true
+          schema:
+            type: entity_ref
+            refTypes: [service]
+        owner_slug_snapshot:
+          required: true
+          schema:
+            type: string
+            enum:
+              - "{refs.owner.slug}"
+    content:
+      sections:
+        goal: {}

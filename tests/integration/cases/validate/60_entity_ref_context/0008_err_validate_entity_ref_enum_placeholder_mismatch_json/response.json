@@ -1,0 +1,34 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "full",
+  "summary": {
+    "schema_valid": true,
+    "validator_conformant": true,
+    "entities_scanned": 2,
+    "entities_valid": 1,
+    "errors": 1,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 2,
+      "checked_entities": 2,
+      "skipped_entities": 0
+    }
+  },
+  "issues": [
+    {
+      "code": "meta.required_enum_mismatch",
+      "level": "error",
+      "class": "InstanceError",
+      "message": "metadata field 'owner_slug_snapshot' is not in enum",
+      "standard_ref": "12.3",
+      "entity": {
+        "type": "doc",
+        "id": "DOC-1",
+        "slug": "intro"
+      },
+      "field": "frontmatter.owner_slug_snapshot"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "validate_10_0005_err_validate_schema_not_found_json",
+  "description": "validate returns top-level schema error when schema file is not found",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "missing.schema.yaml",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

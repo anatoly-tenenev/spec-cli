@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "WRITE_FAILED",
+    "message": "failed to scan workspace",
+    "exit_code": 3,
+    "details": {
+      "reason": "lstat /definitely/missing/spec-cli-workspace: no such file or directory"
+    }
+  }
+}

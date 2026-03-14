@@ -1,12 +1,29 @@
 {
   "result_state": "invalid",
-  "error": {
-    "code": "SCHEMA_INVALID",
-    "message": "schema.entity.doc.path_pattern.cases[0].use placeholder '{refs.owner.id}' references potentially missing value without static guard",
-    "exit_code": 4,
-    "details": {
-      "field": "schema.entity.doc.path_pattern.cases[0].use",
-      "placeholder": "refs.owner.id"
+  "validation_scope": "full",
+  "summary": {
+    "schema_valid": false,
+    "validator_conformant": true,
+    "entities_scanned": 0,
+    "entities_valid": 0,
+    "errors": 1,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 0,
+      "checked_entities": 0,
+      "skipped_entities": 0
     }
-  }
+  },
+  "issues": [
+    {
+      "code": "schema.invalid",
+      "level": "error",
+      "class": "SchemaError",
+      "message": "schema.entity.doc.path_pattern.cases[0].use placeholder '{refs.owner.id}' references potentially missing value without static guard",
+      "standard_ref": "7",
+      "field": "schema.entity.doc.path_pattern.cases[0].use"
+    }
+  ]
 }
