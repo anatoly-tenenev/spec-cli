@@ -1,1 +1,36 @@
-{"changes":[{"after_hash":"sha256:2f9ce0b72be8c99f2560d28081f32ace70d5ff46c732191ea75ca22158af8e3e","after_present":true,"before_hash":"sha256:247d30983f0dfef36964e0df9280b2a9f1272f96b346b5aaec8ca24f8919be28","before_present":true,"field":"content.sections.implementation","op":"set"}],"dry_run":false,"entity":{"created_date":"2026-03-01","id":"FEAT-1","meta":{"status":"draft"},"refs":{"container":{"id":"SVC-1"}},"revision":"sha256:23d29b95b3698af03aaa6b9c1a2bdd5d8381b644c2673f495032e2387f73a8ac","slug":"idempotency-keys","type":"feature","updated_date":"2026-03-11"},"noop":false,"result_state":"valid","updated":true,"validation":{"issues":[],"ok":true}}
+{
+  "changes": [
+    {
+      "after_hash": "sha256:2f9ce0b72be8c99f2560d28081f32ace70d5ff46c732191ea75ca22158af8e3e",
+      "after_present": true,
+      "before_hash": "sha256:247d30983f0dfef36964e0df9280b2a9f1272f96b346b5aaec8ca24f8919be28",
+      "before_present": true,
+      "field": "content.sections.implementation",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-03-01",
+    "id": "FEAT-1",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:23d29b95b3698af03aaa6b9c1a2bdd5d8381b644c2673f495032e2387f73a8ac",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updated_date": "2026-03-11"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

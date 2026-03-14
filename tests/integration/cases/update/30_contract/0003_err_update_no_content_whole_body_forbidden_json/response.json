@@ -1,1 +1,8 @@
-{"error":{"code":"WRITE_CONTRACT_VIOLATION","exit_code":1,"message":"whole-body input is not allowed for entity type without content"},"result_state":"invalid"}
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "exit_code": 1,
+    "message": "whole-body input is not allowed for entity type without content"
+  },
+  "result_state": "invalid"
+}

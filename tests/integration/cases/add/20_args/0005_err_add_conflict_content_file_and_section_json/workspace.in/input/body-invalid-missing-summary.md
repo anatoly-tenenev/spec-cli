@@ -1,2 +1,0 @@
-## Implementation {#implementation}
-Implementation only.

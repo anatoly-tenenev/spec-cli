@@ -1,1 +1,34 @@
-{"changes":[{"after":"SVC-3","before":"SVC-1","field":"refs.container","op":"set"}],"dry_run":true,"entity":{"created_date":"2026-03-01","id":"FEAT-1","meta":{"status":"draft"},"refs":{"container":{"id":"SVC-3"}},"revision":"sha256:24ddff0fa55b259ab0de70c3c79cf3ea6228afe0b1b164be2a8e626561861d24","slug":"idempotency-keys","type":"feature","updated_date":"2026-03-11"},"noop":false,"result_state":"valid","updated":true,"validation":{"issues":[],"ok":true}}
+{
+  "changes": [
+    {
+      "after": "SVC-3",
+      "before": "SVC-1",
+      "field": "refs.container",
+      "op": "set"
+    }
+  ],
+  "dry_run": true,
+  "entity": {
+    "created_date": "2026-03-01",
+    "id": "FEAT-1",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-3"
+      }
+    },
+    "revision": "sha256:24ddff0fa55b259ab0de70c3c79cf3ea6228afe0b1b164be2a8e626561861d24",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updated_date": "2026-03-11"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

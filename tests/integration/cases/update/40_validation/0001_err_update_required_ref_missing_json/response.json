@@ -1,1 +1,27 @@
-{"error":{"code":"VALIDATION_FAILED","details":{"validation":{"issues":[{"code":"meta.required_missing","level":"error","class":"InstanceError","message":"required field 'container' is missing","standard_ref":"11.5","entity":{"type":"feature","id":"FEAT-1","slug":"idempotency-keys"},"field":"frontmatter.container"}]}},"exit_code":1,"message":"updated entity failed validation"},"result_state":"invalid"}
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.required_missing",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "required field 'container' is missing",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-1",
+              "slug": "idempotency-keys"
+            },
+            "field": "frontmatter.container"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "updated entity failed validation"
+  },
+  "result_state": "invalid"
+}
