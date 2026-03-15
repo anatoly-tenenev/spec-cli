@@ -1,0 +1,17 @@
+{
+  "error": {
+    "code": "DELETE_BLOCKED_BY_REFERENCES",
+    "details": {
+      "blocking_refs": [
+        {
+          "field": "container",
+          "source_id": "FEAT-1",
+          "source_type": "feature"
+        }
+      ]
+    },
+    "exit_code": 1,
+    "message": "delete is blocked by incoming entity_ref references"
+  },
+  "result_state": "invalid"
+}

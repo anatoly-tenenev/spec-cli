@@ -1,0 +1,16 @@
+{
+  "id": "delete_50_0003_err_delete_blocked_by_scalar_ref_dry_run_json",
+  "description": "delete_50_0003_err_delete_blocked_by_scalar_ref_dry_run_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-1","--dry-run"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  }
+}

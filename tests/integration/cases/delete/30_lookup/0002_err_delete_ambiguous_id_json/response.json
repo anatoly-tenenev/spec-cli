@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "AMBIGUOUS_ENTITY_ID",
+    "details": {
+      "id": "FEAT-4",
+      "matches": 2
+    },
+    "exit_code": 1,
+    "message": "target id is ambiguous"
+  },
+  "result_state": "invalid"
+}

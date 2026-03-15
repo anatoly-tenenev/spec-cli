@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "--id is required"
+  },
+  "result_state": "invalid"
+}

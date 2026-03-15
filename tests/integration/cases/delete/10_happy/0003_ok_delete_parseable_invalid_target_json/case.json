@@ -1,0 +1,16 @@
+{
+  "id": "delete_10_0003_ok_delete_parseable_invalid_target_json",
+  "description": "delete_10_0003_ok_delete_parseable_invalid_target_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","FEAT-9"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  }
+}

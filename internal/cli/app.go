@@ -8,6 +8,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commandbus"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update"
@@ -33,6 +34,7 @@ func NewApp(stdout, stderr io.Writer, now func() time.Time) *App {
 	bus.Register("get", get.NewHandler())
 	bus.Register("add", add.NewHandler(now))
 	bus.Register("update", update.NewHandler(now))
+	bus.Register("delete", delete.NewHandler())
 
 	return &App{
 		stdout: stdout,

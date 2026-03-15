@@ -1,0 +1,66 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SVC
+    path_pattern: "services/{slug}/index.md"
+    meta:
+      fields:
+        owner:
+          required: true
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  feature:
+    id_prefix: FEAT
+    path_pattern: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        container:
+          required: true
+          schema:
+            type: entity_ref
+            refTypes: [service]
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  release:
+    id_prefix: REL
+    path_pattern: "releases/{slug}.md"
+    meta:
+      fields:
+        features:
+          required: false
+          schema:
+            type: array
+            items:
+              type: entity_ref
+              refTypes: [feature]
+        summary_text:
+          required: false
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: false
+          title: ["Summary"]
+  note:
+    id_prefix: NOTE
+    path_pattern: "notes/{slug}.md"
+    meta:
+      fields:
+        title:
+          required: true
+          schema:
+            type: string

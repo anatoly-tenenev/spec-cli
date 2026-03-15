@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "CONCURRENCY_CONFLICT",
+    "details": {
+      "current_revision": "sha256:029028be15a4adcf10c363cae79a4e9539990c97c84ca1244bcc1c04203f4020",
+      "expected_revision": "sha256:wrong"
+    },
+    "exit_code": 1,
+    "message": "--expect-revision does not match current revision"
+  },
+  "result_state": "invalid"
+}

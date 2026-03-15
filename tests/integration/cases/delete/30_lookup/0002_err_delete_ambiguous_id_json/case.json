@@ -1,0 +1,16 @@
+{
+  "id": "delete_30_0002_err_delete_ambiguous_id_json",
+  "description": "delete_30_0002_err_delete_ambiguous_id_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","FEAT-4"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

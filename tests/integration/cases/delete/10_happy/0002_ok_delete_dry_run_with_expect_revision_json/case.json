@@ -1,0 +1,16 @@
+{
+  "id": "delete_10_0002_ok_delete_dry_run_with_expect_revision_json",
+  "description": "delete_10_0002_ok_delete_dry_run_with_expect_revision_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-2","--expect-revision","sha256:029028be15a4adcf10c363cae79a4e9539990c97c84ca1244bcc1c04203f4020","--dry-run"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  }
+}

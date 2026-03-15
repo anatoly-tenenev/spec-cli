@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_FAILED",
+    "details": {
+      "reason": "injected delete failure before remove commit"
+    },
+    "exit_code": 3,
+    "message": "injected delete failure before remove commit"
+  },
+  "result_state": "invalid"
+}

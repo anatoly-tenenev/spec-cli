@@ -1,0 +1,16 @@
+{
+  "id": "delete_80_0001_ok_delete_help_json",
+  "description": "delete_80_0001_ok_delete_help_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--help"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

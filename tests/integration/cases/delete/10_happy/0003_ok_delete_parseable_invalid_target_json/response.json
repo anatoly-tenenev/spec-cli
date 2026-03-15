@@ -1,0 +1,9 @@
+{
+  "deleted": true,
+  "dry_run": false,
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-9",
+    "revision": "sha256:aac3fee268ae0cd13d759cd1b1eb46cad904b6d40a2604da8e76be45ce4f94cf"
+  }
+}

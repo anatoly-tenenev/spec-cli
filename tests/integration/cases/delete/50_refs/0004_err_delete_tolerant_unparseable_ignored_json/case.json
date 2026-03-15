@@ -1,0 +1,16 @@
+{
+  "id": "delete_50_0004_err_delete_tolerant_unparseable_ignored_json",
+  "description": "delete_50_0004_err_delete_tolerant_unparseable_ignored_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-2"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  }
+}

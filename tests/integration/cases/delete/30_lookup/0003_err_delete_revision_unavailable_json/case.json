@@ -1,0 +1,16 @@
+{
+  "id": "delete_30_0003_err_delete_revision_unavailable_json",
+  "description": "delete_30_0003_err_delete_revision_unavailable_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","FEAT-7"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

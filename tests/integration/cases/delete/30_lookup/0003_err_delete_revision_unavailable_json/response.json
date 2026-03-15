@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "REVISION_UNAVAILABLE",
+    "details": {
+      "id": "FEAT-7"
+    },
+    "exit_code": 1,
+    "message": "target revision is unavailable"
+  },
+  "result_state": "invalid"
+}

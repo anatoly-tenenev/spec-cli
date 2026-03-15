@@ -1,0 +1,16 @@
+{
+  "id": "delete_40_0001_err_delete_expect_revision_mismatch_json",
+  "description": "delete_40_0001_err_delete_expect_revision_mismatch_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-2","--expect-revision","sha256:wrong"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

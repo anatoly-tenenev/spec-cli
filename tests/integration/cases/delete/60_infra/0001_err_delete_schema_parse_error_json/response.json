@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "SCHEMA_PARSE_ERROR",
+    "details": {
+      "reason": "yaml: line 11: did not find expected node content"
+    },
+    "exit_code": 4,
+    "message": "failed to parse schema yaml/json"
+  },
+  "result_state": "invalid"
+}

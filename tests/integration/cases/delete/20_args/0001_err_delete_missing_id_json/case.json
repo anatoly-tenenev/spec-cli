@@ -1,0 +1,16 @@
+{
+  "id": "delete_20_0001_err_delete_missing_id_json",
+  "description": "delete_20_0001_err_delete_missing_id_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

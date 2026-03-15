@@ -1,0 +1,21 @@
+{
+  "id": "delete_70_0001_err_delete_fs_failure_after_checks_json",
+  "description": "delete_70_0001_err_delete_fs_failure_after_checks_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-2"],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "env": {
+      "SPEC_CLI_TEST_INJECT_DELETE_FAILURE": "before_remove_commit"
+    }
+  }
+}

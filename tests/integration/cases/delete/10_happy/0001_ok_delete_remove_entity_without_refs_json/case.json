@@ -1,0 +1,16 @@
+{
+  "id": "delete_10_0001_ok_delete_remove_entity_without_refs_json",
+  "description": "delete_10_0001_ok_delete_remove_entity_without_refs_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-2"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  }
+}

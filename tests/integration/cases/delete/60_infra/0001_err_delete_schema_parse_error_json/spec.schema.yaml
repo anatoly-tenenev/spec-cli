@@ -1,0 +1,11 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SVC
+    path_pattern: "services/{slug}/index.md"
+    meta:
+      fields:
+        owner:
+          schema:
+            type: string
+  feature: [
