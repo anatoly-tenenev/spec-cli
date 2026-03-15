@@ -14,6 +14,9 @@
 4. Для `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 5. Для `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
 6. Для `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
+7. Для `add`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+8. Для `update`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+9. Для `delete`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 
 ## Состояние Binary Entrypoint
 
@@ -26,7 +29,7 @@
 - `internal/cli`
   - Entry point: `internal/cli/app.go` — `NewApp`, `(*App).Run`.
   - Ответственность:
-    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`) через command bus.
+    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`, `delete`) через command bus.
     - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`).
     - Единый рендеринг успешных и ошибочных ответов в `json`.
   - Подпакеты: отсутствуют.
@@ -350,11 +353,163 @@
     - Унифицированная сборка деталей `validation.issues` для error-envelope.
   - Подпакеты: отсутствуют.
 
+- `internal/application/commands/delete`
+  - Entry point: `internal/application/commands/delete/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Ответственность:
+    - Оркестрация пайплайна `delete`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute delete/checks.
+    - Обработка `--help` через `engine.HelpPayload` и возврат контрактного `json`-help ответа без побочных эффектов.
+    - Единая маршрутизация доменных ошибок (`INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`).
+  - Подпакеты:
+    - `delete/internal/options` — parse/norm опций `delete` (`--id`, `--expect-revision`, `--dry-run`, `--help`) и absolute-path policy.
+    - `delete/internal/schema` — загрузка raw schema и извлечение reference slots (`entity_ref`, `array.items.entity_ref`) для reverse-ref проверок.
+    - `delete/internal/workspace` — deterministic scan `.md`, locator target по `id`, tolerant parse frontmatter для snapshot документов, вычисление `revision`.
+    - `delete/internal/engine` — target lookup, optimistic concurrency (`--expect-revision`), reverse-ref blocking checks, dry-run/commit payload, help text.
+    - `delete/internal/storage` — удаление target-файла и маппинг filesystem ошибок (`WRITE_FAILED`), включая test injection hook.
+    - `delete/internal/model` — внутренние типы use-case (`Options`, `Schema`, `Snapshot`, `ParsedDocument`, `BlockingReference`).
+    - `delete/internal/support` — pure helper-функции YAML/map для schema/workspace parsing.
+
+- `internal/application/commands/delete/internal/options`
+  - Entry point: `internal/application/commands/delete/internal/options/parse.go` — `Parse`; `internal/application/commands/delete/internal/options/paths.go` — `NormalizePaths`.
+  - Ответственность:
+    - Парсинг и базовая валидация аргументов `delete` (`--id`, `--expect-revision`, `--dry-run`, `--help`) с поддержкой `--flag=value`.
+    - Проверка обязательности `--id` (кроме help) и нормализация boolean-значения `--dry-run`.
+    - Нормализация `workspace/schema` путей с учётом `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/schema`
+  - Entry point: `internal/application/commands/delete/internal/schema/loader.go` — `Load`.
+  - Ответственность:
+    - Чтение schema-файла, parse YAML/JSON в AST и duplicate-key checks.
+    - Валидация top-level shape (`version/entity/description`) и структуры `schema.entity`.
+    - Извлечение reference slots по типам сущностей только для полей `entity_ref` и массивов `items.type=entity_ref`.
+    - Классификация ошибок загрузки/парсинга/валидации в `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/workspace`
+  - Entry point: `internal/application/commands/delete/internal/workspace/index.go` — `BuildSnapshot`, `FindTargetDocument`.
+  - Ответственность:
+    - Детерминированный scan `.md` файлов workspace и сбор baseline snapshot parseable сущностей (`type/id/revision/frontmatter`).
+    - Быстрый locate target-кандидатов по exact `id` с tolerant fallback (`yaml parse` -> line-based extraction).
+    - Нормализация YAML значений (`time.Time` -> `YYYY-MM-DD`) и вычисление opaque `revision` (`sha256:<hex>`).
+    - Маппинг ошибок scan/read в `READ_FAILED` с нормализованными `reason`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/engine`
+  - Entry point: `internal/application/commands/delete/internal/engine/execute.go` — `Execute`; `internal/application/commands/delete/internal/engine/help.go` — `HelpPayload`.
+  - Ответственность:
+    - Разрешение target по `snapshot.TargetMatches` с диагностикой `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`.
+    - Проверка optimistic concurrency через `--expect-revision` и возврат `CONCURRENCY_CONFLICT`.
+    - Поиск блокирующих incoming ссылок (`scalar/array entity_ref`) по schema slots и build стабильного списка `blocking_refs`.
+    - Выполнение `dry-run` или реального удаления через storage и формирование контрактного payload (`result_state`, `dry_run`, `deleted`, `target.id/revision`).
+    - Генерация help payload/text для `delete` в секциях `Command/Syntax/Options/Rules/Examples`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/storage`
+  - Entry point: `internal/application/commands/delete/internal/storage/delete.go` — `Delete`.
+  - Ответственность:
+    - Удаление целевого markdown-файла через `os.Remove`.
+    - Маппинг причин write-ошибок в контрактный `reason` (`permission denied`, `target file is missing`, `filesystem delete failed`).
+    - Поддержка test-only инъекции fs-сбоя через env `SPEC_CLI_TEST_INJECT_DELETE_FAILURE`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/model`
+  - Entry point: `internal/application/commands/delete/internal/model/types.go` — публичные для пакета структуры состояния команды (функции отсутствуют).
+  - Ответственность:
+    - Типы опций команды (`Options`) и schema-модели reference slots (`Schema`, `ReferenceSlot`).
+    - Типы workspace snapshot (`Snapshot`, `ParsedDocument`, `TargetMatch`).
+    - Типы диагностик блокирующих ссылок (`BlockingReference`) и связанные enum-константы.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/delete/internal/support`
+  - Entry point: `internal/application/commands/delete/internal/support/yaml.go` — `FirstContentNode`, `FindDuplicateMappingKey`, `ToStringMap`; `collections.go` — `SortedMapKeys`.
+  - Ответственность:
+    - Вспомогательные функции для YAML AST и duplicate-key checks.
+    - Безопасное приведение raw YAML decode-значений к `map[string]any`.
+    - Стабильная сортировка map-ключей для детерминированного обхода schema полей.
+  - Подпакеты: отсутствуют.
+
 - `internal/application/commands/update`
   - Entry point: `internal/application/commands/update/handler.go` — `NewHandler`, `(*Handler).Handle`.
   - Ответственность:
-    - Scaffold команды `update`.
-    - Возврат доменной ошибки `NOT_IMPLEMENTED`.
+    - Оркестрация пайплайна `update`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute update/checks.
+    - Поддержка mutating-патча (`--set`, `--set-file`, `--unset`, whole-body операции) и optimistic concurrency (`--expect-revision`).
+    - Возврат контрактного `json`-ответа (`updated/noop/changes/entity/validation`) с единым маппингом доменных ошибок.
+  - Подпакеты:
+    - `update/internal/options` — parse/norm опций `update` и конфликтов аргументов.
+    - `update/internal/schema` — загрузка raw schema и построение write/read-контракта по типам.
+    - `update/internal/workspace` — snapshot workspace, parse frontmatter и layout content sections.
+    - `update/internal/engine` — apply writes, resolve refs/path, full validation, serialize/revision, dry-run/commit.
+    - `update/internal/model` — внутренние типы use-case (`Options`, schema/snapshot/candidate модели).
+    - `update/internal/support` — pure helper-функции YAML/values/collections для parse/validation.
+
+- `internal/application/commands/update/internal/options`
+  - Entry point: `internal/application/commands/update/internal/options/parse.go` — `Parse`; `internal/application/commands/update/internal/options/paths.go` — `NormalizePaths`.
+  - Ответственность:
+    - Парсинг `update`-флагов (`--id`, `--set`, `--set-file`, `--unset`, `--content-file`, `--content-stdin`, `--clear-content`, `--expect-revision`, `--dry-run`).
+    - Валидация конфликтов аргументов (mutual exclusion whole-body флагов, дубли/конфликты write-path, обязательность `--id`, запрет пустого patch).
+    - Нормализация `workspace/schema`, `--content-file` и `--set-file` путей с учетом `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/update/internal/schema`
+  - Entry point: `internal/application/commands/update/internal/schema/loader.go` — `Load`.
+  - Ответственность:
+    - Чтение schema-файла, parse YAML/JSON, deep duplicate-key checks и top-level валидация shape `version/entity/description`.
+    - Построение `Schema.EntityTypes` для `update` (meta/content/path_pattern/write-contract).
+    - Классификация ошибок загрузки/парсинга/валидации в `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` с `validation.issues`.
+  - Подпакеты:
+    - `update/internal/schema/internal/entity` — parse `entity.<type>` (id_prefix/path_pattern/meta.fields/content.sections, allowSet/Unset/SetFile paths, required/required_when, enum/const/refTypes/items-constraints).
+
+- `internal/application/commands/update/internal/schema/internal/entity`
+  - Entry point: `internal/application/commands/update/internal/schema/internal/entity/parser.go` — `ParseType`.
+  - Ответственность:
+    - Разбор и валидация `id_prefix` с контролем уникальности между типами.
+    - Разбор `path_pattern` (string/list/object+cases/when) с требованием fallback-case.
+    - Разбор `meta.fields` и `content.sections` (order-aware parsing по YAML AST, required/required_when, title aliases, enum/const/array/items/refTypes).
+    - Построение write-контракта типа (`AllowSetPaths`, `AllowUnsetPaths`, `AllowSetFilePaths`) для downstream `writes.Apply`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/update/internal/workspace`
+  - Entry point: `internal/application/commands/update/internal/workspace/snapshot.go` — `BuildSnapshot`; `frontmatter.go` — `ParseFrontmatter`, `ReadStringField`, `BuildMeta`; `sections.go` — `BuildSectionLayout`, `ExtractSections`.
+  - Ответственность:
+    - Детерминированный scan `.md` workspace и сбор snapshot-индексов (`EntitiesByID`, `SlugsByType`, `ExistingPaths`, `TargetMatches`).
+    - Быстрый locate target-кандидатов по exact `id` с tolerant fallback (`yaml parse` -> line-based extraction).
+    - Parse frontmatter/body и нормализация meta-полей для reference/validation контекста.
+    - Разметка и extraction labeled sections (`[Title](#label)` и `Title {#label}`), включая детекцию duplicate labels.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/update/internal/engine`
+  - Entry point: `internal/application/commands/update/internal/engine/execute.go` — `Execute`.
+  - Ответственность:
+    - Target lookup + optimistic concurrency guard по persisted `revision` (`ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `CONCURRENCY_CONFLICT`).
+    - Применение patch-операций/whole-body, `updated_date` bump, резолв `entity_ref`, evaluation `path_pattern`.
+    - Full post-update validation (builtin/meta/content/global uniqueness/path/ref), deterministic issue sorting и маппинг в `VALIDATION_FAILED`.
+    - Сериализация markdown/frontmatter, пересчёт `revision`, dry-run или commit (atomic write / move) и сборка `changes`/`entity` payload.
+  - Подпакеты:
+    - `update/internal/engine/internal/writes` — preflight write-контракта, typed YAML parsing (`--set`/`--set-file`), section/body patching и deterministic `changes` diff.
+    - `update/internal/engine/internal/refresolve` — резолв scalar `entity_ref` c проверками `missing|ambiguous|type_mismatch`.
+    - `update/internal/engine/internal/pathcalc` — выбор `path_pattern` case по `when`, placeholder interpolation и guard от выхода за workspace.
+    - `update/internal/engine/internal/validation` — built-in/meta/content/global rules, required_when evaluation, section-title checks, `AsAppError`.
+    - `update/internal/engine/internal/storage` — atomic write/move, rollback при rename-fail, path-conflict check, test injection hook `SPEC_CLI_TEST_INJECT_WRITE_FAILURE`.
+    - `update/internal/engine/internal/markdown` — canonical serialization frontmatter/body и вычисление `revision` (`sha256:*`, persisted/new).
+    - `update/internal/engine/internal/payload` — сбор публичного `entity` payload (`type/id/slug/revision/date/meta/refs`).
+    - `update/internal/engine/internal/expr` — evaluator expression-операторов (`exists`, `eq/eq?`, `in/in?`, `all`, `any`, `not`).
+    - `update/internal/engine/internal/lookup` — lookup-адаптер путей (`type/id/slug/date`, `meta.*`, `refs.*`) для expr/path evaluation.
+    - `update/internal/engine/internal/issues` — фабрика `domainvalidation.Issue` с entity-контекстом.
+
+- `internal/application/commands/update/internal/model`
+  - Entry point: `internal/application/commands/update/internal/model/types.go` — публичные для пакета структуры состояния команды (функции отсутствуют).
+  - Ответственность:
+    - Типы patch-опций (`WriteOperation`, `BodyOperation`) и нормализованного request-состояния.
+    - Типы schema read/write-модели (`EntityTypeSpec`, `MetaField`, `SectionSpec`, `PathPattern`, write-path specs).
+    - Типы workspace snapshot и candidate entity (`WorkspaceEntity`, `TargetMatch`, `Candidate`, `ResolvedRef`).
+  - Подпакеты: отсутствуют.
+
+- `internal/application/commands/update/internal/support`
+  - Entry point: `internal/application/commands/update/internal/support/yaml.go` — `FirstContentNode`, `FindDuplicateMappingKey`, `ToStringMap`, `ToSlice`, `ParseYAMLValue`, `EncodeYAMLNode`; `collections.go` — `SortedMapKeys`, `SortedUniqueStrings`; `values.go` — `DeepCopy`, `LiteralEqual`, `NormalizeValue`, `ValidationIssue`, `WithValidationIssues`.
+  - Ответственность:
+    - YAML AST helpers (включая deep duplicate-key traversal) и typed YAML value parsing.
+    - Value helpers для нормализации/сравнения скаляров и коллекций в patch/validation flow.
+    - Унифицированная сборка `validation.issues` payload для schema и runtime ошибок.
   - Подпакеты: отсутствуют.
 
 - `internal/contracts/requests`
@@ -376,7 +531,7 @@
 - `internal/contracts/capabilities`
   - Entry point: `internal/contracts/capabilities/default.go` — публичная переменная `Default`.
   - Ответственность:
-    - Декларация поддерживаемых команд.
+    - Декларация поддерживаемых команд (текущий `Default`: `validate`, `query`, `get`, `add`, `update`).
     - Декларация поддерживаемых форматов вывода.
   - Подпакеты: отсутствуют.
 
@@ -410,14 +565,15 @@
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`; `tests/integration/delete_multirun_test.go` — `TestDeleteHappy02DryRunMatchesRealRevision`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add`, `update`, `delete` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
-    - Подготовка временного workspace/schema и запуск приложения через `cli.NewApp(...).Run(...)`.
+    - Подготовка временного workspace/schema и запуск CLI как subprocess через собранный бинарник (`exec.CommandContext`).
     - Проверка `exit_code`, `stderr` и `json`-ответа против golden-ожиданий.
     - Для mutating-сценариев проверка `workspace.out` (полный набор файлов + содержимое) против фактического состояния workspace после команды.
+    - Дополнительный dynamic black-box тест эквивалентности `delete` dry-run и real-run по `target.revision` на независимых чистых workspace-копиях.
   - Подпакеты:
     - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json`, `warnings-as-errors`, exit code).
     - `tests/integration/cases/validate/20_schema/*` — schema-level сценарии и ошибки загрузки/валидации схемы.
@@ -439,6 +595,23 @@
     - `tests/integration/cases/add/30_contract/*` — write-contract ошибки (`unknown path`, `set-file` вне section paths, запрет built-in writes).
     - `tests/integration/cases/add/40_validation/*` — full validation-fail для кандидата (`required`/`required_when` на итоговой сущности).
     - `tests/integration/cases/add/50_conflict/*` — workspace-конфликт canonical path (`PATH_CONFLICT`) без изменения файловой системы.
+    - `tests/integration/cases/update/10_happy/*` — happy-path `update` (meta/ref/section patch, whole-body file/stdin, clear-content, dry-run, repair invalid entity).
+    - `tests/integration/cases/update/20_noop/*` — no-op сценарии (идемпотентный set/unset, `updated=false`, стабильный `revision`).
+    - `tests/integration/cases/update/30_args/*` — ошибки аргументов и конфликтов patch-режимов (`--id`, duplicate paths, whole-body conflicts).
+    - `tests/integration/cases/update/40_contract/*` — нарушения write-контракта (`forbidden/unknown paths`, `--set-file` ограничения, type/yaml parse mismatch).
+    - `tests/integration/cases/update/50_validation/*` — пост-валидационные ошибки (`required`, enum, entity_ref target/type, dry-run validation parity).
+    - `tests/integration/cases/update/60_lookup/*` — lookup ошибки target (`ENTITY_NOT_FOUND`).
+    - `tests/integration/cases/update/70_concurrency/*` — optimistic concurrency сценарии (`CONCURRENCY_CONFLICT` и positive match).
+    - `tests/integration/cases/update/80_fs/*` — fs ошибки path conflict и write-failure в commit фазе.
+    - `tests/integration/cases/update/90_infra/*` — инфраструктурные ошибки (`READ_FAILED`, `SCHEMA_PARSE_ERROR`).
+    - `tests/integration/cases/delete/10_happy/*` — happy-path `delete` (`deleted=true`, dry-run, `expect-revision`, tolerant parseable-invalid target).
+    - `tests/integration/cases/delete/20_args/*` — ошибки аргументов `delete` (`--id` обязателен).
+    - `tests/integration/cases/delete/30_lookup/*` — lookup-диагностики (`ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`).
+    - `tests/integration/cases/delete/40_concurrency/*` — optimistic concurrency (`CONCURRENCY_CONFLICT` при mismatch `--expect-revision`).
+    - `tests/integration/cases/delete/50_refs/*` — reverse-ref блокировки (`DELETE_BLOCKED_BY_REFERENCES`) и tolerant поведение при непарсабельных документах.
+    - `tests/integration/cases/delete/60_infra/*` — инфраструктурные ошибки загрузки схемы (`SCHEMA_PARSE_ERROR`).
+    - `tests/integration/cases/delete/70_fs/*` — fs-ошибки на этапе удаления (`WRITE_FAILED`) после прохождения pre-checks.
+    - `tests/integration/cases/delete/80_help/*` — контракт `delete --help`.
 
 ## Текущий статус команд
 
@@ -446,4 +619,5 @@
 - `query` — реализован read-only pipeline (index из стандартной схемы `entity`, `where-json`, projection, deterministic sort, offset pagination, json-contract).
 - `get` — реализован baseline read-one pipeline (target lookup по `id`, schema-driven selectors, tolerant target read, refs/content projection, json-контракт).
 - `add` — реализован baseline create pipeline (raw-schema write-contract, pre-write full validation, deterministic `id/date/revision`, dry-run и атомарная запись, json-контракт).
-- `update` — scaffold, возвращает `NOT_IMPLEMENTED`.
+- `delete` — реализован baseline delete pipeline (lookup по exact `id`, `--expect-revision`, reverse-ref blocking checks, `dry-run`, fs delete и json-контракт).
+- `update` — реализован baseline update pipeline (patch `--set/--set-file/--unset`, whole-body `--content-file|--content-stdin|--clear-content`, pre-commit full validation, `--expect-revision`, dry-run и атомарная запись с возможным move по `path_pattern`, json-контракт).

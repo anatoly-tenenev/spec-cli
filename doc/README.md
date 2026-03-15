@@ -17,7 +17,7 @@
 
 ### Общие документы
 
-- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `add` (entrypoint-first декомпозиция `engine/internal/*`) и интеграционного раннера (`workspace.out` для mutating-команд).
+- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `add`/`update`/`delete` и интеграционного раннера (`workspace.out` для mutating-команд).
 
 ### 001 Base
 
