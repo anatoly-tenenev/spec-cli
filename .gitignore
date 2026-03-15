@@ -12,6 +12,7 @@ spec-cli
 *.test
 *.out
 coverage.out
+!workspace.out
 
 # IDE / OS
 .DS_Store
