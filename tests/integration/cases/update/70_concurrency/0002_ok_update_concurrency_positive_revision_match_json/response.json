@@ -1,0 +1,38 @@
+{
+  "changes": [
+    {
+      "after": "team-core",
+      "before": "team-payments",
+      "field": "meta.owner",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-02-09",
+    "id": "FEAT-2",
+    "meta": {
+      "owner": "team-core",
+      "status": "active",
+      "tags": [
+        "api"
+      ]
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:4a36412f140b2070338700f65ff5b13a00fc757ade34bcb9242158cc81036187",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

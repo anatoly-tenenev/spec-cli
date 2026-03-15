@@ -3,14 +3,21 @@ package storage
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
+
+const writeFailureInjectEnv = "SPEC_CLI_TEST_INJECT_WRITE_FAILURE"
+const writeFailureInjectModeAfterValidateBeforeCommit = "after_validate_before_commit"
 
 func Persist(sourcePath string, targetPath string, payload []byte) *domainerrors.AppError {
 	cleanSource := filepath.Clean(sourcePath)
 	cleanTarget := filepath.Clean(targetPath)
 	if cleanSource == cleanTarget {
+		if shouldInjectWriteFailure() {
+			return injectedWriteFailureError("injected write failure before atomic write commit", nil)
+		}
 		return WriteAtomically(cleanTarget, payload)
 	}
 	return WriteWithMove(cleanSource, cleanTarget, payload)
@@ -77,6 +84,16 @@ func WriteWithMove(sourcePath string, targetPath string, payload []byte) *domain
 			"failed to prepare source file move",
 			map[string]any{"reason": err.Error()},
 		)
+	}
+	if shouldInjectWriteFailure() {
+		rollbackErr := os.Rename(backupPath, sourcePath)
+		if rollbackErr != nil {
+			return injectedWriteFailureError(
+				"injected write failure after source backup before move commit; rollback failed",
+				rollbackErr,
+			)
+		}
+		return injectedWriteFailureError("injected write failure after source backup before move commit", nil)
 	}
 
 	if err := os.Rename(tempPath, targetPath); err != nil {
@@ -193,4 +210,19 @@ func reserveTempPath(parentDir string, pattern string) (string, *domainerrors.Ap
 		)
 	}
 	return path, nil
+}
+
+func shouldInjectWriteFailure() bool {
+	return strings.EqualFold(
+		strings.TrimSpace(os.Getenv(writeFailureInjectEnv)),
+		writeFailureInjectModeAfterValidateBeforeCommit,
+	)
+}
+
+func injectedWriteFailureError(message string, rollbackErr error) *domainerrors.AppError {
+	details := map[string]any{"reason": message}
+	if rollbackErr != nil {
+		details["rollback_reason"] = rollbackErr.Error()
+	}
+	return domainerrors.New(domainerrors.CodeWriteFailed, message, details)
 }

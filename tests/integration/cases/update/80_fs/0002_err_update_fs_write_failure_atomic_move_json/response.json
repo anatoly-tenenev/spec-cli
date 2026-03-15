@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_FAILED",
+    "details": {
+      "reason": "injected write failure after source backup before move commit"
+    },
+    "exit_code": 3,
+    "message": "injected write failure after source backup before move commit"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "update_30_0008_err_update_invalid_set_missing_equals_json",
+  "description": "update_30_0008_err_update_invalid_set_missing_equals_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "meta.status"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

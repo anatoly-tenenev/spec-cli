@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "path": "refs.container"
+    },
+    "exit_code": 1,
+    "message": "--set-file is not allowed for path 'refs.container'"
+  },
+  "result_state": "invalid"
+}

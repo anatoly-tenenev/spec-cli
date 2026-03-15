@@ -1,0 +1,40 @@
+{
+  "changes": [
+    {
+      "after": "active",
+      "before": "draft",
+      "field": "meta.status",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-02-08",
+    "id": "FEAT-1",
+    "meta": {
+      "owner": "team-payments",
+      "priority": 10,
+      "status": "active",
+      "tags": [
+        "api",
+        "reliability"
+      ]
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:dc7576aa39bc2ea7361701ca1cb008e129f8fa8361f58aa3d64f65db7582cdf0",
+    "slug": "retry-window",
+    "type": "feature",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

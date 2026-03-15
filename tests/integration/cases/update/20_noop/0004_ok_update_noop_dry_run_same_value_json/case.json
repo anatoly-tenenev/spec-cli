@@ -1,0 +1,33 @@
+{
+  "id": "update_20_0004_ok_update_noop_dry_run_same_value_json",
+  "description": "update_20_0004_ok_update_noop_dry_run_same_value_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-3",
+    "--set",
+    "meta.status=deprecated",
+    "--dry-run",
+    "--expect-revision",
+    "sha256:faa1b991ea3cdf5d886ac3264b73664fced030d5dc3a1e23f95c8573d6a85dfe"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

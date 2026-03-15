@@ -1,0 +1,35 @@
+{
+  "id": "update_80_0002_err_update_fs_write_failure_atomic_move_json",
+  "description": "update_80_0002_err_update_fs_write_failure_atomic_move_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "refs.container=SVC-3",
+    "--expect-revision",
+    "sha256:3fa4c7d2f71f132edffb1ec1f675a4410b04d8077a58dabecbc058aed2cedaa2"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14",
+    "env": {
+      "SPEC_CLI_TEST_INJECT_WRITE_FAILURE": "after_validate_before_commit"
+    }
+  }
+}

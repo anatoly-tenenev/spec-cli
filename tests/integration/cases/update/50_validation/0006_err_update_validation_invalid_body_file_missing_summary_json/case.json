@@ -1,0 +1,30 @@
+{
+  "id": "update_50_0006_err_update_validation_invalid_body_file_missing_summary_json",
+  "description": "update_50_0006_err_update_validation_invalid_body_file_missing_summary_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--content-file",
+    "${WORKSPACE}/input/body-invalid-missing-summary.md"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

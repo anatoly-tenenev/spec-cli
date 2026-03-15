@@ -1,0 +1,48 @@
+{
+  "changes": [
+    {
+      "after": "draft",
+      "before": "archived",
+      "field": "meta.status",
+      "op": "set"
+    },
+    {
+      "after": "SVC-1",
+      "before": "SVC-999",
+      "field": "refs.container",
+      "op": "set"
+    },
+    {
+      "after_hash": "sha256:1dc70a57d01f1d7b41d123d4998311405715ccb68b6df37b0c39578639db7d9e",
+      "after_present": true,
+      "before_hash": null,
+      "before_present": false,
+      "field": "content.sections.summary",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-02-10",
+    "id": "FEAT-9",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:3092bf38a7832be38ade9842ace280731b210da74f96d0073994dddb3de83764",
+    "slug": "broken-retry-window",
+    "type": "feature",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

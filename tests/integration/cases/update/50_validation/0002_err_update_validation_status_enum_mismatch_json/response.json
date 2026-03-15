@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.required_enum_mismatch",
+            "entity": {
+              "id": "FEAT-1",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.status",
+            "level": "error",
+            "message": "field 'status' value is outside enum",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "updated entity failed validation"
+  },
+  "result_state": "invalid"
+}

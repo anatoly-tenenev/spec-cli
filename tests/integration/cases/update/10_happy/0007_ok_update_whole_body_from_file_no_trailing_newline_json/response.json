@@ -1,0 +1,38 @@
+{
+  "changes": [
+    {
+      "after_hash": "sha256:ab62dd508264ffc560cee530073b9f03f23ca033eb92a5a52bbd5c758ee8202a",
+      "before_hash": "sha256:2514f23ee3b6de48595ad8f95f991d600881c1c9330d0ae7354a4ea286f20a0f",
+      "field": "content.raw",
+      "op": "replace"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-02-09",
+    "id": "FEAT-2",
+    "meta": {
+      "owner": "team-payments",
+      "status": "active",
+      "tags": [
+        "api"
+      ]
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:bf90c101f9ab01495ad44a4b5b27de50cd9fcf3ce4928fedfec38123ddc64ef0",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

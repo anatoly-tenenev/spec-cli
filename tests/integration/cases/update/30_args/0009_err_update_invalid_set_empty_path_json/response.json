@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "value": "=active"
+    },
+    "exit_code": 2,
+    "message": "write operation must match \u003cpath=value\u003e"
+  },
+  "result_state": "invalid"
+}

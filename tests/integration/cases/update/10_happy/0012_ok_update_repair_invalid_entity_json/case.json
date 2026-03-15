@@ -1,0 +1,34 @@
+{
+  "id": "update_10_0012_ok_update_repair_invalid_entity_json",
+  "description": "update_10_0012_ok_update_repair_invalid_entity_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-9",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "content.sections.summary=Recovered summary"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

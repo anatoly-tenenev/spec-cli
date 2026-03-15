@@ -1,0 +1,88 @@
+version: "0.0.3"
+entity:
+  service:
+    id_prefix: SVC
+    path_pattern: "services/{slug}/index.md"
+    meta:
+      fields:
+        owner:
+          required: true
+          schema:
+            type: string
+        dir_path:
+          required: false
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  feature:
+    id_prefix: FEAT
+    path_pattern:
+      cases:
+        - when:
+            exists: refs.container.dir_path
+          use: "{refs.container.dir_path}/features/{slug}.md"
+        - use: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        container:
+          required: true
+          schema:
+            type: entity_ref
+            refTypes: [service]
+        priority:
+          required: false
+          schema:
+            type: integer
+        owner:
+          required: false
+          schema:
+            type: string
+        tags:
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary", "Overview"]
+        implementation:
+          required: false
+          title: ["Implementation"]
+        rollout:
+          required: false
+          title: ["Rollout plan", "Rollout"]
+  memo:
+    id_prefix: MEMO
+    path_pattern: "memos/{slug}.md"
+    meta:
+      fields:
+        title:
+          required: true
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: false
+          title: ["Summary"]
+  note:
+    id_prefix: NOTE
+    path_pattern: "notes/{slug}.md"
+    meta:
+      fields:
+        title:
+          required: true
+          schema:
+            type: string

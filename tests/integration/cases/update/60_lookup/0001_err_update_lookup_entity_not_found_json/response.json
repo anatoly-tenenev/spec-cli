@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "ENTITY_NOT_FOUND",
+    "details": {
+      "id": "FEAT-404"
+    },
+    "exit_code": 1,
+    "message": "target entity is not found"
+  },
+  "result_state": "not_found"
+}

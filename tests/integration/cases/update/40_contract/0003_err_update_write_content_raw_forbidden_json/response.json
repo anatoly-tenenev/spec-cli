@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "path": "content.raw"
+    },
+    "exit_code": 1,
+    "message": "write path 'content.raw' is forbidden by write contract"
+  },
+  "result_state": "invalid"
+}

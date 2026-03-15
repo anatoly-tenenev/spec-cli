@@ -1,0 +1,32 @@
+{
+  "id": "update_30_0010_err_update_conflict_section_patch_and_whole_body_json",
+  "description": "update_30_0010_err_update_conflict_section_patch_and_whole_body_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "content.sections.summary=x",
+    "--content-file",
+    "${WORKSPACE}/input/body-valid.md"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

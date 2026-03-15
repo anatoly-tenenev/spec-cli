@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
-
-var revisionTokenPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 func Execute(
 	opts model.Options,
@@ -79,13 +76,6 @@ func Execute(
 
 	currentRevision := markdown.ComputePersistedRevision(targetMatch.Raw)
 	if opts.ExpectRevision != "" {
-		if !revisionTokenPattern.MatchString(opts.ExpectRevision) {
-			return nil, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"--expect-revision token has invalid format",
-				map[string]any{"revision": opts.ExpectRevision},
-			)
-		}
 		if opts.ExpectRevision != currentRevision {
 			return nil, domainerrors.New(
 				domainerrors.CodeConcurrencyConflict,

@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "path": "meta.status"
+    },
+    "exit_code": 2,
+    "message": "duplicate write path: meta.status"
+  },
+  "result_state": "invalid"
+}

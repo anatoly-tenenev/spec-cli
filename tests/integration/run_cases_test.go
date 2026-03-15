@@ -36,8 +36,9 @@ type integrationCase struct {
 		Permissions  []workspacePermission `json:"permissions"`
 	} `json:"workspace"`
 	Runtime struct {
-		FixedNowUTC string `json:"fixed_now_utc"`
-		StdinFile   string `json:"stdin_file"`
+		FixedNowUTC string            `json:"fixed_now_utc"`
+		StdinFile   string            `json:"stdin_file"`
+		Env         map[string]string `json:"env"`
 	} `json:"runtime"`
 }
 
@@ -254,12 +255,10 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 		restorePermissions = rollback
 	}
 	defer restorePermissions()
-
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
 	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
-
 	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
 	stdinValue := ""
 	if strings.TrimSpace(testCase.Runtime.StdinFile) != "" {
@@ -269,12 +268,10 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 		}
 		stdinValue = string(stdinRaw)
 	}
-
-	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, stdinValue)
+	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, stdinValue, testCase.Runtime.Env)
 	if runErr != nil {
 		t.Fatalf("execute cli process: %v", runErr)
 	}
-
 	if execResult.ExitCode != testCase.Expect.ExitCode {
 		t.Fatalf(
 			"exit code mismatch:\nexpected: %d\nactual: %d\nstdout:\n%s\nstderr:\n%s",
@@ -284,7 +281,6 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 			execResult.Stderr,
 		)
 	}
-
 	assertStderr(t, caseDir, testCase, execResult.Stderr)
 	assertResponse(t, caseDir, testCase, []byte(execResult.Stdout))
 	assertWorkspaceOutput(t, caseDir, testCase, workspacePath)
@@ -296,7 +292,7 @@ type cliExecResult struct {
 	ExitCode int
 }
 
-func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdinValue string) (cliExecResult, error) {
+func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdinValue string, extraEnv map[string]string) (cliExecResult, error) {
 	binaryPath, binErr := ensureCLIBinary()
 	if binErr != nil {
 		return cliExecResult{}, binErr
@@ -305,16 +301,20 @@ func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdin
 	if rootErr != nil {
 		return cliExecResult{}, rootErr
 	}
-
 	cmd := exec.CommandContext(ctx, binaryPath, args...)
 	cmd.Dir = repoRoot
-
 	env := append([]string{}, os.Environ()...)
 	if strings.TrimSpace(fixedNowUTC) != "" {
 		env = append(env, "SPEC_CLI_FIXED_NOW_UTC="+strings.TrimSpace(fixedNowUTC))
 	}
+	for key, value := range extraEnv {
+		name := strings.TrimSpace(key)
+		if name == "" {
+			continue
+		}
+		env = append(env, name+"="+value)
+	}
 	cmd.Env = env
-
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -322,7 +322,6 @@ func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdin
 	if stdinValue != "" {
 		cmd.Stdin = strings.NewReader(stdinValue)
 	}
-
 	if err := cmd.Run(); err != nil {
 		var exitErr *exec.ExitError
 		if !errors.As(err, &exitErr) {
@@ -334,7 +333,6 @@ func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdin
 			ExitCode: exitErr.ExitCode(),
 		}, nil
 	}
-
 	return cliExecResult{
 		Stdout:   stdout.String(),
 		Stderr:   stderr.String(),

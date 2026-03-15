@@ -1,0 +1,31 @@
+{
+  "id": "update_50_0009_err_update_validation_dry_run_does_not_skip_validation_json",
+  "description": "update_50_0009_err_update_validation_dry_run_does_not_skip_validation_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--content-file",
+    "${WORKSPACE}/input/body-invalid-missing-summary.md",
+    "--dry-run"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "update_10_0009_ok_update_clear_content_for_memo_json",
+  "description": "update_10_0009_ok_update_clear_content_for_memo_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "MEMO-1",
+    "--clear-content",
+    "--expect-revision",
+    "sha256:f5f2bc6737372a813f335ba587c0ebbc5b1821d7f25c030ed219bbf1f1c7a90f"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

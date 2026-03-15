@@ -146,7 +146,7 @@ func runAddCommandOnFreshWorkspace(
 	}
 
 	replacedArgs := replacePlaceholders(args, workspacePath, schemaPath)
-	result, err := runCLIProcess(context.Background(), replacedArgs, "2026-03-10", stdinValue)
+	result, err := runCLIProcess(context.Background(), replacedArgs, "2026-03-10", stdinValue, nil)
 	if err != nil {
 		t.Fatalf("run subprocess: %v", err)
 	}

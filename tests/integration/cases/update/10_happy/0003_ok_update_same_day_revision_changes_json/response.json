@@ -1,0 +1,40 @@
+{
+  "changes": [
+    {
+      "after": "team-platform",
+      "before": "team-risk",
+      "field": "meta.owner",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-01-15",
+    "id": "FEAT-3",
+    "meta": {
+      "owner": "team-platform",
+      "priority": 30,
+      "status": "deprecated",
+      "tags": [
+        "ops",
+        "backfill"
+      ]
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-2"
+      }
+    },
+    "revision": "sha256:52a0f37d4d5cb2b42804070eea1e75050dfb67309be6f3abb666f22ce5381bce",
+    "slug": "batch-replay",
+    "type": "feature",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

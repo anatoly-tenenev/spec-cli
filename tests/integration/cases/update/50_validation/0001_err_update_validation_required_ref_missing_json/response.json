@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.required_missing",
+            "entity": {
+              "id": "FEAT-1",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.container",
+            "level": "error",
+            "message": "required field 'container' is missing",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "updated entity failed validation"
+  },
+  "result_state": "invalid"
+}

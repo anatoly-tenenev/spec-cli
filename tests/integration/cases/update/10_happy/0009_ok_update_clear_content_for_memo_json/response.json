@@ -1,0 +1,30 @@
+{
+  "changes": [
+    {
+      "after_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "before_hash": "sha256:f2ae10126a1556b8dbd4e77b62526ffea93e6031785f6ed6afa9a2905e3f35c9",
+      "field": "content.raw",
+      "op": "clear"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-02-12",
+    "id": "MEMO-1",
+    "meta": {
+      "title": "Weekly sync"
+    },
+    "refs": {},
+    "revision": "sha256:bbed15b85a39e988a80c29e86249f619dbf9697367803d518f14441d43659bc3",
+    "slug": "weekly-sync",
+    "type": "memo",
+    "updated_date": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

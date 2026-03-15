@@ -1,0 +1,32 @@
+{
+  "id": "update_70_0002_ok_update_concurrency_positive_revision_match_json",
+  "description": "update_70_0002_ok_update_concurrency_positive_revision_match_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-2",
+    "--set",
+    "meta.owner=team-core",
+    "--expect-revision",
+    "sha256:66eb026dcb7cfe3eebdcefb4c0d7a8e82641356a5f438626d8b12c6ff41401cd"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

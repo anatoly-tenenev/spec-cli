@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "--content-file, --content-stdin and --clear-content are mutually exclusive"
+  },
+  "result_state": "invalid"
+}

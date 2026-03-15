@@ -1,0 +1,32 @@
+{
+  "id": "update_30_0006_err_update_duplicate_set_and_set_file_path_json",
+  "description": "update_30_0006_err_update_duplicate_set_and_set_file_path_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "content.sections.summary=x",
+    "--set-file",
+    "content.sections.summary=${WORKSPACE}/input/summary-multiline.md"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var tempFilePattern = regexp.MustCompile(`\.spec-cli-add-[0-9]+\.tmp`)
+var tempFilePattern = regexp.MustCompile(`\.spec-cli-(?:add|update(?:-backup)?)-[0-9]+\.tmp`)
 
 type WorkspacePermission struct {
 	Path string

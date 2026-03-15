@@ -1,0 +1,31 @@
+{
+  "id": "update_30_0004_err_update_conflict_content_file_and_clear_json",
+  "description": "update_30_0004_err_update_conflict_content_file_and_clear_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--content-file",
+    "${WORKSPACE}/input/body-valid.md",
+    "--clear-content"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

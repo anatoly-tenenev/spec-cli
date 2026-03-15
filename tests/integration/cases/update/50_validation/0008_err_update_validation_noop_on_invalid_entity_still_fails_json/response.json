@@ -1,0 +1,53 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "content.required_missing",
+            "entity": {
+              "id": "FEAT-9",
+              "slug": "broken-retry-window",
+              "type": "feature"
+            },
+            "field": "content.sections.summary",
+            "level": "error",
+            "message": "required content section 'summary' is missing",
+            "standard_ref": "12.2"
+          },
+          {
+            "class": "InstanceError",
+            "code": "meta.entity_ref_target_missing",
+            "entity": {
+              "id": "FEAT-9",
+              "slug": "broken-retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.container",
+            "level": "error",
+            "message": "entity_ref 'container' points to missing id 'SVC-999'",
+            "standard_ref": "11.5"
+          },
+          {
+            "class": "InstanceError",
+            "code": "meta.required_enum_mismatch",
+            "entity": {
+              "id": "FEAT-9",
+              "slug": "broken-retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.status",
+            "level": "error",
+            "message": "field 'status' value is outside enum",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "updated entity failed validation"
+  },
+  "result_state": "invalid"
+}

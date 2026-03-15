@@ -1,0 +1,5 @@
+## Summary {#summary}
+Body summary from file.
+
+## Implementation {#implementation}
+Body implementation from file.

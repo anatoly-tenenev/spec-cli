@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "reason": "open /Users/tenenev/Projects/spec-cli/tmp/update-cases-gen/run-90-0001-SSykDg/workspace/docs/broken.md: permission denied"
+    },
+    "exit_code": 3,
+    "message": "failed to read workspace document"
+  },
+  "result_state": "invalid"
+}

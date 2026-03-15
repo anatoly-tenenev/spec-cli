@@ -1,0 +1,32 @@
+{
+  "id": "update_80_0001_err_update_fs_path_conflict_json",
+  "description": "update_80_0001_err_update_fs_path_conflict_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "refs.container=SVC-3",
+    "--expect-revision",
+    "sha256:d6382f3e3d2e60d89dc17e124d284dc0d3e1cca624f3063c9cd9e514a274fa6f"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

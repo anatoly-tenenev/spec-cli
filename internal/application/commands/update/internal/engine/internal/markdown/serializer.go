@@ -69,14 +69,18 @@ func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byt
 	return []byte(document), nil
 }
 
+// ComputeRevision returns the revision token for serialized candidate bytes.
 func ComputeRevision(serialized []byte) string {
-	hash := sha256.Sum256(serialized)
-	return "sha256:" + hex.EncodeToString(hash[:])
+	return computeSHA256Revision(serialized)
 }
 
+// ComputePersistedRevision returns the revision token for bytes as persisted on disk.
 func ComputePersistedRevision(raw []byte) string {
-	normalized := applyPlatformNewlines(withTrailingNewline(strings.ReplaceAll(string(raw), "\r\n", "\n")))
-	hash := sha256.Sum256([]byte(normalized))
+	return computeSHA256Revision(raw)
+}
+
+func computeSHA256Revision(data []byte) string {
+	hash := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(hash[:])
 }
 
