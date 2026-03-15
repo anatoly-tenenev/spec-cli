@@ -2,6 +2,7 @@
 bin/
 dist/
 spec-cli
+!cmd/spec-cli
 *.exe
 *.exe~
 *.dll
@@ -11,8 +12,8 @@ spec-cli
 # Go test artifacts
 *.test
 *.out
-coverage.out
 !workspace.out
+coverage.out
 
 # IDE / OS
 .DS_Store
