@@ -13,6 +13,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/version"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -35,6 +36,7 @@ func NewApp(stdout, stderr io.Writer, now func() time.Time) *App {
 	bus.Register("add", add.NewHandler(now))
 	bus.Register("update", update.NewHandler(now))
 	bus.Register("delete", delete.NewHandler())
+	bus.Register("version", version.NewHandler())
 
 	return &App{
 		stdout: stdout,

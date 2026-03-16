@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "unknown version option: --unknown-flag",
+    "exit_code": 2
+  }
+}

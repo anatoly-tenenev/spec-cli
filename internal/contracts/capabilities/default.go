@@ -6,5 +6,7 @@ var Default = []string{
 	"get",
 	"add",
 	"update",
+	"delete",
+	"version",
 	"format:json",
 }

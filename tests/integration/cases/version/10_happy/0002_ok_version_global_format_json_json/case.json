@@ -1,0 +1,15 @@
+{
+  "id": "version_10_0002_ok_version_global_format_json_json",
+  "description": "version_10_0002_ok_version_global_format_json_json",
+  "command": "version",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","--format","json","version"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

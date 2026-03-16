@@ -17,21 +17,22 @@
 7. Для `add`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 8. Для `update`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 9. Для `delete`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+10. Для `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> сборка payload `result_state/version`.
 
 ## Состояние Binary Entrypoint
 
 - Entry point бинарника: `cmd/spec-cli/main.go` — `main`.
 - `main` инициализирует `cli.NewApp(os.Stdout, os.Stderr, time.Now)` и завершает процесс через `os.Exit(app.Run(context.Background(), os.Args[1:]))`.
-- Команды `make build`/`make run` используют пакет `./cmd/spec-cli` и собирают единый бинарник `spec-cli`.
+- Команда `make build` собирает `./cmd/spec-cli` в `bin/spec-cli` с `-ldflags` injection переменной `internal/buildinfo.Version` (по умолчанию `VERSION=dev`); `make run` запускает пакет `./cmd/spec-cli`.
 
 ## Карта слоёв
 
 - `internal/cli`
   - Entry point: `internal/cli/app.go` — `NewApp`, `(*App).Run`.
   - Ответственность:
-    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`, `delete`) через command bus.
-    - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`).
-    - Единый рендеринг успешных и ошибочных ответов в `json`.
+    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`, `delete`, `version`) через command bus.
+    - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) c поддержкой `json`.
+    - Единый рендеринг успешных и ошибочных ответов в JSON-контракте.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commandbus`
@@ -512,6 +513,31 @@
     - Унифицированная сборка `validation.issues` payload для schema и runtime ошибок.
   - Подпакеты: отсутствуют.
 
+- `internal/application/commands/version`
+  - Entry point: `internal/application/commands/version/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Ответственность:
+    - Оркестрация команды `version`: parse command options -> resolve build version -> собрать success payload.
+    - Формирование минимального JSON payload (`result_state`, `version`) без обращения к workspace/schema.
+    - Возврат `INTERNAL_ERROR` при сбое version provider и `INVALID_ARGS` при ошибке аргументов команды.
+  - Подпакеты:
+    - `version/internal/options` — parse command-specific опций (в baseline отсутствуют) и валидация неизвестных аргументов.
+
+- `internal/application/commands/version/internal/options`
+  - Entry point: `internal/application/commands/version/internal/options/parse.go` — `Parse`.
+  - Ответственность:
+    - Парсинг аргументов команды `version` в режиме без доменных/файловых опций.
+    - Возврат `INVALID_ARGS` для любых неизвестных command-specific опций.
+    - Нормализация формы `--flag=value` для диагностики имени опции.
+  - Подпакеты: отсутствуют.
+
+- `internal/buildinfo`
+  - Entry point: `internal/buildinfo/version.go` — `ResolveVersion`.
+  - Ответственность:
+    - Единый runtime source строки версии сборки.
+    - Build-time injection переменной `Version` через `-ldflags`.
+    - Детерминированный fallback (`dev`) для локальных сборок без CI injection.
+  - Подпакеты: отсутствуют.
+
 - `internal/contracts/requests`
   - Entry point: `internal/contracts/requests/options.go` — публичный API типов `OutputFormat`, `GlobalOptions`, `Command` (функции отсутствуют).
   - Ответственность:
@@ -531,8 +557,8 @@
 - `internal/contracts/capabilities`
   - Entry point: `internal/contracts/capabilities/default.go` — публичная переменная `Default`.
   - Ответственность:
-    - Декларация поддерживаемых команд (текущий `Default`: `validate`, `query`, `get`, `add`, `update`).
-    - Декларация поддерживаемых форматов вывода.
+    - Декларация поддерживаемых команд (текущий `Default`: `validate`, `query`, `get`, `add`, `update`, `delete`, `version`).
+    - Декларация поддерживаемых форматов вывода (`json`).
   - Подпакеты: отсутствуют.
 
 - `internal/domain/errors`
@@ -565,13 +591,13 @@
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`; `tests/integration/delete_multirun_test.go` — `TestDeleteHappy02DryRunMatchesRealRevision`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`; `tests/integration/delete_multirun_test.go` — `TestDeleteHappy02DryRunMatchesRealRevision`.
   - Ответственность:
-    - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add`, `update`, `delete` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add`, `update`, `delete`, `version` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
     - Подготовка временного workspace/schema и запуск CLI как subprocess через собранный бинарник (`exec.CommandContext`).
-    - Проверка `exit_code`, `stderr` и `json`-ответа против golden-ожиданий.
+    - Проверка `exit_code`, `stderr` и JSON-ответа против golden-ожиданий.
     - Для mutating-сценариев проверка `workspace.out` (полный набор файлов + содержимое) против фактического состояния workspace после команды.
     - Дополнительный dynamic black-box тест эквивалентности `delete` dry-run и real-run по `target.revision` на независимых чистых workspace-копиях.
   - Подпакеты:
@@ -612,6 +638,8 @@
     - `tests/integration/cases/delete/60_infra/*` — инфраструктурные ошибки загрузки схемы (`SCHEMA_PARSE_ERROR`).
     - `tests/integration/cases/delete/70_fs/*` — fs-ошибки на этапе удаления (`WRITE_FAILED`) после прохождения pre-checks.
     - `tests/integration/cases/delete/80_help/*` — контракт `delete --help`.
+    - `tests/integration/cases/version/10_happy/*` — happy-path `version` (`default json`, global `--format json`).
+    - `tests/integration/cases/version/20_args/*` — ошибки аргументов `version` (`unknown option`, command-level `--format`).
 
 ## Текущий статус команд
 
@@ -621,3 +649,4 @@
 - `add` — реализован baseline create pipeline (raw-schema write-contract, pre-write full validation, deterministic `id/date/revision`, dry-run и атомарная запись, json-контракт).
 - `delete` — реализован baseline delete pipeline (lookup по exact `id`, `--expect-revision`, reverse-ref blocking checks, `dry-run`, fs delete и json-контракт).
 - `update` — реализован baseline update pipeline (patch `--set/--set-file/--unset`, whole-body `--content-file|--content-stdin|--clear-content`, pre-commit full validation, `--expect-revision`, dry-run и атомарная запись с возможным move по `path_pattern`, json-контракт).
+- `version` — реализована baseline команда версии (единый build-time source `Version` с fallback `dev`, JSON-контракт, контрактные error-path сценарии).

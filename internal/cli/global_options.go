@@ -23,7 +23,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 		return opts, "", nil, domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			"command is required",
-			map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete"}},
+			map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete", "version"}},
 		)
 	}
 
@@ -120,7 +120,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 	return opts, "", nil, domainerrors.New(
 		domainerrors.CodeInvalidArgs,
 		"command is required",
-		map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete"}},
+		map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete", "version"}},
 	)
 }
 

@@ -17,11 +17,12 @@
 
 ### Общие документы
 
-- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `add`/`update`/`delete` и интеграционного раннера (`workspace.out` для mutating-команд).
+- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `add`/`update`/`delete`/`version` и интеграционного раннера (`workspace.out` для mutating-команд).
 
 ### 001 Base
 
 - [001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md) — спецификация прототипа CLI (`validate`, `query`, `add`, `update`), контрактные инварианты, архитектурные рамки, DoD.
+- [001-base/SPEC_UTILITY_CLI_VERSION_IMPLEMENTATION_PLAN_RU.md](./001-base/SPEC_UTILITY_CLI_VERSION_IMPLEMENTATION_PLAN_RU.md) — план реализации команды `spec-cli version` (JSON-контракт, общий глобальный `--format`, без command-specific `--format`, коды ошибок и покрытие контрактными тестами).
 - [001-base/PLAN_GET_IMPLEMENTATION_RU.md](./001-base/PLAN_GET_IMPLEMENTATION_RU.md) — подробный план реализации baseline-команды `spec-cli get` по API baseline и локальной рабочей спецификации.
 - [001-base/SPEC_UTILITY_CLI_ADD_IMPLEMENTATION_PLAN_RU.md](./001-base/SPEC_UTILITY_CLI_ADD_IMPLEMENTATION_PLAN_RU.md) — подробный план реализации команды `spec-cli add` для baseline CLI API: write-контракт из raw schema, pre-write validation, атомарная запись и black-box интеграционные тесты.
 - [001-base/QUERY_IMPLEMENTATION_PLAN_RU.md](./001-base/QUERY_IMPLEMENTATION_PLAN_RU.md) — детальный план реализации команды `spec-cli query` на стандартной схеме (`entity/meta.fields/content.sections`): CLI-контракт, read-namespace, фильтрация (включая ограничения `where-json` для `content.sections.*` и запрет `content.raw`), сортировка, пагинация, JSON-ответ и тест-план.

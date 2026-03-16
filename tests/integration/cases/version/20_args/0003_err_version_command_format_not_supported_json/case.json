@@ -1,0 +1,15 @@
+{
+  "id": "version_20_0003_err_version_command_format_not_supported_json",
+  "description": "version_20_0003_err_version_command_format_not_supported_json",
+  "command": "version",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","version","--format","json"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

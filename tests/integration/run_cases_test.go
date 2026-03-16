@@ -80,6 +80,10 @@ func TestDeleteCases(t *testing.T) {
 	runCommandCases(t, "delete")
 }
 
+func TestVersionCases(t *testing.T) {
+	runCommandCases(t, "version")
+}
+
 func runCommandCases(t *testing.T, command string) {
 	t.Helper()
 
