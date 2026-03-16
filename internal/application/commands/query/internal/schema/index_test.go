@@ -10,7 +10,7 @@ import (
 )
 
 func TestLoadAndBuildIndex_FromStandardSchema(t *testing.T) {
-	schemaText := `version: "0.0.3"
+	schemaText := `version: "0.0.4"
 entity:
   service:
     id_prefix: SVC
@@ -86,7 +86,7 @@ entity:
 
 func TestLoad_RejectsMissingEntity(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "spec.schema.yaml")
-	if err := os.WriteFile(path, []byte("version: \"0.0.3\"\nmodel: {}\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("version: \"0.0.4\"\nmodel: {}\n"), 0o644); err != nil {
 		t.Fatalf("write schema: %v", err)
 	}
 

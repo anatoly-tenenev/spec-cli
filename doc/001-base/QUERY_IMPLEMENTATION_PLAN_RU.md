@@ -187,7 +187,7 @@ Object-path в `where-json.field` запрещён.
 Для реализации `query` достаточно такого минимального shape:
 
 ```yaml
-version: "0.0.3"
+version: "0.0.4"
 entity:
   feature:
     id_prefix: FEAT

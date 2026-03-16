@@ -11,7 +11,7 @@ import (
 func TestLoadExtractsOnlyEntityRefSlots(t *testing.T) {
 	tempDir := t.TempDir()
 	schemaPath := filepath.Join(tempDir, "spec.schema.yaml")
-	raw := `version: "0.0.3"
+	raw := `version: "0.0.4"
 entity:
   feature:
     id_prefix: FEAT
