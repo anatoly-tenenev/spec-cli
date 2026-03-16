@@ -8,6 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "add",
+    "--format",
+    "json",
     "--type",
     "feature",
     "--slug",

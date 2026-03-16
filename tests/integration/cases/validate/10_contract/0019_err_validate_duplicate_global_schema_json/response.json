@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "unknown version option: --format",
+    "message": "duplicate global option: --schema",
     "exit_code": 2
   }
 }

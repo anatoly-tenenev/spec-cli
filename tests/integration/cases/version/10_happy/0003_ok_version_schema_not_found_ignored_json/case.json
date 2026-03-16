@@ -1,0 +1,15 @@
+{
+  "id": "version_10_0003_ok_version_schema_not_found_ignored_json",
+  "description": "version_10_0003_ok_version_schema_not_found_ignored_json",
+  "command": "version",
+  "args": ["--workspace","${WORKSPACE}","--schema","/tmp/spec-cli-missing-schema.yaml","version","--format","json"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

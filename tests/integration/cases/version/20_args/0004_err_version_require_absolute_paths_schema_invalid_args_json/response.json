@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "--schema must be absolute when --require-absolute-paths is enabled",
+    "exit_code": 2
+  }
+}

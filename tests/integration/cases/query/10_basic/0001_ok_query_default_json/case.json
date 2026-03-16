@@ -2,7 +2,7 @@
   "id": "query_10_0001_ok_query_default_json",
   "description": "query_10_0001_ok_query_default_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query"],
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--format","json"],
   "expect": {
     "exit_code": 0,
     "response_file": "response.json"

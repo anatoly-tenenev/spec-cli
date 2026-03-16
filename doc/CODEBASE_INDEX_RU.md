@@ -31,7 +31,8 @@
   - Entry point: `internal/cli/app.go` — `NewApp`, `(*App).Run`.
   - Ответственность:
     - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`, `delete`, `version`) через command bus.
-    - Парсинг глобальных опций CLI (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) c поддержкой `json`.
+    - Pre-dispatch парсинг global options (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) в обеих формах вызова: до и после имени команды.
+    - Детерминированная валидация global options: запрет дубликатов non-repeatable флагов и ранняя проверка `--require-absolute-paths` для явно переданных `--workspace/--schema`.
     - Единый рендеринг успешных и ошибочных ответов в JSON-контракте.
   - Подпакеты: отсутствуют.
 

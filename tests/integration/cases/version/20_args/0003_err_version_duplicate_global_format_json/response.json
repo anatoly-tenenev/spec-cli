@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "duplicate global option: --format",
+    "exit_code": 2
+  }
+}

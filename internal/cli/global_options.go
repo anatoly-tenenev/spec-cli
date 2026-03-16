@@ -2,12 +2,15 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
+
+var supportedCommands = []string{"validate", "query", "get", "add", "update", "delete", "version"}
 
 func defaultGlobalOptions() requests.GlobalOptions {
 	return requests.GlobalOptions{
@@ -23,14 +26,25 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 		return opts, "", nil, domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			"command is required",
-			map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete", "version"}},
+			map[string]any{"commands": supportedCommands},
 		)
 	}
+
+	commandName := ""
+	commandArgs := make([]string, 0, len(args))
+	commandSelected := false
+	seenGlobals := map[string]struct{}{}
+	explicitWorkspace := false
+	explicitSchema := false
 
 	for i := 0; i < len(args); i++ {
 		token := args[i]
 
 		if token == "--" {
+			if commandSelected {
+				commandArgs = append(commandArgs, args[i:]...)
+				break
+			}
 			return opts, "", nil, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
 				"command is required before '--'",
@@ -39,89 +53,188 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 		}
 
 		if !strings.HasPrefix(token, "-") {
-			if !isSupportedCommand(token) {
-				return opts, "", nil, domainerrors.New(
-					domainerrors.CodeInvalidArgs,
-					fmt.Sprintf("unknown command: %s", token),
-					map[string]any{"command": token},
-				)
+			if !commandSelected {
+				if !isSupportedCommand(token) {
+					return opts, "", nil, domainerrors.New(
+						domainerrors.CodeInvalidArgs,
+						fmt.Sprintf("unknown command: %s", token),
+						map[string]any{"command": token},
+					)
+				}
+				commandName = token
+				commandSelected = true
+				continue
 			}
-			return opts, token, args[i+1:], nil
+			commandArgs = append(commandArgs, token)
+			continue
 		}
 
 		name, value, hasValue := splitLongFlag(token)
-		if !strings.HasPrefix(name, "--") {
-			return opts, "", nil, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				fmt.Sprintf("unsupported option format: %s", token),
-				nil,
-			)
-		}
-
-		switch name {
-		case "--workspace":
-			v, next, err := valueWithFallback(args, i, hasValue, value)
-			if err != nil {
-				return opts, "", nil, err
-			}
-			opts.Workspace = v
-			i = next
-		case "--schema":
-			v, next, err := valueWithFallback(args, i, hasValue, value)
-			if err != nil {
-				return opts, "", nil, err
-			}
-			opts.SchemaPath = v
-			i = next
-		case "--format":
-			v, next, err := valueWithFallback(args, i, hasValue, value)
-			if err != nil {
-				return opts, "", nil, err
-			}
-			switch requests.OutputFormat(v) {
-			case requests.FormatJSON:
-				opts.Format = requests.OutputFormat(v)
-			default:
+		if !commandSelected {
+			if !strings.HasPrefix(name, "--") {
 				return opts, "", nil, domainerrors.New(
 					domainerrors.CodeInvalidArgs,
-					"--format must be one of: json",
-					map[string]any{"value": v},
+					fmt.Sprintf("unsupported option format: %s", token),
+					nil,
 				)
 			}
-			i = next
-		case "--config":
-			v, next, err := valueWithFallback(args, i, hasValue, value)
+
+			handled, nextIdx, usedWorkspace, usedSchema, err := consumeGlobalOption(args, i, name, value, hasValue, &opts, seenGlobals)
 			if err != nil {
 				return opts, "", nil, err
 			}
-			opts.ConfigPath = v
-			i = next
-		case "--require-absolute-paths":
-			parsed, err := parseBoolFlag(name, hasValue, value)
-			if err != nil {
-				return opts, "", nil, err
+			if handled {
+				explicitWorkspace = explicitWorkspace || usedWorkspace
+				explicitSchema = explicitSchema || usedSchema
+				i = nextIdx
+				continue
 			}
-			opts.RequireAbsolutePaths = parsed
-		case "--verbose":
-			parsed, err := parseBoolFlag(name, hasValue, value)
-			if err != nil {
-				return opts, "", nil, err
-			}
-			opts.Verbose = parsed
-		default:
+
 			return opts, "", nil, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
 				fmt.Sprintf("unknown global option: %s", name),
 				nil,
 			)
 		}
+
+		if strings.HasPrefix(name, "--") {
+			handled, nextIdx, usedWorkspace, usedSchema, err := consumeGlobalOption(args, i, name, value, hasValue, &opts, seenGlobals)
+			if err != nil {
+				return opts, "", nil, err
+			}
+			if handled {
+				explicitWorkspace = explicitWorkspace || usedWorkspace
+				explicitSchema = explicitSchema || usedSchema
+				i = nextIdx
+				continue
+			}
+		}
+
+		commandArgs = append(commandArgs, token)
 	}
 
-	return opts, "", nil, domainerrors.New(
-		domainerrors.CodeInvalidArgs,
-		"command is required",
-		map[string]any{"commands": []string{"validate", "query", "get", "add", "update", "delete", "version"}},
-	)
+	if !commandSelected {
+		return opts, "", nil, domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			"command is required",
+			map[string]any{"commands": supportedCommands},
+		)
+	}
+
+	if opts.RequireAbsolutePaths {
+		if explicitWorkspace && !filepath.IsAbs(opts.Workspace) {
+			return opts, "", nil, domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				"--workspace must be absolute when --require-absolute-paths is enabled",
+				nil,
+			)
+		}
+		if explicitSchema && !filepath.IsAbs(opts.SchemaPath) {
+			return opts, "", nil, domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				"--schema must be absolute when --require-absolute-paths is enabled",
+				nil,
+			)
+		}
+	}
+
+	return opts, commandName, commandArgs, nil
+}
+
+func consumeGlobalOption(
+	args []string,
+	currentIdx int,
+	name string,
+	value string,
+	hasValue bool,
+	opts *requests.GlobalOptions,
+	seen map[string]struct{},
+) (bool, int, bool, bool, *domainerrors.AppError) {
+	switch name {
+	case "--workspace":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		opts.Workspace = v
+		return true, next, true, false, nil
+	case "--schema":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		opts.SchemaPath = v
+		return true, next, false, true, nil
+	case "--format":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		switch requests.OutputFormat(v) {
+		case requests.FormatJSON:
+			opts.Format = requests.OutputFormat(v)
+		default:
+			return true, currentIdx, false, false, domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				"--format must be one of: json",
+				map[string]any{"value": v},
+			)
+		}
+		return true, next, false, false, nil
+	case "--config":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		opts.ConfigPath = v
+		return true, next, false, false, nil
+	case "--require-absolute-paths":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		parsed, err := parseBoolFlag(name, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		opts.RequireAbsolutePaths = parsed
+		return true, currentIdx, false, false, nil
+	case "--verbose":
+		if err := markGlobalOptionSeen(name, seen); err != nil {
+			return true, currentIdx, false, false, err
+		}
+		parsed, err := parseBoolFlag(name, hasValue, value)
+		if err != nil {
+			return true, currentIdx, false, false, err
+		}
+		opts.Verbose = parsed
+		return true, currentIdx, false, false, nil
+	default:
+		return false, currentIdx, false, false, nil
+	}
+}
+
+func markGlobalOptionSeen(name string, seen map[string]struct{}) *domainerrors.AppError {
+	if _, exists := seen[name]; exists {
+		return domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("duplicate global option: %s", name),
+			nil,
+		)
+	}
+	seen[name] = struct{}{}
+	return nil
 }
 
 func splitLongFlag(token string) (string, string, bool) {

@@ -1,0 +1,15 @@
+{
+  "id": "version_20_0004_err_version_require_absolute_paths_schema_invalid_args_json",
+  "description": "version_20_0004_err_version_require_absolute_paths_schema_invalid_args_json",
+  "command": "version",
+  "args": ["--workspace","${WORKSPACE}","version","--require-absolute-paths","--schema","spec.schema.yaml"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

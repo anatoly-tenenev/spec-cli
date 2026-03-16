@@ -1,0 +1,23 @@
+{
+  "id": "query_50_0002_err_query_duplicate_global_workspace_json",
+  "description": "query_50_0002_err_query_duplicate_global_workspace_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--workspace",
+    "${WORKSPACE}"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

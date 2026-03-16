@@ -8,6 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "update",
+    "--format",
+    "json",
     "--id",
     "FEAT-1",
     "--set",
