@@ -1,0 +1,15 @@
+{
+  "id": "help_15_0002_ok_help_schema_not_found_text",
+  "description": "help_15_0002_ok_help_schema_not_found_text",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${WORKSPACE}/missing.schema.yaml","help"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

@@ -1,0 +1,78 @@
+Command
+  help: show deterministic text help for CLI and commands
+
+Syntax
+  spec-cli help
+  spec-cli help <command>
+
+Schema
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
+  CLI-oriented projection:
+    version: "0.0.4"
+    description: Workspace specification schema
+    entity:
+      feature:
+        description: Feature specifications
+        id_prefix: FEAT
+        meta:
+          status:
+            description: Lifecycle status
+            required: false
+            schema:
+              type: string
+              enum:
+                - draft
+                - active
+                - deprecated
+          watchers:
+            description: Related services
+            required: false
+            schema:
+              type: array
+              items:
+                type: entity_ref
+                refTypes:
+                  - service
+        refs:
+          owner:
+            description: Parent service
+            required:
+              when:
+                eq?: [meta.status, active]
+            schema:
+              type: entity_ref
+              refTypes:
+                - service
+        content:
+          sections:
+            summary:
+              description: Short summary
+              required:
+                when:
+                  eq?: [meta.status, active]
+              title:
+                - Summary
+      service:
+        id_prefix: SVC
+        meta:
+          tier:
+            required: true
+            schema:
+              type: string
+
+Options
+  <command>
+    required: false
+    repeatable: false
+    description: Optional command name for detailed help.
+
+Rules
+  - Returns stable text-first output.
+  - Renders exactly one Schema section per invocation.
+  - Schema always includes ResolvedPath and Status; when schema is unavailable it includes ReasonCode, Impact, RecoveryClass and RetryCommand.
+  - help --format json returns CAPABILITY_UNSUPPORTED.
+
+Examples
+  spec-cli help
+  spec-cli help query

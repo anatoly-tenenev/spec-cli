@@ -1,0 +1,16 @@
+{
+  "id": "help_10_0010_ok_help_version_text",
+  "description": "help_10_0010_ok_help_version_text",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","help","version"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt",
+    "response_format": "text"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

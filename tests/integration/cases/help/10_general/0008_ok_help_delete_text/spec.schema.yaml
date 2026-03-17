@@ -1,0 +1,49 @@
+version: "0.0.4"
+description: Workspace specification schema
+entity:
+  feature:
+    description: Feature specifications
+    id_prefix: FEAT
+    meta:
+      fields:
+        status:
+          description: Lifecycle status
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - active
+              - deprecated
+        watchers:
+          description: Related services
+          required: false
+          schema:
+            type: array
+            items:
+              type: entity_ref
+              refTypes:
+                - service
+        owner:
+          description: Parent service
+          required_when:
+            eq?: [meta.status, active]
+          schema:
+            type: entity_ref
+            refTypes:
+              - service
+    content:
+      sections:
+        summary:
+          description: Short summary
+          required_when:
+            eq?: [meta.status, active]
+          title: Summary
+  service:
+    id_prefix: SVC
+    meta:
+      fields:
+        tier:
+          required: true
+          schema:
+            type: string

@@ -1,0 +1,139 @@
+Command
+  query: read many entities with structural filters and deterministic pagination
+
+Syntax
+  spec-cli query [options]
+
+Schema
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
+  CLI-oriented projection:
+    version: "0.0.4"
+    description: Workspace specification schema
+    entity:
+      feature:
+        description: Feature specifications
+        id_prefix: FEAT
+        meta:
+          status:
+            description: Lifecycle status
+            required: false
+            schema:
+              type: string
+              enum:
+                - draft
+                - active
+                - deprecated
+          watchers:
+            description: Related services
+            required: false
+            schema:
+              type: array
+              items:
+                type: entity_ref
+                refTypes:
+                  - service
+        refs:
+          owner:
+            description: Parent service
+            required:
+              when:
+                eq?: [meta.status, active]
+            schema:
+              type: entity_ref
+              refTypes:
+                - service
+        content:
+          sections:
+            summary:
+              description: Short summary
+              required:
+                when:
+                  eq?: [meta.status, active]
+              title:
+                - Summary
+      service:
+        id_prefix: SVC
+        meta:
+          tier:
+            required: true
+            schema:
+              type: string
+
+Options
+  --type <entity_type>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: entity type keys from Schema.entity
+    description: Early entity type filter.
+  --where-json <json>
+    takes_value: true
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: where-json.field paths from allowed where-json field subset of read-namespace
+    description: Structural filter JSON expression.
+  --select <field>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: read selectors from CLI read-namespace
+    description: Read-namespace projection selector.
+  --sort <field[:asc|desc]>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: sort fields from leaf-path subset of read-namespace
+    description: Deterministic sort term.
+  --limit <n>
+    takes_value: true
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Page size; integer >= 0; default 100.
+  --offset <n>
+    takes_value: true
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Page offset; integer >= 0; default 0.
+
+Rules
+  - Read-namespace arguments are --select, --sort and where-json.field.
+  - Read-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
+  - --type uses schema-derived entity type keys and is not part of read-namespace.
+  - If --select is omitted, default projection is type, id and slug.
+  - Query guarantees deterministic ordering.
+  - If --sort is omitted, effective sort is type:asc, then id:asc.
+  - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that tail is already present at the end.
+  - where-json logical nodes: {"op":"and","filters":[...]}, {"op":"or","filters":[...]}, {"op":"not","filter":{...}}.
+  - where-json leaf node: {"field":"meta.status","op":"eq","value":"active"}.
+  - Leaf operators: eq, neq, in, not_in, exists, not_exists, gt, gte, lt, lte, contains.
+  - exists/not_exists do not use value; in/not_in require array value; all other leaf operators require value.
+  - Allowed where-json fields: built-in read leaf paths, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.sections.<name>.
+  - content.raw is forbidden in where-json even though it is a selectable read-namespace field.
+  - For content.sections.<name> where-json supports contains, exists and not_exists only.
+  - gt/gte/lt/lte are valid only for numbers and YYYY-MM-DD dates; dates compare lexicographically.
+  - Comparison with incompatible type returns INVALID_QUERY, not false.
+  - For enum fields, eq/neq/in/not_in values must belong to enum with case sensitivity, otherwise INVALID_QUERY.
+  - Missing value semantics: exists returns true only when value is present; not_exists returns true only when value is absent; all other leaf operators return false for missing value.
+
+Examples
+  spec-cli query --type feature --select id --select meta.status
+  spec-cli query --where-json '{"field":"meta.status","op":"eq","value":"active"}'
+  spec-cli query --where-json '{"op":"and","filters":[{"field":"meta.status","op":"eq","value":"active"},{"field":"refs.owner.id","op":"eq","value":"SVC-2"}]}'
+  spec-cli query --where-json '{"field":"content.sections.summary","op":"contains","value":"retry"}'
+  spec-cli query --where-json '{"field":"refs.owner.id","op":"eq","value":"SVC-2"}'
+  spec-cli query --sort updated_date:desc --limit 50 --offset 0

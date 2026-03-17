@@ -1,0 +1,412 @@
+CLI
+  spec-cli is a machine-first CLI utility for spec documents.
+
+Global options
+  --workspace <path>: optional; default "."; root workspace filesystem path
+  --schema <path>: optional; default "spec.schema.yaml"; effective schema filesystem path
+  --format <json|text>: optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED
+  --require-absolute-paths: optional; reject explicit relative filesystem paths
+
+Commands
+  help: show deterministic text help for CLI and commands
+  query: read many entities with structural filters and deterministic pagination
+  get: read one entity by exact id
+  add: create a new entity
+  update: patch one entity by exact id
+  delete: delete one entity by exact id
+  validate: validate schema and workspace documents
+  version: show CLI version
+
+Schema
+  ResolvedPath: /spec-cli-fixed-root/workspace/missing.schema.yaml
+  Status: missing
+  ReasonCode: SCHEMA_NOT_FOUND
+  Impact: schema-derived entity types, namespace paths, enum values and CLI projection of schema-derived fields are unavailable; do not infer these values heuristically
+  RecoveryClass: provide_explicit_schema
+  RetryCommand: spec-cli --schema <path> help
+
+Command details
+help
+  Syntax
+    spec-cli help
+    spec-cli help <command>
+  Options
+    <command>
+      required: false
+      repeatable: false
+      description: Optional command name for detailed help.
+  Rules
+    - Returns stable text-first output.
+    - Renders exactly one Schema section per invocation.
+    - Schema always includes ResolvedPath and Status; when schema is unavailable it includes ReasonCode, Impact, RecoveryClass and RetryCommand.
+    - help --format json returns CAPABILITY_UNSUPPORTED.
+  Examples
+    spec-cli help
+    spec-cli help query
+
+query
+  Syntax
+    spec-cli query [options]
+  Options
+    --type <entity_type>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: entity type keys from Schema.entity
+      description: Early entity type filter.
+    --where-json <json>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: where-json.field paths from allowed where-json field subset of read-namespace
+      description: Structural filter JSON expression.
+    --select <field>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: read selectors from CLI read-namespace
+      description: Read-namespace projection selector.
+    --sort <field[:asc|desc]>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: sort fields from leaf-path subset of read-namespace
+      description: Deterministic sort term.
+    --limit <n>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Page size; integer >= 0; default 100.
+    --offset <n>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Page offset; integer >= 0; default 0.
+  Rules
+    - Read-namespace arguments are --select, --sort and where-json.field.
+    - Read-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
+    - --type uses schema-derived entity type keys and is not part of read-namespace.
+    - If --select is omitted, default projection is type, id and slug.
+    - Query guarantees deterministic ordering.
+    - If --sort is omitted, effective sort is type:asc, then id:asc.
+    - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that tail is already present at the end.
+    - where-json logical nodes: {"op":"and","filters":[...]}, {"op":"or","filters":[...]}, {"op":"not","filter":{...}}.
+    - where-json leaf node: {"field":"meta.status","op":"eq","value":"active"}.
+    - Leaf operators: eq, neq, in, not_in, exists, not_exists, gt, gte, lt, lte, contains.
+    - exists/not_exists do not use value; in/not_in require array value; all other leaf operators require value.
+    - Allowed where-json fields: built-in read leaf paths, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.sections.<name>.
+    - content.raw is forbidden in where-json even though it is a selectable read-namespace field.
+    - For content.sections.<name> where-json supports contains, exists and not_exists only.
+    - gt/gte/lt/lte are valid only for numbers and YYYY-MM-DD dates; dates compare lexicographically.
+    - Comparison with incompatible type returns INVALID_QUERY, not false.
+    - For enum fields, eq/neq/in/not_in values must belong to enum with case sensitivity, otherwise INVALID_QUERY.
+    - Missing value semantics: exists returns true only when value is present; not_exists returns true only when value is absent; all other leaf operators return false for missing value.
+  Examples
+    spec-cli query --type feature --select id --select meta.status
+    spec-cli query --where-json '{"field":"meta.status","op":"eq","value":"active"}'
+    spec-cli query --where-json '{"op":"and","filters":[{"field":"meta.status","op":"eq","value":"active"},{"field":"refs.owner.id","op":"eq","value":"SVC-2"}]}'
+    spec-cli query --where-json '{"field":"content.sections.summary","op":"contains","value":"retry"}'
+    spec-cli query --where-json '{"field":"refs.owner.id","op":"eq","value":"SVC-2"}'
+    spec-cli query --sort updated_date:desc --limit 50 --offset 0
+
+get
+  Syntax
+    spec-cli get [options] --id <entity_id>
+  Options
+    --id <entity_id>
+      takes_value: true
+      required: true
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Exact target id.
+    --select <field>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: read selectors from CLI read-namespace
+      description: Read-namespace projection selector.
+  Rules
+    - Read-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
+    - --select uses read-namespace leaf paths.
+    - --id addresses one entity by exact id and returns a single-entity read result.
+    - If --select is omitted, default projection is type, id, slug, revision and meta.
+    - If selected content.sections.<name> is absent, the field must be present with null value.
+    - Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.
+  Examples
+    spec-cli get --id FEAT-8
+    spec-cli get --id FEAT-8 --select id --select meta.status
+
+add
+  Syntax
+    spec-cli add --type <entity_type> --slug <slug> [options]
+  Options
+    --type <entity_type>
+      takes_value: true
+      required: true
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: entity type keys from Schema.entity
+      description: Target entity type.
+    --slug <slug>
+      takes_value: true
+      required: true
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Entity slug for id/path derivation.
+    --set <path=value>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: write paths from CLI write-namespace
+      description: Set writable slot value by write-namespace path.
+    --set-file <path=file_path>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: content.sections.<name> from raw schema sections
+      description: Set section body from file content.
+    --content-file <path>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: content_body_source
+      schema_derived: false
+      schema_derivation: none
+      description: Whole-body content source from filesystem path.
+    --content-stdin
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: content_body_source
+      schema_derived: false
+      schema_derivation: none
+      description: Whole-body content source from stdin.
+    --dry-run
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Run validation and planning without filesystem mutation.
+  Rules
+    - Write-namespace arguments are --set and --set-file.
+    - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
+    - Projection from raw schema: non-entity_ref metadata -> meta.<name>; scalar entity_ref metadata -> refs.<field>; sections -> content.sections.<name>.
+    - Allowed write-paths are derived from the effective schema.
+    - refs.<field> values are target entity ids.
+    - --set-file is allowed only for content.sections.<name>.
+    - Whole-body inputs --content-file and --content-stdin are not write-namespace paths.
+    - Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.
+    - --content-file and --content-stdin are mutually exclusive.
+  Examples
+    spec-cli add --type feature --slug login-flow --set meta.status=active
+    spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'
+    spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md
+    spec-cli add --type feature --slug login-flow --content-file ./input/body.md
+
+update
+  Syntax
+    spec-cli update [options] --id <entity_id>
+  Options
+    --id <entity_id>
+      takes_value: true
+      required: true
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Exact target id.
+    --set <path=value>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: write paths from CLI write-namespace
+      description: Set writable slot by write-namespace path.
+    --set-file <path=file_path>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: content.sections.<name> from raw schema sections
+      description: Set section body from file content.
+    --unset <path>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: write paths from CLI write-namespace
+      description: Unset writable slot by write-namespace path.
+    --content-file <path>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: body_operation
+      schema_derived: false
+      schema_derivation: none
+      description: Replace whole content from filesystem path.
+    --content-stdin
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: body_operation
+      schema_derived: false
+      schema_derivation: none
+      description: Replace whole content from stdin.
+    --clear-content
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: body_operation
+      schema_derived: false
+      schema_derivation: none
+      description: Clear whole content.
+    --expect-revision <token>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Optimistic concurrency token for exact-match guard.
+    --dry-run
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Run full checks without filesystem mutation.
+  Rules
+    - Write-namespace arguments are --set, --set-file and --unset.
+    - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
+    - Projection from raw schema: non-entity_ref metadata -> meta.<name>; scalar entity_ref metadata -> refs.<field>; sections -> content.sections.<name>.
+    - Allowed write-paths are derived from the effective schema.
+    - refs.<field> values are target entity ids.
+    - --set-file is allowed only for content.sections.<name>.
+    - Whole-body operations are --content-file, --content-stdin and --clear-content; they are not write-namespace paths.
+    - Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.
+    - At least one patch operation must be provided.
+    - --unset removes a writable slot by write-namespace path.
+    - Whole-body operations and content.sections.<name> path-based operations cannot be mixed.
+    - --content-file, --content-stdin and --clear-content are mutually exclusive.
+    - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
+  Examples
+    spec-cli update --id FEAT-8 --set meta.status=deprecated
+    spec-cli update --id FEAT-8 --unset refs.owner
+    spec-cli update --id FEAT-8 --set-file content.sections.summary=./input/summary.md
+    spec-cli update --id FEAT-8 --content-file ./input/body.md --expect-revision sha256:...
+
+delete
+  Syntax
+    spec-cli delete [options] --id <entity_id>
+  Options
+    --id <entity_id>
+      takes_value: true
+      required: true
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Exact target id.
+    --expect-revision <token>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Optimistic concurrency token for exact-match guard.
+    --dry-run
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Run full checks without filesystem mutation.
+  Rules
+    - Target lookup uses exact id match only.
+    - Deletion is blocked when incoming entity_ref references exist.
+    - Blocking checks include scalar entity_ref and array items with entity_ref type.
+    - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
+  Examples
+    spec-cli delete --id FEAT-8
+    spec-cli delete --id FEAT-8 --expect-revision sha256:...
+    spec-cli delete --id FEAT-8 --dry-run
+
+validate
+  Syntax
+    spec-cli validate [options]
+  Options
+    --type <entity_type>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: entity type keys from Schema.entity
+      description: Restrict validation to selected entity types.
+    --fail-fast
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Stop checks after first blocking validation error when supported by rule.
+    --warnings-as-errors
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Treat warnings as non-zero exit status.
+  Rules
+    - Validation always includes effective schema and workspace documents in one deterministic run.
+    - Type filters are validated against schema-derived entity type keys.
+  Examples
+    spec-cli validate
+    spec-cli validate --type feature --type service
+    spec-cli validate --fail-fast
+    spec-cli validate --warnings-as-errors
+
+version
+  Syntax
+    spec-cli version
+  Options
+    none
+  Rules
+    - Returns semantic version string for current binary build.
+  Examples
+    spec-cli version

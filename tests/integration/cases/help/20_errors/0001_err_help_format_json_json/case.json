@@ -1,0 +1,15 @@
+{
+  "id": "help_20_0001_err_help_format_json_json",
+  "description": "help_20_0001_err_help_format_json_json",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","--format","json","help"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

@@ -7,13 +7,6 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commandbus"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/version"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -30,13 +23,7 @@ type App struct {
 
 func NewApp(stdout, stderr io.Writer, now func() time.Time) *App {
 	bus := commandbus.New()
-	bus.Register("validate", validate.NewHandler())
-	bus.Register("query", query.NewHandler())
-	bus.Register("get", get.NewHandler())
-	bus.Register("add", add.NewHandler(now))
-	bus.Register("update", update.NewHandler(now))
-	bus.Register("delete", delete.NewHandler())
-	bus.Register("version", version.NewHandler())
+	registerCommandHandlers(bus, now)
 
 	return &App{
 		stdout: stdout,
@@ -51,6 +38,15 @@ func (a *App) Run(ctx context.Context, args []string) int {
 	if parseErr != nil {
 		a.writeError(parseErr)
 		return parseErr.ExitCode
+	}
+	if globalOpts.Format == requests.FormatText && commandName != "help" {
+		unsupported := domainerrors.New(
+			domainerrors.CodeCapabilityUnsupported,
+			"text output is supported only for help command",
+			nil,
+		)
+		a.writeError(unsupported)
+		return unsupported.ExitCode
 	}
 
 	result, runErr := a.bus.Dispatch(ctx, requests.Command{
@@ -81,6 +77,10 @@ func (a *App) Run(ctx context.Context, args []string) int {
 }
 
 func (a *App) writeSuccess(result responses.CommandOutput) error {
+	if result.Text != "" {
+		_, err := io.WriteString(a.stdout, result.Text)
+		return err
+	}
 	return jsonwriter.New(a.stdout).Write(result.JSON)
 }
 

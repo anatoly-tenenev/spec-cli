@@ -9,7 +9,7 @@ func ResultStateForCode(code domainerrors.Code) responses.ResultState {
 	switch code {
 	case domainerrors.CodeEntityNotFound:
 		return responses.ResultStateNotFound
-	case domainerrors.CodeNotImplemented:
+	case domainerrors.CodeCapabilityUnsupported, domainerrors.CodeNotImplemented:
 		return responses.ResultStateUnsupported
 	case domainerrors.CodeInternalError:
 		return responses.ResultStateIndeterminate

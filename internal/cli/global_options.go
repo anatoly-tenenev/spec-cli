@@ -10,8 +10,6 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-var supportedCommands = []string{"validate", "query", "get", "add", "update", "delete", "version"}
-
 func defaultGlobalOptions() requests.GlobalOptions {
 	return requests.GlobalOptions{
 		Workspace:  ".",
@@ -26,7 +24,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 		return opts, "", nil, domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			"command is required",
-			map[string]any{"commands": supportedCommands},
+			map[string]any{"commands": supportedCommandNames()},
 		)
 	}
 
@@ -117,7 +115,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 		return opts, "", nil, domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			"command is required",
-			map[string]any{"commands": supportedCommands},
+			map[string]any{"commands": supportedCommandNames()},
 		)
 	}
 
@@ -180,12 +178,13 @@ func consumeGlobalOption(
 			return true, currentIdx, false, false, err
 		}
 		switch requests.OutputFormat(v) {
-		case requests.FormatJSON:
+		case requests.FormatJSON, requests.FormatText:
 			opts.Format = requests.OutputFormat(v)
+			opts.FormatExplicit = true
 		default:
 			return true, currentIdx, false, false, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
-				"--format must be one of: json",
+				"--format must be one of: json, text",
 				map[string]any{"value": v},
 			)
 		}

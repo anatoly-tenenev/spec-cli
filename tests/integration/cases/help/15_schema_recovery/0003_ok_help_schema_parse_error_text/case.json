@@ -1,0 +1,15 @@
+{
+  "id": "help_15_0003_ok_help_schema_parse_error_text",
+  "description": "help_15_0003_ok_help_schema_parse_error_text",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","help"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

@@ -11,13 +11,14 @@
 1. `internal/cli/app.go` — `NewApp`, `(*App).Run`.
 2. `internal/application/commandbus/bus.go` — `(*Bus).Dispatch`.
 3. `internal/application/commands/<command>/handler.go` — `(*Handler).Handle`.
-4. Для `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
-5. Для `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
-6. Для `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
-7. Для `add`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-8. Для `update`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-9. Для `delete`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-10. Для `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> сборка payload `result_state/version`.
+4. Для `help`: `options.Parse` -> `options.NormalizePaths` (канонический `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
+5. Для `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
+6. Для `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
+7. Для `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
+8. Для `add`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+9. Для `update`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+10. Для `delete`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+11. Для `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> сборка payload `result_state/version`.
 
 ## Состояние Binary Entrypoint
 
@@ -30,10 +31,11 @@
 - `internal/cli`
   - Entry point: `internal/cli/app.go` — `NewApp`, `(*App).Run`.
   - Ответственность:
-    - Сборка приложения и регистрация handlers (`validate`, `query`, `get`, `add`, `update`, `delete`, `version`) через command bus.
+    - Сборка приложения и регистрация handlers (`help`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`) через `internal/cli/command_catalog.go`.
     - Pre-dispatch парсинг global options (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) в обеих формах вызова: до и после имени команды.
     - Детерминированная валидация global options: запрет дубликатов non-repeatable флагов и ранняя проверка `--require-absolute-paths` для явно переданных `--workspace/--schema`.
-    - Единый рендеринг успешных и ошибочных ответов в JSON-контракте.
+    - Pre-dispatch capability-gate: `--format text` разрешён только для команды `help` (`CAPABILITY_UNSUPPORTED` для остальных).
+    - Единый рендеринг успешных и ошибочных ответов: JSON для командных payload/error и text-first для `help`.
   - Подпакеты: отсутствуют.
 
 - `internal/application/commandbus`
@@ -45,11 +47,12 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/validate`
-  - Entry point: `internal/application/commands/validate/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/validate/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/validate/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `validate`: parse options -> normalize paths -> load schema -> scan workspace -> run engine.
     - Объединение schema issues и instance issues в единый результат.
     - Формирование контрактного `json`-ответа и `ExitCode` с учётом `--warnings-as-errors`.
+    - Локальный owner командной справки `validate` (summary/syntax/options/rules/examples) для общего `help`.
   - Подпакеты:
     - `validate/internal/options` — parse/norm опций команды.
     - `validate/internal/schema` — загрузка и compile-time проверка схемы.
@@ -168,10 +171,11 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/query`
-  - Entry point: `internal/application/commands/query/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/query/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/query/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `query`: parse options -> normalize paths -> load schema -> build schema index -> build query plan -> load workspace views -> execute query.
     - Формирование контрактного `json`-ответа (`items`, `matched`, `page`) и `help`-ответа для `query --help`.
+    - Локальный owner командной справки `query` (summary/syntax/options/rules/examples) для общего `help`.
     - Единый вход для маппинга доменных ошибок (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, schema/read errors).
   - Подпакеты:
     - `query/internal/options` — parse/norm опций команды (`--type`, `--where-json`, `--select`, `--sort`, `--limit`, `--offset`).
@@ -217,11 +221,64 @@
     - Генерация подробного help-текста `query` в фиксированных секциях `Command/Syntax/Options/Rules/Examples/Schema`.
   - Подпакеты: отсутствуют.
 
+- `internal/application/commands/help`
+  - Entry point: `internal/application/commands/help/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/help/help.go` — `HelpSpec`.
+  - Ответственность:
+    - Оркестрация `spec-cli help` и `spec-cli help <command>` через единый ordered catalog команд.
+    - Capability-ограничение: explicit `--format json` для `help` возвращает `CAPABILITY_UNSUPPORTED`.
+    - Гарантированный discovery-путь: успешный `help`/`help <command>` при schema-problems (`missing|invalid|error`) с деградированным `Schema`-контрактом вместо hard-fail.
+    - Рендер text-first help с ровно одной секцией `Schema`, где всегда присутствуют `ResolvedPath` и `Status`.
+    - Стабильный recovery-блок (`ReasonCode/Impact/RecoveryClass/RetryCommand`) при `Status != loaded` без изменения бизнес-логики команд.
+    - Возврат `INVALID_ARGS` для неизвестной команды в `help <command>`.
+  - Подпакеты:
+    - `help/internal/options` — parse positional `help`-аргументов, canonical absolute-path для schema и runtime-детерминизация `ResolvedPath` через fixed-root инъекцию.
+
+- `internal/application/help/helpmodel`
+  - Entry point: `internal/application/help/helpmodel/model.go` — `NewCatalog`, `MustCatalog`, `(*Catalog).Ordered`, `(*Catalog).Find`, `(*Catalog).Names`, `(*Catalog).Has`.
+  - Ответственность:
+    - Typed-model для командного help-контракта (`CommandSpec`, `PositionalSpec`, `OptionSpec`, `GlobalOptionSpec`).
+    - Единый ordered command catalog для генерации `Commands` и `Command details`.
+    - Валидация уникальности команд в каталоге.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/help/helpglobal`
+  - Entry point: `internal/application/help/helpglobal/options.go` — `Options`.
+  - Ответственность:
+    - Единый compact descriptor global options для top-level секции `Global options`.
+    - Нормативные формулировки для `--workspace`, `--schema`, `--format`, `--require-absolute-paths`.
+  - Подпакеты: отсутствуют.
+
+- `internal/application/help/helpschema`
+  - Entry point: `internal/application/help/helpschema/projector.go` — `LoadReport`.
+  - Ответственность:
+    - Чтение effective schema, parse YAML AST и детерминированная проекция raw schema -> CLI-oriented schema view.
+    - Классификация недоступности schema в статусы `loaded|missing|invalid|error` и reason-коды (`SCHEMA_NOT_FOUND`, `SCHEMA_NOT_READABLE`, `SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`, `SCHEMA_PROJECTION_ERROR`).
+    - Формирование recovery-контракта degraded-режима (`Impact`, `RecoveryClass`, `RetryCommand`) без partial/heuristic schema-derived данных.
+    - Передача в report filesystem-path представления `ResolvedPath` (absolute path после резолва).
+    - Нормализация `meta.fields -> meta|refs`, `required|required_when -> required`, `title -> string[]`.
+    - Исключение storage-facing узлов (`path_pattern`, raw `meta.fields`) и скрытие пустых блоков.
+    - Canonical emission выражений `required.when` и канонический порядок ключей schema-поддерева.
+  - Подпакеты:
+    - `helpschema/internal/projector` — thin orchestration entrypoint projection-слоя (`LoadProjection`) и mapping `pipeline -> use-case`.
+    - `helpschema/internal/projector/internal/pipeline` — полный pipeline projection/render: AST parse, ordered projection, canonical `required.when`, deterministic YAML emission.
+    - `helpschema/internal/projector/internal/pipeline/internal/yamlnodes` — изолированные YAML-node primitives (mapping/sequence/scalar helpers, key-валидация, projection error mapping) для pipeline.
+
+- `internal/application/help/helptext`
+  - Entry point: `internal/application/help/helptext/renderer.go` — `RenderGeneral`, `RenderCommand`.
+  - Ответственность:
+    - Единый text-first renderer секций help с фиксированным порядком.
+    - Рендер нормализованного option-блока (positionals перед флагами, sentinel `none`).
+    - Рендер shared `Schema` секции: `ResolvedPath` печатается всегда; при `Status=loaded` — full projection, при degraded — фиксированный recovery-блок.
+    - В `help <command>` при degraded-schema добавление явного правила о том, что concrete schema-derived значения для `schema_derived` опций намеренно не перечисляются.
+    - Рендер command blocks без ANSI/табличных layout.
+  - Подпакеты: отсутствуют.
+
 - `internal/application/commands/get`
-  - Entry point: `internal/application/commands/get/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/get/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/get/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Формирование контрактного `json`-ответа (`result_state`, `target`, `entity`) для single-entity read.
+    - Локальный owner командной справки `get` (summary/syntax/options/rules/examples) для общего `help`.
     - Единая обработка доменных ошибок (`INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`).
   - Подпакеты:
     - `get/internal/options` — parse/norm опций команды (`--id`, повторяемый `--select`) и нормализация путей.
@@ -283,11 +340,12 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/add`
-  - Entry point: `internal/application/commands/add/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/add/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/add/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `add`: parse options -> normalize paths -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
     - Преобразование доменных ошибок `INVALID_ARGS`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema/read-write ошибок в единый JSON envelope.
     - Передача внедряемого `Clock` для детерминированной генерации `created_date`/`updated_date`.
+    - Локальный owner командной справки `add` (summary/syntax/options/rules/examples) для общего `help`.
   - Подпакеты:
     - `add/internal/options` — parse/norm опций `add` (`--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`) с конфликтами, дубликатами path и absolute-path policy.
     - `add/internal/schema` — загрузка raw schema и построение локального write-контракта для `add` (`meta.*`, `refs.*`, `content.sections.*`, `set-file allowlist`, `path_pattern`, `meta/content rules`).
@@ -356,11 +414,12 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/delete`
-  - Entry point: `internal/application/commands/delete/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/delete/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/delete/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `delete`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute delete/checks.
     - Обработка `--help` через `engine.HelpPayload` и возврат контрактного `json`-help ответа без побочных эффектов.
     - Единая маршрутизация доменных ошибок (`INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`).
+    - Локальный owner командной справки `delete` (summary/syntax/options/rules/examples) для общего `help`.
   - Подпакеты:
     - `delete/internal/options` — parse/norm опций `delete` (`--id`, `--expect-revision`, `--dry-run`, `--help`) и absolute-path policy.
     - `delete/internal/schema` — загрузка raw schema и извлечение reference slots (`entity_ref`, `array.items.entity_ref`) для reverse-ref проверок.
@@ -431,11 +490,12 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/update`
-  - Entry point: `internal/application/commands/update/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/update/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/update/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация пайплайна `update`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute update/checks.
     - Поддержка mutating-патча (`--set`, `--set-file`, `--unset`, whole-body операции) и optimistic concurrency (`--expect-revision`).
     - Возврат контрактного `json`-ответа (`updated/noop/changes/entity/validation`) с единым маппингом доменных ошибок.
+    - Локальный owner командной справки `update` (summary/syntax/options/rules/examples) для общего `help`.
   - Подпакеты:
     - `update/internal/options` — parse/norm опций `update` и конфликтов аргументов.
     - `update/internal/schema` — загрузка raw schema и построение write/read-контракта по типам.
@@ -515,11 +575,12 @@
   - Подпакеты: отсутствуют.
 
 - `internal/application/commands/version`
-  - Entry point: `internal/application/commands/version/handler.go` — `NewHandler`, `(*Handler).Handle`.
+  - Entry point: `internal/application/commands/version/handler.go` — `NewHandler`, `(*Handler).Handle`; `internal/application/commands/version/help.go` — `HelpSpec`.
   - Ответственность:
     - Оркестрация команды `version`: parse command options -> resolve build version -> собрать success payload.
     - Формирование минимального JSON payload (`result_state`, `version`) без обращения к workspace/schema.
     - Возврат `INTERNAL_ERROR` при сбое version provider и `INVALID_ARGS` при ошибке аргументов команды.
+    - Локальный owner командной справки `version` (summary/syntax/options/rules/examples) для общего `help`.
   - Подпакеты:
     - `version/internal/options` — parse command-specific опций (в baseline отсутствуют) и валидация неизвестных аргументов.
 
@@ -543,14 +604,14 @@
   - Entry point: `internal/contracts/requests/options.go` — публичный API типов `OutputFormat`, `GlobalOptions`, `Command` (функции отсутствуют).
   - Ответственность:
     - Контракт глобальных опций и командного запроса.
-    - Единый enum форматов вывода (`json`).
+    - Единый enum форматов вывода (`json`, `text`) и флаг явного выбора формата (`FormatExplicit`).
     - Передача запроса между CLI, bus и handlers.
   - Подпакеты: отсутствуют.
 
 - `internal/contracts/responses`
   - Entry point: `internal/contracts/responses/types.go` — публичный API типов `ResultState`, `CommandOutput` (функции отсутствуют).
   - Ответственность:
-    - Контракт ответа команды для `json`.
+    - Контракт ответа команды для `json` и text-first payload (`CommandOutput.Text`).
     - Единый enum `result_state`.
     - Транспорт `ExitCode` из use-case в CLI.
   - Подпакеты: отсутствуют.
@@ -558,14 +619,14 @@
 - `internal/contracts/capabilities`
   - Entry point: `internal/contracts/capabilities/default.go` — публичная переменная `Default`.
   - Ответственность:
-    - Декларация поддерживаемых команд (текущий `Default`: `validate`, `query`, `get`, `add`, `update`, `delete`, `version`).
-    - Декларация поддерживаемых форматов вывода (`json`).
+    - Декларация поддерживаемых команд (текущий `Default`: `help`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`).
+    - Декларация поддерживаемых форматов вывода (`json`, `text`).
   - Подпакеты: отсутствуют.
 
 - `internal/domain/errors`
   - Entry point: `internal/domain/errors/codes.go` — `New`, `ExitCodeFor`.
   - Ответственность:
-    - Единый каталог доменных кодов ошибок.
+    - Единый каталог доменных кодов ошибок, включая help-specific (`CAPABILITY_UNSUPPORTED`, `SCHEMA_READ_ERROR`, `SCHEMA_PROJECTION_ERROR`).
     - Формирование `AppError` с code/message/details/exit_code.
     - Маппинг доменных кодов в процессные exit codes.
   - Подпакеты: отсутствуют.
@@ -588,17 +649,22 @@
   - Entry point: `internal/output/errormap/mapper.go` — `ResultStateForCode`.
   - Ответственность:
     - Маппинг domain error code в `result_state` контракта.
+    - Специальный mapping `CAPABILITY_UNSUPPORTED`/`NOT_IMPLEMENTED` -> `unsupported`.
     - Централизация политики отображения ошибок для output слоя.
   - Подпакеты: отсутствуют.
 
 - `tests/integration`
-  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`; `tests/integration/delete_multirun_test.go` — `TestDeleteHappy02DryRunMatchesRealRevision`.
+  - Entry point: `tests/integration/run_cases_test.go` — `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`; `tests/integration/help_cases_test.go` — `TestHelpGeneralCases`, `TestHelpSchemaRecoveryCases`, `TestHelpErrorCases`, `TestHelpSelectedCases`; `tests/integration/delete_multirun_test.go` — `TestDeleteHappy02DryRunMatchesRealRevision`.
   - Ответственность:
     - Data-first запуск интеграционных кейсов `validate`, `query`, `get`, `add`, `update`, `delete`, `version` из структуры `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Data-first black-box проверки команды `help` для групп `cases/help/10_general` (включая сценарии schema вне workspace и без дублирующего default-кейса), `cases/help/15_schema_recovery` (degraded-schema/recovery text-контракт с `exit_code=0`) и `cases/help/20_errors` (non-zero error-contract/fail-path).
+    - Отдельные targeted black-box проверки ключевых error-path `help` (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) через subprocess-вызовы в `help_cases_test.go`.
     - Детерминированный обход групп и кейсов (лексикографическая сортировка на каждом уровне).
     - Валидация соглашения нейминга `NNNN_ok_*` / `NNNN_err_*` с проверкой соответствия `expect.exit_code`, `case.json.id` и `case.json.command`.
     - Подготовка временного workspace/schema и запуск CLI как subprocess через собранный бинарник (`exec.CommandContext`).
-    - Проверка `exit_code`, `stderr` и JSON-ответа против golden-ожиданий.
+    - Проверка `exit_code`, `stderr` и ответа (`json|text`) против golden-ожиданий.
+    - Для `help`-кейсов `workspace.in` опционален: при отсутствии входной директории раннер создаёт пустой workspace, поэтому schema-driven сценарии могут использовать `spec.schema.yaml` вне workspace через `${SCHEMA}`.
+    - Для text-help кейсов сравнение stdout выполняется напрямую (без post-нормализации путей), а стабилизация `ResolvedPath` достигается runtime-env инъекцией fixed path root.
     - Для mutating-сценариев проверка `workspace.out` (полный набор файлов + содержимое) против фактического состояния workspace после команды.
     - Дополнительный dynamic black-box тест эквивалентности `delete` dry-run и real-run по `target.revision` на независимых чистых workspace-копиях.
   - Подпакеты:
@@ -641,9 +707,13 @@
     - `tests/integration/cases/delete/80_help/*` — контракт `delete --help`.
     - `tests/integration/cases/version/10_happy/*` — happy-path `version` (`default json`, global `--format json`).
     - `tests/integration/cases/version/20_args/*` — ошибки аргументов `version` (`unknown option`, command-level `--format`).
+    - `tests/integration/cases/help/10_general/*` — общий `help` и `help <command>` для `help/query/get/add/update/delete/validate/version` в text-first контракте.
+    - `tests/integration/cases/help/15_schema_recovery/*` — recovery-контракт `help` при недоступной/некорректной схеме (`SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_PROJECTION_ERROR|SCHEMA_READ_ERROR`) с text-ответом и `exit_code=0`.
+    - `tests/integration/cases/help/20_errors/*` — non-zero ошибки `help` (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`, `--require-absolute-paths` violation).
 
 ## Текущий статус команд
 
+- `help` — реализован общий text-first discovery интерфейс (`spec-cli help`, `spec-cli help <command>`), shared schema projection и capability-gate `--format json`.
 - `validate` — расширена поддержка `expressions`, `entity_ref` и `path_pattern.cases[].when` (json-контракт).
 - `query` — реализован read-only pipeline (index из стандартной схемы `entity`, `where-json`, projection, deterministic sort, offset pagination, json-contract).
 - `get` — реализован baseline read-one pipeline (target lookup по `id`, schema-driven selectors, tolerant target read, refs/content projection, json-контракт).

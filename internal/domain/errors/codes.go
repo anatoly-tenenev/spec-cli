@@ -3,10 +3,12 @@ package errors
 type Code string
 
 const (
-	CodeInvalidArgs      Code = "INVALID_ARGS"
-	CodeSchemaNotFound   Code = "SCHEMA_NOT_FOUND"
-	CodeSchemaParseError Code = "SCHEMA_PARSE_ERROR"
-	CodeSchemaInvalid    Code = "SCHEMA_INVALID"
+	CodeInvalidArgs           Code = "INVALID_ARGS"
+	CodeSchemaNotFound        Code = "SCHEMA_NOT_FOUND"
+	CodeSchemaReadError       Code = "SCHEMA_READ_ERROR"
+	CodeSchemaParseError      Code = "SCHEMA_PARSE_ERROR"
+	CodeSchemaInvalid         Code = "SCHEMA_INVALID"
+	CodeSchemaProjectionError Code = "SCHEMA_PROJECTION_ERROR"
 
 	CodeEntityTypeUnknown      Code = "ENTITY_TYPE_UNKNOWN"
 	CodeEntityNotFound         Code = "ENTITY_NOT_FOUND"
@@ -24,6 +26,7 @@ const (
 	CodeReadFailed             Code = "READ_FAILED"
 	CodeWriteFailed            Code = "WRITE_FAILED"
 	CodeInternalError          Code = "INTERNAL_ERROR"
+	CodeCapabilityUnsupported  Code = "CAPABILITY_UNSUPPORTED"
 
 	CodeNotImplemented Code = "NOT_IMPLEMENTED"
 )
@@ -56,7 +59,7 @@ func ExitCodeFor(code Code) int {
 		return 2
 	case CodeReadFailed, CodeWriteFailed:
 		return 3
-	case CodeSchemaNotFound, CodeSchemaParseError, CodeSchemaInvalid:
+	case CodeSchemaNotFound, CodeSchemaReadError, CodeSchemaParseError, CodeSchemaInvalid, CodeSchemaProjectionError:
 		return 4
 	case CodeInternalError:
 		return 5

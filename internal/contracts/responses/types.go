@@ -13,5 +13,6 @@ const (
 
 type CommandOutput struct {
 	JSON     map[string]any
+	Text     string
 	ExitCode int
 }

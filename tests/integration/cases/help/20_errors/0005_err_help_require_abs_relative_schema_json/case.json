@@ -1,0 +1,15 @@
+{
+  "id": "help_20_0005_err_help_require_abs_relative_schema_json",
+  "description": "help_20_0005_err_help_require_abs_relative_schema_json",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","spec.schema.yaml","--require-absolute-paths","help"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

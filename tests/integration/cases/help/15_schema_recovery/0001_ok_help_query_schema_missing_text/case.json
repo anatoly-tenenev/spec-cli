@@ -1,0 +1,16 @@
+{
+  "id": "help_15_0001_ok_help_query_schema_missing_text",
+  "description": "help_15_0001_ok_help_query_schema_missing_text",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${WORKSPACE}/missing.schema.yaml","--format","text","help","query"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt",
+    "response_format": "text"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

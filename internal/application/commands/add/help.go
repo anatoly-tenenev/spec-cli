@@ -1,0 +1,102 @@
+package add
+
+import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"
+
+func HelpSpec() helpmodel.CommandSpec {
+	return helpmodel.CommandSpec{
+		Name:    "add",
+		Summary: "create a new entity",
+		Syntaxes: []string{
+			"spec-cli add --type <entity_type> --slug <slug> [options]",
+		},
+		Options: []helpmodel.OptionSpec{
+			{
+				Name:             "--type",
+				ValueSyntax:      "<entity_type>",
+				TakesValue:       true,
+				Required:         true,
+				Repeatable:       false,
+				SchemaDerived:    true,
+				SchemaDerivation: "entity type keys from Schema.entity",
+				Description:      "Target entity type.",
+			},
+			{
+				Name:             "--slug",
+				ValueSyntax:      "<slug>",
+				TakesValue:       true,
+				Required:         true,
+				Repeatable:       false,
+				SchemaDerived:    false,
+				SchemaDerivation: "none",
+				Description:      "Entity slug for id/path derivation.",
+			},
+			{
+				Name:             "--set",
+				ValueSyntax:      "<path=value>",
+				TakesValue:       true,
+				Required:         false,
+				Repeatable:       true,
+				SchemaDerived:    true,
+				SchemaDerivation: "write paths from CLI write-namespace",
+				Description:      "Set writable slot value by write-namespace path.",
+			},
+			{
+				Name:             "--set-file",
+				ValueSyntax:      "<path=file_path>",
+				TakesValue:       true,
+				Required:         false,
+				Repeatable:       true,
+				SchemaDerived:    true,
+				SchemaDerivation: "content.sections.<name> from raw schema sections",
+				Description:      "Set section body from file content.",
+			},
+			{
+				Name:                    "--content-file",
+				ValueSyntax:             "<path>",
+				TakesValue:              true,
+				Required:                false,
+				Repeatable:              false,
+				MutuallyExclusiveGroups: []string{"content_body_source"},
+				SchemaDerived:           false,
+				SchemaDerivation:        "none",
+				Description:             "Whole-body content source from filesystem path.",
+			},
+			{
+				Name:                    "--content-stdin",
+				TakesValue:              false,
+				Required:                false,
+				Repeatable:              false,
+				MutuallyExclusiveGroups: []string{"content_body_source"},
+				SchemaDerived:           false,
+				SchemaDerivation:        "none",
+				Description:             "Whole-body content source from stdin.",
+			},
+			{
+				Name:             "--dry-run",
+				TakesValue:       false,
+				Required:         false,
+				Repeatable:       false,
+				SchemaDerived:    false,
+				SchemaDerivation: "none",
+				Description:      "Run validation and planning without filesystem mutation.",
+			},
+		},
+		Rules: []string{
+			"Write-namespace arguments are --set and --set-file.",
+			"Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.",
+			"Projection from raw schema: non-entity_ref metadata -> meta.<name>; scalar entity_ref metadata -> refs.<field>; sections -> content.sections.<name>.",
+			"Allowed write-paths are derived from the effective schema.",
+			"refs.<field> values are target entity ids.",
+			"--set-file is allowed only for content.sections.<name>.",
+			"Whole-body inputs --content-file and --content-stdin are not write-namespace paths.",
+			"Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.",
+			"--content-file and --content-stdin are mutually exclusive.",
+		},
+		Examples: []string{
+			"spec-cli add --type feature --slug login-flow --set meta.status=active",
+			"spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'",
+			"spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md",
+			"spec-cli add --type feature --slug login-flow --content-file ./input/body.md",
+		},
+	}
+}

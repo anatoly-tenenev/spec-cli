@@ -1,0 +1,136 @@
+Command
+  add: create a new entity
+
+Syntax
+  spec-cli add --type <entity_type> --slug <slug> [options]
+
+Schema
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
+  CLI-oriented projection:
+    version: "0.0.4"
+    description: Workspace specification schema
+    entity:
+      feature:
+        description: Feature specifications
+        id_prefix: FEAT
+        meta:
+          status:
+            description: Lifecycle status
+            required: false
+            schema:
+              type: string
+              enum:
+                - draft
+                - active
+                - deprecated
+          watchers:
+            description: Related services
+            required: false
+            schema:
+              type: array
+              items:
+                type: entity_ref
+                refTypes:
+                  - service
+        refs:
+          owner:
+            description: Parent service
+            required:
+              when:
+                eq?: [meta.status, active]
+            schema:
+              type: entity_ref
+              refTypes:
+                - service
+        content:
+          sections:
+            summary:
+              description: Short summary
+              required:
+                when:
+                  eq?: [meta.status, active]
+              title:
+                - Summary
+      service:
+        id_prefix: SVC
+        meta:
+          tier:
+            required: true
+            schema:
+              type: string
+
+Options
+  --type <entity_type>
+    takes_value: true
+    required: true
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: entity type keys from Schema.entity
+    description: Target entity type.
+  --slug <slug>
+    takes_value: true
+    required: true
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Entity slug for id/path derivation.
+  --set <path=value>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: write paths from CLI write-namespace
+    description: Set writable slot value by write-namespace path.
+  --set-file <path=file_path>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: content.sections.<name> from raw schema sections
+    description: Set section body from file content.
+  --content-file <path>
+    takes_value: true
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: content_body_source
+    schema_derived: false
+    schema_derivation: none
+    description: Whole-body content source from filesystem path.
+  --content-stdin
+    takes_value: false
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: content_body_source
+    schema_derived: false
+    schema_derivation: none
+    description: Whole-body content source from stdin.
+  --dry-run
+    takes_value: false
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Run validation and planning without filesystem mutation.
+
+Rules
+  - Write-namespace arguments are --set and --set-file.
+  - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
+  - Projection from raw schema: non-entity_ref metadata -> meta.<name>; scalar entity_ref metadata -> refs.<field>; sections -> content.sections.<name>.
+  - Allowed write-paths are derived from the effective schema.
+  - refs.<field> values are target entity ids.
+  - --set-file is allowed only for content.sections.<name>.
+  - Whole-body inputs --content-file and --content-stdin are not write-namespace paths.
+  - Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.
+  - --content-file and --content-stdin are mutually exclusive.
+
+Examples
+  spec-cli add --type feature --slug login-flow --set meta.status=active
+  spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'
+  spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md
+  spec-cli add --type feature --slug login-flow --content-file ./input/body.md

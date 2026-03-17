@@ -1,0 +1,97 @@
+Command
+  validate: validate schema and workspace documents
+
+Syntax
+  spec-cli validate [options]
+
+Schema
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
+  CLI-oriented projection:
+    version: "0.0.4"
+    description: Workspace specification schema
+    entity:
+      feature:
+        description: Feature specifications
+        id_prefix: FEAT
+        meta:
+          status:
+            description: Lifecycle status
+            required: false
+            schema:
+              type: string
+              enum:
+                - draft
+                - active
+                - deprecated
+          watchers:
+            description: Related services
+            required: false
+            schema:
+              type: array
+              items:
+                type: entity_ref
+                refTypes:
+                  - service
+        refs:
+          owner:
+            description: Parent service
+            required:
+              when:
+                eq?: [meta.status, active]
+            schema:
+              type: entity_ref
+              refTypes:
+                - service
+        content:
+          sections:
+            summary:
+              description: Short summary
+              required:
+                when:
+                  eq?: [meta.status, active]
+              title:
+                - Summary
+      service:
+        id_prefix: SVC
+        meta:
+          tier:
+            required: true
+            schema:
+              type: string
+
+Options
+  --type <entity_type>
+    takes_value: true
+    required: false
+    repeatable: true
+    mutually_exclusive_groups: none
+    schema_derived: true
+    schema_derivation: entity type keys from Schema.entity
+    description: Restrict validation to selected entity types.
+  --fail-fast
+    takes_value: false
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Stop checks after first blocking validation error when supported by rule.
+  --warnings-as-errors
+    takes_value: false
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Treat warnings as non-zero exit status.
+
+Rules
+  - Validation always includes effective schema and workspace documents in one deterministic run.
+  - Type filters are validated against schema-derived entity type keys.
+
+Examples
+  spec-cli validate
+  spec-cli validate --type feature --type service
+  spec-cli validate --fail-fast
+  spec-cli validate --warnings-as-errors

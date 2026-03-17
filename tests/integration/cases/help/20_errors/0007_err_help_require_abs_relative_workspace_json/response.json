@@ -1,0 +1,1 @@
+{"error":{"code":"INVALID_ARGS","exit_code":2,"message":"--workspace must be absolute when --require-absolute-paths is enabled"},"result_state":"invalid"}
