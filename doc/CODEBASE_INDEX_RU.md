@@ -666,6 +666,7 @@
     - Для `help`-кейсов `workspace.in` опционален: при отсутствии входной директории раннер создаёт пустой workspace, поэтому schema-driven сценарии могут использовать `spec.schema.yaml` вне workspace через `${SCHEMA}`.
     - Для text-help кейсов сравнение stdout выполняется напрямую (без post-нормализации путей), а стабилизация `ResolvedPath` достигается runtime-env инъекцией fixed path root.
     - Для mutating-сценариев проверка `workspace.out` (полный набор файлов + содержимое) против фактического состояния workspace после команды.
+    - Для кейсов с пустым входным workspace в data-first layout используется маркер `workspace.in/.keep`, чтобы директория гарантированно попадала в Git и была доступна в CI.
     - Дополнительный dynamic black-box тест эквивалентности `delete` dry-run и real-run по `target.revision` на независимых чистых workspace-копиях.
   - Подпакеты:
     - `tests/integration/cases/validate/10_contract/*` — контрактные сценарии (`json`, `warnings-as-errors`, exit code).

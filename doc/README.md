@@ -17,7 +17,7 @@
 
 ### Общие документы
 
-- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `help`/`add`/`update`/`delete`/`version`, канонический path-контракт `help` (`ResolvedPath`), recovery-контракт degraded schema в `help`, pre-dispatch контракт global options CLI и интеграционного раннера (включая data-first группы `cases/help/10_general` без дублирующего default-кейса, `cases/help/15_schema_recovery`, `cases/help/20_errors`, опциональный `workspace.in` для help-кейсов и `workspace.out` для mutating-команд).
+- [CODEBASE_INDEX_RU.md](./CODEBASE_INDEX_RU.md) — краткая карта кодовой базы (agent map) в формате `entrypoint + ответственность + подпакеты` для каждого слоя/пакета, включая актуальное состояние `help`/`add`/`update`/`delete`/`version`, канонический path-контракт `help` (`ResolvedPath`), recovery-контракт degraded schema в `help`, pre-dispatch контракт global options CLI и интеграционного раннера (включая data-first группы `cases/help/10_general` без дублирующего default-кейса, `cases/help/15_schema_recovery`, `cases/help/20_errors`, опциональный `workspace.in` для help-кейсов, `workspace.out` для mutating-команд и маркер `workspace.in/.keep` для пустых входных workspace).
 
 ### 001 Base
 
