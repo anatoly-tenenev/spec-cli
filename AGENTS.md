@@ -1,33 +1,36 @@
 # AGENTS.md
 
-## Цель проекта
-`spec-cli` — machine-first CLI-утилита на Go для работы со spec-документами.
-Текущий прототип обязан покрывать команды `validate`, `query`, `add`, `update` с контрактами из `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md`.
+## Project Goal
+`spec-cli` is a machine-first CLI utility written in Go for working with spec documents.
+The current prototype must cover the `validate`, `query`, `add`, and `update` commands according to the contracts in `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE.md`.
 
-## Технологии и baseline
-- Язык: Go (`go 1.24+`).
-- Формат поставки: один бинарник `spec-cli`.
-- Предпочтительно использовать стандартную библиотеку.
-- Внешние зависимости добавлять только при явной пользе и с обоснованием в PR/коммите.
+## Communication Rules
+- Communicate in the language the dialogue started in unless the user explicitly asks to switch languages.
 
-## Архитектурные правила
-- Следовать стилю `Hexagonal + Command Bus`.
-- CLI-слой (`internal/cli`) только парсит аргументы и роутит команды.
-- Use-case логика в `internal/application/commands/<command>`.
-- Доменные типы/ошибки в `internal/domain`.
-- Вывод в `json/ndjson` держать в `internal/output`.
-- Не смешивать форматирование ответа и бизнес-логику в одном месте.
+## Technology and Baseline
+- Language: Go (`go 1.24+`).
+- Distribution format: a single `spec-cli` binary.
+- Prefer the standard library.
+- Add external dependencies only when they provide clear value and the reason is documented in the PR/commit.
 
-## Контрактные инварианты
-- Поддерживаемые форматы: `--format json` и `--format ndjson`.
-- В каждом ответе/записи должен быть `result_state`.
-- Ошибки должны включать: `error.code`, `error.message`, `error.exit_code`.
-- Для `ndjson` использовать `record_type` (`result|item|issue|summary|error`) по сценарию команды.
-- Для сущностей возвращать `revision` как opaque token.
+## Architectural Rules
+- Follow the `Hexagonal + Command Bus` style.
+- The CLI layer (`internal/cli`) must only parse arguments and route commands.
+- Use-case logic belongs in `internal/application/commands/<command>`.
+- Domain types/errors belong in `internal/domain`.
+- Keep `json/ndjson` output in `internal/output`.
+- Do not mix response formatting and business logic in one place.
 
-## Коды ошибок и exit codes
-- Использовать единый набор кодов ошибок из доменного слоя.
-- Базовый маппинг exit codes:
+## Contract Invariants
+- Supported formats: `--format json` and `--format ndjson`.
+- Every response/record must contain `result_state`.
+- Errors must include: `error.code`, `error.message`, `error.exit_code`.
+- For `ndjson`, use `record_type` (`result|item|issue|summary|error`) according to the command scenario.
+- For entities, return `revision` as an opaque token.
+
+## Error Codes and Exit Codes
+- Use the single shared set of error codes from the domain layer.
+- Base exit code mapping:
   - `0` success
   - `1` domain error
   - `2` invalid args/query
@@ -35,77 +38,77 @@
   - `4` schema error
   - `5` internal error
 
-## Структура репозитория
+## Repository Structure
 - Entry point: `cmd/spec-cli/main.go`
-- Основные слои: `internal/cli`, `internal/application`, `internal/domain`, `internal/output`, `internal/contracts`
-- Спецификация прототипа: `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE_RU.md`
-- Локальная рабочая спецификация: `spec/SPEC_STANDARD_RU_REVISED_V3.md` (директория `spec/` в `.gitignore`)
-- Индекс документации (точка входа): `doc/README.md`
-- Индекс кодовой базы (agent map): `doc/CODEBASE_INDEX_RU.md`
+- Main layers: `internal/cli`, `internal/application`, `internal/domain`, `internal/output`, `internal/contracts`
+- Prototype specification: `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE.md`
+- Local working specification: `spec/SPEC_STANDARD_RU_REVISED_V3.md` (the `spec/` directory is in `.gitignore`)
+- Documentation index (entry point): `doc/README.md`
+- Codebase index (agent map): `doc/CODEBASE_INDEX.md`
 
-## Команды разработки
-- Форматирование: `make fmt`
-- Статика: `make vet`
-- Тесты: `make test`
-- Сборка: `make build`
+## Development Commands
+- Formatting: `make fmt`
+- Static checks: `make vet`
+- Tests: `make test`
+- Build: `make build`
 
-## Ожидания к изменениям
-- Сохранять machine-stable контракт ответов.
-- При добавлении/изменении команды обновлять контрактные тесты и snapshot/golden файлы.
-- Интеграционные тесты должны быть black-box контрактными: проверять только публичное поведение CLI (`args` -> `stdout/stderr` -> `exit_code`, для mutating-команд дополнительно `workspace.out`).
-- В интеграционных тестах запрещены предположения о внутреннем устройстве утилиты (слои, переиспользование движков, порядок внутренних вызовов).
-- Каждое значимое контрактное поведение должно иметь прямой интеграционный кейс; косвенное покрытие через другой сценарий не считается достаточным.
-- При добавлении/изменении документации в `doc/` обновлять `doc/README.md` в том же изменении.
-- При любых изменениях структуры/ролей кодовой базы поддерживать `doc/CODEBASE_INDEX_RU.md` в актуальном состоянии в том же изменении.
-- Не делать интерактивных prompt по умолчанию.
-- Не раскрывать внутренние filesystem path сущностей в API-ответах.
+## Expectations for Changes
+- Preserve the machine-stable response contract.
+- When adding/changing a command, update contract tests and snapshot/golden files.
+- Integration tests must remain black-box contract tests: verify only public CLI behavior (`args` -> `stdout/stderr` -> `exit_code`, and for mutating commands also `workspace.out`).
+- Integration tests must not assume anything about the internal implementation of the utility (layers, engine reuse, order of internal calls).
+- Every meaningful contract behavior must have a direct integration case; indirect coverage via another scenario is not sufficient.
+- When adding/changing documentation in `doc/`, update `doc/README.md` in the same change.
+- When changing codebase structure/roles, keep `doc/CODEBASE_INDEX.md` up to date in the same change.
+- Do not add interactive prompts by default.
+- Do not expose internal entity filesystem paths in API responses.
 
-## Правила структуры кода (entrypoint-first, strict)
-- Для любой директории прикладной логики действует инвариант: одна директория = один уровень абстракции.
-- В корне директории допускаются только entrypoint-файлы уровня этой директории.
-- Entry point содержит orchestration и публичный API пакета; детали реализации в нём не размещаются.
-- Любая детальная реализация выносится в подпакеты с предметными именами.
-- Файлы деталей рядом с entrypoint в корне директории запрещены.
-- Если в корне директории несколько `.go`-файлов, каждый из них должен быть entrypoint отдельной верхнеуровневой роли; иначе файл переносится в подпакет.
-- Для команд use-case entrypoint фиксирован: `internal/application/commands/<command>/handler.go`.
-- Для сложных команд детали размещать в `internal/application/commands/<command>/internal/...` с предметными именами пакетов (`options`, `schema`, `workspace`, `engine`, `support` и т.п.).
-- Не использовать `common` как универсальный пакет; prefer предметные имена по назначению.
-- Новую директорию с нетривиальной логикой создавать только вместе с явным entrypoint-файлом и понятной ролью директории.
-- Для `.go`-файлов действует лимит `600` строк; при превышении файл разбивается с сохранением правил entrypoint-first.
-- Если `.go`-файл превысил `600` строк, детальную логику нужно переносить в подпакеты `internal/<предметная_роль>/...`; разбиение на несколько detail-файлов в корне той же директории запрещено.
-- Промежуточный шаг "сначала разрезать файл в корне, потом вынести в подпакеты" не допускается: нужно сразу делать целевую структуру с entrypoint в корне и деталями в подпакетах.
-- Критерий review: за 5 секунд должно быть понятно, какой файл — entrypoint директории и где находятся детали.
-- Завершать задачу без self-check по entrypoint-first запрещено: перед финальным ответом нужно проверить каждую изменённую директорию и убедиться, что в её корне нет detail-файлов рядом с entrypoint.
-- Если в изменённой директории осталось более одного `.go`-файла, в финальном сообщении обязателен явный список их ролей (entrypoint каждой верхнеуровневой роли) и подтверждение, что детали вынесены в подпакеты.
-- Любой структурный рефакторинг должен выполняться сразу в целевой структуре; временное нарушение entrypoint-first в коммите/изменении не допускается.
+## Code Structure Rules (entrypoint-first, strict)
+- For any application-logic directory, the invariant is: one directory = one abstraction level.
+- Only entrypoint files for that directory level are allowed in the directory root.
+- An entry point contains orchestration and the package's public API; implementation details must not live there.
+- Any detailed implementation must be moved into subpackages with domain-specific names.
+- Detail files next to the entrypoint in the directory root are forbidden.
+- If a directory root has multiple `.go` files, each of them must be an entrypoint for a separate top-level role; otherwise move the file into a subpackage.
+- For command use cases, the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
+- For complex commands, place details under `internal/application/commands/<command>/internal/...` using domain-specific package names (`options`, `schema`, `workspace`, `engine`, `support`, etc.).
+- Do not use `common` as a universal package; prefer domain-specific names by purpose.
+- Create a new directory with non-trivial logic only together with a clear entrypoint file and an explicit directory role.
+- `.go` files are limited to `600` lines; when the limit is exceeded, split the file while preserving the entrypoint-first rules.
+- If a `.go` file exceeds `600` lines, move detailed logic into subpackages under `internal/<domain_role>/...`; splitting into several detail files in the same root directory is forbidden.
+- The intermediate step "first split the file in the root, then move it into subpackages" is not allowed: move directly to the target structure with the entrypoint in the root and details in subpackages.
+- Review criterion: within 5 seconds it must be clear which file is the directory entrypoint and where the details live.
+- Finishing a task without an entrypoint-first self-check is forbidden: before the final response, check every modified directory and ensure there are no detail files next to an entrypoint in its root.
+- If a modified directory still contains more than one `.go` file, the final message must explicitly list their roles (the entrypoint of each top-level role) and confirm that details were moved to subpackages.
+- Any structural refactoring must be done directly in the target structure; temporary violations of entrypoint-first within a commit/change are not allowed.
 
-## Стандарт реализации команд (по умолчанию)
-- `handler.go` должен быть тонким orchestration-слоем: parse options -> load inputs/schema -> run use-case -> собрать `json/ndjson` ответ.
-- Для `validate` использовать текущую структуру как baseline:
-  - `internal/model` — внутренние типы команды.
-  - `internal/options` — парсинг командных опций и нормализация путей.
-  - `internal/schema` — загрузка/проверка schema.
-  - `internal/workspace` — scan кандидатов и parse frontmatter/content.
-  - `internal/engine` — основной pipeline проверки и issue aggregation.
-  - `internal/support` — узкие pure helper-функции (yaml/collections/values).
-- Business-логика, коды ошибок и issue-коды не менять без явной задачи на изменение поведения.
-- Валидация должна оставаться детерминированной: стабильный порядок обхода/сортировок и стабильный формат ответа.
-- После любых изменений в команде обязательно прогонять минимум `make vet` и `make test`.
+## Command Implementation Standard (default)
+- `handler.go` must remain a thin orchestration layer: parse options -> load inputs/schema -> run use case -> build the `json/ndjson` response.
+- For `validate`, use the current structure as the baseline:
+  - `internal/model` - internal command types.
+  - `internal/options` - command option parsing and path normalization.
+  - `internal/schema` - schema loading/validation.
+  - `internal/workspace` - candidate scan and frontmatter/content parsing.
+  - `internal/engine` - main validation pipeline and issue aggregation.
+  - `internal/support` - narrow pure helper functions (`yaml`/collections/values).
+- Do not change business logic, error codes, or issue codes without an explicit task to change behavior.
+- Validation must remain deterministic: stable traversal/sort order and stable response format.
+- After any command changes, run at least `make vet` and `make test`.
 
-## Правило работы с документацией
-- Перед поиском деталей по проекту сначала проверять `doc/README.md`.
-- Если добавлен новый документ, агент обязан добавить его в индекс с кратким описанием назначения.
-- Нумерацию каталогов вида `NNN-*` использовать только для документации этапов (stage/milestone).
-- Общезначимую документацию (индексы, карты, общие соглашения) размещать в корне `doc/` без номерного префикса.
-- При обновлении `doc/CODEBASE_INDEX_RU.md` каждая запись должна быть самодостаточной и содержать: entrypoint (путь к файлу + публичная функция/метод), ответственность текущего уровня (2–5 конкретных задач), подпакеты и их роли (если есть).
-- В `doc/CODEBASE_INDEX_RU.md` запрещены расплывчатые формулировки без расшифровки: `детализация вынесена`, `и т.п.`, `внутренняя логика`.
-- Критерий приемки для записи в `doc/CODEBASE_INDEX_RU.md`: по ней должно быть понятно, куда идти в коде дальше, без дополнительных уточнений.
-- `doc/CODEBASE_INDEX_RU.md` обязателен к обновлению в том же изменении, если есть хотя бы одно из событий:
-  - добавлен/удалён/переименован файл в `cmd/**`, `internal/**`, `tests/integration/**`;
-  - изменён entrypoint-файл директории или публичная функция/метод entrypoint-уровня;
-  - изменены роли подпакетов, маршрутизация CLI или состав поддерживаемых команд.
-- Запрещено завершать задачу и формулировать финальный ответ без doc-index self-check:
-  - проверить `git diff --name-status --cached` (или `git diff --name-status`, если без staging);
-  - если изменения затрагивают триггеры выше, в diff обязательно должен присутствовать `doc/CODEBASE_INDEX_RU.md`;
-  - при наличии doc-изменений также проверить актуальность `doc/README.md`.
-- Если по результатам self-check обновление `doc/CODEBASE_INDEX_RU.md` не требуется, в финальном ответе явно указать причину, почему триггеры не сработали.
+## Documentation Rules
+- Before searching for project details, check `doc/README.md` first.
+- If a new document is added, the agent must add it to the index with a short description of its purpose.
+- Use numbering like `NNN-*` only for stage/milestone documentation directories.
+- Put generally applicable documentation (indexes, maps, shared conventions) in the root of `doc/` without a numbered prefix.
+- When updating `doc/CODEBASE_INDEX.md`, every entry must be self-sufficient and include: entrypoint (file path + public function/method), responsibilities of the current level (2-5 concrete tasks), and subpackages with their roles (if any).
+- `doc/CODEBASE_INDEX.md` must not contain vague wording without explanation: `details moved out`, `etc.`, `internal logic`.
+- Acceptance criterion for an entry in `doc/CODEBASE_INDEX.md`: it must be clear where to go next in the code without extra clarification.
+- `doc/CODEBASE_INDEX.md` must be updated in the same change if at least one of these events happened:
+  - a file was added/removed/renamed under `cmd/**`, `internal/**`, or `tests/integration/**`;
+  - a directory entrypoint file or a public entrypoint-level function/method was changed;
+  - subpackage roles, CLI routing, or the set of supported commands changed.
+- It is forbidden to finish the task and write the final response without the doc-index self-check:
+  - check `git diff --name-status --cached` (or `git diff --name-status` if nothing is staged);
+  - if the changes trigger the conditions above, `doc/CODEBASE_INDEX.md` must be present in the diff;
+  - if there are documentation changes, also check whether `doc/README.md` remains up to date.
+- If the self-check shows that `doc/CODEBASE_INDEX.md` does not need an update, explicitly state in the final response why the triggers did not fire.
