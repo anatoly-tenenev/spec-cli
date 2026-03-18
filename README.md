@@ -163,6 +163,14 @@ That is the point of the project:
 - CI and tooling work with the same corpus;
 - there is no need for a second source of truth next to Markdown.
 
+## Example Schema and Corpus
+
+If you need a concrete example of a schema and spec workspace, see:
+[`rust-cc-spec`](https://github.com/anatoly-tenenev/rust-cc-spec)
+
+This is a companion repository with an example spec schema and spec corpus for building a C compiler in Rust.
+It shows how the schema and the documents themselves can be organized as a unified knowledge layer for people, CI, and automation.
+
 ## Baseline
 
 The baseline is intentionally narrow for now:
