@@ -1,0 +1,47 @@
+{
+  "issues": [
+    {
+      "class": "InstanceError",
+      "code": "meta.entity_ref_type_mismatch",
+      "entity": {
+        "id": "FEAT-1",
+        "slug": "login",
+        "type": "feature"
+      },
+      "field": "frontmatter.owner",
+      "level": "error",
+      "message": "entity_ref field 'owner' cannot reference entity type 'domain'",
+      "standard_ref": "12.3"
+    },
+    {
+      "class": "InstanceError",
+      "code": "meta.entity_ref_type_mismatch",
+      "entity": {
+        "id": "FEAT-1",
+        "slug": "login",
+        "type": "feature"
+      },
+      "field": "frontmatter.owners[0]",
+      "level": "error",
+      "message": "entity_ref field 'owners[0]' cannot reference entity type 'domain'",
+      "standard_ref": "12.3"
+    }
+  ],
+  "result_state": "invalid",
+  "summary": {
+    "coverage": {
+      "candidate_entities": 2,
+      "checked_entities": 2,
+      "complete": true,
+      "mode": "strict",
+      "skipped_entities": 0
+    },
+    "entities_scanned": 2,
+    "entities_valid": 1,
+    "errors": 2,
+    "schema_valid": true,
+    "validator_conformant": true,
+    "warnings": 0
+  },
+  "validation_scope": "full"
+}

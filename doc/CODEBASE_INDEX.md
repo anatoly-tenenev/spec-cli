@@ -99,12 +99,14 @@ Compact project map for fast entry into the code.
     - `.../names` - schema-key validation for `meta.fields` and `content.sections`.
     - `.../pathpattern` - parsing and validation of `path_pattern`.
     - `.../schemachecks` - reusable schema check helpers.
+    - `.../tests` - unit tests for schema parsing behavior of `meta.fields[].schema` (`items.type`, `items.refTypes`).
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/metafields`
   - Entrypoint: `parser.go` - `Parse`.
   - Responsibilities:
     - Validate `meta`, `meta.fields[]`, and `meta.fields[].schema` structure and closed-world keys.
     - Parse field schema attributes (`type`, `enum`, `const`, `refTypes`, `items`, `uniqueItems`, `minItems`, `maxItems`) and validate links to entity types.
+    - Validate `schema.items.refTypes` only for `schema.items.type=entity_ref` (non-empty, no duplicates, known entity types) and keep deterministic sorted `refTypes`.
     - Parse `required` / `required_when` through `requiredconstraint.Parse`.
     - Run static checks for strict `eq/in` operators on potentially-missing operands.
   - Subpackages: none.
@@ -176,7 +178,8 @@ Compact project map for fast entry into the code.
     - `issues.go` - `CountIssuesByLevel`
   - Responsibilities:
     - Run the full validation pipeline: parse candidates, built-in checks, schema-driven checks.
-    - Resolve `entity_ref`, evaluate `required_when`, validate `path_pattern`.
+    - Resolve scalar `entity_ref` and `array.items.type=entity_ref` targets (including `refTypes`, `missing|ambiguous|type_mismatch`) and reject blank array `entity_ref` items as item-type mismatches.
+    - Evaluate `required_when`, validate `path_pattern`, and keep deterministic issue ordering.
     - Aggregate entity/global issues and compute coverage, validity, and conformance metrics.
   - Subpackages: none.
 
@@ -723,11 +726,11 @@ Compact project map for fast entry into the code.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
   - Subpackages:
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
-    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios.
+    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.
     - `tests/integration/cases/validate/40_instance_meta_content/*` - `meta.fields` and `content.sections`.
     - `tests/integration/cases/validate/50_path_pattern_expr/*` - `path_pattern.cases[].when` scenarios.
-    - `tests/integration/cases/validate/60_entity_ref_context/*` - `entity_ref`, `ref.*`, `ref.dir_path`.
+    - `tests/integration/cases/validate/60_entity_ref_context/*` - scalar/array `entity_ref`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dir_path`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`.
     - `tests/integration/cases/query/20_select/*` - selector/projection scenarios.

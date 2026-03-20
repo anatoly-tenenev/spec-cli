@@ -1,0 +1,24 @@
+{
+  "id": "validate_20_0022_err_validate_schema_array_items_ref_types_non_entity_ref_json",
+  "description": "validate returns schema error when items.refTypes is used for non-entity_ref array items",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

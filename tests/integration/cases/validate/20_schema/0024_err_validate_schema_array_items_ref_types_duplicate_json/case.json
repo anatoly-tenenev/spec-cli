@@ -1,0 +1,24 @@
+{
+  "id": "validate_20_0024_err_validate_schema_array_items_ref_types_duplicate_json",
+  "description": "validate returns schema error when items.refTypes contains duplicate values",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

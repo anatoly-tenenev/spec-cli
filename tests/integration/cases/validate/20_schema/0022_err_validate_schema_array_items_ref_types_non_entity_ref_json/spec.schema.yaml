@@ -1,0 +1,17 @@
+version: "0.0.4"
+entity:
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        tags:
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              refTypes: [doc]
+    content:
+      sections:
+        goal: {}

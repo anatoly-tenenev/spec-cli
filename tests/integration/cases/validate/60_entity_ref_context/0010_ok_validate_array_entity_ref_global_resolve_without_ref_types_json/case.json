@@ -1,0 +1,24 @@
+{
+  "id": "validate_60_0010_ok_validate_array_entity_ref_global_resolve_without_ref_types_json",
+  "description": "validate resolves entity_ref array items globally when items.refTypes is omitted",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

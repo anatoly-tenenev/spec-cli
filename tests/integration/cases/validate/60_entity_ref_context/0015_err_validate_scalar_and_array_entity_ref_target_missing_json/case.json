@@ -1,0 +1,24 @@
+{
+  "id": "validate_60_0015_err_validate_scalar_and_array_entity_ref_target_missing_json",
+  "description": "validate reports the same missing-target semantics for scalar and array entity_ref fields",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

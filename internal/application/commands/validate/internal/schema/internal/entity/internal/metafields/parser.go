@@ -144,7 +144,7 @@ func Parse(
 		}
 
 		if ruleType == "array" {
-			if arrayErr := parseArrayConstraints(fieldPath, schemaRaw, &rule); arrayErr != nil {
+			if arrayErr := parseArrayConstraints(fieldPath, schemaRaw, typeSet, &rule); arrayErr != nil {
 				return nil, nil, arrayErr
 			}
 		} else if hasArrayConstraint(schemaRaw) {
@@ -158,7 +158,7 @@ func Parse(
 		if ruleType == "entity_ref" {
 			refTypesRaw, hasRefTypes := schemaRaw["refTypes"]
 			if hasRefTypes {
-				refTypes, refTypesErr := parseRefTypes(typeName, fieldName, refTypesRaw, typeSet)
+				refTypes, refTypesErr := parseRefTypes(fieldPath+".schema.refTypes", refTypesRaw, typeSet)
 				if refTypesErr != nil {
 					return nil, nil, refTypesErr
 				}
@@ -235,7 +235,12 @@ func hasArrayConstraint(values map[string]any) bool {
 	return false
 }
 
-func parseArrayConstraints(fieldPath string, schemaRaw map[string]any, rule *model.RequiredFieldRule) *domainerrors.AppError {
+func parseArrayConstraints(
+	fieldPath string,
+	schemaRaw map[string]any,
+	typeSet map[string]struct{},
+	rule *model.RequiredFieldRule,
+) *domainerrors.AppError {
 	if rawItems, hasItems := schemaRaw["items"]; hasItems {
 		itemsMap, ok := support.ToStringMap(rawItems)
 		if !ok {
@@ -245,7 +250,7 @@ func parseArrayConstraints(fieldPath string, schemaRaw map[string]any, rule *mod
 				nil,
 			)
 		}
-		if keyErr := schemachecks.EnsureOnlyKeys(fieldPath+".schema.items", itemsMap, "type"); keyErr != nil {
+		if keyErr := schemachecks.EnsureOnlyKeys(fieldPath+".schema.items", itemsMap, "type", "refTypes"); keyErr != nil {
 			return keyErr
 		}
 
@@ -268,6 +273,22 @@ func parseArrayConstraints(fieldPath string, schemaRaw map[string]any, rule *mod
 		}
 		rule.HasItemType = true
 		rule.ItemType = itemType
+
+		if itemType == "entity_ref" {
+			if refTypesRaw, hasRefTypes := itemsMap["refTypes"]; hasRefTypes {
+				itemRefTypes, refTypesErr := parseRefTypes(fieldPath+".schema.items.refTypes", refTypesRaw, typeSet)
+				if refTypesErr != nil {
+					return refTypesErr
+				}
+				rule.ItemRefTypes = itemRefTypes
+			}
+		} else if _, hasRefTypes := itemsMap["refTypes"]; hasRefTypes {
+			return domainerrors.New(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s.schema.items.refTypes is allowed only for items.type entity_ref", fieldPath),
+				nil,
+			)
+		}
 	}
 
 	if rawUnique, hasUnique := schemaRaw["uniqueItems"]; hasUnique {
@@ -378,12 +399,12 @@ func parseArrayLengthConstraint(raw any) (int, bool) {
 	}
 }
 
-func parseRefTypes(typeName string, fieldName string, raw any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
+func parseRefTypes(path string, raw any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
 	rawItems, ok := raw.([]any)
 	if !ok || len(rawItems) == 0 {
 		return nil, domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes must be a non-empty list", typeName, fieldName),
+			fmt.Sprintf("%s must be a non-empty list", path),
 			nil,
 		)
 	}
@@ -395,7 +416,7 @@ func parseRefTypes(typeName string, fieldName string, raw any, typeSet map[strin
 		if !ok || strings.TrimSpace(value) == "" {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes[%d] must be non-empty string", typeName, fieldName, idx),
+				fmt.Sprintf("%s[%d] must be non-empty string", path, idx),
 				nil,
 			)
 		}
@@ -403,14 +424,14 @@ func parseRefTypes(typeName string, fieldName string, raw any, typeSet map[strin
 		if _, exists := seen[value]; exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes contains duplicate '%s'", typeName, fieldName, value),
+				fmt.Sprintf("%s contains duplicate '%s'", path, value),
 				nil,
 			)
 		}
 		if _, exists := typeSet[value]; !exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes references unknown entity type '%s'", typeName, fieldName, value),
+				fmt.Sprintf("%s references unknown entity type '%s'", path, value),
 				nil,
 			)
 		}

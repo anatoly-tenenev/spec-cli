@@ -1,0 +1,23 @@
+version: "0.0.4"
+entity:
+  service:
+    id_prefix: SRV
+    path_pattern: "services/{slug}.md"
+    content:
+      sections:
+        goal: {}
+  doc:
+    id_prefix: DOC
+    path_pattern: "docs/{slug}.md"
+    meta:
+      fields:
+        owners:
+          required: false
+          schema:
+            type: array
+            items:
+              type: entity_ref
+              refTypes: [service, ghost]
+    content:
+      sections:
+        goal: {}

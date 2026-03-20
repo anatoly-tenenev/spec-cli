@@ -15,6 +15,7 @@ func validateRequiredFields(
 	entity *model.CheckedEntity,
 	frontmatter map[string]any,
 	typeSpec model.SchemaEntityType,
+	idIndex map[string][]resolvedEntityRef,
 	context runtimeExpressionContext,
 ) {
 	for _, rule := range typeSpec.RequiredFields {
@@ -70,7 +71,7 @@ func validateRequiredFields(
 				})
 				continue
 			}
-			validateArrayField(issues, entity, rule, arrayValue)
+			validateArrayField(issues, entity, rule, arrayValue, idIndex)
 		}
 
 		resolvedEnum, enumResolveErr := resolveStringRuleValues(rule.Enum, context)
@@ -134,6 +135,7 @@ func validateArrayField(
 	entity *model.CheckedEntity,
 	rule model.RequiredFieldRule,
 	arrayValue []any,
+	idIndex map[string][]resolvedEntityRef,
 ) {
 	fieldPath := fmt.Sprintf("frontmatter.%s", rule.Name)
 	itemCount := len(arrayValue)
@@ -162,9 +164,35 @@ func validateArrayField(
 
 	if rule.HasItemType {
 		for idx, item := range arrayValue {
-			if support.MatchesRuleType(item, rule.ItemType) {
+			matchesItemType := support.MatchesRuleType(item, rule.ItemType)
+			if matchesItemType && rule.ItemType == "entity_ref" {
+				referenceID, _ := item.(string)
+				if strings.TrimSpace(referenceID) == "" {
+					matchesItemType = false
+				}
+			}
+
+			if matchesItemType {
+				if rule.ItemType == "entity_ref" {
+					referenceID, _ := item.(string)
+					referenceID = strings.TrimSpace(referenceID)
+					if referenceID != "" {
+						indexedField := fmt.Sprintf("%s[%d]", fieldPath, idx)
+						resolution := resolveEntityReferenceValue(
+							fmt.Sprintf("%s[%d]", rule.Name, idx),
+							indexedField,
+							referenceID,
+							rule.ItemRefTypes,
+							idIndex,
+						)
+						if resolution.Issue != nil {
+							addIssue(issues, entity, *resolution.Issue)
+						}
+					}
+				}
 				continue
 			}
+
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_array_items_mismatch",
 				Level:       domainvalidation.LevelError,

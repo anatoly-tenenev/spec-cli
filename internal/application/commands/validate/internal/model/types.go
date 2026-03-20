@@ -32,6 +32,7 @@ type RequiredFieldRule struct {
 	Value            any
 	HasItemType      bool
 	ItemType         string
+	ItemRefTypes     []string
 	UniqueItems      bool
 	HasMinItems      bool
 	MinItems         int

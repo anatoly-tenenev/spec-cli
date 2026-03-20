@@ -200,7 +200,14 @@ func RunValidation(
 			)
 			context := buildRuntimeExpressionContext(candidate.Frontmatter, resolvedRefs)
 
-			validateRequiredFields(&run.Issues, &entity, candidate.Frontmatter, candidate.TypeSpec, context)
+			validateRequiredFields(
+				&run.Issues,
+				&entity,
+				candidate.Frontmatter,
+				candidate.TypeSpec,
+				idTargetIndex,
+				context,
+			)
 			validateRequiredSections(&run.Issues, &entity, candidate.Sections, candidate.DuplicateLabels, candidate.TypeSpec, context)
 			validatePathPattern(&run.Issues, &entity, candidate.RelativePath, candidate.TypeSpec, context)
 		} else {
