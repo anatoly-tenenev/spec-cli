@@ -1,6 +1,0 @@
-{
-  "command": "delete",
-  "help": "Command\n  delete - remove one entity by exact id.\n\nSyntax\n  spec-cli delete --id <entity_id> [options]\n\nOptions\n  --id <entity_id>             Required exact target id.\n  --expect-revision <token>    Optional optimistic concurrency guard.\n  --dry-run                     Run full checks without filesystem mutation.\n  --help, -h                    Print command help.\n\nRules\n  Target lookup uses exact id match only.\n  Deletion is blocked when incoming entity_ref references exist.\n  Blocking checks include scalar entity_ref and array items with entity_ref type.\n\nExamples\n  spec-cli delete --id FEAT-42\n  spec-cli delete --id FEAT-42 --expect-revision sha256:...\n  spec-cli delete --id FEAT-42 --dry-run\n",
-  "result_state": "valid",
-  "syntax": "spec-cli delete --id <entity_id> [options]"
-}

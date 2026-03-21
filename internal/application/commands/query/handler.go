@@ -39,21 +39,6 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, schemaIndexErr
 	}
 
-	if opts.Help {
-		helpText := engine.BuildHelpText(schemaIndex, schemaPath, loadedSchema.RawText)
-		return responses.CommandOutput{
-			JSON: map[string]any{
-				"result_state": responses.ResultStateValid,
-				"command":      "query",
-				"syntax":       "spec-cli query [options]",
-				"help":         helpText,
-				"schema": map[string]any{
-					"effective_path": schemaPath,
-				},
-			},
-		}, nil
-	}
-
 	plan, planErr := engine.BuildPlan(opts, schemaIndex)
 	if planErr != nil {
 		return responses.CommandOutput{}, planErr

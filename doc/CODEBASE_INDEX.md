@@ -189,7 +189,7 @@ Compact project map for fast entry into the code.
     - `help.go` - `HelpSpec`
   - Responsibilities:
     - Orchestrate `query`: parse options -> normalize paths -> load schema -> build schema index -> build query plan -> load workspace views -> execute.
-    - Build contractual JSON response (`items`, `matched`, `page`) and `query --help` payload.
+    - Build contractual JSON response (`items`, `matched`, `page`).
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `where-json.field`.
     - Own `query` help inside shared `help`.
     - Provide one place for mapping `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, schema errors, and read errors.
@@ -197,7 +197,7 @@ Compact project map for fast entry into the code.
     - `query/internal/options` - `--type`, `--where-json`, `--select`, `--sort`, `--limit`, `--offset`.
     - `query/internal/schema` - standard-schema loading and `QuerySchemaIndex`.
     - `query/internal/workspace` - full read-view building and `refs.<field>` resolution.
-    - `query/internal/engine` - planner, `where-json` evaluator, sorting, pagination, projection, help text.
+    - `query/internal/engine` - planner, `where-json` evaluator, sorting, pagination, projection.
     - `query/internal/model` - internal request/plan/index/AST/response types.
     - `query/internal/support` - pure helpers for YAML, collections, and literal/value operations.
 
@@ -241,7 +241,6 @@ Compact project map for fast entry into the code.
     - Parse and bind typed `--where-json` AST with `field/op/value`, type, and enum checks against `filter-namespace`.
     - Build effective sort (default + hidden tail) and deterministic comparator for missing values, including `refs.<name>.type/slug` missing semantics when non-deterministic.
     - Execute filter/sort/paginate/project pipeline and build page metadata (`matched`, `returned`, `has_more`, `next_offset`, `effective_sort`).
-    - Generate detailed help text in fixed sections `Command/Syntax/Options/Rules/Examples/Schema`.
   - Subpackages: none.
 
 - `internal/application/commands/help`
@@ -466,14 +465,13 @@ Compact project map for fast entry into the code.
     - `help.go` - `HelpSpec`
   - Responsibilities:
     - Orchestrate `delete`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute delete/checks.
-    - Serve `--help` through `engine.HelpPayload` and return contractual JSON help payload without side effects.
     - Map `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
     - Own `delete` help inside shared `help`.
   - Subpackages:
-    - `delete/internal/options` - parse/norm of `--id`, `--expect-revision`, `--dry-run`, `--help`.
+    - `delete/internal/options` - parse/norm of `--id`, `--expect-revision`, `--dry-run`.
     - `delete/internal/schema` - raw schema loading and reference-slot extraction for reverse-ref checks.
     - `delete/internal/workspace` - deterministic scan, target lookup by `id`, tolerant frontmatter parse, `revision`.
-    - `delete/internal/engine` - target lookup, optimistic concurrency, reverse-ref blocking, dry-run/commit payload, help text.
+    - `delete/internal/engine` - target lookup, optimistic concurrency, reverse-ref blocking, dry-run/commit payload.
     - `delete/internal/storage` - file deletion and filesystem error mapping.
     - `delete/internal/model` - internal use-case types.
     - `delete/internal/support` - YAML/map parsing helpers.
@@ -484,7 +482,7 @@ Compact project map for fast entry into the code.
     - `paths.go` - `NormalizePaths`
   - Responsibilities:
     - Parse and validate `delete` arguments, including `--flag=value`.
-    - Enforce required `--id` outside help and normalize boolean `--dry-run`.
+    - Enforce required `--id` and normalize boolean `--dry-run`.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
   - Subpackages: none.
 
@@ -509,13 +507,11 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/delete/internal/engine`
   - Entrypoints:
     - `execute.go` - `Execute`
-    - `help.go` - `HelpPayload`
   - Responsibilities:
     - Resolve target from `snapshot.TargetMatches` and diagnose `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`.
     - Enforce optimistic concurrency through `--expect-revision`.
     - Find blocking incoming references and build stable `blocking_refs`.
     - Execute dry-run or real delete and build contractual payload (`result_state`, `dry_run`, `deleted`, `target.id/revision`).
-    - Generate `delete` help payload/text in `Command/Syntax/Options/Rules/Examples`.
   - Subpackages: none.
 
 - `internal/application/commands/delete/internal/storage`
@@ -743,7 +739,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/50_path_pattern_expr/*` - `path_pattern.cases[].when` scenarios.
     - `tests/integration/cases/validate/60_entity_ref_context/*` - scalar/array `entity_ref`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dir_path`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
-    - `tests/integration/cases/query/10_basic/*` - basic `query`.
+    - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
     - `tests/integration/cases/query/20_select/*` - selector/projection scenarios.
     - `tests/integration/cases/query/30_where/*` - `--where-json` happy/negative scenarios.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
@@ -772,7 +768,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking.
     - `tests/integration/cases/delete/60_infra/*` - schema/load failures.
     - `tests/integration/cases/delete/70_fs/*` - delete-time filesystem failures.
-    - `tests/integration/cases/delete/80_help/*` - `delete --help`.
+    - `tests/integration/cases/delete/80_help/*` - unsupported command-local `delete --help`.
     - `tests/integration/cases/version/10_happy/*` - happy-path `version`.
     - `tests/integration/cases/version/20_args/*` - `version` argument failures.
     - `tests/integration/cases/help/10_general/*` - general `help` and `help <command>`.

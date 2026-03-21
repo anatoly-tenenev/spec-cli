@@ -14,10 +14,6 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 
 	for idx := 0; idx < len(args); idx++ {
 		token := args[idx]
-		if token == "--help" || token == "-h" {
-			opts.Help = true
-			continue
-		}
 
 		name, inlineValue, hasInlineValue := splitLongFlag(token)
 		if !strings.HasPrefix(name, "--") {
@@ -72,10 +68,6 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 				nil,
 			)
 		}
-	}
-
-	if opts.Help {
-		return opts, nil
 	}
 
 	if opts.ID == "" {

@@ -70,12 +70,12 @@ func TestParse_UnknownOption(t *testing.T) {
 	}
 }
 
-func TestParse_HelpFlag(t *testing.T) {
-	opts, err := Parse([]string{"--help"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestParse_HelpFlagUnsupported(t *testing.T) {
+	_, err := Parse([]string{"--help"})
+	if err == nil {
+		t.Fatal("expected error")
 	}
-	if !opts.Help {
-		t.Fatal("help flag was not set")
+	if err.Code != domainerrors.CodeInvalidArgs {
+		t.Fatalf("unexpected error code: %s", err.Code)
 	}
 }

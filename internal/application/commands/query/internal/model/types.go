@@ -21,7 +21,6 @@ type Options struct {
 	Sorts       []SortTerm
 	Limit       int
 	Offset      int
-	Help        bool
 }
 
 type SchemaFieldKind string
@@ -129,14 +128,6 @@ type QueryResponse struct {
 	Items       []map[string]any
 	Matched     int
 	Page        PageInfo
-}
-
-type HelpResponse struct {
-	ResultState string
-	Command     string
-	Syntax      string
-	Help        string
-	Schema      map[string]any
 }
 
 type JSONValue = json.RawMessage

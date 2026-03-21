@@ -4,7 +4,6 @@ type Options struct {
 	ID             string
 	ExpectRevision string
 	DryRun         bool
-	Help           bool
 }
 
 type Schema struct {

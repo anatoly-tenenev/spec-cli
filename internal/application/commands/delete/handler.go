@@ -24,10 +24,6 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, parseErr
 	}
 
-	if opts.Help {
-		return responses.CommandOutput{JSON: engine.HelpPayload()}, nil
-	}
-
 	workspacePath, schemaPath, pathErr := options.NormalizePaths(request.Global)
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
