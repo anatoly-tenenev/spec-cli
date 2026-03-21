@@ -1,4 +1,4 @@
-# spec / spec-cli
+# spec-cli
 
 **CLI for validating, querying, and updating Markdown specs.**
 
