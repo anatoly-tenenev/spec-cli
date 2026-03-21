@@ -285,9 +285,21 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 	normalizedType := strings.TrimSpace(rawType)
 	switch normalizedType {
 	case "integer", "number", "boolean", "array", "string", "entity_ref":
-		parsed := parsedMetadataField{IsRef: normalizedType == "entity_ref"}
-		if parsed.IsRef {
+		parsed := parsedMetadataField{}
+		if normalizedType == "entity_ref" {
+			parsed.IsRef = true
 			parsed.DeterministicType = extractSingleRefTypeHint(schemaNode)
+			return parsed, nil
+		}
+		if normalizedType == "array" {
+			isArrayRef, deterministicType, parseErr := parseArrayEntityRefMetadataField(entityTypeName, fieldName, schemaNode)
+			if parseErr != nil {
+				return parsedMetadataField{}, parseErr
+			}
+			if isArrayRef {
+				parsed.IsRef = true
+				parsed.DeterministicType = deterministicType
+			}
 		}
 		return parsed, nil
 	default:
@@ -297,6 +309,39 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 			map[string]any{"type": normalizedType},
 		)
 	}
+}
+
+func parseArrayEntityRefMetadataField(
+	entityTypeName string,
+	fieldName string,
+	schemaNode map[string]any,
+) (bool, string, *domainerrors.AppError) {
+	rawItems, hasItems := schemaNode["items"]
+	if !hasItems {
+		return false, "", nil
+	}
+	itemsNode, ok := support.ToStringMap(rawItems)
+	if !ok {
+		return false, "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items must be a mapping", entityTypeName, fieldName),
+			nil,
+		)
+	}
+
+	rawItemType, ok := itemsNode["type"].(string)
+	if !ok || strings.TrimSpace(rawItemType) == "" {
+		return false, "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type must be a non-empty string", entityTypeName, fieldName),
+			nil,
+		)
+	}
+	if strings.TrimSpace(rawItemType) != "entity_ref" {
+		return false, "", nil
+	}
+
+	return true, extractSingleRefTypeHint(itemsNode), nil
 }
 
 func extractSingleRefTypeHint(schemaNode map[string]any) string {

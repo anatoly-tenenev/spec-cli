@@ -217,9 +217,9 @@ Compact project map for fast entry into the code.
     - `index.go` - `BuildIndex`
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Parse metadata/read/content info for every entity type, including scalar `entity_ref` hints (`refTypes` single-type deterministic hint).
+    - Parse metadata/read/content info for every entity type, including scalar `entity_ref` and `array.items.type=entity_ref` hints (`refTypes` single-type deterministic hint).
     - Build `QuerySchemaIndex` with namespace split: public projection selectors (`refs`, `refs.<name>`) and filter/sort leaf fields (`refs.<name>.resolved|type|id|slug`) used for where/sort and hidden projection compatibility.
-    - Exclude scalar `entity_ref` from `meta.<name>` selector/filter/sort namespaces and keep type-conflict validation across entity types.
+    - Exclude scalar and array `entity_ref` from `meta.<name>` selector/filter/sort namespaces and keep type-conflict validation across entity types.
   - Subpackages: none.
 
 - `internal/application/commands/query/internal/workspace`
@@ -227,8 +227,8 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Deterministically scan `.md` files and parse entity frontmatter/body.
     - Build full read-view (`type/id/slug/revision/created_date/updated_date/meta/refs/content.raw/content.sections`).
-    - Exclude scalar `entity_ref` slots from projected `meta`.
-    - Build global `id` index and resolve `refs.<field>` into `{id,resolved,type,slug}` with `null`/unresolved semantics and deterministic fallback hints.
+    - Exclude scalar and array `entity_ref` slots from projected `meta`.
+    - Build global `id` index and resolve `refs.<field>` into `{id,resolved,type,slug}` for scalar refs and arrays of this shape for array refs, with `null`/unresolved semantics and deterministic fallback hints.
     - Mark `resolved=true` only when the resolved target is unique and compatible with `refTypes` hint; incompatible unique target keeps unresolved fallback shape.
     - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`) and compute opaque `revision` (`sha256:<hex>`).
   - Subpackages: none.
@@ -304,7 +304,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read.
-    - Enforce projection contract for scalar `entity_ref`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>` and compatible leaf selectors `refs.<name>.id|resolved|type|slug`.
+    - Enforce projection contract for scalar and array `entity_ref`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>` and compatible leaf selectors `refs.<name>.id|resolved|type|slug`.
     - Own `get` help inside shared `help`.
     - Handle `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`.
   - Subpackages:
@@ -329,7 +329,7 @@ Compact project map for fast entry into the code.
   - Entrypoint: `loader.go` - `LoadReadModel`.
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Build read-model from `schema.entity`: non-ref meta fields, scalar `entity_ref` fields (with single-`refTypes` deterministic type hint), and `content.sections` per type.
+    - Build read-model from `schema.entity`: non-ref meta fields, scalar `entity_ref` fields, and `array.items.type=entity_ref` fields (with single-`refTypes` deterministic type hint), plus `content.sections` per type.
     - Build canonical selector allowlist (`built-in`, `meta.<non_ref>`, `refs`, `refs.<name>`, `content.raw`, `content.sections`, `content.sections.<name>`).
     - Return `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` with `validation.issues`.
   - Subpackages: none.
@@ -351,7 +351,7 @@ Compact project map for fast entry into the code.
     - Validate selectors against schema read-model and build terminal select tree.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
     - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for `refs.<name>`/`refs.<name>.<leaf>` and `content.sections.<name>`.
-    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with refs shape `{id,resolved,type,slug}` and unresolved fallback semantics.
+    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with refs shape `{id,resolved,type,slug}` for scalar refs and arrays of this shape for array refs, plus unresolved fallback semantics.
     - Mark `resolved=true` only for unique ref target compatible with `refTypes` hint; unique incompatible target stays unresolved with deterministic fallback.
     - Apply blocking policy only when a requested ref slot is structurally unreadable and deterministic `id` cannot be obtained.
     - Project only the selected response subtree.
@@ -729,7 +729,7 @@ Compact project map for fast entry into the code.
     - Use marker `workspace.in/.keep` for empty input workspaces so they stay in Git and CI.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
-    - Cover scalar `entity_ref` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
+    - Cover scalar and array `entity_ref` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
   - Subpackages:
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
@@ -740,11 +740,11 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/60_entity_ref_context/*` - scalar/array `entity_ref`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dir_path`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
-    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios.
+    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entity_ref` under `refs.<field>`.
     - `tests/integration/cases/query/30_where/*` - `--where-json` happy/negative scenarios.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
-    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios.
+    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entity_ref` under `refs.<field>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
     - `tests/integration/cases/add/10_happy/*` - happy-path `add`.

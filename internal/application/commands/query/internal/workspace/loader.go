@@ -256,41 +256,63 @@ func resolveRefs(entity parsedEntity, entityType model.EntityTypeSpec, idIndex m
 			refs[refField] = nil
 			continue
 		}
-		targetID, ok := readRefID(rawTarget)
+		hintedType := entityType.RefTypeHints[refField]
+		refValue, ok := resolveRefValue(rawTarget, hintedType, idIndex)
 		if !ok {
 			refs[refField] = nil
 			continue
 		}
-
-		targets := idIndex[targetID]
-		hintedType := entityType.RefTypeHints[refField]
-		compatibleTargets := filterTargetsByHint(targets, hintedType)
-		refValue := map[string]any{
-			"id":       targetID,
-			"resolved": false,
-			"type":     nil,
-			"slug":     nil,
-		}
-
-		if len(targets) == 1 && isResolvedRefTarget(targets[0], hintedType) {
-			target := targets[0]
-			refValue["resolved"] = true
-			refValue["type"] = target.Type
-			refValue["slug"] = target.Slug
-			refs[refField] = refValue
-			continue
-		}
-
-		if deterministicType := deterministicRefType(compatibleTargets, hintedType); deterministicType != "" {
-			refValue["type"] = deterministicType
-		}
-		if deterministicSlug := deterministicRefSlug(compatibleTargets); deterministicSlug != "" {
-			refValue["slug"] = deterministicSlug
-		}
-
 		refs[refField] = refValue
 	}
 	return refs
+}
+
+func resolveRefValue(rawTarget any, hintedType string, idIndex map[string][]entityIdentity) (any, bool) {
+	if items, ok := rawTarget.([]any); ok {
+		resolvedItems := make([]any, 0, len(items))
+		for _, item := range items {
+			targetID, ok := readRefID(item)
+			if !ok {
+				return nil, false
+			}
+			resolvedItems = append(resolvedItems, buildResolvedRefValue(targetID, hintedType, idIndex))
+		}
+		return resolvedItems, true
+	}
+
+	targetID, ok := readRefID(rawTarget)
+	if !ok {
+		return nil, false
+	}
+	return buildResolvedRefValue(targetID, hintedType, idIndex), true
+}
+
+func buildResolvedRefValue(targetID string, hintedType string, idIndex map[string][]entityIdentity) map[string]any {
+	targets := idIndex[targetID]
+	compatibleTargets := filterTargetsByHint(targets, hintedType)
+	refValue := map[string]any{
+		"id":       targetID,
+		"resolved": false,
+		"type":     nil,
+		"slug":     nil,
+	}
+
+	if len(targets) == 1 && isResolvedRefTarget(targets[0], hintedType) {
+		target := targets[0]
+		refValue["resolved"] = true
+		refValue["type"] = target.Type
+		refValue["slug"] = target.Slug
+		return refValue
+	}
+
+	if deterministicType := deterministicRefType(compatibleTargets, hintedType); deterministicType != "" {
+		refValue["type"] = deterministicType
+	}
+	if deterministicSlug := deterministicRefSlug(compatibleTargets); deterministicSlug != "" {
+		refValue["slug"] = deterministicSlug
+	}
+
+	return refValue
 }
 
 func readRefID(rawTarget any) (string, bool) {

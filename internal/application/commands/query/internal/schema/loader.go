@@ -234,17 +234,17 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 	if kindErr != nil {
 		return Field{}, kindErr
 	}
-	isEntityRef := strings.TrimSpace(rawType) == "entity_ref"
+	isEntityRef, refTypeHint, refErr := parseEntityRefMetadataField(entityTypeName, fieldName, rawType, schemaNode)
+	if refErr != nil {
+		return Field{}, refErr
+	}
 
 	field := Field{
 		Name:        fieldName,
 		Kind:        fieldKind,
 		EnumValues:  []any{},
 		IsEntityRef: isEntityRef,
-		RefTypeHint: "",
-	}
-	if isEntityRef {
-		field.RefTypeHint = extractSingleRefTypeHint(schemaNode)
+		RefTypeHint: refTypeHint,
 	}
 
 	rawEnum, hasEnum := schemaNode["enum"]
@@ -261,6 +261,48 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 	}
 
 	return field, nil
+}
+
+func parseEntityRefMetadataField(
+	entityTypeName string,
+	fieldName string,
+	rawType string,
+	schemaNode map[string]any,
+) (bool, string, *domainerrors.AppError) {
+	normalizedType := strings.TrimSpace(rawType)
+	if normalizedType == "entity_ref" {
+		return true, extractSingleRefTypeHint(schemaNode), nil
+	}
+	if normalizedType != "array" {
+		return false, "", nil
+	}
+
+	rawItems, hasItems := schemaNode["items"]
+	if !hasItems {
+		return false, "", nil
+	}
+	itemsNode, ok := support.ToStringMap(rawItems)
+	if !ok {
+		return false, "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items must be a mapping", entityTypeName, fieldName),
+			nil,
+		)
+	}
+
+	rawItemType, ok := itemsNode["type"].(string)
+	if !ok || strings.TrimSpace(rawItemType) == "" {
+		return false, "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type must be a non-empty string", entityTypeName, fieldName),
+			nil,
+		)
+	}
+	if strings.TrimSpace(rawItemType) != "entity_ref" {
+		return false, "", nil
+	}
+
+	return true, extractSingleRefTypeHint(itemsNode), nil
 }
 
 func extractSingleRefTypeHint(schemaNode map[string]any) string {

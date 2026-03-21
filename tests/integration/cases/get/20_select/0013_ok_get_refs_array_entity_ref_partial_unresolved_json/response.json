@@ -1,0 +1,25 @@
+{
+  "entity": {
+    "refs": {
+      "reviewers": [
+        {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        },
+        {
+          "id": "SVC-404",
+          "resolved": false,
+          "slug": null,
+          "type": "service"
+        }
+      ]
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

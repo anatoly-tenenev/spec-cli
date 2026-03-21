@@ -1,0 +1,29 @@
+{
+  "entity": {
+    "meta": {
+      "score": 9.5,
+      "status": "active"
+    },
+    "refs": {
+      "reviewers": [
+        {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        },
+        {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      ]
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

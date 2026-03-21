@@ -1,0 +1,29 @@
+{
+  "id": "query_20_0014_ok_query_select_refs_array_entity_ref_json",
+  "description": "query exposes array entity_ref metadata field under refs namespace",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where-json",
+    "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"FEAT-1\"}",
+    "--select",
+    "id",
+    "--select",
+    "meta",
+    "--select",
+    "refs"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}
