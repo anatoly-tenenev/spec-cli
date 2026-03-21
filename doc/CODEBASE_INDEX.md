@@ -386,7 +386,7 @@ Compact project map for fast entry into the code.
     - Orchestrate `add`: parse options -> normalize paths -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
     - Map `INVALID_ARGS`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema errors, and read/write errors into one JSON envelope.
     - Inject `Clock` for deterministic `created_date`/`updated_date`.
-    - Own `add` help inside shared `help`.
+    - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
   - Subpackages:
     - `add/internal/options` - parse/norm of `--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`.
     - `add/internal/schema` - raw schema loading and local write-contract building.
@@ -551,7 +551,7 @@ Compact project map for fast entry into the code.
     - Orchestrate `update`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
     - Return contractual JSON response (`updated/noop/changes/entity/validation`) with one domain-error mapping layer.
-    - Own `update` help inside shared `help`.
+    - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
   - Subpackages:
     - `update/internal/options` - parse/norm of `update` options and conflict checks.
     - `update/internal/schema` - raw schema loading and read/write contract building.

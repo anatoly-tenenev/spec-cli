@@ -109,6 +109,7 @@ func HelpSpec() helpmodel.CommandSpec {
 			"refs.<field> values are target entity ids (scalar id or YAML array of ids).",
 			"--set-file is allowed only for content.sections.<name>.",
 			"Whole-body operations are --content-file, --content-stdin and --clear-content; they are not write-namespace paths.",
+			"For whole-body operations --content-file/--content-stdin, use headings like `## <title> {#<section_name>}`.",
 			"Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.",
 			"At least one patch operation must be provided.",
 			"--unset removes a writable slot by write-namespace path.",
