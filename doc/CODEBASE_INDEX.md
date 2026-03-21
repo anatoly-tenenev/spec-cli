@@ -33,6 +33,8 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Build the application and register handlers (`help`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`) through `internal/cli/command_catalog.go`.
     - Parse global options (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) both before and after the command name.
+    - Load active JSON config before dispatch (`--config <path>` or auto-discovered `cwd/spec-cli.json`), apply only supported keys (`schema`, `workspace`), resolve relative config paths from config directory, and enforce priority `explicit CLI > config > defaults`.
+    - Return deterministic `INVALID_CONFIG` for missing/unreadable/unparseable explicit config, invalid auto-discovered config, and unknown config keys.
     - Validate global options deterministically: reject duplicate non-repeatable flags and enforce early `--require-absolute-paths` checks for explicit `--workspace/--schema`.
     - Apply the pre-dispatch capability gate: `--format text` is allowed only for `help`.
     - Render successful and error responses uniformly: JSON for command payload/error, text-first for `help`.
@@ -269,7 +271,7 @@ Compact project map for fast entry into the code.
   - Entrypoint: `options.go` - `Options`.
   - Responsibilities:
     - Define compact shared descriptor of global options for the top-level `Global options` section.
-    - Provide normative wording for `--workspace`, `--schema`, `--format`, `--require-absolute-paths`.
+    - Provide normative wording for `--workspace`, `--schema`, `--config`, `--format`, `--require-absolute-paths`.
   - Subpackages: none.
 
 - `internal/application/help/helpschema`
@@ -714,14 +716,17 @@ Compact project map for fast entry into the code.
   - Entrypoints:
     - `run_cases_test.go` - `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`
     - `help_cases_test.go` - `TestHelpGeneralCases`, `TestHelpSchemaRecoveryCases`, `TestHelpErrorCases`, `TestHelpSelectedCases`
+    - `global_options_cases_test.go` - `TestGlobalOptionsCases`
     - `delete_multirun_test.go` - `TestDeleteHappy02DryRunMatchesRealRevision`
   - Responsibilities:
     - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`.
+    - Run black-box global-config cases (`--config` explicit path, auto-discovery of `cwd/spec-cli.json`, CLI-over-config priority, `INVALID_CONFIG` failures).
     - Run targeted `help` error-path checks (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) through subprocess invocations.
     - Traverse groups/cases deterministically (lexicographic sort on every level).
     - Validate naming rules `NNNN_ok_*` / `NNNN_err_*` against `expect.exit_code`, `case.json.id`, and `case.json.command`.
     - Prepare temporary workspace/schema and execute CLI as subprocess through the built binary.
+    - Support optional case runtime working directory override (`runtime.cwd`) with `${WORKSPACE}` / `${SCHEMA}` placeholders; default working directory remains repository root.
     - Compare `exit_code`, `stderr`, and response (`json|text`) with golden expectations.
     - Treat `workspace.in` as optional for `help` cases; create empty workspace when absent.
     - Compare text-help stdout directly and stabilize `ResolvedPath` through runtime fixed-root injection.
@@ -774,6 +779,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/help/10_general/*` - general `help` and `help <command>`.
     - `tests/integration/cases/help/15_schema_recovery/*` - degraded-schema recovery contract for `help`.
     - `tests/integration/cases/help/20_errors/*` - non-zero `help` errors.
+    - `tests/integration/cases/global_options/10_config/*` - data-first global `--config` contract scenarios (explicit config, auto-discovery, CLI precedence, INVALID_CONFIG failures).
 
 ## Current Command Status
 

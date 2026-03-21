@@ -39,10 +39,15 @@ Prototype global options:
 
 `--config` rules:
 
-- `--config` points to a JSON/YAML file with defaults for global options;
+- `--config` points to a JSON file with defaults for global options;
+- only `schema` and `workspace` keys are allowed in the MVP config;
+- if `--config` is omitted, the CLI auto-loads `cwd/spec-cli.json` when that file exists;
+- if `--config` is omitted and `cwd/spec-cli.json` is absent, the command continues without config;
+- relative `schema`/`workspace` values from config are resolved from the active config file directory;
 - value priority: explicit CLI flag > `--config` > built-in default;
-- unknown keys in the config file fail with `INVALID_ARGS`;
-- an unavailable/unparseable config file fails with `INVALID_ARGS`.
+- built-in defaults remain `workspace="."` and `schema="spec.schema.yaml"`;
+- if `--config` is explicit, missing/unreadable/unparseable config and unknown keys fail with `INVALID_CONFIG`;
+- if `--config` is omitted, unreadable/unparseable auto-found `cwd/spec-cli.json` and unknown keys fail with `INVALID_CONFIG`.
 
 `--verbose` rules:
 
@@ -356,6 +361,7 @@ Minimal JSON error format:
 Codes that must already be implemented in the prototype:
 
 - `INVALID_ARGS`
+- `INVALID_CONFIG`
 - `SCHEMA_NOT_FOUND`
 - `SCHEMA_PARSE_ERROR`
 - `SCHEMA_INVALID`

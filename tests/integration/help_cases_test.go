@@ -189,6 +189,7 @@ func TestHelpSelectedCases(t *testing.T) {
 		}
 		assertContains(t, result.Stdout, "CLI\n  spec-cli is a machine-first CLI utility for spec documents.")
 		assertContains(t, result.Stdout, "Global options")
+		assertContains(t, result.Stdout, "--config <path>: optional; JSON config with \"schema\"/\"workspace\"; if omitted, auto-loads \"./spec-cli.json\" when present")
 		assertContains(t, result.Stdout, "Commands")
 		assertContains(t, result.Stdout, "Schema")
 		assertSchemaResolvedPathContract(t, result.Stdout)

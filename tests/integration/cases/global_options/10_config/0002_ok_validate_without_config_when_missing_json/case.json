@@ -1,0 +1,21 @@
+{
+  "id": "global_options_10_0002_ok_validate_without_config_when_missing_json",
+  "description": "global_options_10_0002_ok_validate_without_config_when_missing_json",
+  "command": "validate",
+  "args": [
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

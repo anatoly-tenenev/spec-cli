@@ -1,0 +1,12 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_CONFIG",
+    "message": "failed to read config file",
+    "exit_code": 2,
+    "details": {
+      "path": "<workspace>/missing.json",
+      "reason": "<workspace>/missing.json: no such file or directory"
+    }
+  }
+}

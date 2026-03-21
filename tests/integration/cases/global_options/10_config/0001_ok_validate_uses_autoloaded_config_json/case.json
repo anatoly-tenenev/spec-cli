@@ -1,0 +1,21 @@
+{
+  "id": "global_options_10_0001_ok_validate_uses_autoloaded_config_json",
+  "description": "global_options_10_0001_ok_validate_uses_autoloaded_config_json",
+  "command": "validate",
+  "args": [
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

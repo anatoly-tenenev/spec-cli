@@ -1,14 +1,29 @@
 package cli
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
+
+const autoConfigFilename = "spec-cli.json"
+
+type loadedGlobalConfig struct {
+	SchemaValue     string
+	SchemaSet       bool
+	WorkspaceValue  string
+	WorkspaceSet    bool
+	ConfigPath      string
+	ConfigDirectory string
+}
 
 func defaultGlobalOptions() requests.GlobalOptions {
 	return requests.GlobalOptions{
@@ -34,6 +49,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 	seenGlobals := map[string]struct{}{}
 	explicitWorkspace := false
 	explicitSchema := false
+	explicitConfig := false
 
 	for i := 0; i < len(args); i++ {
 		token := args[i]
@@ -84,6 +100,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 			if handled {
 				explicitWorkspace = explicitWorkspace || usedWorkspace
 				explicitSchema = explicitSchema || usedSchema
+				explicitConfig = explicitConfig || name == "--config"
 				i = nextIdx
 				continue
 			}
@@ -103,6 +120,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 			if handled {
 				explicitWorkspace = explicitWorkspace || usedWorkspace
 				explicitSchema = explicitSchema || usedSchema
+				explicitConfig = explicitConfig || name == "--config"
 				i = nextIdx
 				continue
 			}
@@ -117,6 +135,11 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 			"command is required",
 			map[string]any{"commands": supportedCommandNames()},
 		)
+	}
+
+	configErr := applyConfigOptions(&opts, explicitWorkspace, explicitSchema, explicitConfig)
+	if configErr != nil {
+		return opts, "", nil, configErr
 	}
 
 	if opts.RequireAbsolutePaths {
@@ -137,6 +160,159 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 	}
 
 	return opts, commandName, commandArgs, nil
+}
+
+func applyConfigOptions(
+	opts *requests.GlobalOptions,
+	explicitWorkspace bool,
+	explicitSchema bool,
+	explicitConfig bool,
+) *domainerrors.AppError {
+	loaded, hasConfig, configErr := loadActiveConfig(opts.ConfigPath, explicitConfig)
+	if configErr != nil {
+		return configErr
+	}
+	if !hasConfig {
+		return nil
+	}
+
+	opts.ConfigPath = loaded.ConfigPath
+
+	if loaded.WorkspaceSet && !explicitWorkspace {
+		opts.Workspace = resolveConfigPath(loaded.ConfigDirectory, loaded.WorkspaceValue)
+	}
+	if loaded.SchemaSet && !explicitSchema {
+		opts.SchemaPath = resolveConfigPath(loaded.ConfigDirectory, loaded.SchemaValue)
+	}
+
+	return nil
+}
+
+func loadActiveConfig(rawPath string, explicitConfig bool) (loadedGlobalConfig, bool, *domainerrors.AppError) {
+	configPath, err := activeConfigPath(rawPath, explicitConfig)
+	if err != nil {
+		return loadedGlobalConfig{}, false, invalidConfigError("", err.Error(), nil)
+	}
+
+	content, readErr := os.ReadFile(configPath)
+	if readErr != nil {
+		if !explicitConfig && errors.Is(readErr, os.ErrNotExist) {
+			return loadedGlobalConfig{}, false, nil
+		}
+		return loadedGlobalConfig{}, false, invalidConfigError(configPath, "failed to read config file", readErr)
+	}
+
+	parsed, parseErr := parseConfig(content, configPath)
+	if parseErr != nil {
+		return loadedGlobalConfig{}, false, parseErr
+	}
+
+	return parsed, true, nil
+}
+
+func activeConfigPath(rawPath string, explicitConfig bool) (string, error) {
+	if explicitConfig {
+		return filepath.Abs(rawPath)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve current working directory: %w", err)
+	}
+	return filepath.Join(cwd, autoConfigFilename), nil
+}
+
+func parseConfig(content []byte, configPath string) (loadedGlobalConfig, *domainerrors.AppError) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(content, &raw); err != nil {
+		return loadedGlobalConfig{}, invalidConfigError(configPath, "failed to parse JSON config", err)
+	}
+
+	parsed := loadedGlobalConfig{
+		ConfigPath:      filepath.Clean(configPath),
+		ConfigDirectory: filepath.Dir(configPath),
+	}
+
+	keys := make([]string, 0, len(raw))
+	for key := range raw {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		rawValue := raw[key]
+		switch key {
+		case "schema":
+			value, parseErr := parseConfigPathValue(rawValue, key, configPath)
+			if parseErr != nil {
+				return loadedGlobalConfig{}, parseErr
+			}
+			parsed.SchemaValue = value
+			parsed.SchemaSet = true
+		case "workspace":
+			value, parseErr := parseConfigPathValue(rawValue, key, configPath)
+			if parseErr != nil {
+				return loadedGlobalConfig{}, parseErr
+			}
+			parsed.WorkspaceValue = value
+			parsed.WorkspaceSet = true
+		default:
+			return loadedGlobalConfig{}, domainerrors.New(
+				domainerrors.CodeInvalidConfig,
+				fmt.Sprintf("unknown config key: %s", key),
+				map[string]any{
+					"path": configPath,
+					"key":  key,
+				},
+			)
+		}
+	}
+
+	return parsed, nil
+}
+
+func parseConfigPathValue(rawValue json.RawMessage, key string, configPath string) (string, *domainerrors.AppError) {
+	var value string
+	if err := json.Unmarshal(rawValue, &value); err != nil {
+		return "", invalidConfigError(configPath, fmt.Sprintf("config key %q must be a string", key), err)
+	}
+	if strings.TrimSpace(value) == "" {
+		return "", domainerrors.New(
+			domainerrors.CodeInvalidConfig,
+			fmt.Sprintf("config key %q must be a non-empty string", key),
+			map[string]any{
+				"path": configPath,
+				"key":  key,
+			},
+		)
+	}
+	return value, nil
+}
+
+func resolveConfigPath(configDir string, rawValue string) string {
+	if filepath.IsAbs(rawValue) {
+		return filepath.Clean(rawValue)
+	}
+	return filepath.Clean(filepath.Join(configDir, rawValue))
+}
+
+func invalidConfigError(configPath string, message string, cause error) *domainerrors.AppError {
+	details := map[string]any{}
+	if configPath != "" {
+		details["path"] = filepath.Clean(configPath)
+	}
+	if cause != nil {
+		details["reason"] = cause.Error()
+	}
+	if len(details) == 0 {
+		details = nil
+	}
+
+	return domainerrors.New(
+		domainerrors.CodeInvalidConfig,
+		message,
+		details,
+	)
 }
 
 func consumeGlobalOption(

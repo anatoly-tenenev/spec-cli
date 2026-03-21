@@ -21,7 +21,7 @@ This page is the single entry point to the `spec-cli` project documentation.
 
 ### 001 Base
 
-- [001-base/SPEC_UTILITY_CLI_PROTOTYPE.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE.md) - specification of the CLI prototype (`validate`, `query`, `add`, `update`), contract invariants, architectural boundaries, and DoD.
+- [001-base/SPEC_UTILITY_CLI_PROTOTYPE.md](./001-base/SPEC_UTILITY_CLI_PROTOTYPE.md) - specification of the CLI prototype (`validate`, `query`, `add`, `update`), contract invariants, architectural boundaries, DoD, and the global `--config` JSON contract (including auto-discovery of `cwd/spec-cli.json`).
 - [001-base/SPEC_UTILITY_CLI_VERSION_IMPLEMENTATION_PLAN.md](./001-base/SPEC_UTILITY_CLI_VERSION_IMPLEMENTATION_PLAN.md) - implementation plan for the `spec-cli version` command (JSON contract, shared global `--format`, no command-specific `--format`, error codes, and contract-test coverage).
 - [001-base/PLAN_GET_IMPLEMENTATION.md](./001-base/PLAN_GET_IMPLEMENTATION.md) - detailed implementation plan for the baseline `spec-cli get` command based on the baseline API and the local working specification.
 - [001-base/SPEC_UTILITY_CLI_ADD_IMPLEMENTATION_PLAN.md](./001-base/SPEC_UTILITY_CLI_ADD_IMPLEMENTATION_PLAN.md) - detailed implementation plan for the `spec-cli add` command for the baseline CLI API: write contract from raw schema, pre-write validation, atomic write, and black-box integration tests.
@@ -34,4 +34,4 @@ This page is the single entry point to the `spec-cli` project documentation.
 
 ### 002 Integration
 
-- [002-integration/INTEGRATION_CASES_LAYOUT.md](./002-integration/INTEGRATION_CASES_LAYOUT.md) - data-first and black-box contract structure for integration cases, the `tests/integration/cases` layout, the case directory content contract (`case.json`, `spec.schema.yaml`, `workspace.in/out`, `response.json`), including two-level grouping `validate/<group>/<case>`, the naming convention `NNNN_ok_*` / `NNNN_err_*` for `validate` cases, and the `_json` suffix rule for cases using `--format json`.
+- [002-integration/INTEGRATION_CASES_LAYOUT.md](./002-integration/INTEGRATION_CASES_LAYOUT.md) - data-first and black-box contract structure for integration cases, the `tests/integration/cases` layout, the case directory content contract (`case.json`, `spec.schema.yaml`, `workspace.in/out`, `response.json`), including grouped suites (`validate/<group>/<case>`, `global_options/<group>/<case>`), optional `runtime.cwd` placeholder support, the naming convention `NNNN_ok_*` / `NNNN_err_*` for `validate` cases, and the `_json` suffix rule for cases using `--format json`.

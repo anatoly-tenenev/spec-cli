@@ -15,6 +15,11 @@ func Options() []helpmodel.GlobalOptionSpec {
 			Description: `optional; default "spec.schema.yaml"; effective schema filesystem path`,
 		},
 		{
+			Name:        "--config",
+			ValueSyntax: "<path>",
+			Description: `optional; JSON config with "schema"/"workspace"; if omitted, auto-loads "./spec-cli.json" when present`,
+		},
+		{
 			Name:        "--format",
 			ValueSyntax: "<json|text>",
 			Description: `optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED`,

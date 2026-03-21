@@ -1,0 +1,23 @@
+{
+  "id": "global_options_10_0006_err_validate_explicit_missing_config_json",
+  "description": "global_options_10_0006_err_validate_explicit_missing_config_json",
+  "command": "validate",
+  "args": [
+    "--config",
+    "missing.json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

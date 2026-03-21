@@ -1,0 +1,5 @@
+{
+  "schema": "spec.schema.yaml",
+  "workspace": ".",
+  "unknown": "value"
+}

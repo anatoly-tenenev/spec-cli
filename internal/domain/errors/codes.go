@@ -4,6 +4,7 @@ type Code string
 
 const (
 	CodeInvalidArgs           Code = "INVALID_ARGS"
+	CodeInvalidConfig         Code = "INVALID_CONFIG"
 	CodeSchemaNotFound        Code = "SCHEMA_NOT_FOUND"
 	CodeSchemaReadError       Code = "SCHEMA_READ_ERROR"
 	CodeSchemaParseError      Code = "SCHEMA_PARSE_ERROR"
@@ -53,7 +54,7 @@ func New(code Code, message string, details map[string]any) *AppError {
 
 func ExitCodeFor(code Code) int {
 	switch code {
-	case CodeInvalidArgs, CodeInvalidQuery:
+	case CodeInvalidArgs, CodeInvalidConfig, CodeInvalidQuery:
 		return 2
 	case CodeEntityTypeUnknown:
 		return 2

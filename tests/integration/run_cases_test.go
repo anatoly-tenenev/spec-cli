@@ -39,6 +39,7 @@ type integrationCase struct {
 		FixedNowUTC string            `json:"fixed_now_utc"`
 		StdinFile   string            `json:"stdin_file"`
 		Env         map[string]string `json:"env"`
+		CWD         string            `json:"cwd"`
 	} `json:"runtime"`
 }
 
@@ -268,6 +269,7 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
 	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
+	runCWD := replaceRuntimePlaceholder(testCase.Runtime.CWD, workspacePath, schemaPath)
 	stdinValue := ""
 	if strings.TrimSpace(testCase.Runtime.StdinFile) != "" {
 		stdinRaw, readErr := os.ReadFile(filepath.Join(caseDir, testCase.Runtime.StdinFile))
@@ -276,7 +278,7 @@ func runCase(t *testing.T, caseDir string, testCase integrationCase) {
 		}
 		stdinValue = string(stdinRaw)
 	}
-	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, stdinValue, testCase.Runtime.Env)
+	execResult, runErr := runCLIProcessInDir(context.Background(), runCWD, args, testCase.Runtime.FixedNowUTC, stdinValue, testCase.Runtime.Env)
 	if runErr != nil {
 		t.Fatalf("execute cli process: %v", runErr)
 	}
@@ -301,16 +303,32 @@ type cliExecResult struct {
 }
 
 func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdinValue string, extraEnv map[string]string) (cliExecResult, error) {
+	return runCLIProcessInDir(ctx, "", args, fixedNowUTC, stdinValue, extraEnv)
+}
+
+func runCLIProcessInDir(
+	ctx context.Context,
+	cwd string,
+	args []string,
+	fixedNowUTC string,
+	stdinValue string,
+	extraEnv map[string]string,
+) (cliExecResult, error) {
 	binaryPath, binErr := ensureCLIBinary()
 	if binErr != nil {
 		return cliExecResult{}, binErr
 	}
-	repoRoot, rootErr := ensureRepoRoot()
-	if rootErr != nil {
-		return cliExecResult{}, rootErr
-	}
+
 	cmd := exec.CommandContext(ctx, binaryPath, args...)
-	cmd.Dir = repoRoot
+	if strings.TrimSpace(cwd) != "" {
+		cmd.Dir = cwd
+	} else {
+		repoRoot, rootErr := ensureRepoRoot()
+		if rootErr != nil {
+			return cliExecResult{}, rootErr
+		}
+		cmd.Dir = repoRoot
+	}
 	env := append([]string{}, os.Environ()...)
 	if strings.TrimSpace(fixedNowUTC) != "" {
 		env = append(env, "SPEC_CLI_FIXED_NOW_UTC="+strings.TrimSpace(fixedNowUTC))
@@ -346,6 +364,14 @@ func runCLIProcess(ctx context.Context, args []string, fixedNowUTC string, stdin
 		Stderr:   stderr.String(),
 		ExitCode: 0,
 	}, nil
+}
+
+func replaceRuntimePlaceholder(raw string, workspace string, schema string) string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return ""
+	}
+	return replacePlaceholders([]string{value}, workspace, schema)[0]
 }
 
 func ensureCLIBinary() (string, error) {

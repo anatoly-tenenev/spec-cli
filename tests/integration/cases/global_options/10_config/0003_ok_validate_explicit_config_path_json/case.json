@@ -1,0 +1,23 @@
+{
+  "id": "global_options_10_0003_ok_validate_explicit_config_path_json",
+  "description": "global_options_10_0003_ok_validate_explicit_config_path_json",
+  "command": "validate",
+  "args": [
+    "--config",
+    "config/custom.json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

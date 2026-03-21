@@ -10,7 +10,7 @@ Related document: [SPEC_UTILITY_CLI_PROTOTYPE.md](../001-base/SPEC_UTILITY_CLI_P
 - Integration tests are `data-first`: a case is described by files.
 - Go tests and the runner are minimal: load the case, run the CLI, compare the expected result.
 - Integration tests are **black-box contract tests**: only observable CLI behavior is checked.
-- Cases are grouped **by command**: `validate`, `query`, `add`, `update`.
+- Cases are grouped **by command/contract suite**: `validate`, `query`, `add`, `update`, and `global_options`.
 - `validate` uses an additional domain grouping `group -> case` (strictly 2 levels).
 - Each case contains the input workspace, the schema, and the expected CLI response.
 - For mutating commands (`add`, `update`), the case also contains the expected `workspace.out`.
@@ -67,6 +67,14 @@ tests/
           workspace.in/
           workspace.out/
           response.json
+
+      global_options/
+        <GG_group-name>/
+          <NNNN_outcome_case-id>/
+            case.json
+            spec.schema.yaml
+            workspace.in/
+            response.json
 ```
 
 ## 3. Case Directory Contract
@@ -75,6 +83,7 @@ The case directory must contain:
 
 - for `validate`: `tests/integration/cases/validate/<GG_group-name>/<NNNN_outcome_case-id>/`;
 - for `query|add|update`: `tests/integration/cases/<command>/<XXXX_case-id>/`.
+- for `global_options`: `tests/integration/cases/global_options/<GG_group-name>/<NNNN_outcome_case-id>/`.
 
 Case directory contents:
 
@@ -120,17 +129,21 @@ Example:
     "input_dir": "workspace.in",
     "output_dir": "workspace.out",
     "assert_output": true
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
   }
 }
 ```
 
 Field rules:
 
-- `command`: one of `validate|query|add|update`.
+- `command`: one of `validate|query|add|update` (for dedicated global-options suites the command in each case remains the real CLI command, e.g. `validate`).
 - `args`: CLI arguments without the binary name.
 - `${WORKSPACE}` and `${SCHEMA}` are runner placeholders.
 - `expect.exit_code`: expected process exit code.
 - `expect.response_file`: path to the expected response file (usually `response.json`).
+- `runtime.cwd` (optional): process working directory for the case; supports `${WORKSPACE}` and `${SCHEMA}` placeholders; default is repository root.
 - `workspace.assert_output`:
   - `false` for read-only commands (`validate`, `query`),
   - `true` for mutating commands (`add`, `update`).

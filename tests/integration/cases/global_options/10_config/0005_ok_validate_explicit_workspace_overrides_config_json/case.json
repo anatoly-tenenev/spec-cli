@@ -1,0 +1,25 @@
+{
+  "id": "global_options_10_0005_ok_validate_explicit_workspace_overrides_config_json",
+  "description": "global_options_10_0005_ok_validate_explicit_workspace_overrides_config_json",
+  "command": "validate",
+  "args": [
+    "--config",
+    "spec-cli.json",
+    "--workspace",
+    "overrides/workspace",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

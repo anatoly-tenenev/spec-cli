@@ -4,6 +4,7 @@ CLI
 Global options
   --workspace <path>: optional; default "."; root workspace filesystem path
   --schema <path>: optional; default "spec.schema.yaml"; effective schema filesystem path
+  --config <path>: optional; JSON config with "schema"/"workspace"; if omitted, auto-loads "./spec-cli.json" when present
   --format <json|text>: optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED
   --require-absolute-paths: optional; reject explicit relative filesystem paths
 
