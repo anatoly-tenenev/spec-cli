@@ -103,8 +103,9 @@ func Execute(
 	candidate := buildCandidate(applied.Frontmatter, applied.Body)
 	hydrateMetaAndRefIDs(candidate, typeSpec)
 
-	resolvedRefs, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
+	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
 	candidate.Refs = resolvedRefs
+	candidate.RefArrays = resolvedRefArrays
 
 	pathRelPOSIX, pathIssues := pathcalc.Evaluate(typeSpec, candidate)
 	if pathRelPOSIX != "" {
@@ -246,7 +247,9 @@ func buildCandidate(frontmatter map[string]any, body string) *model.Candidate {
 		Frontmatter:  frontmatter,
 		Meta:         map[string]any{},
 		RefIDs:       map[string]string{},
+		RefIDArrays:  map[string][]string{},
 		Refs:         map[string]model.ResolvedRef{},
+		RefArrays:    map[string][]model.ResolvedRef{},
 		Body:         strings.ReplaceAll(body, "\r\n", "\n"),
 		Sections:     map[string]string{},
 		PathRelPOSIX: "",
@@ -272,6 +275,23 @@ func hydrateMetaAndRefIDs(candidate *model.Candidate, typeSpec model.EntityTypeS
 				continue
 			}
 			candidate.RefIDs[fieldName] = text
+			continue
+		}
+		if field.IsEntityRefArray {
+			items, ok := value.([]any)
+			if !ok {
+				continue
+			}
+			ids := make([]string, 0, len(items))
+			for _, item := range items {
+				itemText, ok := item.(string)
+				if !ok || strings.TrimSpace(itemText) == "" {
+					ids = nil
+					break
+				}
+				ids = append(ids, strings.TrimSpace(itemText))
+			}
+			candidate.RefIDArrays[fieldName] = ids
 			continue
 		}
 		candidate.Meta[fieldName] = support.NormalizeValue(value)

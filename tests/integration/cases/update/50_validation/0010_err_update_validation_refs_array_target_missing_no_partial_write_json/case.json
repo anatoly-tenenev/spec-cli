@@ -1,0 +1,32 @@
+{
+  "id": "update_50_0010_err_update_validation_refs_array_target_missing_no_partial_write_json",
+  "description": "update_50_0010_err_update_validation_refs_array_target_missing_no_partial_write_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "meta.status=active",
+    "--set",
+    "refs.watchers=[SVC-999]"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

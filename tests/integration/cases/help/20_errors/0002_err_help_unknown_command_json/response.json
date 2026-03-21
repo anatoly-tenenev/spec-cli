@@ -1,11 +1,11 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "unknown command: unknown",
-    "exit_code": 2,
     "details": {
       "command": "unknown"
-    }
-  }
+    },
+    "exit_code": 2,
+    "message": "unknown command: unknown"
+  },
+  "result_state": "invalid"
 }

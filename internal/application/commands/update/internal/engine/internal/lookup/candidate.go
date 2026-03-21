@@ -49,45 +49,62 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 			return nil, false
 		}
 		ref, exists := l.Candidate.Refs[parts[0]]
+		if exists {
+			if len(parts) == 1 {
+				return map[string]any{
+					"type":     ref.Type,
+					"id":       ref.ID,
+					"slug":     ref.Slug,
+					"dir_path": ref.DirPath,
+				}, true
+			}
+
+			switch parts[1] {
+			case "type":
+				if len(parts) == 2 {
+					return ref.Type, true
+				}
+			case "id":
+				if len(parts) == 2 {
+					return ref.ID, true
+				}
+			case "slug":
+				if len(parts) == 2 {
+					return ref.Slug, true
+				}
+			case "dir_path":
+				if len(parts) == 2 {
+					return ref.DirPath, true
+				}
+			default:
+				value, exists := ref.Meta[parts[1]]
+				if !exists {
+					return nil, false
+				}
+				if len(parts) == 2 {
+					return value, true
+				}
+				return lookupNested(value, parts[2:])
+			}
+		}
+
+		refArray, exists := l.Candidate.RefArrays[parts[0]]
 		if !exists {
 			return nil, false
 		}
-		if len(parts) == 1 {
-			return map[string]any{
-				"type":     ref.Type,
-				"id":       ref.ID,
-				"slug":     ref.Slug,
-				"dir_path": ref.DirPath,
-			}, true
+		if len(parts) != 1 {
+			return nil, false
 		}
-
-		switch parts[1] {
-		case "type":
-			if len(parts) == 2 {
-				return ref.Type, true
-			}
-		case "id":
-			if len(parts) == 2 {
-				return ref.ID, true
-			}
-		case "slug":
-			if len(parts) == 2 {
-				return ref.Slug, true
-			}
-		case "dir_path":
-			if len(parts) == 2 {
-				return ref.DirPath, true
-			}
-		default:
-			value, exists := ref.Meta[parts[1]]
-			if !exists {
-				return nil, false
-			}
-			if len(parts) == 2 {
-				return value, true
-			}
-			return lookupNested(value, parts[2:])
+		values := make([]any, 0, len(refArray))
+		for _, item := range refArray {
+			values = append(values, map[string]any{
+				"type":     item.Type,
+				"id":       item.ID,
+				"slug":     item.Slug,
+				"dir_path": item.DirPath,
+			})
 		}
+		return values, true
 	}
 
 	return nil, false

@@ -1,0 +1,35 @@
+{
+  "changes": [],
+  "dry_run": false,
+  "entity": {
+    "created_date": "2026-03-01",
+    "id": "FEAT-1",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      },
+      "watchers": [
+        {
+          "id": "SVC-1"
+        },
+        {
+          "id": "SVC-2"
+        }
+      ]
+    },
+    "revision": "sha256:16e7a41f6cbf28c6b9239c2dfda2e7d056387f31634bc736a390622d874dcea4",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updated_date": "2026-03-01"
+  },
+  "noop": true,
+  "result_state": "valid",
+  "updated": false,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

@@ -1,0 +1,57 @@
+version: "0.0.4"
+entity:
+  service:
+    id_prefix: SVC
+    path_pattern: "services/{slug}/index.md"
+    meta:
+      fields:
+        dir_path:
+          required: true
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  feature:
+    id_prefix: FEAT
+    path_pattern:
+      cases:
+        - when:
+            exists: refs.container.dir_path
+          use: "{refs.container.dir_path}/features/{slug}.md"
+        - use: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        container:
+          required: true
+          schema:
+            type: entity_ref
+            refTypes: [service]
+        tags:
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            minItems: 1
+            maxItems: 2
+            uniqueItems: true
+        watchers:
+          required: false
+          schema:
+            type: array
+            items:
+              type: entity_ref
+              refTypes: [service]
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]

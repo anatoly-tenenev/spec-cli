@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "path": "refs.watchers.id"
+    },
+    "exit_code": 1,
+    "message": "write path 'refs.watchers.id' is forbidden by write contract"
+  },
+  "result_state": "invalid"
+}

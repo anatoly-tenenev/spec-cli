@@ -383,6 +383,9 @@ func isValueOfType(value any, typeName string) bool {
 		return ok
 	case "null":
 		return value == nil
+	case "entity_ref":
+		text, ok := value.(string)
+		return ok && strings.TrimSpace(text) != ""
 	default:
 		return false
 	}

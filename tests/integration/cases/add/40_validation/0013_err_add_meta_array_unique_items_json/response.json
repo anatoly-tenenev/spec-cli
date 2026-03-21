@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.required_array_unique_items",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "field 'tags' requires unique items",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-2",
+              "slug": "array-unique"
+            },
+            "field": "frontmatter.tags"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

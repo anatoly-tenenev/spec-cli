@@ -6,14 +6,24 @@ func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[
 	refsPayload := map[string]any{}
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		field := typeSpec.MetaFields[fieldName]
-		if !field.IsEntityRef {
-			continue
+		switch {
+		case field.IsEntityRef:
+			idValue, exists := candidate.RefIDs[fieldName]
+			if !exists || idValue == "" {
+				continue
+			}
+			refsPayload[fieldName] = map[string]any{"id": idValue}
+		case field.IsEntityRefArray:
+			refIDs, exists := candidate.RefIDArrays[fieldName]
+			if !exists {
+				continue
+			}
+			itemsPayload := make([]any, 0, len(refIDs))
+			for _, refID := range refIDs {
+				itemsPayload = append(itemsPayload, map[string]any{"id": refID})
+			}
+			refsPayload[fieldName] = itemsPayload
 		}
-		idValue, exists := candidate.RefIDs[fieldName]
-		if !exists || idValue == "" {
-			continue
-		}
-		refsPayload[fieldName] = map[string]any{"id": idValue}
 	}
 
 	sectionsPayload := map[string]any{}
@@ -24,7 +34,7 @@ func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[
 	metaPayload := map[string]any{}
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		field := typeSpec.MetaFields[fieldName]
-		if field.IsEntityRef {
+		if field.IsEntityRef || field.IsEntityRefArray {
 			continue
 		}
 		value, exists := candidate.Meta[fieldName]

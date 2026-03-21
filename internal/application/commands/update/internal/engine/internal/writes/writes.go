@@ -303,6 +303,38 @@ func resolveOperationValue(
 		}
 		return support.NormalizeValue(parsed), nil
 	case model.WritePathRef:
+		field := typeSpec.MetaFields[writeSpec.FieldName]
+		if field.IsEntityRefArray {
+			parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+			if parseErr != nil {
+				return nil, domainerrors.New(
+					domainerrors.CodeWriteContractViolation,
+					fmt.Sprintf("failed to parse value for path '%s'", op.Path),
+					map[string]any{"path": op.Path, "reason": parseErr.Error()},
+				)
+			}
+			items, ok := parsed.([]any)
+			if !ok {
+				return nil, domainerrors.New(
+					domainerrors.CodeWriteContractViolation,
+					fmt.Sprintf("value for path '%s' must be array of entity ids", op.Path),
+					map[string]any{"path": op.Path, "expected_type": "array", "actual_type": describeValueType(parsed)},
+				)
+			}
+			result := make([]any, 0, len(items))
+			for idx, item := range items {
+				itemText, ok := item.(string)
+				if !ok || strings.TrimSpace(itemText) == "" {
+					return nil, domainerrors.New(
+						domainerrors.CodeWriteContractViolation,
+						fmt.Sprintf("value for path '%s' must contain non-empty string entity ids", op.Path),
+						map[string]any{"path": op.Path, "index": idx},
+					)
+				}
+				result = append(result, strings.TrimSpace(itemText))
+			}
+			return result, nil
+		}
 		value := strings.TrimSpace(op.RawValue)
 		if value == "" {
 			return nil, domainerrors.New(

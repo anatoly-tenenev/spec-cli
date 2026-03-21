@@ -1,8 +1,8 @@
 {
-  "result_state": "unsupported",
   "error": {
     "code": "CAPABILITY_UNSUPPORTED",
-    "message": "help supports text output only",
-    "exit_code": 1
-  }
+    "exit_code": 1,
+    "message": "help supports text output only"
+  },
+  "result_state": "unsupported"
 }

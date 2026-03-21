@@ -15,6 +15,7 @@ type Applied struct {
 	FrontmatterValues map[string]any
 	MetaPayload       map[string]any
 	RefIDs            map[string]string
+	RefIDArrays       map[string][]string
 	SectionBodies     map[string]string
 	WholeBody         string
 	WholeBodyProvided bool
@@ -25,6 +26,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 		FrontmatterValues: map[string]any{},
 		MetaPayload:       map[string]any{},
 		RefIDs:            map[string]string{},
+		RefIDArrays:       map[string][]string{},
 		SectionBodies:     map[string]string{},
 	}
 
@@ -73,10 +75,17 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 			}
 			applied.MetaPayload[field.Name] = support.NormalizeValue(value)
 		case model.WritePathRef:
-			idValue := strings.TrimSpace(value.(string))
-			applied.FrontmatterValues[writeSpec.FieldName] = idValue
-			if idValue != "" {
-				applied.RefIDs[writeSpec.FieldName] = idValue
+			field := typeSpec.MetaFields[writeSpec.FieldName]
+			if field.IsEntityRefArray {
+				refIDs := extractRefIDArray(value.([]any))
+				applied.FrontmatterValues[writeSpec.FieldName] = value
+				applied.RefIDArrays[writeSpec.FieldName] = refIDs
+			} else {
+				idValue := strings.TrimSpace(value.(string))
+				applied.FrontmatterValues[writeSpec.FieldName] = idValue
+				if idValue != "" {
+					applied.RefIDs[writeSpec.FieldName] = idValue
+				}
 			}
 		case model.WritePathSection:
 			applied.SectionBodies[writeSpec.FieldName] = value.(string)
@@ -215,6 +224,38 @@ func resolveOperationValue(
 		}
 		return support.NormalizeValue(parsed), nil
 	case model.WritePathRef:
+		field := typeSpec.MetaFields[writeSpec.FieldName]
+		if field.IsEntityRefArray {
+			parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+			if parseErr != nil {
+				return nil, domainerrors.New(
+					domainerrors.CodeWriteContractViolation,
+					fmt.Sprintf("failed to parse value for path '%s'", op.Path),
+					map[string]any{"path": op.Path, "reason": parseErr.Error()},
+				)
+			}
+			items, ok := parsed.([]any)
+			if !ok {
+				return nil, domainerrors.New(
+					domainerrors.CodeWriteContractViolation,
+					fmt.Sprintf("value for path '%s' must be array of entity ids", op.Path),
+					map[string]any{"path": op.Path, "expected_type": "array", "actual_type": describeValueType(parsed)},
+				)
+			}
+			result := make([]any, 0, len(items))
+			for idx, item := range items {
+				itemText, ok := item.(string)
+				if !ok || strings.TrimSpace(itemText) == "" {
+					return nil, domainerrors.New(
+						domainerrors.CodeWriteContractViolation,
+						fmt.Sprintf("value for path '%s' must contain non-empty string entity ids", op.Path),
+						map[string]any{"path": op.Path, "index": idx},
+					)
+				}
+				result = append(result, strings.TrimSpace(itemText))
+			}
+			return result, nil
+		}
 		value := strings.TrimSpace(op.RawValue)
 		if value == "" {
 			return nil, domainerrors.New(
@@ -301,4 +342,20 @@ func isForbiddenWritePath(path string) bool {
 		}
 	}
 	return false
+}
+
+func extractRefIDArray(items []any) []string {
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		itemText, ok := item.(string)
+		if !ok {
+			continue
+		}
+		trimmed := strings.TrimSpace(itemText)
+		if trimmed == "" {
+			continue
+		}
+		result = append(result, trimmed)
+	}
+	return result
 }

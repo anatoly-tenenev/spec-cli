@@ -13,18 +13,89 @@ func Resolve(
 	typeSpec model.EntityTypeSpec,
 	candidate *model.Candidate,
 	snapshot model.Snapshot,
-) (map[string]model.ResolvedRef, []domainvalidation.Issue) {
+) (map[string]model.ResolvedRef, map[string][]model.ResolvedRef, []domainvalidation.Issue) {
 	resolved := map[string]model.ResolvedRef{}
+	resolvedArrays := map[string][]model.ResolvedRef{}
 	refIssues := make([]domainvalidation.Issue, 0)
+	candidate.RefIDs = map[string]string{}
+	candidate.RefIDArrays = map[string][]string{}
 
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		fieldSpec := typeSpec.MetaFields[fieldName]
-		if !fieldSpec.IsEntityRef {
+		if !fieldSpec.IsEntityRef && !fieldSpec.IsEntityRefArray {
 			continue
 		}
 
 		rawValue, exists := candidate.Frontmatter[fieldName]
 		if !exists {
+			continue
+		}
+		if fieldSpec.IsEntityRefArray {
+			targetIDs, idOK := readRefIDArray(rawValue)
+			if !idOK {
+				refIssues = append(refIssues, issues.New(
+					"meta.required_type_mismatch",
+					fmt.Sprintf("field '%s' must be array of non-empty string target ids", fieldName),
+					"11.5",
+					"frontmatter."+fieldName,
+					candidate,
+				))
+				continue
+			}
+			candidate.RefIDArrays[fieldName] = targetIDs
+
+			resolvedItems := make([]model.ResolvedRef, 0, len(targetIDs))
+			hasRefIssue := false
+			for idx, targetID := range targetIDs {
+				targets := snapshot.EntitiesByID[targetID]
+				itemField := fmt.Sprintf("frontmatter.%s[%d]", fieldName, idx)
+				if len(targets) == 0 {
+					refIssues = append(refIssues, issues.New(
+						"meta.entity_ref_target_missing",
+						fmt.Sprintf("entity_ref '%s[%d]' points to missing id '%s'", fieldName, idx, targetID),
+						"11.5",
+						itemField,
+						candidate,
+					))
+					hasRefIssue = true
+					continue
+				}
+				if len(targets) > 1 {
+					refIssues = append(refIssues, issues.New(
+						"meta.entity_ref_target_ambiguous",
+						fmt.Sprintf("entity_ref '%s[%d]' points to ambiguous id '%s'", fieldName, idx, targetID),
+						"11.5",
+						itemField,
+						candidate,
+					))
+					hasRefIssue = true
+					continue
+				}
+
+				target := targets[0]
+				if len(fieldSpec.ItemRefTypes) > 0 && !contains(fieldSpec.ItemRefTypes, target.Type) {
+					refIssues = append(refIssues, issues.New(
+						"meta.entity_ref_type_mismatch",
+						fmt.Sprintf("entity_ref '%s[%d]' points to type '%s' outside refTypes", fieldName, idx, target.Type),
+						"11.5",
+						itemField,
+						candidate,
+					))
+					hasRefIssue = true
+					continue
+				}
+
+				resolvedItems = append(resolvedItems, model.ResolvedRef{
+					Type:    target.Type,
+					ID:      target.ID,
+					Slug:    target.Slug,
+					DirPath: target.DirPath,
+					Meta:    target.Meta,
+				})
+			}
+			if !hasRefIssue && len(resolvedItems) == len(targetIDs) {
+				resolvedArrays[fieldName] = resolvedItems
+			}
 			continue
 		}
 
@@ -89,7 +160,7 @@ func Resolve(
 		}
 	}
 
-	return resolved, refIssues
+	return resolved, resolvedArrays, refIssues
 }
 
 func contains(values []string, target string) bool {
@@ -99,4 +170,25 @@ func contains(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func readRefIDArray(rawValue any) ([]string, bool) {
+	rawItems, ok := rawValue.([]any)
+	if !ok {
+		return nil, false
+	}
+
+	result := make([]string, 0, len(rawItems))
+	for _, rawItem := range rawItems {
+		itemText, ok := rawItem.(string)
+		if !ok {
+			return nil, false
+		}
+		itemText = strings.TrimSpace(itemText)
+		if itemText == "" {
+			return nil, false
+		}
+		result = append(result, itemText)
+	}
+	return result, true
 }

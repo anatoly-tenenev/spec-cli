@@ -55,24 +55,26 @@ type WritePathSpec struct {
 }
 
 type MetaField struct {
-	Name            string
-	Type            string
-	Format          string
-	Required        bool
-	HasRequiredWhen bool
-	RequiredWhen    any
-	Enum            []any
-	HasConst        bool
-	Const           any
-	IsEntityRef     bool
-	RefTypes        []string
-	HasItems        bool
-	ItemType        string
-	UniqueItems     bool
-	HasMinItems     bool
-	MinItems        int
-	HasMaxItems     bool
-	MaxItems        int
+	Name             string
+	Type             string
+	Format           string
+	Required         bool
+	HasRequiredWhen  bool
+	RequiredWhen     any
+	Enum             []any
+	HasConst         bool
+	Const            any
+	IsEntityRef      bool
+	IsEntityRefArray bool
+	RefTypes         []string
+	HasItems         bool
+	ItemType         string
+	ItemRefTypes     []string
+	UniqueItems      bool
+	HasMinItems      bool
+	MinItems         int
+	HasMaxItems      bool
+	MaxItems         int
 }
 
 type SectionSpec struct {
@@ -123,7 +125,9 @@ type Candidate struct {
 	Frontmatter  map[string]any
 	Meta         map[string]any
 	RefIDs       map[string]string
+	RefIDArrays  map[string][]string
 	Refs         map[string]ResolvedRef
+	RefArrays    map[string][]ResolvedRef
 	Body         string
 	Sections     map[string]string
 	PathRelPOSIX string

@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.entity_ref_type_mismatch",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "entity_ref 'watchers[0]' points to type 'feature' outside refTypes",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-2",
+              "slug": "array-ref-type-mismatch"
+            },
+            "field": "frontmatter.watchers[0]"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

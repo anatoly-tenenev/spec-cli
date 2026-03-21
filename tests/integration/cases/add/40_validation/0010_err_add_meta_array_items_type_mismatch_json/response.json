@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.required_array_items_mismatch",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "field 'tags' contains item with unsupported type",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-2",
+              "slug": "array-items-type"
+            },
+            "field": "frontmatter.tags"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

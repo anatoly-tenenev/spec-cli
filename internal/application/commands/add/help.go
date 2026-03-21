@@ -84,9 +84,9 @@ func HelpSpec() helpmodel.CommandSpec {
 		Rules: []string{
 			"Write-namespace arguments are --set and --set-file.",
 			"Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.",
-			"Projection from raw schema: non-entity_ref metadata -> meta.<name>; scalar entity_ref metadata -> refs.<field>; sections -> content.sections.<name>.",
+			"Projection from raw schema: non-entity_ref metadata -> meta.<name>; entity_ref metadata (scalar or array items.type=entity_ref) -> refs.<field>; sections -> content.sections.<name>.",
 			"Allowed write-paths are derived from the effective schema.",
-			"refs.<field> values are target entity ids.",
+			"refs.<field> values are target entity ids (scalar id or YAML array of ids).",
 			"--set-file is allowed only for content.sections.<name>.",
 			"Whole-body inputs --content-file and --content-stdin are not write-namespace paths.",
 			"Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.",
@@ -95,6 +95,7 @@ func HelpSpec() helpmodel.CommandSpec {
 		Examples: []string{
 			"spec-cli add --type feature --slug login-flow --set meta.status=active",
 			"spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'",
+			"spec-cli add --type feature --slug login-flow --set meta.tags='[api, reliability]' --set refs.watchers='[SVC-1, SVC-2]'",
 			"spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md",
 			"spec-cli add --type feature --slug login-flow --content-file ./input/body.md",
 		},

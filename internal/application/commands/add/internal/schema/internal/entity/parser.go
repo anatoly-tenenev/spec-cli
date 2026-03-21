@@ -41,7 +41,7 @@ func ParseType(
 	allowWritePaths := map[string]model.WritePathSpec{}
 	allowSetFilePaths := map[string]struct{}{}
 	for _, fieldName := range metaOrder {
-		if metaFields[fieldName].IsEntityRef {
+		if isReferenceField(metaFields[fieldName]) {
 			allowWritePaths["refs."+fieldName] = model.WritePathSpec{Kind: model.WritePathRef, FieldName: fieldName}
 			continue
 		}
@@ -379,6 +379,36 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 			}
 			field.HasItems = true
 			field.ItemType = strings.TrimSpace(itemType)
+			if field.ItemType == "entity_ref" {
+				field.IsEntityRefArray = true
+				if rawItemRefTypes, hasItemRefTypes := itemsMap["refTypes"]; hasItemRefTypes {
+					itemRefTypes, ok := support.ToSlice(rawItemRefTypes)
+					if !ok {
+						return model.MetaField{}, newSchemaError(
+							domainerrors.CodeSchemaInvalid,
+							fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes must be array", typeName, fieldName),
+							nil,
+						)
+					}
+					for _, item := range itemRefTypes {
+						refType, ok := item.(string)
+						if !ok || strings.TrimSpace(refType) == "" {
+							return model.MetaField{}, newSchemaError(
+								domainerrors.CodeSchemaInvalid,
+								fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes must contain non-empty strings", typeName, fieldName),
+								nil,
+							)
+						}
+						field.ItemRefTypes = append(field.ItemRefTypes, strings.TrimSpace(refType))
+					}
+				}
+			} else if _, hasItemRefTypes := itemsMap["refTypes"]; hasItemRefTypes {
+				return model.MetaField{}, newSchemaError(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes is allowed only for items.type entity_ref", typeName, fieldName),
+					nil,
+				)
+			}
 		}
 		if uniqueItems, exists := schemaMap["uniqueItems"]; exists {
 			typed, ok := uniqueItems.(bool)
@@ -571,6 +601,10 @@ func orderedKeys(values map[string]any, mappingNode *yaml.Node) []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func isReferenceField(field model.MetaField) bool {
+	return field.IsEntityRef || field.IsEntityRefArray
 }
 
 func mappingValueNode(node *yaml.Node, key string) *yaml.Node {

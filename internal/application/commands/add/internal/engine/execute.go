@@ -57,14 +57,17 @@ func Execute(
 		Frontmatter:  frontmatter,
 		Meta:         appliedWrites.MetaPayload,
 		RefIDs:       appliedWrites.RefIDs,
+		RefIDArrays:  appliedWrites.RefIDArrays,
 		Refs:         map[string]model.ResolvedRef{},
+		RefArrays:    map[string][]model.ResolvedRef{},
 		Body:         writes.BuildBody(typeSpec, appliedWrites),
 		Sections:     map[string]string{},
 		PathRelPOSIX: "",
 	}
 
-	resolvedRefs, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
+	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
 	candidate.Refs = resolvedRefs
+	candidate.RefArrays = resolvedRefArrays
 
 	pathRelPOSIX, pathIssues := pathcalc.Evaluate(typeSpec, candidate)
 	if pathRelPOSIX != "" {

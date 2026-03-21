@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "WRITE_CONTRACT_VIOLATION",
+    "details": {
+      "actual_type": "string",
+      "expected_type": "array",
+      "path": "meta.tags"
+    },
+    "exit_code": 1,
+    "message": "value for path 'meta.tags' does not match schema type 'array'"
+  },
+  "result_state": "invalid"
+}

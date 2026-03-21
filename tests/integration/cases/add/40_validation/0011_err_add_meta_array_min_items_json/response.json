@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.required_array_min_items",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "field 'tags' requires at least 1 items",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-2",
+              "slug": "array-min-items"
+            },
+            "field": "frontmatter.tags"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}
