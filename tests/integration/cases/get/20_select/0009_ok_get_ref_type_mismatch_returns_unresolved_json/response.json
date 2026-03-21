@@ -1,0 +1,17 @@
+{
+  "entity": {
+    "refs": {
+      "owner": {
+        "id": "OWNER-1",
+        "resolved": false,
+        "slug": null,
+        "type": "service"
+      }
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-1",
+    "match_by": "id"
+  }
+}

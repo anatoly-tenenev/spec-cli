@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0009_ok_query_sort_refs_owner_id_missing_first_json",
+  "description": "query_40_0009_ok_query_sort_refs_owner_id_missing_first_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner",
+    "--sort",
+    "refs.owner.id:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

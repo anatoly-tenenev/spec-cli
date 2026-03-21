@@ -1,17 +1,53 @@
 {
-  "result_state": "valid",
   "items": [
-    {"type": "feature", "id": "FEAT-2", "slug": "login"},
-    {"type": "feature", "id": "FEAT-3", "slug": "orphan"}
+    {
+      "id": "FEAT-2",
+      "meta": {
+        "score": 5,
+        "status": "draft",
+        "tags": [
+          "auth"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      },
+      "slug": "login",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": null
+      },
+      "slug": "orphan",
+      "type": "feature"
+    }
   ],
   "matched": 5,
   "page": {
-    "mode": "offset",
-    "limit": 2,
-    "offset": 1,
-    "returned": 2,
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
     "has_more": true,
+    "limit": 2,
+    "mode": "offset",
     "next_offset": 3,
-    "effective_sort": ["type:asc", "id:asc"]
-  }
+    "offset": 1,
+    "returned": 2
+  },
+  "result_state": "valid"
 }

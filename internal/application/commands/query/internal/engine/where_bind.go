@@ -56,7 +56,7 @@ func bindWhereNode(raw model.RawFilterNode, index model.QuerySchemaIndex) (model
 		if isPolicyForbiddenWhereField(raw.Field) {
 			return model.FilterNode{}, domainerrors.New(
 				domainerrors.CodeInvalidQuery,
-				fmt.Sprintf("field '%s' is not allowed in where-json", raw.Field),
+				fmt.Sprintf("field '%s' is not allowed in filter-namespace (--where-json)", raw.Field),
 				map[string]any{
 					"arg":    "--where-json",
 					"reason": whereDetailsReasonForbiddenField,
@@ -69,7 +69,7 @@ func bindWhereNode(raw model.RawFilterNode, index model.QuerySchemaIndex) (model
 		if !exists {
 			return model.FilterNode{}, domainerrors.New(
 				domainerrors.CodeInvalidQuery,
-				fmt.Sprintf("unknown filter field '%s'", raw.Field),
+				fmt.Sprintf("unknown filter-namespace field '%s'", raw.Field),
 				nil,
 			)
 		}

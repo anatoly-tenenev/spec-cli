@@ -2,11 +2,17 @@
   "entity": {
     "id": "FEAT-8",
     "meta": {
-      "container": "SVC-1",
       "score": 9.5,
       "status": "active"
     },
-    "revision": "sha256:d0d3a43e212cc73d5f4686e5d8bdd76f5baa3bdd43ee3b39863d644e41105bf0",
+    "refs": {
+      "container": {
+        "id": "SVC-1",
+        "resolved": true,
+        "slug": "api",
+        "type": "service"
+      }
+    },
     "slug": "retry-window",
     "type": "feature"
   },

@@ -24,7 +24,7 @@ func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex
 		if _, exists := index.SortFields[term.Path]; !exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
-				fmt.Sprintf("invalid sort field '%s'", term.Path),
+				fmt.Sprintf("invalid filter-namespace sort field '%s'", term.Path),
 				nil,
 			)
 		}

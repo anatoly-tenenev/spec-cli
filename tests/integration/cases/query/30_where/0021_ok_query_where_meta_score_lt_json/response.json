@@ -2,6 +2,16 @@
   "items": [
     {
       "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": null
+      },
       "slug": "orphan",
       "type": "feature"
     }

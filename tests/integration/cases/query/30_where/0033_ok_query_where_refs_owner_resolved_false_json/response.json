@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-404",
+          "resolved": false,
+          "slug": null,
+          "type": "service"
+        }
+      },
+      "slug": "orphan",
+      "type": "feature"
+    }
+  ],
+  "matched": 1,
+  "page": {
+    "effective_sort": [
+      "id:asc",
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 1
+  },
+  "result_state": "valid"
+}

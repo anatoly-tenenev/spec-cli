@@ -1,0 +1,35 @@
+{
+  "id": "query_40_0008_ok_query_sort_refs_owner_id_multi_key_json",
+  "description": "query_40_0008_ok_query_sort_refs_owner_id_multi_key_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"refs.owner.id\",\"op\":\"exists\"}",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner",
+    "--select",
+    "created_date",
+    "--sort",
+    "refs.owner.id:asc",
+    "--sort",
+    "created_date:desc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

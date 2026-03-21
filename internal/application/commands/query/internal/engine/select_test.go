@@ -24,7 +24,7 @@ func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 		"type": "feature",
 		"id":   "FEAT-1",
 		"refs": map[string]any{
-			"owner": map[string]any{"type": "service", "id": "SVC-1", "slug": "api"},
+			"owner": map[string]any{"type": "service", "id": "SVC-1", "slug": "api", "resolved": true},
 		},
 		"content": map[string]any{
 			"sections": map[string]any{},
@@ -36,7 +36,7 @@ func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 		"type": "feature",
 		"id":   "FEAT-1",
 		"refs": map[string]any{
-			"owner": map[string]any{"type": "service", "id": "SVC-1", "slug": "api"},
+			"owner": map[string]any{"type": "service", "id": "SVC-1", "slug": "api", "resolved": true},
 		},
 		"content": map[string]any{
 			"sections": map[string]any{"summary": nil},

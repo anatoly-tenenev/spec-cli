@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "unknown projection-namespace selector 'meta.owner'",
+    "exit_code": 2
+  }
+}

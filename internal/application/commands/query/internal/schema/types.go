@@ -19,4 +19,5 @@ type Field struct {
 	Kind        model.SchemaFieldKind
 	EnumValues  []any
 	IsEntityRef bool
+	RefTypeHint string
 }

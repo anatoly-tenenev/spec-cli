@@ -10,7 +10,10 @@
     },
     "refs": {
       "container": {
-        "id": "SVC-1"
+        "id": "SVC-1",
+        "resolved": true,
+        "slug": "api",
+        "type": "service"
       }
     }
   },

@@ -5,6 +5,7 @@
       "refs": {
         "owner": {
           "id": "SVC-2",
+          "resolved": true,
           "slug": "billing",
           "type": "service"
         }
@@ -15,6 +16,7 @@
       "refs": {
         "owner": {
           "id": "SVC-1",
+          "resolved": true,
           "slug": "api",
           "type": "service"
         }

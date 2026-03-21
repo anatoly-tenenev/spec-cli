@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "revision": "sha256:eba8d91a588efda6b9d44954783aeba010e3160477dce63d11704a885bc589da"
+    },
+    {
+      "id": "FEAT-2",
+      "revision": "sha256:2a9c3862e54cf96c997d324029cac3a959bc4dc2e58cffa89eb9796a6f0da8e3"
+    },
+    {
+      "id": "FEAT-3",
+      "revision": "sha256:75708a20cc0fdade021abf6379647d7a30e5db09135b9e32b963105e278f35cb"
+    }
+  ],
+  "matched": 3,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 3
+  },
+  "result_state": "valid"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "query_30_0035_ok_query_where_refs_owner_resolved_false_type_mismatch_json",
+  "description": "query_30_0035_ok_query_where_refs_owner_resolved_false_type_mismatch_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"refs.owner.resolved\",\"op\":\"eq\",\"value\":false}",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -2,7 +2,17 @@
   "id": "get_40_0002_err_get_requested_ref_cannot_be_computed_json",
   "description": "get_40_0002_err_get_requested_ref_cannot_be_computed_json",
   "command": "get",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","get","--id","FEAT-8","--select","refs.container.id"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "get",
+    "--id",
+    "FEAT-8",
+    "--select",
+    "refs.container"
+  ],
   "expect": {
     "exit_code": 3,
     "response_file": "response.json"

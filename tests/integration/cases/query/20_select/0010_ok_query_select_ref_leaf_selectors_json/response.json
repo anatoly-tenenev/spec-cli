@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "refs": {
+        "owner": {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      }
+    },
+    {
+      "id": "FEAT-2",
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      }
+    },
+    {
+      "id": "FEAT-3",
+      "refs": {
+        "owner": null
+      }
+    }
+  ],
+  "matched": 3,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 3
+  },
+  "result_state": "valid"
+}

@@ -31,10 +31,14 @@ func BuildIndex(loaded LoadedSchema) (model.QuerySchemaIndex, *domainerrors.AppE
 		entityTypeSpec := model.EntityTypeSpec{
 			Name:          entityTypeName,
 			RefFields:     map[string]struct{}{},
+			RefTypeHints:  map[string]string{},
 			SectionFields: map[string]struct{}{},
 		}
-		for refField := range entityType.EntityRefFields {
+		for refField, refFieldSpec := range entityType.EntityRefFields {
 			entityTypeSpec.RefFields[refField] = struct{}{}
+			if refFieldSpec.RefTypeHint != "" {
+				entityTypeSpec.RefTypeHints[refField] = refFieldSpec.RefTypeHint
+			}
 		}
 		for section := range entityType.ContentSections {
 			entityTypeSpec.SectionFields[section] = struct{}{}
@@ -55,6 +59,9 @@ func BuildIndex(loaded LoadedSchema) (model.QuerySchemaIndex, *domainerrors.AppE
 		}
 
 		for metadataFieldName, metadataField := range entityType.MetadataFields {
+			if metadataField.IsEntityRef {
+				continue
+			}
 			path := "meta." + metadataFieldName
 			index.SelectorPaths[path] = struct{}{}
 			fieldSpec := model.SchemaFieldSpec{Path: path, Kind: metadataField.Kind, EnumValues: metadataField.EnumValues}
@@ -70,10 +77,13 @@ func BuildIndex(loaded LoadedSchema) (model.QuerySchemaIndex, *domainerrors.AppE
 
 		for refFieldName := range entityType.EntityRefFields {
 			index.SelectorPaths["refs."+refFieldName] = struct{}{}
-			for _, refPart := range []string{"type", "id", "slug"} {
-				path := fmt.Sprintf("refs.%s.%s", refFieldName, refPart)
-				index.SelectorPaths[path] = struct{}{}
-				fieldSpec := model.SchemaFieldSpec{Path: path, Kind: model.FieldKindString}
+			refFieldSpecs := []model.SchemaFieldSpec{
+				{Path: fmt.Sprintf("refs.%s.id", refFieldName), Kind: model.FieldKindString},
+				{Path: fmt.Sprintf("refs.%s.resolved", refFieldName), Kind: model.FieldKindBoolean},
+				{Path: fmt.Sprintf("refs.%s.type", refFieldName), Kind: model.FieldKindString},
+				{Path: fmt.Sprintf("refs.%s.slug", refFieldName), Kind: model.FieldKindString},
+			}
+			for _, fieldSpec := range refFieldSpecs {
 				if err := addFieldSpec(index.FilterFields, fieldSpec); err != nil {
 					return model.QuerySchemaIndex{}, err
 				}

@@ -34,21 +34,17 @@ func BuildEntityView(
 	meta := buildMeta(target.Frontmatter, entityType.MetaFields)
 	refs := map[string]any{}
 	if plan.RequiresRefs {
-		resolvedRefs := resolveRefs(meta, entityType.RefFields, identityIndex)
-		for key, value := range resolvedRefs {
-			refs[key] = value
+		requestedFields := buildRequestedRefFields(entityType.RefFields, plan)
+		resolvedRefs, refErr := resolveRefs(
+			target.Frontmatter,
+			entityType.RefTypeHints,
+			identityIndex,
+			requestedFields,
+		)
+		if refErr != nil {
+			return nil, refErr
 		}
-		for field := range plan.RequiredRefFields {
-			if _, ok := refs[field]; ok {
-				continue
-			}
-			return nil, newReadError(
-				"failed to compute requested refs field",
-				fmt.Sprintf("requested refs field '%s' cannot be computed deterministically", field),
-				getEntityRefStandardRef,
-				map[string]any{"field": field},
-			)
-		}
+		refs = resolvedRefs
 	}
 
 	if plan.RequiresSections {
@@ -103,38 +99,147 @@ func buildMeta(frontmatter map[string]any, allowedFields map[string]struct{}) ma
 }
 
 func resolveRefs(
-	meta map[string]any,
-	refFields map[string]struct{},
+	frontmatter map[string]any,
+	refTypeHints map[string]string,
 	identityIndex map[string][]model.EntityIdentity,
-) map[string]any {
+	requestedFields map[string]struct{},
+) (map[string]any, *domainerrors.AppError) {
 	refs := map[string]any{}
-	for _, refField := range support.SortedMapKeys(refFields) {
-		rawTarget, exists := meta[refField]
+	for _, refField := range support.SortedMapKeys(requestedFields) {
+		rawTarget, exists := frontmatter[refField]
 		if !exists {
+			refs[refField] = nil
 			continue
 		}
-		targetID, ok := rawTarget.(string)
+		targetID, ok := readRefID(rawTarget)
 		if !ok {
-			continue
-		}
-		targetID = strings.TrimSpace(targetID)
-		if targetID == "" {
-			continue
+			return nil, newReadError(
+				"failed to compute requested refs field",
+				fmt.Sprintf("requested refs field '%s' cannot be computed deterministically", refField),
+				getEntityRefStandardRef,
+				map[string]any{"field": refField},
+			)
 		}
 
 		targets := identityIndex[targetID]
-		if len(targets) != 1 {
+		hintedType := refTypeHints[refField]
+		compatibleTargets := filterTargetsByHint(targets, hintedType)
+		refValue := map[string]any{
+			"id":       targetID,
+			"resolved": false,
+			"type":     nil,
+			"slug":     nil,
+		}
+
+		if len(targets) == 1 && isResolvedRefTarget(targets[0], hintedType) {
+			target := targets[0]
+			refValue["resolved"] = true
+			refValue["type"] = target.Type
+			refValue["slug"] = target.Slug
+			refs[refField] = refValue
 			continue
 		}
 
-		target := targets[0]
-		refs[refField] = map[string]any{
-			"type": target.Type,
-			"id":   target.ID,
-			"slug": target.Slug,
+		if deterministicType := deterministicRefType(compatibleTargets, hintedType); deterministicType != "" {
+			refValue["type"] = deterministicType
+		}
+		if deterministicSlug := deterministicRefSlug(compatibleTargets); deterministicSlug != "" {
+			refValue["slug"] = deterministicSlug
+		}
+
+		refs[refField] = refValue
+	}
+	return refs, nil
+}
+
+func buildRequestedRefFields(refFields map[string]struct{}, plan model.SelectorPlan) map[string]struct{} {
+	requested := map[string]struct{}{}
+	if plan.RequiresAllRefFields {
+		for field := range refFields {
+			requested[field] = struct{}{}
+		}
+		return requested
+	}
+	for field := range plan.RequiredRefFields {
+		requested[field] = struct{}{}
+	}
+	return requested
+}
+
+func readRefID(rawTarget any) (string, bool) {
+	switch typed := rawTarget.(type) {
+	case string:
+		return normalizeRefID(typed)
+	case map[string]any:
+		rawID, ok := typed["id"]
+		if !ok {
+			return "", false
+		}
+		targetID, ok := rawID.(string)
+		if !ok {
+			return "", false
+		}
+		return normalizeRefID(targetID)
+	default:
+		return "", false
+	}
+}
+
+func normalizeRefID(raw string) (string, bool) {
+	normalized := strings.TrimSpace(raw)
+	if normalized == "" {
+		return "", false
+	}
+	return normalized, true
+}
+
+func isResolvedRefTarget(target model.EntityIdentity, hintedType string) bool {
+	hintedType = strings.TrimSpace(hintedType)
+	return hintedType == "" || target.Type == hintedType
+}
+
+func filterTargetsByHint(targets []model.EntityIdentity, hintedType string) []model.EntityIdentity {
+	hintedType = strings.TrimSpace(hintedType)
+	if hintedType == "" {
+		return targets
+	}
+	filtered := make([]model.EntityIdentity, 0, len(targets))
+	for _, target := range targets {
+		if target.Type == hintedType {
+			filtered = append(filtered, target)
 		}
 	}
-	return refs
+	return filtered
+}
+
+func deterministicRefType(targets []model.EntityIdentity, hintedType string) string {
+	hintedType = strings.TrimSpace(hintedType)
+	if hintedType != "" {
+		return hintedType
+	}
+	if len(targets) == 0 {
+		return ""
+	}
+	deterministic := targets[0].Type
+	for idx := 1; idx < len(targets); idx++ {
+		if targets[idx].Type != deterministic {
+			return ""
+		}
+	}
+	return deterministic
+}
+
+func deterministicRefSlug(targets []model.EntityIdentity) string {
+	if len(targets) == 0 {
+		return ""
+	}
+	deterministic := targets[0].Slug
+	for idx := 1; idx < len(targets); idx++ {
+		if targets[idx].Slug != deterministic {
+			return ""
+		}
+	}
+	return deterministic
 }
 
 func validateRequestedSections(duplicates map[string]int, plan model.SelectorPlan) *domainerrors.AppError {

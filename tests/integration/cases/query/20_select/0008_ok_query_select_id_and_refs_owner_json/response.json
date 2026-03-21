@@ -5,6 +5,7 @@
       "refs": {
         "owner": {
           "id": "SVC-2",
+          "resolved": true,
           "slug": "billing",
           "type": "service"
         }

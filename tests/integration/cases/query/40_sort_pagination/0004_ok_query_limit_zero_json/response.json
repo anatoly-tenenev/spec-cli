@@ -1,14 +1,17 @@
 {
-  "result_state": "valid",
   "items": [],
   "matched": 5,
   "page": {
-    "mode": "offset",
-    "limit": 0,
-    "offset": 0,
-    "returned": 0,
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
     "has_more": true,
+    "limit": 0,
+    "mode": "offset",
     "next_offset": 0,
-    "effective_sort": ["type:asc", "id:asc"]
-  }
+    "offset": 0,
+    "returned": 0
+  },
+  "result_state": "valid"
 }

@@ -2,11 +2,37 @@
   "items": [
     {
       "id": "FEAT-1",
+      "meta": {
+        "score": 9.5,
+        "status": "active",
+        "tags": [
+          "reliability",
+          "billing"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      },
       "slug": "retry-window",
       "type": "feature"
     },
     {
       "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": null
+      },
       "slug": "orphan",
       "type": "feature"
     }

@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "invalid sort field 'meta'",
+    "message": "invalid filter-namespace sort field 'meta'",
     "exit_code": 2
   }
 }

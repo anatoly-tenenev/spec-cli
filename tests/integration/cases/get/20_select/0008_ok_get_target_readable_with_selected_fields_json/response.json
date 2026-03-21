@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "id": "FEAT-8",
+    "meta": {
+      "score": 9.5,
+      "status": "active"
+    },
+    "slug": "retry-window",
+    "type": "feature"
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

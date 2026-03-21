@@ -10,7 +10,13 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-var defaultSelectors = []string{"type", "id", "slug", "revision", "meta"}
+var defaultSelectors = []string{
+	"type",
+	"id",
+	"slug",
+	"meta",
+	"refs",
+}
 
 func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct{}) (model.SelectorPlan, *domainerrors.AppError) {
 	selectors := rawSelectors
@@ -34,6 +40,7 @@ func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct
 	effectiveSelectors := collectTerminalSelectors(root)
 	nullIfMissing := map[string]struct{}{}
 	requiredRefFields := map[string]struct{}{}
+	requiresAllRefFields := false
 	requiredSectionNames := map[string]struct{}{}
 
 	requiresRefs := false
@@ -51,8 +58,17 @@ func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct
 		switch parts[0] {
 		case "refs":
 			requiresRefs = true
-			if len(parts) == 3 {
+			if len(parts) == 1 {
+				requiresAllRefFields = true
+			}
+			if len(parts) >= 2 {
 				requiredRefFields[parts[1]] = struct{}{}
+			}
+			if len(parts) == 2 {
+				nullIfMissing[selector] = struct{}{}
+			}
+			if len(parts) == 3 {
+				nullIfMissing["refs."+parts[1]] = struct{}{}
 			}
 		case "content":
 			requiresContent = true
@@ -77,6 +93,7 @@ func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct
 		EffectiveSelectors:   effectiveSelectors,
 		NullIfMissingPaths:   nullIfMissing,
 		RequiredRefFields:    requiredRefFields,
+		RequiresAllRefFields: requiresAllRefFields,
 		RequiredSectionNames: requiredSectionNames,
 		RequiresRefs:         requiresRefs,
 		RequiresSections:     requiresSections,
@@ -178,6 +195,10 @@ func projectMap(source map[string]any, node *model.SelectNode, prefix string, nu
 		projected, include := projectValue(value, child, path, nullIfMissing)
 		if include {
 			out[key] = projected
+			continue
+		}
+		if _, shouldMaterializeNull := nullIfMissing[path]; shouldMaterializeNull {
+			out[key] = nil
 		}
 	}
 

@@ -241,6 +241,10 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 		Kind:        fieldKind,
 		EnumValues:  []any{},
 		IsEntityRef: isEntityRef,
+		RefTypeHint: "",
+	}
+	if isEntityRef {
+		field.RefTypeHint = extractSingleRefTypeHint(schemaNode)
 	}
 
 	rawEnum, hasEnum := schemaNode["enum"]
@@ -257,6 +261,26 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 	}
 
 	return field, nil
+}
+
+func extractSingleRefTypeHint(schemaNode map[string]any) string {
+	rawRefTypes, ok := schemaNode["refTypes"]
+	if !ok {
+		return ""
+	}
+	values, ok := support.ToSlice(rawRefTypes)
+	if !ok || len(values) != 1 {
+		return ""
+	}
+	refType, ok := values[0].(string)
+	if !ok {
+		return ""
+	}
+	refType = strings.TrimSpace(refType)
+	if refType == "" {
+		return ""
+	}
+	return refType
 }
 
 func schemaTypeToFieldKind(

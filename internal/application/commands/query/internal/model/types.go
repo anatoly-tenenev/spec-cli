@@ -43,6 +43,7 @@ type SchemaFieldSpec struct {
 type EntityTypeSpec struct {
 	Name          string
 	RefFields     map[string]struct{}
+	RefTypeHints  map[string]string
 	SectionFields map[string]struct{}
 }
 

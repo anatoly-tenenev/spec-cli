@@ -14,16 +14,30 @@ func buildSelectTree(selects []string, index model.QuerySchemaIndex) (*model.Sel
 	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
 	for _, selector := range selects {
 		normalized := strings.TrimSpace(selector)
-		if _, exists := index.SelectorPaths[normalized]; !exists {
+		if _, exists := index.SelectorPaths[normalized]; !exists && !isHiddenRefLeafSelector(normalized, index) {
 			return nil, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
-				fmt.Sprintf("unknown selector '%s'", normalized),
+				fmt.Sprintf("unknown projection-namespace selector '%s'", normalized),
 				nil,
 			)
 		}
 		insertSelector(root, strings.Split(normalized, "."))
 	}
 	return root, nil
+}
+
+func isHiddenRefLeafSelector(path string, index model.QuerySchemaIndex) bool {
+	parts := strings.Split(path, ".")
+	if len(parts) != 3 || parts[0] != "refs" {
+		return false
+	}
+	switch parts[2] {
+	case "id", "resolved", "type", "slug":
+	default:
+		return false
+	}
+	_, exists := index.FilterFields[path]
+	return exists
 }
 
 func insertSelector(root *model.SelectNode, parts []string) {

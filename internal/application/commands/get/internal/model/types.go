@@ -15,6 +15,7 @@ type SelectorPlan struct {
 	EffectiveSelectors   []string
 	NullIfMissingPaths   map[string]struct{}
 	RequiredRefFields    map[string]struct{}
+	RequiresAllRefFields bool
 	RequiredSectionNames map[string]struct{}
 	RequiresRefs         bool
 	RequiresSections     bool
@@ -27,6 +28,7 @@ type EntityTypeSpec struct {
 	Name          string
 	MetaFields    map[string]struct{}
 	RefFields     map[string]struct{}
+	RefTypeHints  map[string]string
 	SectionFields map[string]struct{}
 }
 

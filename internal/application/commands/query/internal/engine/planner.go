@@ -8,7 +8,13 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-var defaultSelects = []string{"type", "id", "slug"}
+var defaultSelects = []string{
+	"type",
+	"id",
+	"slug",
+	"meta",
+	"refs",
+}
 
 func BuildPlan(opts model.Options, index model.QuerySchemaIndex) (model.QueryPlan, *domainerrors.AppError) {
 	if err := validateTypeFilters(opts.TypeFilters, index); err != nil {

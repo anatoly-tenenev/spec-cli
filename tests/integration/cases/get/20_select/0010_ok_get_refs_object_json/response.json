@@ -1,0 +1,23 @@
+{
+  "entity": {
+    "refs": {
+      "backup_container": {
+        "id": "SVC-2",
+        "resolved": true,
+        "slug": "billing",
+        "type": "service"
+      },
+      "container": {
+        "id": "SVC-1",
+        "resolved": true,
+        "slug": "api",
+        "type": "service"
+      }
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

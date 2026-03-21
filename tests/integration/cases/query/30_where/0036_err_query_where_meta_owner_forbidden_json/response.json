@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "unknown filter-namespace field 'meta.owner'",
+    "exit_code": 2
+  }
+}

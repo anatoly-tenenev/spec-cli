@@ -2,11 +2,42 @@
   "items": [
     {
       "id": "FEAT-1",
+      "meta": {
+        "score": 9.5,
+        "status": "active",
+        "tags": [
+          "reliability",
+          "billing"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      },
       "slug": "retry-window",
       "type": "feature"
     },
     {
       "id": "FEAT-2",
+      "meta": {
+        "score": 5,
+        "status": "draft",
+        "tags": [
+          "auth"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      },
       "slug": "login",
       "type": "feature"
     }

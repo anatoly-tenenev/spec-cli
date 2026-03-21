@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0013_ok_query_sort_refs_owner_resolved_json",
+  "description": "query_40_0013_ok_query_sort_refs_owner_resolved_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner",
+    "--sort",
+    "refs.owner.resolved:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

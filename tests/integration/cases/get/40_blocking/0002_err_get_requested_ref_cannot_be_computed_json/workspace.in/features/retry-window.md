@@ -5,7 +5,8 @@ slug: retry-window
 created_date: 2026-03-05
 updated_date: 2026-03-11
 status: active
-container: SVC-404
+container:
+  target: SVC-404
 score: 9.5
 ---
 

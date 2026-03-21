@@ -2,11 +2,36 @@
   "items": [
     {
       "id": "FEAT-2",
+      "meta": {
+        "score": 5,
+        "status": "draft",
+        "tags": [
+          "auth"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      },
       "slug": "login",
       "type": "feature"
     },
     {
       "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": null
+      },
       "slug": "orphan",
       "type": "feature"
     }

@@ -1,0 +1,27 @@
+{
+  "id": "query_30_0034_ok_query_where_refs_owner_slug_not_exists_json",
+  "description": "query_30_0034_ok_query_where_refs_owner_slug_not_exists_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"refs.owner.slug\",\"op\":\"not_exists\"}",
+    "--sort",
+    "id:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "unknown filter field 'meta'",
+    "message": "unknown filter-namespace field 'meta'",
     "exit_code": 2
   }
 }

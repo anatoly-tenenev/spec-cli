@@ -1,0 +1,11 @@
+{
+  "entity": {
+    "id": "FEAT-8",
+    "revision": "sha256:d8d66d8b210e77db92b8bb114dd42ce4564ea9bfb9eb8cdf0784af5a96905c17"
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

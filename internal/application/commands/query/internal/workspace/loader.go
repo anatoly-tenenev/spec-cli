@@ -29,7 +29,7 @@ type parsedEntity struct {
 	CreatedDate string
 	UpdatedDate string
 	Revision    string
-	Meta        map[string]any
+	Frontmatter map[string]any
 	Sections    map[string]string
 	RawContent  string
 }
@@ -75,9 +75,11 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 			entityTypeSpec = model.EntityTypeSpec{
 				Name:          entity.Type,
 				RefFields:     map[string]struct{}{},
+				RefTypeHints:  map[string]string{},
 				SectionFields: map[string]struct{}{},
 			}
 		}
+		meta := buildMetadata(entity.Frontmatter, entityTypeSpec.RefFields)
 		refs := resolveRefs(entity, entityTypeSpec, idIndex)
 		view := map[string]any{
 			"type":         entity.Type,
@@ -86,7 +88,7 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 			"revision":     entity.Revision,
 			"created_date": entity.CreatedDate,
 			"updated_date": entity.UpdatedDate,
-			"meta":         entity.Meta,
+			"meta":         meta,
 			"refs":         refs,
 			"content": map[string]any{
 				"raw":      entity.RawContent,
@@ -175,7 +177,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 
 	createdDate, _ := readStringField(frontmatter, "created_date")
 	updatedDate, _ := readStringField(frontmatter, "updated_date")
-	meta := buildMetadata(frontmatter)
+	normalizedFrontmatter := normalizeMap(frontmatter)
 
 	revisionHash := sha256.Sum256(raw)
 	revision := "sha256:" + hex.EncodeToString(revisionHash[:])
@@ -187,23 +189,34 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 		CreatedDate: createdDate,
 		UpdatedDate: updatedDate,
 		Revision:    revision,
-		Meta:        meta,
+		Frontmatter: normalizedFrontmatter,
 		Sections:    extractSections(body),
 		RawContent:  body,
 	}, nil
 }
 
-func buildMetadata(frontmatter map[string]any) map[string]any {
+func buildMetadata(frontmatter map[string]any, refFields map[string]struct{}) map[string]any {
 	meta := map[string]any{}
 	for key, value := range frontmatter {
 		switch key {
 		case "type", "id", "slug", "created_date", "updated_date":
 			continue
 		default:
+			if _, isRefField := refFields[key]; isRefField {
+				continue
+			}
 			meta[key] = normalizeValue(value)
 		}
 	}
 	return meta
+}
+
+func normalizeMap(values map[string]any) map[string]any {
+	normalized := make(map[string]any, len(values))
+	for key, value := range values {
+		normalized[key] = normalizeValue(value)
+	}
+	return normalized
 }
 
 func normalizeValue(value any) any {
@@ -237,31 +250,123 @@ func buildIDIndex(entities []parsedEntity) map[string][]entityIdentity {
 
 func resolveRefs(entity parsedEntity, entityType model.EntityTypeSpec, idIndex map[string][]entityIdentity) map[string]any {
 	refs := map[string]any{}
-	for refField := range entityType.RefFields {
-		rawTarget, exists := entity.Meta[refField]
+	for _, refField := range support.SortedMapKeys(entityType.RefFields) {
+		rawTarget, exists := entity.Frontmatter[refField]
 		if !exists {
+			refs[refField] = nil
 			continue
 		}
-		targetID, ok := rawTarget.(string)
+		targetID, ok := readRefID(rawTarget)
 		if !ok {
+			refs[refField] = nil
 			continue
 		}
-		targetID = strings.TrimSpace(targetID)
-		if targetID == "" {
-			continue
-		}
+
 		targets := idIndex[targetID]
-		if len(targets) != 1 {
+		hintedType := entityType.RefTypeHints[refField]
+		compatibleTargets := filterTargetsByHint(targets, hintedType)
+		refValue := map[string]any{
+			"id":       targetID,
+			"resolved": false,
+			"type":     nil,
+			"slug":     nil,
+		}
+
+		if len(targets) == 1 && isResolvedRefTarget(targets[0], hintedType) {
+			target := targets[0]
+			refValue["resolved"] = true
+			refValue["type"] = target.Type
+			refValue["slug"] = target.Slug
+			refs[refField] = refValue
 			continue
 		}
-		target := targets[0]
-		refs[refField] = map[string]any{
-			"type": target.Type,
-			"id":   target.ID,
-			"slug": target.Slug,
+
+		if deterministicType := deterministicRefType(compatibleTargets, hintedType); deterministicType != "" {
+			refValue["type"] = deterministicType
 		}
+		if deterministicSlug := deterministicRefSlug(compatibleTargets); deterministicSlug != "" {
+			refValue["slug"] = deterministicSlug
+		}
+
+		refs[refField] = refValue
 	}
 	return refs
+}
+
+func readRefID(rawTarget any) (string, bool) {
+	switch typed := rawTarget.(type) {
+	case string:
+		return normalizeRefID(typed)
+	case map[string]any:
+		rawID, ok := typed["id"]
+		if !ok {
+			return "", false
+		}
+		targetID, ok := rawID.(string)
+		if !ok {
+			return "", false
+		}
+		return normalizeRefID(targetID)
+	default:
+		return "", false
+	}
+}
+
+func normalizeRefID(raw string) (string, bool) {
+	targetID := strings.TrimSpace(raw)
+	if targetID == "" {
+		return "", false
+	}
+	return targetID, true
+}
+
+func isResolvedRefTarget(target entityIdentity, hintedType string) bool {
+	hintedType = strings.TrimSpace(hintedType)
+	return hintedType == "" || target.Type == hintedType
+}
+
+func filterTargetsByHint(targets []entityIdentity, hintedType string) []entityIdentity {
+	hintedType = strings.TrimSpace(hintedType)
+	if hintedType == "" {
+		return targets
+	}
+	filtered := make([]entityIdentity, 0, len(targets))
+	for _, target := range targets {
+		if target.Type == hintedType {
+			filtered = append(filtered, target)
+		}
+	}
+	return filtered
+}
+
+func deterministicRefType(targets []entityIdentity, hintedType string) string {
+	hintedType = strings.TrimSpace(hintedType)
+	if hintedType != "" {
+		return hintedType
+	}
+	if len(targets) == 0 {
+		return ""
+	}
+	deterministic := targets[0].Type
+	for idx := 1; idx < len(targets); idx++ {
+		if targets[idx].Type != deterministic {
+			return ""
+		}
+	}
+	return deterministic
+}
+
+func deterministicRefSlug(targets []entityIdentity) string {
+	if len(targets) == 0 {
+		return ""
+	}
+	deterministic := targets[0].Slug
+	for idx := 1; idx < len(targets); idx++ {
+		if targets[idx].Slug != deterministic {
+			return ""
+		}
+	}
+	return deterministic
 }
 
 func sectionsToAnyMap(sections map[string]string) map[string]any {

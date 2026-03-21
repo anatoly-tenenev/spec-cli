@@ -110,7 +110,7 @@ query
       repeatable: false
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: where-json.field paths from allowed where-json field subset of read-namespace
+      schema_derivation: where-json.field paths from CLI filter-namespace
       description: Structural filter JSON expression.
     --select <field>
       takes_value: true
@@ -118,15 +118,15 @@ query
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: read selectors from CLI read-namespace
-      description: Read-namespace projection selector.
+      schema_derivation: selectors from CLI projection-namespace
+      description: Projection-namespace selector.
     --sort <field[:asc|desc]>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: sort fields from leaf-path subset of read-namespace
+      schema_derivation: sort fields from CLI filter-namespace
       description: Deterministic sort term.
     --limit <n>
       takes_value: true
@@ -145,10 +145,12 @@ query
       schema_derivation: none
       description: Page offset; integer >= 0; default 0.
   Rules
-    - Read-namespace arguments are --select, --sort and where-json.field.
-    - Read-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
-    - --type uses schema-derived entity type keys and is not part of read-namespace.
-    - If --select is omitted, default projection is type, id and slug.
+    - projection-namespace argument is --select.
+    - filter-namespace arguments are --sort and where-json.field.
+    - projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
+    - filter-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
+    - --type uses schema-derived entity type keys and is not part of projection-namespace or filter-namespace.
+    - If --select is omitted, default projection is type, id, slug, meta and refs.
     - Query guarantees deterministic ordering.
     - If --sort is omitted, effective sort is type:asc, then id:asc.
     - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that tail is already present at the end.
@@ -156,8 +158,8 @@ query
     - where-json leaf node: {"field":"meta.status","op":"eq","value":"active"}.
     - Leaf operators: eq, neq, in, not_in, exists, not_exists, gt, gte, lt, lte, contains.
     - exists/not_exists do not use value; in/not_in require array value; all other leaf operators require value.
-    - Allowed where-json fields: built-in read leaf paths, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.sections.<name>.
-    - content.raw is forbidden in where-json even though it is a selectable read-namespace field.
+    - Allowed where-json fields come from filter-namespace.
+    - content.raw is forbidden in where-json even though it is available in projection-namespace and --sort.
     - For content.sections.<name> where-json supports contains, exists and not_exists only.
     - gt/gte/lt/lte are valid only for numbers and YYYY-MM-DD dates; dates compare lexicographically.
     - Comparison with incompatible type returns INVALID_QUERY, not false.
@@ -189,13 +191,14 @@ get
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: read selectors from CLI read-namespace
-      description: Read-namespace projection selector.
+      schema_derivation: selectors from CLI projection-namespace
+      description: Projection-namespace selector.
   Rules
-    - Read-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
-    - --select uses read-namespace leaf paths.
+    - Projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
+    - --select uses projection-namespace selectors.
     - --id addresses one entity by exact id and returns a single-entity read result.
-    - If --select is omitted, default projection is type, id, slug, revision and meta.
+    - If --select is omitted, default projection is type, id, slug, meta and refs.
+    - entity_ref scalar fields are exposed through refs.<field> and are not projected under meta.<name>.
     - If selected content.sections.<name> is absent, the field must be present with null value.
     - Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.
   Examples

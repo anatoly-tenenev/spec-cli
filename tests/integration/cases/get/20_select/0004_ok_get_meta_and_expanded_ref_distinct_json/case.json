@@ -1,0 +1,27 @@
+{
+  "id": "get_20_0004_ok_get_meta_and_expanded_ref_distinct_json",
+  "description": "get_20_0004_ok_get_meta_and_expanded_ref_distinct_json",
+  "command": "get",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "get",
+    "--id",
+    "FEAT-8",
+    "--select",
+    "meta.status",
+    "--select",
+    "refs.container"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

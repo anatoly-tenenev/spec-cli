@@ -1,0 +1,17 @@
+{
+  "entity": {
+    "refs": {
+      "container": {
+        "id": "SVC-404",
+        "resolved": false,
+        "slug": null,
+        "type": "service"
+      }
+    }
+  },
+  "result_state": "valid",
+  "target": {
+    "id": "FEAT-8",
+    "match_by": "id"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "query_20_0010_ok_query_select_ref_leaf_selectors_json",
+  "description": "query supports refs.<field>.id|resolved|type|slug selectors",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--select",
+    "refs.owner.id",
+    "--select",
+    "refs.owner.resolved",
+    "--select",
+    "refs.owner.type",
+    "--select",
+    "refs.owner.slug"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

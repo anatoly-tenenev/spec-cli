@@ -2,7 +2,6 @@
   "items": [
     {
       "meta": {
-        "owner": "SVC-2",
         "score": 9.5,
         "status": "active",
         "tags": [
@@ -13,7 +12,6 @@
     },
     {
       "meta": {
-        "owner": "SVC-1",
         "score": 5,
         "status": "draft",
         "tags": [

@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "created_date": "2026-03-04",
+      "id": "FEAT-2",
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      }
+    },
+    {
+      "created_date": "2026-03-05",
+      "id": "FEAT-1",
+      "refs": {
+        "owner": {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      }
+    }
+  ],
+  "matched": 2,
+  "page": {
+    "effective_sort": [
+      "refs.owner.id:asc",
+      "created_date:desc",
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 2
+  },
+  "result_state": "valid"
+}

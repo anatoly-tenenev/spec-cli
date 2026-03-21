@@ -16,5 +16,19 @@ func resolveReadValue(view map[string]any, path string) (any, bool) {
 		}
 		current = next
 	}
+	if isOptionalRefLeaf(path) && current == nil {
+		return nil, false
+	}
 	return current, true
+}
+
+func isOptionalRefLeaf(path string) bool {
+	parts := strings.Split(path, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	if parts[0] != "refs" {
+		return false
+	}
+	return parts[2] == "type" || parts[2] == "slug"
 }

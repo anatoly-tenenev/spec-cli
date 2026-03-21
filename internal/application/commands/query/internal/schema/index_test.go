@@ -67,11 +67,23 @@ entity:
 	if _, ok := index.SelectorPaths["revision"]; !ok {
 		t.Fatal("revision selector is missing")
 	}
-	if _, ok := index.SelectorPaths["refs.owner.id"]; !ok {
-		t.Fatal("refs.owner.id selector is missing")
+	if _, ok := index.SelectorPaths["refs.owner"]; !ok {
+		t.Fatal("refs.owner selector is missing")
+	}
+	if _, ok := index.SelectorPaths["refs.owner.id"]; ok {
+		t.Fatal("refs.owner.id selector must not be available in projection namespace")
 	}
 	if _, ok := index.SortFields["meta.score"]; !ok {
 		t.Fatal("meta.score sort field is missing")
+	}
+	if _, ok := index.FilterFields["refs.owner.resolved"]; !ok {
+		t.Fatal("refs.owner.resolved filter field is missing")
+	}
+	if _, ok := index.SortFields["refs.owner.resolved"]; !ok {
+		t.Fatal("refs.owner.resolved sort field is missing")
+	}
+	if _, ok := index.SelectorPaths["meta.owner"]; ok {
+		t.Fatal("meta.owner selector must not be available for entity_ref")
 	}
 	if _, ok := index.FilterFields["content.sections.summary"]; !ok {
 		t.Fatal("content.sections.summary filter field is missing")

@@ -1,0 +1,31 @@
+{
+  "id": "get_10_0008_ok_get_ref_leaf_selectors_json",
+  "description": "get supports refs.<field>.id|resolved|type|slug selectors",
+  "command": "get",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "get",
+    "--id",
+    "FEAT-8",
+    "--select",
+    "refs.container.id",
+    "--select",
+    "refs.container.resolved",
+    "--select",
+    "refs.container.type",
+    "--select",
+    "refs.container.slug"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}
