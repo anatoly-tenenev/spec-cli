@@ -485,7 +485,7 @@ func normalizeRequired(requiredNode *yaml.Node, requiredWhenNode *yaml.Node, pat
 	}
 
 	if requiredNode == nil {
-		return boolScalar(false), nil
+		return boolScalar(true), nil
 	}
 	parsed, err := parseBoolScalar(requiredNode, path+".required")
 	if err != nil {

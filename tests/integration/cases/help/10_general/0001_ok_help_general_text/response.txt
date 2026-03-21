@@ -30,7 +30,7 @@ Schema
         meta:
           status:
             description: Lifecycle status
-            required: false
+            required: true
             schema:
               type: string
               enum:

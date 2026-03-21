@@ -8,7 +8,6 @@ entity:
       fields:
         status:
           description: Lifecycle status
-          required: false
           schema:
             type: string
             enum:

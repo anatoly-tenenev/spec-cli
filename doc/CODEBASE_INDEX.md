@@ -280,7 +280,7 @@ Compact project map for fast entry into the code.
     - Classify schema unavailability into `loaded|missing|invalid|error` plus reason codes (`SCHEMA_NOT_FOUND`, `SCHEMA_NOT_READABLE`, `SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`, `SCHEMA_PROJECTION_ERROR`).
     - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without partial heuristic schema-derived data.
     - Pass absolute `ResolvedPath` into the report.
-    - Normalize `meta.fields -> meta|refs`, `required|required_when -> required`, `title -> string[]`.
+    - Normalize `meta.fields -> meta|refs`, `required|required_when -> required` (implicit default is `required: true` when both keys are absent), `title -> string[]`.
     - Exclude storage-facing nodes (`path_pattern`, raw `meta.fields`) and hide empty blocks.
     - Emit canonical `required.when` expressions and canonical key order in schema subtree.
   - Subpackages:

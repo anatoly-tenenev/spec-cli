@@ -26,7 +26,7 @@ Schema
                 - deprecated
           watchers:
             description: Related services
-            required: false
+            required: true
             schema:
               type: array
               items:
