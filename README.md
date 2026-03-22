@@ -34,6 +34,10 @@ Output:
 
 The source stays as normal Markdown. This is not a separate database and not a machine-only format.
 
+## Installation
+
+See [INSTALL.md](./INSTALL.md).
+
 ## Example workspace
 
 ```text
