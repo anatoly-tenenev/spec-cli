@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	integrationharness "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/harness"
 )
 
 func TestGlobalOptionsCases(t *testing.T) {
@@ -18,7 +20,7 @@ func TestGlobalOptionsCases(t *testing.T) {
 
 		testCase := tc
 		t.Run(testCase.ID, func(t *testing.T) {
-			runCase(t, caseDir, testCase)
+			integrationharness.RunCase(t, caseDir, testCase)
 		})
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	integrationharness "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/harness"
 )
 
 // Kept as a dynamic black-box test because this contract compares two independent
@@ -53,17 +55,17 @@ func runDeleteCommandOnFreshWorkspace(
 
 	tempRoot := t.TempDir()
 	workspacePath := filepath.Join(tempRoot, "workspace")
-	if err := copyDir(filepath.Join(caseDir, "workspace.in"), workspacePath); err != nil {
+	if err := integrationharness.CopyDir(filepath.Join(caseDir, "workspace.in"), workspacePath); err != nil {
 		t.Fatalf("copy workspace.in: %v", err)
 	}
 
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
-	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
+	if err := integrationharness.CopyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
 
-	replacedArgs := replacePlaceholders(args, workspacePath, schemaPath)
-	result, err := runCLIProcess(context.Background(), replacedArgs, "", "", nil)
+	replacedArgs := integrationharness.ReplacePlaceholders(args, workspacePath, schemaPath)
+	result, err := integrationharness.RunCLIProcess(context.Background(), replacedArgs, "", "", nil)
 	if err != nil {
 		t.Fatalf("run subprocess: %v", err)
 	}

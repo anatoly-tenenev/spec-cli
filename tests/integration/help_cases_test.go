@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	integrationrunner "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/runner"
+	integrationharness "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/harness"
 )
 
 const (
@@ -101,7 +101,7 @@ func runHelpCase(t *testing.T, caseDir string, testCase integrationCase) {
 
 	restorePermissions := func() {}
 	if len(testCase.Workspace.Permissions) > 0 {
-		rollback, err := integrationrunner.ApplyWorkspacePermissions(workspacePath, toRunnerPermissions(testCase.Workspace.Permissions))
+		rollback, err := integrationharness.ApplyWorkspacePermissions(workspacePath, testCase.Workspace.Permissions)
 		if err != nil {
 			t.Fatalf("apply workspace permissions: %v", err)
 		}
@@ -110,18 +110,18 @@ func runHelpCase(t *testing.T, caseDir string, testCase integrationCase) {
 	defer restorePermissions()
 
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
-	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
+	if err := integrationharness.CopyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
 
-	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
+	args := integrationharness.ReplacePlaceholders(testCase.Args, workspacePath, schemaPath)
 	runtimeEnv := map[string]string{
 		helpFixedPathRootEnv: helpFixedPathRoot,
 	}
 	for key, value := range testCase.Runtime.Env {
 		runtimeEnv[key] = value
 	}
-	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, "", runtimeEnv)
+	execResult, runErr := integrationharness.RunCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, "", runtimeEnv)
 	if runErr != nil {
 		t.Fatalf("execute cli process: %v", runErr)
 	}
@@ -134,7 +134,7 @@ func runHelpCase(t *testing.T, caseDir string, testCase integrationCase) {
 			execResult.Stderr,
 		)
 	}
-	assertStderr(t, caseDir, testCase, execResult.Stderr)
+	integrationharness.AssertStderr(t, caseDir, testCase, execResult.Stderr)
 	if strings.HasSuffix(strings.ToLower(testCase.Expect.ResponseFile), ".txt") {
 		assertSchemaResolvedPathContract(t, execResult.Stdout)
 		expectedRaw, readErr := os.ReadFile(filepath.Join(caseDir, testCase.Expect.ResponseFile))
@@ -148,7 +148,7 @@ func runHelpCase(t *testing.T, caseDir string, testCase integrationCase) {
 		return
 	}
 
-	assertResponse(t, caseDir, testCase, []byte(execResult.Stdout))
+	integrationharness.AssertResponse(t, caseDir, testCase, []byte(execResult.Stdout))
 }
 
 func prepareHelpWorkspace(caseDir string, inputDir string, workspacePath string) error {
@@ -165,13 +165,13 @@ func prepareHelpWorkspace(caseDir string, inputDir string, workspacePath string)
 		return err
 	}
 
-	return copyDir(sourcePath, workspacePath)
+	return integrationharness.CopyDir(sourcePath, workspacePath)
 }
 
 func TestHelpSelectedCases(t *testing.T) {
 	t.Run("help_text_explicit_format", func(t *testing.T) {
 		workspace, schema := prepareHelpFixture(t)
-		result, err := runCLIProcess(
+		result, err := integrationharness.RunCLIProcess(
 			context.Background(),
 			[]string{"--workspace", workspace, "--schema", schema, "--format", "text", "help"},
 			"",
@@ -202,7 +202,7 @@ func TestHelpSelectedCases(t *testing.T) {
 
 	t.Run("help_text_default_format", func(t *testing.T) {
 		workspace, schema := prepareHelpFixture(t)
-		result, err := runCLIProcess(
+		result, err := integrationharness.RunCLIProcess(
 			context.Background(),
 			[]string{"--workspace", workspace, "--schema", schema, "help"},
 			"",
@@ -225,7 +225,7 @@ func TestHelpSelectedCases(t *testing.T) {
 
 	t.Run("help_format_json_unsupported", func(t *testing.T) {
 		workspace, schema := prepareHelpFixture(t)
-		result, err := runCLIProcess(
+		result, err := integrationharness.RunCLIProcess(
 			context.Background(),
 			[]string{"--workspace", workspace, "--schema", schema, "--format", "json", "help"},
 			"",
@@ -243,7 +243,7 @@ func TestHelpSelectedCases(t *testing.T) {
 
 	t.Run("help_unknown_command", func(t *testing.T) {
 		workspace, schema := prepareHelpFixture(t)
-		result, err := runCLIProcess(
+		result, err := integrationharness.RunCLIProcess(
 			context.Background(),
 			[]string{"--workspace", workspace, "--schema", schema, "help", "unknown"},
 			"",
@@ -262,7 +262,7 @@ func TestHelpSelectedCases(t *testing.T) {
 	t.Run("help_command_schema_missing_returns_recovery_contract", func(t *testing.T) {
 		workspace, _ := prepareHelpFixture(t)
 		missingSchema := filepath.Join(workspace, "missing.schema.yaml")
-		result, err := runCLIProcess(
+		result, err := integrationharness.RunCLIProcess(
 			context.Background(),
 			[]string{"--workspace", workspace, "--schema", missingSchema, "help", "query"},
 			"",

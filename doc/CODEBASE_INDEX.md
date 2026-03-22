@@ -737,8 +737,10 @@ Compact project map for fast entry into the code.
     - Run targeted `help` error-path checks (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) through subprocess invocations.
     - Traverse groups/cases deterministically (lexicographic sort on every level).
     - Validate naming rules `NNNN_ok_*` / `NNNN_err_*` against `expect.exit_code`, `case.json.id`, and `case.json.command`.
-    - Prepare temporary workspace/schema and execute CLI as subprocess through the built binary.
+    - Delegate shared subprocess/workspace/assert helpers to `tests/integration/internal/harness`.
+    - Prepare temporary workspace/schema and execute CLI as subprocess through the integration harness.
     - Support optional case runtime working directory override (`runtime.cwd`) with `${WORKSPACE}` / `${SCHEMA}` placeholders; default working directory remains repository root.
+    - Keep entrypoint/data-first case traversal and naming validation in `run_cases_test.go`; keep runtime/assert details in `tests/integration/internal/harness`.
     - Compare `exit_code`, `stderr`, and response (`json|text`) with golden expectations.
     - Treat `workspace.in` as optional for `help` cases; create empty workspace when absent.
     - Compare text-help stdout directly and stabilize `ResolvedPath` through runtime fixed-root injection.
@@ -751,6 +753,8 @@ Compact project map for fast entry into the code.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entity_ref`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
   - Subpackages:
+    - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, placeholder/path utilities, stderr/response/workspace assertions, permission setup).
+    - `tests/integration/internal/runner` - response normalization and workspace permission adapter used by harness and selected tests.
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
     - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.

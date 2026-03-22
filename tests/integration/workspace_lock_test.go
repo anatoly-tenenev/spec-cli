@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/workspacelock"
+	integrationharness "github.com/anatoly-tenenev/spec-cli/tests/integration/internal/harness"
 )
 
 const (
@@ -89,16 +90,16 @@ func runWorkspaceLockConflictCase(t *testing.T, caseDir string) {
 
 	tempRoot := t.TempDir()
 	workspacePath := filepath.Join(tempRoot, "workspace")
-	if err := copyDir(filepath.Join(caseDir, testCase.Workspace.InputDir), workspacePath); err != nil {
+	if err := integrationharness.CopyDir(filepath.Join(caseDir, testCase.Workspace.InputDir), workspacePath); err != nil {
 		t.Fatalf("copy workspace.in: %v", err)
 	}
 
 	schemaPath := filepath.Join(tempRoot, "spec.schema.yaml")
-	if err := copyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
+	if err := integrationharness.CopyFile(filepath.Join(caseDir, "spec.schema.yaml"), schemaPath); err != nil {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
 
-	beforeFiles, err := collectWorkspaceFiles(workspacePath)
+	beforeFiles, err := integrationharness.CollectWorkspaceFiles(workspacePath)
 	if err != nil {
 		t.Fatalf("collect workspace files before run: %v", err)
 	}
@@ -106,8 +107,8 @@ func runWorkspaceLockConflictCase(t *testing.T, caseDir string) {
 	releaseLock := startIntegrationLockHolderProcess(t, workspacePath)
 	defer releaseLock()
 
-	args := replacePlaceholders(testCase.Args, workspacePath, schemaPath)
-	execResult, runErr := runCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, "", testCase.Runtime.Env)
+	args := integrationharness.ReplacePlaceholders(testCase.Args, workspacePath, schemaPath)
+	execResult, runErr := integrationharness.RunCLIProcess(context.Background(), args, testCase.Runtime.FixedNowUTC, "", testCase.Runtime.Env)
 	if runErr != nil {
 		t.Fatalf("run command: %v", runErr)
 	}
@@ -140,15 +141,15 @@ func runWorkspaceLockConflictCase(t *testing.T, caseDir string) {
 		t.Fatalf("lock conflict must not expose internal details: %s", execResult.Stdout)
 	}
 
-	afterFiles, err := collectWorkspaceFiles(workspacePath)
+	afterFiles, err := integrationharness.CollectWorkspaceFiles(workspacePath)
 	if err != nil {
 		t.Fatalf("collect workspace files after run: %v", err)
 	}
 	if !reflect.DeepEqual(beforeFiles, afterFiles) {
 		t.Fatalf(
 			"workspace must stay unchanged on lock conflict\nbefore:\n%s\nafter:\n%s",
-			mustJSON(beforeFiles),
-			mustJSON(afterFiles),
+			integrationharness.MustJSON(beforeFiles),
+			integrationharness.MustJSON(afterFiles),
 		)
 	}
 }
