@@ -1,0 +1,32 @@
+{
+  "id": "workspace_lock_10_0002_err_workspace_lock_update_json",
+  "description": "workspace_lock_10_0002_err_workspace_lock_update_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "meta.status=active",
+    "--expect-revision",
+    "sha256:d6382f3e3d2e60d89dc17e124d284dc0d3e1cca624f3063c9cd9e514a274fa6f"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

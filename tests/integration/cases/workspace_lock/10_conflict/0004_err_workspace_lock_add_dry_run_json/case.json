@@ -1,0 +1,38 @@
+{
+  "id": "workspace_lock_10_0004_err_workspace_lock_add_dry_run_json",
+  "description": "workspace_lock_10_0004_err_workspace_lock_add_dry_run_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--format",
+    "json",
+    "--type",
+    "feature",
+    "--slug",
+    "dry-run-summary",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "refs.container=SVC-1",
+    "--set",
+    "content.sections.summary=Dry run summary",
+    "--dry-run"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-10"
+  }
+}

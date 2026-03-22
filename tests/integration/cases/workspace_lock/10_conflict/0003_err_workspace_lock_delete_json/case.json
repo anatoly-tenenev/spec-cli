@@ -1,0 +1,24 @@
+{
+  "id": "workspace_lock_10_0003_err_workspace_lock_delete_json",
+  "description": "workspace_lock_10_0003_err_workspace_lock_delete_json",
+  "command": "delete",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "delete",
+    "--id",
+    "SVC-2"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

@@ -546,11 +546,16 @@ func collectWorkspaceFiles(root string) (map[string]string, error) {
 		if err != nil {
 			return err
 		}
+		normalizedRelative := filepath.ToSlash(relative)
+		if isInternalWorkspaceLockFile(normalizedRelative) {
+			return nil
+		}
+
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		files[filepath.ToSlash(relative)] = string(raw)
+		files[normalizedRelative] = string(raw)
 		return nil
 	})
 	if err != nil {
@@ -558,6 +563,10 @@ func collectWorkspaceFiles(root string) (map[string]string, error) {
 	}
 
 	return files, nil
+}
+
+func isInternalWorkspaceLockFile(relativePath string) bool {
+	return relativePath == ".spec-cli/workspace.lock"
 }
 
 func parseJSON(raw []byte) (any, error) {

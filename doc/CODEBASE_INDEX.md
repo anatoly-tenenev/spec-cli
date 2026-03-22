@@ -15,9 +15,9 @@ Compact project map for fast entry into the code.
 5. For `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 6. For `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
 7. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
-8. For `add`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-9. For `update`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-10. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+8. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+9. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+10. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 11. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
 
 ## Binary Entrypoint Status
@@ -47,6 +47,16 @@ Compact project map for fast entry into the code.
     - Dispatch a request to the correct handler.
     - Return domain error `INVALID_ARGS` for an unknown command.
   - Subpackages: none.
+
+- `internal/application/workspacelock`
+  - Entrypoint: `internal/application/workspacelock/locker.go` - `AcquireExclusive`, `(*Guard).Release`.
+  - Responsibilities:
+    - Build workspace-level lock path (`<workspace>/.spec-cli/workspace.lock`) from normalized workspace root.
+    - Acquire fail-fast advisory exclusive lock before mutating command snapshot/validation stages.
+    - Return deterministic lock contention error (`CONCURRENCY_CONFLICT`) for concurrent mutating operations.
+    - Keep release lifecycle in one guard API used by `add`, `update`, and `delete` handlers.
+  - Subpackages:
+    - `workspacelock/internal/flock` - platform lock backend (`flock` on Unix, capability fallback on unsupported targets).
 
 - `internal/application/commands/validate`
   - Entrypoints:
@@ -383,8 +393,8 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `add`: parse options -> normalize paths -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
-    - Map `INVALID_ARGS`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema errors, and read/write errors into one JSON envelope.
+    - Orchestrate `add`: parse options -> normalize paths -> acquire workspace lock -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
+    - Map `INVALID_ARGS`, `CONCURRENCY_CONFLICT`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema errors, and read/write errors into one JSON envelope.
     - Inject `Clock` for deterministic `created_date`/`updated_date`.
     - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
   - Subpackages:
@@ -467,8 +477,8 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `delete`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute delete/checks.
-    - Map `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
+    - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> load schema -> build workspace snapshot -> execute delete/checks.
+    - Map `INVALID_ARGS`, `SCHEMA_*`, `CONCURRENCY_CONFLICT`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
     - Own `delete` help inside shared `help`.
   - Subpackages:
     - `delete/internal/options` - parse/norm of `--id`, `--expect-revision`, `--dry-run`.
@@ -548,7 +558,7 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `update`: parse options -> normalize paths -> load schema -> build workspace snapshot -> execute.
+    - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> load schema -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
     - Return contractual JSON response (`updated/noop/changes/entity/validation`) with one domain-error mapping layer.
     - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
@@ -719,6 +729,7 @@ Compact project map for fast entry into the code.
     - `help_cases_test.go` - `TestHelpGeneralCases`, `TestHelpSchemaRecoveryCases`, `TestHelpErrorCases`, `TestHelpSelectedCases`
     - `global_options_cases_test.go` - `TestGlobalOptionsCases`
     - `delete_multirun_test.go` - `TestDeleteHappy02DryRunMatchesRealRevision`
+    - `workspace_lock_test.go` - `TestMutatingCommandsLockConflict`, `TestMutatingCommandsDryRunRespectsWorkspaceLock`
   - Responsibilities:
     - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`.
@@ -731,9 +742,10 @@ Compact project map for fast entry into the code.
     - Compare `exit_code`, `stderr`, and response (`json|text`) with golden expectations.
     - Treat `workspace.in` as optional for `help` cases; create empty workspace when absent.
     - Compare text-help stdout directly and stabilize `ResolvedPath` through runtime fixed-root injection.
-    - Compare `workspace.out` for mutating scenarios against actual post-command workspace state.
+    - Compare `workspace.out` for mutating scenarios against actual post-command workspace state (ignoring internal `.spec-cli/workspace.lock` service file).
     - Use marker `workspace.in/.keep` for empty input workspaces so they stay in Git and CI.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
+    - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
     - Cover scalar and array `entity_ref` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entity_ref`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
@@ -782,6 +794,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/help/15_schema_recovery/*` - degraded-schema recovery contract for `help`.
     - `tests/integration/cases/help/20_errors/*` - non-zero `help` errors.
     - `tests/integration/cases/global_options/10_config/*` - data-first global `--config` contract scenarios (explicit config, auto-discovery, CLI precedence, INVALID_CONFIG failures).
+    - `tests/integration/cases/workspace_lock/10_conflict/*` - dedicated lock-contention fixtures for `add/update/delete` (regular and `--dry-run`) used by dynamic helper-process checks.
 
 ## Current Command Status
 
@@ -789,7 +802,7 @@ Compact project map for fast entry into the code.
 - `validate` - support for `expressions`, `entity_ref`, and `path_pattern.cases[].when` is implemented.
 - `query` - read-only pipeline is implemented (schema index, `where-json`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
-- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>` and array `entity_ref` writes in `refs.<field>`.
-- `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract).
-- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including full-replace array patch semantics and array `entity_ref` writes in `refs.<field>`.
+- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entity_ref` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
+- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including full-replace array patch semantics, array `entity_ref` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `version` - baseline version command is implemented (single build-time source `Version` with fallback `dev`, JSON contract, contract error-path cases).

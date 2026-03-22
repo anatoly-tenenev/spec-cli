@@ -8,6 +8,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/schema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/workspacelock"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -34,6 +35,12 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
 	}
+
+	lockGuard, lockErr := workspacelock.AcquireExclusive(workspacePath)
+	if lockErr != nil {
+		return responses.CommandOutput{}, lockErr
+	}
+	defer lockGuard.Release()
 
 	loadedSchema, schemaErr := schema.Load(schemaPath, request.Global.SchemaPath)
 	if schemaErr != nil {
