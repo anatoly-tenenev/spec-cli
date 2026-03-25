@@ -747,6 +747,7 @@ Compact project map for fast entry into the code.
     - Compare `workspace.out` for mutating scenarios against actual post-command workspace state (ignoring internal `.spec-cli/workspace.lock` service file).
     - Use marker `workspace.in/.keep` for empty input workspaces so they stay in Git and CI.
     - Keep early-fail argument/planner/schema fixtures minimal: cases that fail before workspace scan (for example `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `SCHEMA_PARSE_ERROR`) should use `workspace.in/.keep` only unless the scenario explicitly validates filesystem/schema/read behavior.
+    - For mutating happy-path cases (`add`/`update`/`delete`), keep at least one valid unrelated entity file in `workspace.in/out` to assert absence of collateral file changes.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
