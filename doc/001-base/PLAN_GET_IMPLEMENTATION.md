@@ -82,7 +82,7 @@ The `get` implementation must include the following capabilities.
   - allowed `entity` types;
   - `meta.fields` definitions;
   - `content.sections` definitions;
-  - `entity_ref` field types;
+  - `entityRef` field types;
   - read selectors available in the baseline model.
 
 ### 3.2. Canonical Read Namespace
@@ -93,8 +93,8 @@ Support these paths:
   - `type`
   - `id`
   - `slug`
-  - `created_date`
-  - `updated_date`
+  - `createdDate`
+  - `updatedDate`
   - `revision`
 - meta:
   - `meta`
@@ -127,7 +127,7 @@ For the target entity, `get` must be able to:
 - separate built-in fields from `meta.fields`;
 - extract the raw document body;
 - build a normalized section model under the standard rules;
-- compute `refs` through successfully resolved `entity_ref`;
+- compute `refs` through successfully resolved `entityRef`;
 - compute `revision` from the actual persisted document state.
 
 ### 3.5. Response Projection via `--select`
@@ -312,7 +312,7 @@ Non-blocking cases for `get`:
 
 Do:
 
-- read `type`, `id`, `slug`, `created_date`, `updated_date` from frontmatter;
+- read `type`, `id`, `slug`, `createdDate`, `updatedDate` from frontmatter;
 - assemble `meta` from non-built-in frontmatter fields declared in schema `meta.fields`;
 - support absent values:
   - missing `meta.<name>` is not automatically a `get` error;
@@ -327,7 +327,7 @@ Ready when:
 
 Do:
 
-- determine from the schema which metadata fields are `entity_ref`;
+- determine from the schema which metadata fields are `entityRef`;
 - resolve them by `id` to target entities;
 - return the expanded read-view:
   - `refs.<field>.id`
@@ -445,8 +445,8 @@ Minimal model to keep in code:
 - `type`
 - `id`
 - `slug`
-- `created_date`
-- `updated_date`
+- `createdDate`
+- `updatedDate`
 - `revision`
 - `meta`
 - `refs`
@@ -798,7 +798,7 @@ Expected:
 
 Given:
 
-- the target has a valid `entity_ref` link.
+- the target has a valid `entityRef` link.
 
 Command:
 
@@ -849,7 +849,7 @@ Minimal test-data set:
 
 - one valid schema with a type that includes:
   - regular metadata fields;
-  - at least one `entity_ref`;
+  - at least one `entityRef`;
   - at least two `content.sections`;
 - one valid target entity;
 - one target entity without a required section;

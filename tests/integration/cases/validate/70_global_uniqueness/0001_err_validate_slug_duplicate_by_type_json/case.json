@@ -1,6 +1,6 @@
 {
   "id": "validate_70_0001_err_validate_slug_duplicate_by_type_json",
-  "description": "validate returns issues for missing id and duplicate slug",
+  "description": "validate_70_0001_err_validate_slug_duplicate_by_type_json",
   "command": "validate",
   "args": [
     "--workspace",

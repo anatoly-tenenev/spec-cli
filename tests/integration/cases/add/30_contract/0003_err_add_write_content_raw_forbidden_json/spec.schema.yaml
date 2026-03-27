@@ -1,15 +1,15 @@
 version: "0.0.4"
 entity:
   service:
-    id_prefix: SVC
-    path_pattern: "services/{slug}/index.md"
+    idPrefix: SVC
+    pathTemplate: "services/{slug}/index.md"
     meta:
       fields:
         owner:
           required: true
           schema:
             type: string
-        dir_path:
+        dirPath:
           required: false
           schema:
             type: string
@@ -19,12 +19,12 @@ entity:
           required: true
           title: ["Summary"]
   feature:
-    id_prefix: FEAT
-    path_pattern:
+    idPrefix: FEAT
+    pathTemplate:
       cases:
         - when:
-            exists: refs.container.dir_path
-          use: "{refs.container.dir_path}/features/{slug}.md"
+            exists: refs.container.dirPath
+          use: "{refs.container.dirPath}/features/{slug}.md"
         - use: "features/{slug}.md"
     meta:
       fields:
@@ -36,7 +36,7 @@ entity:
         container:
           required: true
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
         priority:
           required: false
@@ -67,8 +67,8 @@ entity:
           required: false
           title: ["Implementation"]
   note:
-    id_prefix: NOTE
-    path_pattern: "notes/{slug}.md"
+    idPrefix: NOTE
+    pathTemplate: "notes/{slug}.md"
     meta:
       fields:
         title:

@@ -344,7 +344,7 @@ func compileReferenceOperand(raw any, path string, ctx CompileContext, requireCo
 		if !exists || !spec.EntityRef {
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",
-				fmt.Sprintf("refs field '%s' is not declared as entity_ref", field),
+				fmt.Sprintf("refs field '%s' is not declared as entityRef", field),
 				path,
 			)}
 		}
@@ -362,7 +362,7 @@ func compileReferenceOperand(raw any, path string, ctx CompileContext, requireCo
 
 		part := parts[2]
 		switch part {
-		case "id", "type", "slug", "dir_path":
+		case "id", "type", "slug", "dirPath":
 		default:
 			return nil, []CompileIssue{newIssue(
 				"schema.expression.invalid_reference",

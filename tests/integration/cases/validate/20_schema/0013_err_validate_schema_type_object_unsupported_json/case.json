@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0013_err_validate_schema_type_object_unsupported_json",
-  "description": "validate returns schema error for unsupported schema.type object",
+  "description": "validate_20_0013_err_validate_schema_type_object_unsupported_json",
   "command": "validate",
   "args": [
     "--workspace",

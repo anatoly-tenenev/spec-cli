@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0011_err_validate_type_missing_json",
-  "description": "validate returns instance error when built-in type field is missing",
+  "description": "validate_30_0011_err_validate_type_missing_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -1,6 +1,6 @@
 {
   "id": "query_40_0007_ok_query_sort_meta_status_hidden_tail_json",
-  "description": "QRY-SORT-01 adapted to current fixtures",
+  "description": "query_40_0007_ok_query_sort_meta_status_hidden_tail_json",
   "command": "query",
   "args": [
     "--workspace",

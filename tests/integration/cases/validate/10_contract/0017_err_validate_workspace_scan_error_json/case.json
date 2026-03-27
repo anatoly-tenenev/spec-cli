@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0017_err_validate_workspace_scan_error_json",
-  "description": "validate returns WRITE_FAILED when workspace path cannot be scanned",
+  "description": "validate_10_0017_err_validate_workspace_scan_error_json",
   "command": "validate",
   "args": [
     "--workspace",

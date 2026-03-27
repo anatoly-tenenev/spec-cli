@@ -41,8 +41,8 @@ func Execute(
 		"type":         opts.EntityType,
 		"id":           candidateID,
 		"slug":         opts.Slug,
-		"created_date": today,
-		"updated_date": today,
+		"createdDate": today,
+		"updatedDate": today,
 	}
 	for key, value := range appliedWrites.FrontmatterValues {
 		frontmatter[key] = value
@@ -102,10 +102,10 @@ func Execute(
 		if candidate.PathAbs == "" {
 			return nil, validation.AsAppError([]domainvalidation.Issue{
 				issues.New(
-					"instance.path_pattern.no_matching_case",
-					"path_pattern has no matching case for created entity",
+					"instance.pathTemplate.no_matching_case",
+					"pathTemplate has no matching case for created entity",
 					"12.4",
-					"schema.path_pattern",
+					"schema.pathTemplate",
 					candidate,
 				),
 			})

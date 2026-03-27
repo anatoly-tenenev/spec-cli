@@ -1,6 +1,6 @@
 {
   "id": "query_30_0017_ok_query_where_not_in_status_json",
-  "description": "QRY-WHERE-04 adapted to current fixtures",
+  "description": "query_30_0017_ok_query_where_not_in_status_json",
   "command": "query",
   "args": [
     "--workspace",

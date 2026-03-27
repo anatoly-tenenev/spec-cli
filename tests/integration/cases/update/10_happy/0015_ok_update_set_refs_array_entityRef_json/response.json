@@ -1,0 +1,47 @@
+{
+  "changes": [
+    {
+      "after": [
+        "SVC-2",
+        "SVC-3"
+      ],
+      "before": [
+        "SVC-1"
+      ],
+      "field": "refs.watchers",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "createdDate": "2026-03-01",
+    "id": "FEAT-1",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      },
+      "watchers": [
+        {
+          "id": "SVC-2"
+        },
+        {
+          "id": "SVC-3"
+        }
+      ]
+    },
+    "revision": "sha256:e2e5c7c8a42574e5950bc9828e54e4fb063af029e62b1201fb1ef7833accc381",
+    "slug": "idempotency-keys",
+    "type": "feature",
+    "updatedDate": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

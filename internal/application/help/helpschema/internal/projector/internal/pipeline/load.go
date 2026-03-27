@@ -176,19 +176,19 @@ func projectEntityType(entityTypeNode *yaml.Node, path string) (*yaml.Node, erro
 	}
 	if err := ensureAllowedKeys(entries, map[string]struct{}{
 		"description":  {},
-		"id_prefix":    {},
-		"path_pattern": {},
+		"idPrefix":    {},
+		"pathTemplate": {},
 		"meta":         {},
 		"content":      {},
 	}, path); err != nil {
 		return nil, err
 	}
 
-	idPrefixNode, exists := byKey["id_prefix"]
+	idPrefixNode, exists := byKey["idPrefix"]
 	if !exists {
-		return nil, fmt.Errorf("%s.id_prefix is required", path)
+		return nil, fmt.Errorf("%s.idPrefix is required", path)
 	}
-	idPrefixScalar, err := requiredScalar(idPrefixNode, path+".id_prefix")
+	idPrefixScalar, err := requiredScalar(idPrefixNode, path+".idPrefix")
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func projectEntityType(entityTypeNode *yaml.Node, path string) (*yaml.Node, erro
 		}
 		appendMapping(projected, "description", descriptionScalar)
 	}
-	appendMapping(projected, "id_prefix", idPrefixScalar)
+	appendMapping(projected, "idPrefix", idPrefixScalar)
 	if len(metaFields) > 0 {
 		metaNode := mappingNode()
 		for _, field := range metaFields {
@@ -268,7 +268,7 @@ func projectMetaFields(metaNode *yaml.Node, path string) ([]projectedField, []pr
 		if fieldErr != nil {
 			return nil, nil, fieldErr
 		}
-		if fieldType == "entity_ref" {
+		if fieldType == "entityRef" {
 			refFields = append(refFields, projectedField{Name: fieldEntry.Key, Node: fieldNode})
 			continue
 		}

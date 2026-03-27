@@ -17,8 +17,8 @@ var builtinSelectors = []string{
 	"type",
 	"id",
 	"slug",
-	"created_date",
-	"updated_date",
+	"createdDate",
+	"updatedDate",
 	"revision",
 	"meta",
 	"refs",
@@ -284,9 +284,9 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 
 	normalizedType := strings.TrimSpace(rawType)
 	switch normalizedType {
-	case "integer", "number", "boolean", "array", "string", "entity_ref":
+	case "integer", "number", "boolean", "array", "string", "entityRef":
 		parsed := parsedMetadataField{}
-		if normalizedType == "entity_ref" {
+		if normalizedType == "entityRef" {
 			parsed.IsRef = true
 			parsed.DeterministicType = extractSingleRefTypeHint(schemaNode)
 			return parsed, nil
@@ -337,7 +337,7 @@ func parseArrayEntityRefMetadataField(
 			nil,
 		)
 	}
-	if strings.TrimSpace(rawItemType) != "entity_ref" {
+	if strings.TrimSpace(rawItemType) != "entityRef" {
 		return false, "", nil
 	}
 

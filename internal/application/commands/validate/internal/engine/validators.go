@@ -20,8 +20,8 @@ func validateAllowedFrontmatterKeys(issues *[]domainvalidation.Issue, entity *mo
 		"type":         {},
 		"id":           {},
 		"slug":         {},
-		"created_date": {},
-		"updated_date": {},
+		"createdDate": {},
+		"updatedDate": {},
 	}
 	for _, rule := range typeSpec.RequiredFields {
 		allowed[rule.Name] = struct{}{}

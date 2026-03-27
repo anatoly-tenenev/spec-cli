@@ -1,8 +1,8 @@
 version: "0.0.4"
 entity:
   service:
-    id_prefix: SVC
-    path_pattern: "services/{slug}/index.md"
+    idPrefix: SVC
+    pathTemplate: "services/{slug}/index.md"
     meta:
       fields:
         owner:
@@ -15,8 +15,8 @@ entity:
           required: true
           title: ["Summary"]
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         status:
@@ -27,7 +27,7 @@ entity:
         container:
           required: true
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
     content:
       sections:
@@ -35,8 +35,8 @@ entity:
           required: true
           title: ["Summary"]
   release:
-    id_prefix: REL
-    path_pattern: "releases/{slug}.md"
+    idPrefix: REL
+    pathTemplate: "releases/{slug}.md"
     meta:
       fields:
         features:
@@ -44,7 +44,7 @@ entity:
           schema:
             type: array
             items:
-              type: entity_ref
+              type: entityRef
               refTypes: [feature]
         summary_text:
           required: false
@@ -56,8 +56,8 @@ entity:
           required: false
           title: ["Summary"]
   note:
-    id_prefix: NOTE
-    path_pattern: "notes/{slug}.md"
+    idPrefix: NOTE
+    pathTemplate: "notes/{slug}.md"
     meta:
       fields:
         title:

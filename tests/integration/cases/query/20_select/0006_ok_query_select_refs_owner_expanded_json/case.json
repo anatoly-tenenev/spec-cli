@@ -1,6 +1,6 @@
 {
   "id": "query_20_0006_ok_query_select_refs_owner_expanded_json",
-  "description": "QRY-SELECT-04 adapted: refs.container -> refs.owner",
+  "description": "query_20_0006_ok_query_select_refs_owner_expanded_json",
   "command": "query",
   "args": [
     "--workspace",

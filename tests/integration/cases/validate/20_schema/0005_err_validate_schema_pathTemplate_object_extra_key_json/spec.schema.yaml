@@ -1,0 +1,8 @@
+version: 0.0.4
+entity:
+  doc:
+    idPrefix: "DOC"
+    pathTemplate:
+      mode: strict
+      cases:
+        - use: "{slug}.md"

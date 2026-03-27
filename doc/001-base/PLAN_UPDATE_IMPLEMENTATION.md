@@ -48,8 +48,8 @@ Mandatory rules:
 6. For types without a `content` block, `--content-file`, `--content-stdin`, and `--clear-content` must fail with `WRITE_CONTRACT_VIOLATION`.
 7. `update` must not depend on `schema.model` as the runtime source of the write contract.
 8. Allowed paths for `--set` are derived directly from raw schema of the entity type:
-   - `meta.<field>` only for fields from `meta.fields` where `schema.type != entity_ref`;
-   - `refs.<field>` only for fields from `meta.fields` where `schema.type = entity_ref`;
+   - `meta.<field>` only for fields from `meta.fields` where `schema.type != entityRef`;
+   - `refs.<field>` only for fields from `meta.fields` where `schema.type = entityRef`;
    - `content.sections.<name>` only for sections from `content.sections`.
 9. Allowed paths for `--unset` are defined by the same writable namespace as `--set`.
 10. Normatively forbidden write paths are determined by baseline write-namespace rules and the raw schema of the target type.
@@ -58,7 +58,7 @@ Mandatory rules:
 13. After the patch is applied, the final entity must pass full validation.
 14. If the post-patch state is invalid, nothing is written.
 15. If there are no actual changes, the command must return successful `no-op` with `updated: false`, `noop: true`, `changes[]: []`.
-16. On an actual change, `updated_date` is updated automatically.
+16. On an actual change, `updatedDate` is updated automatically.
 17. If the canonical path changes, the internal move must be part of the same atomic operation.
 18. Successful `--dry-run` must execute the same pipeline as normal `update`, return the same success payload, but not write to disk and set `dry_run: true`.
 
@@ -88,7 +88,7 @@ Separate:
    Writable fields and/or body.
 
 2. Derived changes.
-   Recomputed `updated_date`, `revision`, possible internal file move.
+   Recomputed `updatedDate`, `revision`, possible internal file move.
 
 `changes[]` must describe actual user changes only. Do not include derived changes.
 
@@ -121,12 +121,12 @@ Workspace indexes are required:
 - `id -> entity location`
 - `(type, slug) -> entity`
 - `path -> entity`
-- entity index for `entity_ref` resolution
+- entity index for `entityRef` resolution
 
 Without these indexes, `update` cannot correctly handle:
 
 - target lookup by `--id`;
-- `entity_ref` checks;
+- `entityRef` checks;
 - `slug` uniqueness checks;
 - path conflict checks during possible moves.
 
@@ -169,9 +169,9 @@ Two validation stages are needed:
    Validates the final entity under the standard and baseline, including:
    - built-in fields;
    - `meta.fields`;
-   - `entity_ref`;
+   - `entityRef`;
    - `content.sections`;
-   - `path_pattern`;
+   - `pathTemplate`;
    - `slug` uniqueness;
    - canonical path correctness;
    - path conflict.
@@ -225,8 +225,8 @@ Need an in-memory representation with:
 - `type`
 - `id`
 - `slug`
-- `created_date`
-- `updated_date`
+- `createdDate`
+- `updatedDate`
 - metadata fields
 - raw body
 - normalized sections
@@ -259,7 +259,7 @@ After the entity `type` is known, load the type-specific write contract:
 - `set_paths`
 - `unset_paths`, matching the same writable namespace
 - `path_specs`
-- `forbidden_path_patterns`, derived from baseline write-namespace rules and raw schema
+- `forbidden_pathTemplates`, derived from baseline write-namespace rules and raw schema
 
 For each patch element:
 
@@ -299,7 +299,7 @@ This step must not attempt full schema validation. It is enough to:
 - ensure the value can be applied to the given path;
 - reject obvious write-contract violations.
 
-Full checks of `enum`, `const`, `required_when`, `entity_ref`, `path_pattern`, and sections must run only after the patch is applied to the full candidate.
+Full checks of `enum`, `const`, `required_when`, `entityRef`, `pathTemplate`, and sections must run only after the patch is applied to the full candidate.
 
 ### Step 7. Apply the Patch to the In-Memory Model
 
@@ -315,7 +315,7 @@ For `meta.<field>`:
 
 For `refs.<field>`:
 
-1. `set` replaces the string `id` in the frontmatter field corresponding to that `entity_ref`.
+1. `set` replaces the string `id` in the frontmatter field corresponding to that `entityRef`.
 2. `unset` is allowed for any `refs.<field>` inside the writable namespace of `update`.
 3. If the field is absent, `unset` is a successful `no-op`.
 
@@ -361,7 +361,7 @@ For types without `content`, such operations must already have been rejected dur
 
 ### Step 8. Compute Semantic No-Op
 
-After patch application but before automatic `updated_date` change, compare original and new user state:
+After patch application but before automatic `updatedDate` change, compare original and new user state:
 
 - built-in writable semantic subset: `slug` is excluded because it is readonly for `update` in the write contract;
 - metadata fields;
@@ -371,19 +371,19 @@ After patch application but before automatic `updated_date` change, compare orig
 If user state did not change:
 
 1. Mark the candidate as `noop`.
-2. Do not change `updated_date`.
+2. Do not change `updatedDate`.
 3. `changes[]` must be empty.
 
 Important: do not return `noop` before full post-patch validation. Otherwise the command could "succeed" on an already-invalid entity just because the patch did not change it.
 
-### Step 9. Automatically Update `updated_date`
+### Step 9. Automatically Update `updatedDate`
 
 If the semantic diff is not empty:
 
 1. Take the current calendar date from the injected clock source.
-2. Write it into `updated_date`.
+2. Write it into `updatedDate`.
 
-Because date granularity is daily, `updated_date` may remain the same string when the update happens on the same day. That is fine: the change is still reflected in `revision` and document content.
+Because date granularity is daily, `updatedDate` may remain the same string when the update happens on the same day. That is fine: the change is still reflected in `revision` and document content.
 
 ### Step 10. Run Full Post-Patch Candidate Validation
 
@@ -393,8 +393,8 @@ Run the same validation pipeline required by the standard for entity-level valid
    - `type`
    - `id`
    - `slug`
-   - `created_date`
-   - `updated_date`
+   - `createdDate`
+   - `updatedDate`
 
 2. `meta.fields`:
    - `required`
@@ -403,14 +403,14 @@ Run the same validation pipeline required by the standard for entity-level valid
    - `schema.const`
    - `schema.enum`
    - array constraints
-   - `entity_ref`
+   - `entityRef`
 
 3. `content.sections`:
    - `required/required_when`
    - label presence
    - title validity
 
-4. `path_pattern`:
+4. `pathTemplate`:
    - case selection
    - placeholder substitution
    - canonical path validation
@@ -531,8 +531,8 @@ For deterministic write behavior, `update` must use the same canonical frontmatt
 1. `type`
 2. `id`
 3. `slug`
-4. `created_date`
-5. `updated_date`
+4. `createdDate`
+5. `updatedDate`
 6. then `meta.fields` in the declaration order from raw schema
 
 This order is mandatory for the `update` serializer.
@@ -600,7 +600,7 @@ Required cases:
 3. `unset` of a missing `refs.<field>`.
 4. `unset` of a missing section.
 5. Verify no disk write on `noop`.
-6. Verify `updated_date` does not change on `noop`.
+6. Verify `updatedDate` does not change on `noop`.
 7. Verify successful `noop` returns `updated: false`, `noop: true`, `changes[]: []`.
 8. Verify `noop` does not bypass post-patch validation on an already-invalid entity.
 
@@ -610,10 +610,10 @@ Required cases:
 
 1. Patch removes required field.
 2. Patch breaks `required_when`.
-3. Patch breaks `entity_ref`.
+3. Patch breaks `entityRef`.
 4. Patch breaks `content.sections`.
 5. Patch creates `slug` conflict.
-6. Patch changes path via `path_pattern`.
+6. Patch changes path via `pathTemplate`.
 7. Patch creates path conflict.
 
 ### 6.5. Whole-Body Mode
@@ -674,7 +674,7 @@ The implementation is best done in short complete slices, not as one large task.
 ### Stage 4. Validation + Persistence
 
 1. Enable full post-patch validation.
-2. Enable automatic `updated_date`.
+2. Enable automatic `updatedDate`.
 3. Enable path recompute.
 4. Enable atomic write / move transaction.
 5. Enable `dry-run`.
@@ -726,7 +726,7 @@ Using `--set-file` for `meta.<field>` and `refs.<field>` must fail with `WRITE_C
 ### 8.8. Frontmatter Order
 
 The `update` serializer must use the mandatory frontmatter field order:
-`type`, `id`, `slug`, `created_date`, `updated_date`, then `meta.fields` in the raw-schema declaration order.
+`type`, `id`, `slug`, `createdDate`, `updatedDate`, then `meta.fields` in the raw-schema declaration order.
 
 ### 8.9. Serializer Spacing/Newline Policy
 
@@ -798,7 +798,7 @@ Support for `ndjson` and corresponding contract tests is outside this task.
 
 In success payload, `entity.refs` uses short form only:
 `{ "<field>": { "id": "<target_id>" } }`.
-Expanded ref data (`type`, `slug`, `dir_path`, `meta`) must not appear in the public `update` response.
+Expanded ref data (`type`, `slug`, `dirPath`, `meta`) must not appear in the public `update` response.
 
 ## 9. Summary
 
@@ -811,7 +811,7 @@ Correct baseline `update` implementation reduces to one connected pipeline:
 5. Run preflight write validation.
 6. Apply the patch to the in-memory document model.
 7. Determine `noop` or actual change.
-8. Update `updated_date` when required.
+8. Update `updatedDate` when required.
 9. Fully validate the post-patch candidate.
 10. Recompute path/revision.
 11. Execute atomic write or atomic move+write.

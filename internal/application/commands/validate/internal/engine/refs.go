@@ -18,7 +18,7 @@ func resolveEntityReferences(
 	resolved := make(map[string]resolvedEntityRef)
 
 	for _, fieldRule := range typeSpec.RequiredFields {
-		if fieldRule.Type != "entity_ref" {
+		if fieldRule.Type != "entityRef" {
 			continue
 		}
 
@@ -70,10 +70,10 @@ func resolveEntityReferenceValue(
 	switch len(targets) {
 	case 0:
 		issue := domainvalidation.Issue{
-			Code:        "meta.entity_ref_target_missing",
+			Code:        "meta.entityRef_target_missing",
 			Level:       domainvalidation.LevelError,
 			Class:       "InstanceError",
-			Message:     fmt.Sprintf("entity_ref field '%s' points to unknown id '%s'", fieldLabel, referenceID),
+			Message:     fmt.Sprintf("entityRef field '%s' points to unknown id '%s'", fieldLabel, referenceID),
 			StandardRef: "12.3",
 			Field:       fieldPath,
 		}
@@ -82,10 +82,10 @@ func resolveEntityReferenceValue(
 		// continue below
 	default:
 		issue := domainvalidation.Issue{
-			Code:        "meta.entity_ref_target_ambiguous",
+			Code:        "meta.entityRef_target_ambiguous",
 			Level:       domainvalidation.LevelError,
 			Class:       "InstanceError",
-			Message:     fmt.Sprintf("entity_ref field '%s' points to ambiguous id '%s'", fieldLabel, referenceID),
+			Message:     fmt.Sprintf("entityRef field '%s' points to ambiguous id '%s'", fieldLabel, referenceID),
 			StandardRef: "12.3",
 			Field:       fieldPath,
 		}
@@ -95,10 +95,10 @@ func resolveEntityReferenceValue(
 	target := targets[0]
 	if len(refTypes) > 0 && !containsString(refTypes, target.Type) {
 		issue := domainvalidation.Issue{
-			Code:        "meta.entity_ref_type_mismatch",
+			Code:        "meta.entityRef_type_mismatch",
 			Level:       domainvalidation.LevelError,
 			Class:       "InstanceError",
-			Message:     fmt.Sprintf("entity_ref field '%s' cannot reference entity type '%s'", fieldLabel, target.Type),
+			Message:     fmt.Sprintf("entityRef field '%s' cannot reference entity type '%s'", fieldLabel, target.Type),
 			StandardRef: "12.3",
 			Field:       fieldPath,
 		}

@@ -5,13 +5,13 @@ Status: working execution plan
 
 ## 1. Goal
 
-Finish the `validate` implementation so it matches `SPEC_STANDARD_RU_REVISED_V3.md` and `SPEC_UTILITY_CLI_API_RU.md`, without degradations around `expressions` and `entity_ref`.
+Finish the `validate` implementation so it matches `SPEC_STANDARD_RU_REVISED_V3.md` and `SPEC_UTILITY_CLI_API_RU.md`, without degradations around `expressions` and `entityRef`.
 
 Target state:
 
-- `required_when` and `path_pattern.cases[].when` work with the full expression model;
-- `entity_ref` resolves deterministically and builds the `ref` context;
-- static schema consistency rules are enforced (including `path_pattern` and strict/safe operators);
+- `required_when` and `pathTemplate.cases[].when` work with the full expression model;
+- `entityRef` resolves deterministically and builds the `ref` context;
+- static schema consistency rules are enforced (including `pathTemplate` and strict/safe operators);
 - `summary.validator_conformant` is set strictly according to the contract;
 - the `json/ndjson` format and diagnostic classes (`SchemaError`/`InstanceError`/`ProfileError`) match the specification.
 
@@ -19,38 +19,38 @@ Target state:
 
 ### 2.1. What Is Already Defined
 
-- There is an MVP document: `SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION.md` (without full `expressions` and `entity_ref` support).
+- There is an MVP document: `SPEC_UTILITY_CLI_VALIDATE_BASE_IMPLEMENTATION.md` (without full `expressions` and `entityRef` support).
 - There is a plan for expressions: `SPEC_UTILITY_CLI_VALIDATE_EXPRESSIONS_IMPLEMENTATION_PLAN.md`.
-- `V3` and the newer proposals added/clarified requirements for static schema analysis (`path_pattern`, `exists` guards, forbidding strict operators for potentially-missing values).
+- `V3` and the newer proposals added/clarified requirements for static schema analysis (`pathTemplate`, `exists` guards, forbidding strict operators for potentially-missing values).
 
-### 2.2. What Must Be Closed in Addition to `entity_ref`
+### 2.2. What Must Be Closed in Addition to `entityRef`
 
 - Static ban on `eq`/`in` for potentially-missing operands:
   - in `required_when`;
-  - in `path_pattern.cases[].when`.
-- Static validation of `path_pattern.cases[].use`:
+  - in `pathTemplate.cases[].when`.
+- Static validation of `pathTemplate.cases[].use`:
   - `{meta:*}`/`{ref:*}` only when the value is statically safe;
   - `exists` in `when` counts as a guard only in allowed forms;
   - unnecessary `exists` for `use` placeholders is a schema error.
 - Strict separation of schema-time and runtime errors according to `14.4`.
-- Full synchronization of `validator_conformant` with the implementation profile (including deterministic `entity_ref/ref` resolution).
+- Full synchronization of `validator_conformant` with the implementation profile (including deterministic `entityRef/ref` resolution).
 
 ## 3. Work Scope
 
-### 3.1. `entity_ref` and `ref` Context
+### 3.1. `entityRef` and `ref` Context
 
 - Schema level:
-  - validate `schema.type: entity_ref`;
+  - validate `schema.type: entityRef`;
   - validate `refTypes` (structure/typing);
-  - validate `ref.<field>.<part>` references only for `entity_ref` fields.
+  - validate `ref.<field>.<part>` references only for `entityRef` fields.
 - Runtime level:
   - dataset entity index for link resolution;
   - deterministic target-selection algorithm;
   - `refTypes` validation against the actual target `type`;
-  - populate `ref.<field>.id|type|slug|dir_path`.
+  - populate `ref.<field>.id|type|slug|dirPath`.
 - Expression semantics:
-  - `meta.<entity_ref_field>` is treated as `ref.<field>.id` (after resolution);
-  - `exists` for `meta.<entity_ref_field>` and `ref.*` depends on successful resolution.
+  - `meta.<entityRef_field>` is treated as `ref.<field>.id` (after resolution);
+  - `exists` for `meta.<entityRef_field>` and `ref.*` depends on successful resolution.
 
 ### 3.2. Expressions + Static Analysis
 
@@ -60,7 +60,7 @@ Target state:
 - Check strict operators in two modes:
   - `REQUIRED_WHEN`;
   - `PATH_WHEN`.
-- Analyze `path_pattern.cases[].when` + `use` as a single construct:
+- Analyze `pathTemplate.cases[].when` + `use` as a single construct:
   - extract the `guard-set`;
   - validate statically safe placeholder usage.
 
@@ -69,11 +69,11 @@ Target state:
 Order inside one entity:
 
 1. Parse frontmatter + built-ins.
-2. Resolve `entity_ref` and build the runtime context.
+2. Resolve `entityRef` and build the runtime context.
 3. `required_when` for `meta.fields`.
 4. Validate `meta.fields` values (`type/const/enum` etc.).
 5. `required_when` for `content.sections`.
-6. `path_pattern.cases[].when` + case selection + actual path validation.
+6. `pathTemplate.cases[].when` + case selection + actual path validation.
 
 Finalization:
 
@@ -100,23 +100,23 @@ Definition of Done:
 - Implement `potentially-missing` classification.
 - Add schema-time checks:
   - forbid strict `eq`/`in` on potentially-missing operands;
-  - enforce `exists` guard rules for `path_pattern`.
+  - enforce `exists` guard rules for `pathTemplate`.
 
 Definition of Done:
 
 - invalid schemas are rejected before document iteration;
 - violations derivable from the schema are classified as `SchemaError`.
 
-### Stage 2. `entity_ref` Runtime Core
+### Stage 2. `entityRef` Runtime Core
 
 - Entity registry and deterministic link resolution.
 - `refTypes` and ambiguity checks.
-- Build the `ref` context with `dir_path`.
+- Build the `ref` context with `dirPath`.
 - Make the resolution profile a mandatory dependency of a conformant mode.
 
 Definition of Done:
 
-- all `entity_ref` values either resolve unambiguously or yield a correct `InstanceError`;
+- all `entityRef` values either resolve unambiguously or yield a correct `InstanceError`;
 - if the profile is unavailable/non-deterministic, a `ProfileError` is produced.
 
 ### Stage 3. Evaluator Runtime Semantics
@@ -126,7 +126,7 @@ Definition of Done:
   - `eq`/`in`: strict;
   - `eq?`/`in?`: safe (`missing -> false`);
   - `all/any/not/exists` with short-circuit.
-- Support alias `meta.<entity_ref>` -> `ref.<field>.id`.
+- Support alias `meta.<entityRef>` -> `ref.<field>.id`.
 
 Definition of Done:
 
@@ -135,7 +135,7 @@ Definition of Done:
 ### Stage 4. Integrate into `validate`
 
 - Plug the evaluator into `required_when` (`meta.fields`, `content.sections`).
-- Plug evaluation into `path_pattern.cases[].when`.
+- Plug evaluation into `pathTemplate.cases[].when`.
 - Use one shared context for substitutions and expressions.
 
 Definition of Done:
@@ -158,11 +158,11 @@ Definition of Done:
 - Unit:
   - compiler/evaluator;
   - `potentially-missing` classification;
-  - `path_pattern` guard logic.
+  - `pathTemplate` guard logic.
 - Integration:
-  - `entity_ref` + `ref.dir_path` scenarios;
+  - `entityRef` + `ref.dirPath` scenarios;
   - `required_when`, `content.sections.required_when`;
-  - complex `path_pattern` with fallback.
+  - complex `pathTemplate` with fallback.
 - Contract:
   - golden tests for `json/ndjson`;
   - verify diagnostic classes and `standard_ref`.
@@ -183,17 +183,17 @@ Definition of Done:
 - `schema.expression.invalid_reference`
 - `schema.required_when.strict_potentially_missing`
 - `schema.path_when.strict_potentially_missing`
-- `schema.path_pattern.placeholder_not_guarded`
-- `schema.path_pattern.unused_exists_guard`
-- `instance.entity_ref.unresolved`
-- `instance.entity_ref.ref_type_mismatch`
-- `profile.entity_ref_resolution_unavailable`
+- `schema.pathTemplate.placeholder_not_guarded`
+- `schema.pathTemplate.unused_exists_guard`
+- `instance.entityRef.unresolved`
+- `instance.entityRef.ref_type_mismatch`
+- `profile.entityRef_resolution_unavailable`
 
 Important: the exact `code` strings can be adapted to current naming, but `class` and `standard_ref` must remain normatively correct.
 
 ## 6. Completion Criteria (Final)
 
-- The implementation fully covers `expressions` and `entity_ref` without MVP degradations.
+- The implementation fully covers `expressions` and `entityRef` without MVP degradations.
 - Static schema contradictions are caught as `SchemaError` before data iteration.
 - Runtime data problems remain `InstanceError`.
 - `summary.validator_conformant` reflects the actual completeness of the profile and checks.
@@ -202,7 +202,7 @@ Important: the exact `code` strings can be adapted to current naming, but `class
 ## 7. Recommended Execution Order
 
 1. Stage 1 (compiler + static checks).
-2. Stage 2 (`entity_ref` runtime core).
+2. Stage 2 (`entityRef` runtime core).
 3. Stage 3 (evaluator semantics).
 4. Stage 4 (pipeline integration).
 5. Stage 5 (contract/output hardening).

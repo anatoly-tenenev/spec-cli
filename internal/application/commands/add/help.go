@@ -84,13 +84,13 @@ func HelpSpec() helpmodel.CommandSpec {
 		Rules: []string{
 			"Write-namespace arguments are --set and --set-file.",
 			"Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.",
-			"Projection from raw schema: non-entity_ref metadata -> meta.<name>; entity_ref metadata (scalar or array items.type=entity_ref) -> refs.<field>; sections -> content.sections.<name>.",
+			"Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.",
 			"Allowed write-paths are derived from the effective schema.",
 			"refs.<field> values are target entity ids (scalar id or YAML array of ids).",
 			"--set-file is allowed only for content.sections.<name>.",
 			"Whole-body inputs --content-file and --content-stdin are not write-namespace paths.",
-			"For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<section_name>}`.",
-			"Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.",
+			"For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<sectionName>}`.",
+			"Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.",
 			"--content-file and --content-stdin are mutually exclusive.",
 		},
 		Examples: []string{

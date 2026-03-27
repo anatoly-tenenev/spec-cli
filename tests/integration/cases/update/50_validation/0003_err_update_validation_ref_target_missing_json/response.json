@@ -6,7 +6,7 @@
         "issues": [
           {
             "class": "InstanceError",
-            "code": "meta.entity_ref_target_missing",
+            "code": "meta.entityRef_target_missing",
             "entity": {
               "id": "FEAT-1",
               "slug": "retry-window",
@@ -14,7 +14,7 @@
             },
             "field": "frontmatter.container",
             "level": "error",
-            "message": "entity_ref 'container' points to missing id 'SVC-999'",
+            "message": "entityRef 'container' points to missing id 'SVC-999'",
             "standard_ref": "11.5"
           }
         ]

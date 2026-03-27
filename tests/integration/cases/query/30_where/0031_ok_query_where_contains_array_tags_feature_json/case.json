@@ -1,6 +1,6 @@
 {
   "id": "query_30_0031_ok_query_where_contains_array_tags_feature_json",
-  "description": "QRY-WHERE-12 adapted with current tag values",
+  "description": "query_30_0031_ok_query_where_contains_array_tags_feature_json",
   "command": "query",
   "args": [
     "--workspace",

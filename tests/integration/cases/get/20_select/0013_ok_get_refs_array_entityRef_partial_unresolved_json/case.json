@@ -1,0 +1,25 @@
+{
+  "id": "get_20_0013_ok_get_refs_array_entityRef_partial_unresolved_json",
+  "description": "get_20_0013_ok_get_refs_array_entityRef_partial_unresolved_json",
+  "command": "get",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "get",
+    "--id",
+    "FEAT-8",
+    "--select",
+    "refs"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

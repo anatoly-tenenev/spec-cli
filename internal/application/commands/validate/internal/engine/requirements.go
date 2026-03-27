@@ -165,7 +165,7 @@ func validateArrayField(
 	if rule.HasItemType {
 		for idx, item := range arrayValue {
 			matchesItemType := support.MatchesRuleType(item, rule.ItemType)
-			if matchesItemType && rule.ItemType == "entity_ref" {
+			if matchesItemType && rule.ItemType == "entityRef" {
 				referenceID, _ := item.(string)
 				if strings.TrimSpace(referenceID) == "" {
 					matchesItemType = false
@@ -173,7 +173,7 @@ func validateArrayField(
 			}
 
 			if matchesItemType {
-				if rule.ItemType == "entity_ref" {
+				if rule.ItemType == "entityRef" {
 					referenceID, _ := item.(string)
 					referenceID = strings.TrimSpace(referenceID)
 					if referenceID != "" {
@@ -280,7 +280,7 @@ func renderMetadataTemplate(template string, context runtimeExpressionContext) (
 
 func resolveMetadataPlaceholder(token string, context runtimeExpressionContext) (string, error) {
 	switch token {
-	case "id", "slug", "created_date", "updated_date":
+	case "id", "slug", "createdDate", "updatedDate":
 		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: token, Raw: "meta." + token})
 		if !exists {
 			return "", fmt.Errorf("placeholder '{%s}' is missing", token)

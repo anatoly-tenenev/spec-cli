@@ -11,7 +11,7 @@
       ]
     },
     "exit_code": 1,
-    "message": "delete is blocked by incoming entity_ref references"
+    "message": "delete is blocked by incoming entityRef references"
   },
   "result_state": "invalid"
 }

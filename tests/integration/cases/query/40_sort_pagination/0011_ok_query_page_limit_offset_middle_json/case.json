@@ -1,6 +1,6 @@
 {
   "id": "query_40_0011_ok_query_page_limit_offset_middle_json",
-  "description": "QRY-PAGE-03 adapted to current fixtures",
+  "description": "query_40_0011_ok_query_page_limit_offset_middle_json",
   "command": "query",
   "args": [
     "--workspace",

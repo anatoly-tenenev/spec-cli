@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0002_err_validate_schema_closed_world_top_level_extra_key_json",
-  "description": "validate returns schema error for unsupported top-level schema keys",
+  "description": "validate_20_0002_err_validate_schema_closed_world_top_level_extra_key_json",
   "command": "validate",
   "args": [
     "--workspace",

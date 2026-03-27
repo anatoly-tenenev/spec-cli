@@ -87,7 +87,7 @@
   "matched": 5,
   "page": {
     "effective_sort": [
-      "updated_date:desc",
+      "updatedDate:desc",
       "type:asc",
       "id:asc"
     ],

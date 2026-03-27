@@ -14,19 +14,19 @@ func TestLoadExtractsOnlyEntityRefSlots(t *testing.T) {
 	raw := `version: "0.0.4"
 entity:
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         container:
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
         related:
           schema:
             type: array
             items:
-              type: entity_ref
+              type: entityRef
               refTypes: [feature]
         status:
           schema:

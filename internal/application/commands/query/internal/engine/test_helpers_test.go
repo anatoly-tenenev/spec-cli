@@ -25,7 +25,7 @@ func newEngineTestIndex() model.QuerySchemaIndex {
 		SortFields: map[string]model.SchemaFieldSpec{
 			"type":                     {Path: "type", Kind: model.FieldKindString},
 			"id":                       {Path: "id", Kind: model.FieldKindString},
-			"updated_date":             {Path: "updated_date", Kind: model.FieldKindDate},
+			"updatedDate":             {Path: "updatedDate", Kind: model.FieldKindDate},
 			"meta.score":               {Path: "meta.score", Kind: model.FieldKindNumber},
 			"meta.status":              {Path: "meta.status", Kind: model.FieldKindString},
 			"refs.owner.id":            {Path: "refs.owner.id", Kind: model.FieldKindString},
@@ -37,7 +37,7 @@ func newEngineTestIndex() model.QuerySchemaIndex {
 		FilterFields: map[string]model.SchemaFieldSpec{
 			"type":                     {Path: "type", Kind: model.FieldKindString},
 			"id":                       {Path: "id", Kind: model.FieldKindString},
-			"updated_date":             {Path: "updated_date", Kind: model.FieldKindDate},
+			"updatedDate":             {Path: "updatedDate", Kind: model.FieldKindDate},
 			"meta.status":              {Path: "meta.status", Kind: model.FieldKindString, EnumValues: []any{"draft", "active", "deprecated"}},
 			"meta.score":               {Path: "meta.score", Kind: model.FieldKindNumber},
 			"meta.tags":                {Path: "meta.tags", Kind: model.FieldKindArray},

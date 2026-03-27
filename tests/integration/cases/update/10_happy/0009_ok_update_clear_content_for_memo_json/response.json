@@ -9,7 +9,7 @@
   ],
   "dry_run": false,
   "entity": {
-    "created_date": "2026-02-12",
+    "createdDate": "2026-02-12",
     "id": "MEMO-1",
     "meta": {
       "title": "Weekly sync"
@@ -18,7 +18,7 @@
     "revision": "sha256:bbed15b85a39e988a80c29e86249f619dbf9697367803d518f14441d43659bc3",
     "slug": "weekly-sync",
     "type": "memo",
-    "updated_date": "2026-03-14"
+    "updatedDate": "2026-03-14"
   },
   "noop": false,
   "result_state": "valid",

@@ -221,8 +221,8 @@ Key rules:
 
 - `--content-file` and `--content-stdin` are mutually exclusive;
 - `--meta-json` and `--meta-file` are mutually exclusive, `--meta` complements/overrides them;
-- `id`, `created_date`, `updated_date` are always computed automatically;
-- if the entity type requires a hierarchical link (`entity_ref`) for placement/validation, reference context is mandatory;
+- `id`, `createdDate`, `updatedDate` are always computed automatically;
+- if the entity type requires a hierarchical link (`entityRef`) for placement/validation, reference context is mandatory;
 - if a reference is provided (`--ref-id`), `--ref-field` is mandatory, otherwise `INVALID_ARGS`;
 - `--ref-field` without `--ref-id` is not allowed (`INVALID_ARGS`);
 - if the type requires reference context, `--ref-field` is always required, even if there is only one suitable field in the schema;
@@ -246,8 +246,8 @@ Minimal JSON contract:
     "type": "feature",
     "id": "FEAT-8",
     "slug": "retry-window",
-    "created_date": "2026-02-25",
-    "updated_date": "2026-02-25",
+    "createdDate": "2026-02-25",
+    "updatedDate": "2026-02-25",
     "revision": "sha256:abc123",
     "metadata": {}
   },
@@ -318,8 +318,8 @@ Minimal JSON contract:
     "type": "feature",
     "id": "FEAT-8",
     "slug": "retry-window",
-    "created_date": "2026-02-25",
-    "updated_date": "2026-02-26",
+    "createdDate": "2026-02-25",
+    "updatedDate": "2026-02-26",
     "revision": "sha256:def456",
     "metadata": {}
   },
@@ -451,7 +451,7 @@ internal/
 
 ### 5.3 Key Domain Contracts
 
-- `Entity`: `type`, `id`, `slug`, `created_date`, `updated_date`, `revision`, `metadata`, `content`.
+- `Entity`: `type`, `id`, `slug`, `createdDate`, `updatedDate`, `revision`, `metadata`, `content`.
 - `RevisionService`: computes opaque `revision`.
 - `QueryAst` + `QueryValidator` + `QueryEvaluator`.
 - `ValidationIssue`: `class`, `message`, `standard_ref`, `severity`.

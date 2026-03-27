@@ -379,7 +379,7 @@ description: Workspace specification schema
 entity:
   feature:
     description: Feature specifications
-    id_prefix: FEAT
+    idPrefix: FEAT
     meta:
       fields:
         status:
@@ -397,7 +397,7 @@ entity:
           schema:
             type: array
             items:
-              type: entity_ref
+              type: entityRef
               refTypes:
                 - service
         owner:
@@ -405,7 +405,7 @@ entity:
           required_when:
             eq?: [meta.status, active]
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes:
               - service
     content:
@@ -416,7 +416,7 @@ entity:
             eq?: [meta.status, active]
           title: Summary
   service:
-    id_prefix: SVC
+    idPrefix: SVC
     meta:
       fields:
         tier:

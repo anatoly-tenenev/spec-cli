@@ -1,6 +1,6 @@
 {
   "id": "validate_70_0003_ok_validate_slug_same_value_across_types_is_allowed_json",
-  "description": "validate allows same slug value across different entity types",
+  "description": "validate_70_0003_ok_validate_slug_same_value_across_types_is_allowed_json",
   "command": "validate",
   "args": [
     "--workspace",

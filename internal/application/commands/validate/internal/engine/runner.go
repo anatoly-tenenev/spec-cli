@@ -185,8 +185,8 @@ func RunValidation(
 			}
 		}
 
-		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "created_date", "11.3")
-		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "updated_date", "11.3")
+		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "createdDate", "11.3")
+		validateDateField(&run.Issues, &entity, candidate.Frontmatter, "updatedDate", "11.3")
 
 		if candidate.TypeKnown {
 			validateAllowedFrontmatterKeys(&run.Issues, &entity, candidate.Frontmatter, candidate.TypeSpec)

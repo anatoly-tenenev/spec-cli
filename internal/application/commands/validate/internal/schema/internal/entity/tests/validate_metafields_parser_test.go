@@ -19,7 +19,7 @@ func TestMetafieldsParseAcceptsItemsRefTypesForEntityRefItems(t *testing.T) {
 					"schema": map[string]any{
 						"type": "array",
 						"items": map[string]any{
-							"type":     "entity_ref",
+							"type":     "entityRef",
 							"refTypes": []any{"service", "domain"},
 						},
 					},
@@ -46,8 +46,8 @@ func TestMetafieldsParseAcceptsItemsRefTypesForEntityRefItems(t *testing.T) {
 	if !rule.HasItemType {
 		t.Fatalf("expected HasItemType=true")
 	}
-	if rule.ItemType != "entity_ref" {
-		t.Fatalf("expected ItemType=entity_ref, got %s", rule.ItemType)
+	if rule.ItemType != "entityRef" {
+		t.Fatalf("expected ItemType=entityRef, got %s", rule.ItemType)
 	}
 
 	expectedRefTypes := []string{"domain", "service"}
@@ -84,7 +84,7 @@ func TestMetafieldsParseRejectsItemsRefTypesForNonEntityRefItems(t *testing.T) {
 	if parseErr.Code != domainerrors.CodeSchemaInvalid {
 		t.Fatalf("expected code %s, got %s", domainerrors.CodeSchemaInvalid, parseErr.Code)
 	}
-	if !strings.Contains(parseErr.Message, "schema.entity.feature.meta.fields.tags.schema.items.refTypes is allowed only for items.type entity_ref") {
+	if !strings.Contains(parseErr.Message, "schema.entity.feature.meta.fields.tags.schema.items.refTypes is allowed only for items.type entityRef") {
 		t.Fatalf("unexpected error message: %s", parseErr.Message)
 	}
 }

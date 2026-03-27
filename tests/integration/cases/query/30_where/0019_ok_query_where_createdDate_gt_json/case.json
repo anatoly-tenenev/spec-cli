@@ -1,0 +1,25 @@
+{
+  "id": "query_30_0019_ok_query_where_createdDate_gt_json",
+  "description": "query_30_0019_ok_query_where_createdDate_gt_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where-json",
+    "{\"field\":\"createdDate\",\"op\":\"gt\",\"value\":\"2026-03-05\"}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

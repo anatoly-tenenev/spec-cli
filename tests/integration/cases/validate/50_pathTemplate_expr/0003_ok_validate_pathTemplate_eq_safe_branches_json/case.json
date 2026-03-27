@@ -1,0 +1,24 @@
+{
+  "id": "validate_50_0003_ok_validate_pathTemplate_eq_safe_branches_json",
+  "description": "validate_50_0003_ok_validate_pathTemplate_eq_safe_branches_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

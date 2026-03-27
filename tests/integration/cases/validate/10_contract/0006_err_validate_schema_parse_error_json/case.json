@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0006_err_validate_schema_parse_error_json",
-  "description": "validate returns top-level schema parse error when schema file is empty",
+  "description": "validate_10_0006_err_validate_schema_parse_error_json",
   "command": "validate",
   "args": [
     "--workspace",

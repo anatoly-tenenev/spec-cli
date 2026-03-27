@@ -18,7 +18,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 		t.Fatalf("unexpected default sort: %#v", terms)
 	}
 
-	custom := []model.SortTerm{{Path: "updated_date", Direction: model.SortDirectionDesc}}
+	custom := []model.SortTerm{{Path: "updatedDate", Direction: model.SortDirectionDesc}}
 	effective, err := buildEffectiveSort(custom, index)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

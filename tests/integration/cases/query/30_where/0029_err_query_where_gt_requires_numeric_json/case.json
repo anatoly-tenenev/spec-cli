@@ -1,6 +1,6 @@
 {
   "id": "query_30_0029_err_query_where_gt_requires_numeric_json",
-  "description": "QRY-ERR-09 adapted: meta.owner -> meta.score",
+  "description": "query_30_0029_err_query_where_gt_requires_numeric_json",
   "command": "query",
   "args": [
     "--workspace",

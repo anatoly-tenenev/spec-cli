@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0015_err_validate_type_not_string_json",
-  "description": "validate returns type_missing when frontmatter type is not a string",
+  "description": "validate_30_0015_err_validate_type_not_string_json",
   "command": "validate",
   "args": [
     "--workspace",

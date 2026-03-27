@@ -1,4 +1,4 @@
-# Baseline `spec-cli validate` Implementation (MVP without `expressions` and `entity_ref`)
+# Baseline `spec-cli validate` Implementation (MVP without `expressions` and `entityRef`)
 
 ## 1. Goal
 
@@ -8,7 +8,7 @@ MVP goal:
 
 - validate the schema and documents in a stable way;
 - produce a deterministic `json/ndjson` contract;
-- degrade explicitly and safely where `expressions` and `entity_ref` are required.
+- degrade explicitly and safely where `expressions` and `entityRef` are required.
 
 ## 2. MVP Scope
 
@@ -18,7 +18,7 @@ MVP goal:
 - loading the schema and validating its structure;
 - reading Markdown documents and strictly parsing frontmatter;
 - checks for:
-  - built-in fields (`type`, `id`, `slug`, `created_date`, `updated_date`);
+  - built-in fields (`type`, `id`, `slug`, `createdDate`, `updatedDate`);
   - `meta.fields` (`schema.type/schema.enum/schema.const` and `required/required_when` without evaluating expression objects);
   - `content.sections` (`required/required_when` without evaluating expression objects);
   - uniqueness of `id`, numeric `id` suffix inside a type, and `slug` inside a type;
@@ -28,12 +28,12 @@ MVP goal:
 ### 2.2. What Is Not Implemented Yet
 
 - evaluation/substitution of `expressions` (including `<...>` templates inside rule values);
-- validation and resolution of `entity_ref` links;
+- validation and resolution of `entityRef` links;
 - incremental modes and extended validation scopes.
 
 ### 2.3. How Unsupported Areas Degrade
 
-If the input schema/data contains constructs that require `expressions` or `entity_ref`, the validator:
+If the input schema/data contains constructs that require `expressions` or `entityRef`, the validator:
 
 - adds a `ProfileError` diagnostic with `standard_ref`;
 - continues the remaining checks where that is safe;
@@ -143,10 +143,10 @@ File read errors map to an I/O code with `exit=3` (baseline rule for file I/O).
 Entity checks:
 
 - `type`: exists in the schema;
-- `id`: string, matches `id_prefix-<number>`;
+- `id`: string, matches `idPrefix-<number>`;
 - numeric `id` suffix parses as integer `>= 0`;
 - `slug`: string, format `^[a-z0-9]+(?:-[a-z0-9]+)*$`;
-- `created_date`, `updated_date`: `YYYY-MM-DD` format;
+- `createdDate`, `updatedDate`: `YYYY-MM-DD` format;
 - `meta.fields`:
   - requiredness follows the `required/required_when` model (11.5/11.6), where expression-form `required_when` is not evaluated in the MVP;
   - type must match exactly;
@@ -203,12 +203,12 @@ If a rule requires expression evaluation (`<...>` in `schema.const` or an expres
 
 ### 6.2. Entity References
 
-If a schema field has type `entity_ref` or validation depends on resolving links, the MVP:
+If a schema field has type `entityRef` or validation depends on resolving links, the MVP:
 
 - does not resolve the target;
 - creates an issue:
   - `class="ProfileError"`
-  - `code="profile.entity_ref_not_supported"`
+  - `code="profile.entityRef_not_supported"`
   - `level="warning"`.
 
 ## 7. Pseudocode
@@ -262,7 +262,7 @@ runValidate(args):
 - `validation/rules_global.*`
   - uniqueness of `id`/suffix/slug.
 - `validation/unsupported_rules.*`
-  - detection of `expressions`/`entity_ref` and `ProfileError` generation.
+  - detection of `expressions`/`entityRef` and `ProfileError` generation.
 - `validation/output.*`
   - JSON/NDJSON writer.
 
@@ -271,11 +271,11 @@ runValidate(args):
 - the `validate` command runs reliably over the full workspace;
 - `json` and `ndjson` match the contract (`record_type`, `summary`, `result_state`);
 - exit codes are correct (`0/1/2/3/4/5`);
-- when `expressions`/`entity_ref` are present, there is no silent pass: an explicit `ProfileError` exists.
+- when `expressions`/`entityRef` are present, there is no silent pass: an explicit `ProfileError` exists.
 
 ## 10. What to Add Next
 
 - a full `expressions` engine;
-- `entity_ref` resolution and validation plus the dependency graph;
+- `entityRef` resolution and validation plus the dependency graph;
 - incremental modes and extended validation scopes;
 - an extended strict profile without degradations.

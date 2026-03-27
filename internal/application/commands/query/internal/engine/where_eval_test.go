@@ -49,11 +49,11 @@ func TestEvaluateFilter_ContainsStringAndArray(t *testing.T) {
 func TestEvaluateFilter_DateAndLogicalNodes(t *testing.T) {
 	view := map[string]any{
 		"type":         "feature",
-		"updated_date": "2026-03-10",
+		"updatedDate": "2026-03-10",
 		"meta":         map[string]any{"status": "active"},
 	}
 
-	left := model.FilterNode{Kind: model.FilterNodeLeaf, Field: "updated_date", Op: "gte", Value: "2026-03-01", HasValue: true, Spec: model.SchemaFieldSpec{Path: "updated_date", Kind: model.FieldKindDate}}
+	left := model.FilterNode{Kind: model.FilterNodeLeaf, Field: "updatedDate", Op: "gte", Value: "2026-03-01", HasValue: true, Spec: model.SchemaFieldSpec{Path: "updatedDate", Kind: model.FieldKindDate}}
 	right := model.FilterNode{Kind: model.FilterNodeLeaf, Field: "meta.status", Op: "eq", Value: "active", HasValue: true, Spec: model.SchemaFieldSpec{Path: "meta.status", Kind: model.FieldKindString}}
 	notNode := model.FilterNode{Kind: model.FilterNodeNot, Filter: &model.FilterNode{Kind: model.FilterNodeLeaf, Field: "type", Op: "eq", Value: "service", HasValue: true, Spec: model.SchemaFieldSpec{Path: "type", Kind: model.FieldKindString}}}
 

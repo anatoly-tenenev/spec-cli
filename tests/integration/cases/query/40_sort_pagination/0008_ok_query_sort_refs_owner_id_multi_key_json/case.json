@@ -17,11 +17,11 @@
     "--select",
     "refs.owner",
     "--select",
-    "created_date",
+    "createdDate",
     "--sort",
     "refs.owner.id:asc",
     "--sort",
-    "created_date:desc"
+    "createdDate:desc"
   ],
   "expect": {
     "exit_code": 0,

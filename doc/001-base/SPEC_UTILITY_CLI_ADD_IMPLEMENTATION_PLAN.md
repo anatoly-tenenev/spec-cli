@@ -18,11 +18,11 @@ The code must cover the following mandatory contract.
 - Required options: `--type <entity_type>` and `--slug <slug>`.
 - Supported options: `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`.
 - `--content-file` and `--content-stdin` are mutually exclusive.
-- `id`, `created_date`, and `updated_date` are computed automatically.
+- `id`, `createdDate`, and `updatedDate` are computed automatically.
 - `add` does not use `schema.model` as the source of the write contract.
 - Allowed write paths for `--set` and `--set-file` are derived directly from raw schema:
   - `meta.<field>` for fields from `meta.fields`;
-  - `refs.<field>` for fields from `meta.fields` where `schema.type = entity_ref`;
+  - `refs.<field>` for fields from `meta.fields` where `schema.type = entityRef`;
   - `content.sections.<name>` for sections from `content.sections`.
 - `--set-file` is allowed only for `content.sections.<name>`.
 - No separate `required_set_paths` contract is used; required data is enforced only through full validation of the final entity.
@@ -34,7 +34,7 @@ The code must cover the following mandatory contract.
 - Writing must be observably atomic: on failure, on-disk state must not change.
 - All top-level JSON responses must contain `result_state`.
 - Entity responses must contain `revision`, computed from the actual document state.
-- The implementation must respect standard rules for `id_prefix`, `path_pattern`, `required` / `required_when`, `entity_ref`, `content.sections`, `slug`, `created_date`, `updated_date`, closed-world schema, and diagnostic classes.
+- The implementation must respect standard rules for `idPrefix`, `pathTemplate`, `required` / `required_when`, `entityRef`, `content.sections`, `slug`, `createdDate`, `updatedDate`, closed-world schema, and diagnostic classes.
 
 ## 3. Decisions to Fix Before Coding
 
@@ -42,7 +42,7 @@ The baseline and the standard define the `add` contract but leave several implem
 
 ### 3.1. New `id` Generation
 
-The standard requires only `"{id_prefix}-N"` format and uniqueness of `N` within a type. The algorithm for selecting a new `N` is not standardized.
+The standard requires only `"{idPrefix}-N"` format and uniqueness of `N` within a type. The algorithm for selecting a new `N` is not standardized.
 
 Fixed decision:
 
@@ -53,7 +53,7 @@ Fixed decision:
 
 Reason: `max + 1` is simpler, more stable, and easier to test than "minimum free number".
 
-### 3.2. Date Source for `created_date` and `updated_date`
+### 3.2. Date Source for `createdDate` and `updatedDate`
 
 The standard requires `YYYY-MM-DD` format but does not fix the source of "today's" date.
 
@@ -62,7 +62,7 @@ Fixed decision:
 - introduce an injectable `Clock`;
 - in production, use the UTC day from one explicit process time source;
 - in tests, stub `Clock` so the date is deterministic;
-- use the same value for both `created_date` and `updated_date` on creation.
+- use the same value for both `createdDate` and `updatedDate` on creation.
 
 ### 3.3. Parsing `--set <path=value>`
 
@@ -139,10 +139,10 @@ Fixed decision:
 - the only source of truth for the `add` write contract is the raw standard schema;
 - allowed write paths are derived locally from raw schema:
   - `meta.<field>` for every field in `meta.fields`;
-  - `refs.<field>` only for fields in `meta.fields` where `schema.type = entity_ref`;
+  - `refs.<field>` only for fields in `meta.fields` where `schema.type = entityRef`;
   - `content.sections.<name>` for every section in `content.sections`;
 - built-in paths, aggregate paths, and expanded read paths are rejected by baseline rules:
-  - `type`, `id`, `slug`, `created_date`, `updated_date`;
+  - `type`, `id`, `slug`, `createdDate`, `updatedDate`;
   - `content`, `content.raw`, `content.sections`;
   - `refs.*.id`, `refs.*.type`, `refs.*.slug`;
 - `--set-file` is not treated as a general "string input" mechanism;
@@ -246,8 +246,8 @@ Fixed decision:
   - `type`
   - `id`
   - `slug`
-  - `created_date`
-  - `updated_date`
+  - `createdDate`
+  - `updatedDate`
 - then go fields derived from `meta.fields`, in the order declared in raw schema;
 - the serializer must not depend on arbitrary map/dict order;
 - on the same platform, the same logical entity must produce the same field order and byte output.
@@ -300,8 +300,8 @@ Responsible for:
 Responsible for extracting everything needed specifically by `add` from the schema:
 
 - entity type description;
-- `id_prefix`;
-- `path_pattern`;
+- `idPrefix`;
+- `pathTemplate`;
 - `meta.fields`;
 - `content.sections`;
 - locally derived allowlist of write paths;
@@ -316,8 +316,8 @@ Needed for:
 - finding existing entities;
 - checking `id` uniqueness;
 - checking `slug` uniqueness inside a type;
-- resolving `entity_ref`;
-- computing `refs.*` for `path_pattern` and validation;
+- resolving `entityRef`;
+- computing `refs.*` for `pathTemplate` and validation;
 - selecting the next `N` for `id`;
 - early detection of final-path collision.
 
@@ -399,7 +399,7 @@ At this stage compute immediately:
 - the set of paths allowed specifically for `--set-file`;
 - the set of normatively forbidden paths under baseline rules;
 - the content model of the type;
-- `path_pattern` rules;
+- `pathTemplate` rules;
 - `meta.fields` rules.
 
 If the type has no `content`, mark whole-body input as invalid for `add`.
@@ -415,13 +415,13 @@ Do:
 - build the `id` index;
 - build the `slug` index per type;
 - compute `max_suffix_by_type`;
-- build the index used for `entity_ref` resolution.
+- build the index used for `entityRef` resolution.
 
 This must happen before candidate construction because otherwise it is impossible to:
 
 - generate `id`;
 - validate referential integrity;
-- compute `refs.*` for `path_pattern`;
+- compute `refs.*` for `pathTemplate`;
 - catch duplicates early.
 
 ### Stage 4. Validate and Type Write Operations
@@ -455,7 +455,7 @@ Do:
 - take `slug` from `--slug`;
 - validate `slug` against the standard regex;
 - compute a new `id` using the rule from section 3.1;
-- set `created_date` and `updated_date` from one `Clock` value interpreted as a UTC day;
+- set `createdDate` and `updatedDate` from one `Clock` value interpreted as a UTC day;
 - ensure that the generated `id` does not conflict with an existing one.
 
 At this step it is also convenient to build the base frontmatter scaffold of the future entity.
@@ -483,7 +483,7 @@ If the type has no `content`, the user may not use `--content-file` or `--conten
 
 Do:
 
-- normalize `path_pattern` into `cases` form;
+- normalize `pathTemplate` into `cases` form;
 - evaluate `when` left to right;
 - select the first matching `use`;
 - substitute built-ins, `meta.*`, and `refs.*`;
@@ -501,12 +501,12 @@ Validate not the operations, but the complete final entity.
 Check:
 
 - built-in fields;
-- `id_prefix`;
+- `idPrefix`;
 - uniqueness of `id`;
 - uniqueness of `slug` within type;
 - `meta.fields` by `required`, `required_when`, and `schema`;
 - referential integrity and `refTypes`;
-- `path_pattern`;
+- `pathTemplate`;
 - placeholder validity and computability;
 - `content.sections`, including required sections and title validity;
 - closed-world frontmatter;
@@ -604,10 +604,10 @@ For `add`, one reference schema with two types is enough, for example:
 - `service`:
   - simple type without mandatory references;
 - `feature`:
-  - `id_prefix`;
-  - `path_pattern` that uses `slug`, and in one scenario `refs.container.dir_path`;
+  - `idPrefix`;
+  - `pathTemplate` that uses `slug`, and in one scenario `refs.container.dirPath`;
   - `meta.fields.status` with string `enum`;
-  - `meta.fields.container` with `schema.type: entity_ref` and `refTypes: [service]`;
+  - `meta.fields.container` with `schema.type: entityRef` and `refTypes: [service]`;
   - `content.sections.summary`;
   - `content.sections.implementation`.
 
@@ -617,7 +617,7 @@ This single fixture set lets the tests cover:
 - write-path derivation from raw schema;
 - `--set-file` restriction to section paths;
 - referential integrity;
-- `path_pattern`;
+- `pathTemplate`;
 - section handling;
 - required/optional fields.
 
@@ -642,7 +642,7 @@ Verify:
 - `entity.type = "feature"`;
 - `entity.slug = "retry-window"`;
 - generated `id` has the form `FEAT-N`;
-- `created_date` and `updated_date` are present and equal;
+- `createdDate` and `updatedDate` are present and equal;
 - the date matches the UTC value of the test `Clock`;
 - `entity.refs.container.id = "SVC-1"`;
 - `type` and `slug` are absent from `entity.refs.container`;
@@ -898,7 +898,7 @@ Setup:
 
 Verify validation failure and no write.
 
-#### T21. Unresolvable or Wrong-Type `entity_ref`
+#### T21. Unresolvable or Wrong-Type `entityRef`
 
 Variants:
 
@@ -915,11 +915,11 @@ Example:
 
 Verify validation failure and no write.
 
-#### T23. `path_pattern` Cannot Be Computed
+#### T23. `pathTemplate` Cannot Be Computed
 
 Example:
 
-- the selected case requires a placeholder from `refs.container.dir_path`, but the link cannot be resolved.
+- the selected case requires a placeholder from `refs.container.dirPath`, but the link cannot be resolved.
 
 Verify validation failure and no write.
 
@@ -984,7 +984,7 @@ On the same platform, two identically serialized documents must produce identica
 
 Verify:
 
-- built-in fields are serialized in order `type`, `id`, `slug`, `created_date`, `updated_date`;
+- built-in fields are serialized in order `type`, `id`, `slug`, `createdDate`, `updatedDate`;
 - `meta.fields` come after built-ins;
 - order of `meta` fields matches their declaration order in raw schema;
 - rerunning the same scenario on the same platform yields the same field order.

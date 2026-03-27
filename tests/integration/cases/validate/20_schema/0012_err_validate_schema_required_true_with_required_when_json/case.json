@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0012_err_validate_schema_required_true_with_required_when_json",
-  "description": "validate returns schema error when required=true is combined with required_when",
+  "description": "validate_20_0012_err_validate_schema_required_true_with_required_when_json",
   "command": "validate",
   "args": [
     "--workspace",

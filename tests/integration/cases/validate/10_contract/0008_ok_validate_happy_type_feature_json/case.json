@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0008_ok_validate_happy_type_feature_json",
-  "description": "validate succeeds with --type feature on mixed valid workspace",
+  "description": "validate_10_0008_ok_validate_happy_type_feature_json",
   "command": "validate",
   "args": [
     "--workspace",

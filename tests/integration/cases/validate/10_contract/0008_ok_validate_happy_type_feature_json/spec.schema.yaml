@@ -1,20 +1,20 @@
 version: "0.0.4"
 entity:
   service:
-    id_prefix: SRV
-    path_pattern: "services/{slug}.md"
+    idPrefix: SRV
+    pathTemplate: "services/{slug}.md"
     content:
       sections:
         goal: {}
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         owner:
           required: false
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
     content:
       sections:

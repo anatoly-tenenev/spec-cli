@@ -1,6 +1,6 @@
 {
   "id": "query_30_0018_ok_query_where_refs_owner_not_exists_json",
-  "description": "QRY-WHERE-06 adapted: refs.container.id -> refs.owner.id",
+  "description": "query_30_0018_ok_query_where_refs_owner_not_exists_json",
   "command": "query",
   "args": [
     "--workspace",

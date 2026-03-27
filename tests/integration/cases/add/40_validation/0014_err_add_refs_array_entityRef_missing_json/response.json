@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "code": "meta.entityRef_target_missing",
+            "level": "error",
+            "class": "InstanceError",
+            "message": "entityRef 'watchers[0]' points to missing id 'SVC-999'",
+            "standard_ref": "11.5",
+            "entity": {
+              "type": "feature",
+              "id": "FEAT-2",
+              "slug": "array-ref-missing"
+            },
+            "field": "frontmatter.watchers[0]"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

@@ -13,8 +13,8 @@ var builtinFieldKinds = map[string]model.SchemaFieldKind{
 	"id":           model.FieldKindString,
 	"slug":         model.FieldKindString,
 	"revision":     model.FieldKindString,
-	"created_date": model.FieldKindDate,
-	"updated_date": model.FieldKindDate,
+	"createdDate": model.FieldKindDate,
+	"updatedDate": model.FieldKindDate,
 }
 
 func BuildIndex(loaded LoadedSchema) (model.QuerySchemaIndex, *domainerrors.AppError) {

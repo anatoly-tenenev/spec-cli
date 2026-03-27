@@ -2,7 +2,7 @@
   "changes": [],
   "dry_run": false,
   "entity": {
-    "created_date": "2026-02-09",
+    "createdDate": "2026-02-09",
     "id": "FEAT-2",
     "meta": {
       "owner": "team-payments",
@@ -19,7 +19,7 @@
     "revision": "sha256:66eb026dcb7cfe3eebdcefb4c0d7a8e82641356a5f438626d8b12c6ff41401cd",
     "slug": "idempotency-keys",
     "type": "feature",
-    "updated_date": "2026-03-02"
+    "updatedDate": "2026-03-02"
   },
   "noop": true,
   "result_state": "valid",

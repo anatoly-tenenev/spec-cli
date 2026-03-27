@@ -99,9 +99,9 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/validate/internal/schema/internal/entity`
   - Entrypoint: `parser.go` - `ParseType`.
   - Responsibilities:
-    - Validate closed-world keys at `entity.<type>` level (`id_prefix`, `path_pattern`, `meta`, `content`, `description`).
-    - Parse `id_prefix` and enforce uniqueness across types.
-    - Orchestrate parsing of `meta.fields`, `content.sections`, and `path_pattern` through specialized subpackages.
+    - Validate closed-world keys at `entity.<type>` level (`idPrefix`, `pathTemplate`, `meta`, `content`, `description`).
+    - Parse `idPrefix` and enforce uniqueness across types.
+    - Orchestrate parsing of `meta.fields`, `content.sections`, and `pathTemplate` through specialized subpackages.
     - Build field maps and expression compile context, and aggregate schema issues from subpackages.
   - Subpackages:
     - `.../metafields` - parse and compile-time checks for `meta.fields` and `meta.fields[].schema`.
@@ -109,7 +109,7 @@ Compact project map for fast entry into the code.
     - `.../requiredconstraint` - shared parsing for `required` / `required_when`.
     - `.../expressioncontext` - expression compile context and compile-issue mapping.
     - `.../names` - schema-key validation for `meta.fields` and `content.sections`.
-    - `.../pathpattern` - parsing and validation of `path_pattern`.
+    - `.../pathpattern` - parsing and validation of `pathTemplate`.
     - `.../schemachecks` - reusable schema check helpers.
     - `.../tests` - unit tests for schema parsing behavior of `meta.fields[].schema` (`items.type`, `items.refTypes`).
 
@@ -118,7 +118,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Validate `meta`, `meta.fields[]`, and `meta.fields[].schema` structure and closed-world keys.
     - Parse field schema attributes (`type`, `enum`, `const`, `refTypes`, `items`, `uniqueItems`, `minItems`, `maxItems`) and validate links to entity types.
-    - Validate `schema.items.refTypes` only for `schema.items.type=entity_ref` (non-empty, no duplicates, known entity types) and keep deterministic sorted `refTypes`.
+    - Validate `schema.items.refTypes` only for `schema.items.type=entityRef` (non-empty, no duplicates, known entity types) and keep deterministic sorted `refTypes`.
     - Parse `required` / `required_when` through `requiredconstraint.Parse`.
     - Run static checks for strict `eq/in` operators on potentially-missing operands.
   - Subpackages: none.
@@ -143,7 +143,7 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext`
   - Entrypoint: `context.go` - `Build`, `FromCompileIssue`, `IsBuiltinMetaField`.
   - Responsibilities:
-    - Describe built-in meta fields for compile context (`type`, `id`, `slug`, `created_date`, `updated_date`).
+    - Describe built-in meta fields for compile context (`type`, `id`, `slug`, `createdDate`, `updatedDate`).
     - Build `expressions.CompileContext` from built-ins and schema-defined `meta.fields`.
     - Map expression compiler issues into schema issue format.
   - Subpackages: none.
@@ -158,8 +158,8 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern`
   - Entrypoint: `parser.go` - `Parse`.
   - Responsibilities:
-    - Normalize `path_pattern` from `string | list | object`.
-    - Validate closed-world keys of the `path_pattern` object and `cases[]`.
+    - Normalize `pathTemplate` from `string | list | object`.
+    - Validate closed-world keys of the `pathTemplate` object and `cases[]`.
     - Compile `cases[].when` expressions.
     - Validate placeholders (`meta:*`, `ref:*`), strict operators, static `exists` guards, and the single-unconditional-case-at-end rule.
   - Subpackages: none.
@@ -190,8 +190,8 @@ Compact project map for fast entry into the code.
     - `issues.go` - `CountIssuesByLevel`
   - Responsibilities:
     - Run the full validation pipeline: parse candidates, built-in checks, schema-driven checks.
-    - Resolve scalar `entity_ref` and `array.items.type=entity_ref` targets (including `refTypes`, `missing|ambiguous|type_mismatch`) and reject blank array `entity_ref` items as item-type mismatches.
-    - Evaluate `required_when`, validate `path_pattern`, and keep deterministic issue ordering.
+    - Resolve scalar `entityRef` and `array.items.type=entityRef` targets (including `refTypes`, `missing|ambiguous|type_mismatch`) and reject blank array `entityRef` items as item-type mismatches.
+    - Evaluate `required_when`, validate `pathTemplate`, and keep deterministic issue ordering.
     - Aggregate entity/global issues and compute coverage, validity, and conformance metrics.
   - Subpackages: none.
 
@@ -229,17 +229,17 @@ Compact project map for fast entry into the code.
     - `index.go` - `BuildIndex`
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Parse metadata/read/content info for every entity type, including scalar `entity_ref` and `array.items.type=entity_ref` hints (`refTypes` single-type deterministic hint).
+    - Parse metadata/read/content info for every entity type, including scalar `entityRef` and `array.items.type=entityRef` hints (`refTypes` single-type deterministic hint).
     - Build `QuerySchemaIndex` with namespace split: public projection selectors (`refs`, `refs.<name>`) and filter/sort leaf fields (`refs.<name>.resolved|type|id|slug`) used for where/sort and hidden projection compatibility.
-    - Exclude scalar and array `entity_ref` from `meta.<name>` selector/filter/sort namespaces and keep type-conflict validation across entity types.
+    - Exclude scalar and array `entityRef` from `meta.<name>` selector/filter/sort namespaces and keep type-conflict validation across entity types.
   - Subpackages: none.
 
 - `internal/application/commands/query/internal/workspace`
   - Entrypoint: `loader.go` - `LoadEntities`.
   - Responsibilities:
     - Deterministically scan `.md` files and parse entity frontmatter/body.
-    - Build full read-view (`type/id/slug/revision/created_date/updated_date/meta/refs/content.raw/content.sections`).
-    - Exclude scalar and array `entity_ref` slots from projected `meta`.
+    - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.raw/content.sections`).
+    - Exclude scalar and array `entityRef` slots from projected `meta`.
     - Build global `id` index and resolve `refs.<field>` into `{id,resolved,type,slug}` for scalar refs and arrays of this shape for array refs, with `null`/unresolved semantics and deterministic fallback hints.
     - Mark `resolved=true` only when the resolved target is unique and compatible with `refTypes` hint; incompatible unique target keeps unresolved fallback shape.
     - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`) and compute opaque `revision` (`sha256:<hex>`).
@@ -292,7 +292,7 @@ Compact project map for fast entry into the code.
     - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without partial heuristic schema-derived data.
     - Pass absolute `ResolvedPath` into the report.
     - Normalize `meta.fields -> meta|refs`, `required|required_when -> required` (implicit default is `required: true` when both keys are absent), `title -> string[]`.
-    - Exclude storage-facing nodes (`path_pattern`, raw `meta.fields`) and hide empty blocks.
+    - Exclude storage-facing nodes (`pathTemplate`, raw `meta.fields`) and hide empty blocks.
     - Emit canonical `required.when` expressions and canonical key order in schema subtree.
   - Subpackages:
     - `helpschema/internal/projector` - thin projection entrypoint and pipeline -> use-case mapping.
@@ -316,7 +316,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read.
-    - Enforce projection contract for scalar and array `entity_ref`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>` and compatible leaf selectors `refs.<name>.id|resolved|type|slug`.
+    - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>` and compatible leaf selectors `refs.<name>.id|resolved|type|slug`.
     - Own `get` help inside shared `help`.
     - Handle `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`.
   - Subpackages:
@@ -341,7 +341,7 @@ Compact project map for fast entry into the code.
   - Entrypoint: `loader.go` - `LoadReadModel`.
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Build read-model from `schema.entity`: non-ref meta fields, scalar `entity_ref` fields, and `array.items.type=entity_ref` fields (with single-`refTypes` deterministic type hint), plus `content.sections` per type.
+    - Build read-model from `schema.entity`: non-ref meta fields, scalar `entityRef` fields, and `array.items.type=entityRef` fields (with single-`refTypes` deterministic type hint), plus `content.sections` per type.
     - Build canonical selector allowlist (`built-in`, `meta.<non_ref>`, `refs`, `refs.<name>`, `content.raw`, `content.sections`, `content.sections.<name>`).
     - Return `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` with `validation.issues`.
   - Subpackages: none.
@@ -395,13 +395,13 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `add`: parse options -> normalize paths -> acquire workspace lock -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
     - Map `INVALID_ARGS`, `CONCURRENCY_CONFLICT`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema errors, and read/write errors into one JSON envelope.
-    - Inject `Clock` for deterministic `created_date`/`updated_date`.
-    - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
+    - Inject `Clock` for deterministic `createdDate`/`updatedDate`.
+    - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
   - Subpackages:
     - `add/internal/options` - parse/norm of `--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`.
     - `add/internal/schema` - raw schema loading and local write-contract building.
-    - `add/internal/workspace` - deterministic workspace snapshot (`id`/`slug`/suffix indexes, existing paths, parseable identities, `dir_path` context).
-    - `add/internal/engine` - apply writes, typed YAML parsing, canonical serialization, `path_pattern` / expression evaluation, full validation, `revision`, dry-run, atomic write.
+    - `add/internal/workspace` - deterministic workspace snapshot (`id`/`slug`/suffix indexes, existing paths, parseable identities, `dirPath` context).
+    - `add/internal/engine` - apply writes, typed YAML parsing, canonical serialization, `pathTemplate` / expression evaluation, full validation, `revision`, dry-run, atomic write.
     - `add/internal/model` - internal use-case types.
     - `add/internal/support` - YAML/deep-copy/literal-compare/stable-collection/error-detail helpers.
 
@@ -419,10 +419,10 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate top level.
     - Orchestrate `entity.<type>` parsing and build `AddSchema`.
-    - Parse write-contract projection for `meta/refs`, including `array.items.type=entity_ref` and `array.items.refTypes`.
+    - Parse write-contract projection for `meta/refs`, including `array.items.type=entityRef` and `array.items.refTypes`.
     - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages:
-    - `add/internal/schema/internal/entity` - parse `id_prefix`, `path_pattern`, `meta.fields`, `content.sections`, and build local write contract.
+    - `add/internal/schema/internal/entity` - parse `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, and build local write contract.
 
 - `internal/application/commands/add/internal/workspace`
   - Entrypoints:
@@ -443,8 +443,8 @@ Compact project map for fast entry into the code.
     - Build contractual `entity` payload and final `result_state=valid`.
   - Subpackages:
     - `.../writes` - apply write ops, typed YAML parsing, write-contract guard rails, Markdown body build.
-    - `.../refresolve` - resolve scalar `entity_ref` and `array.items.type=entity_ref` via workspace snapshot and diagnose deterministic `missing|ambiguous|type_mismatch` (indexed for arrays).
-    - `.../pathcalc` - evaluate `path_pattern`, interpolate placeholders, normalize, and guard against escaping workspace.
+    - `.../refresolve` - resolve scalar `entityRef` and `array.items.type=entityRef` via workspace snapshot and diagnose deterministic `missing|ambiguous|type_mismatch` (indexed for arrays).
+    - `.../pathcalc` - evaluate `pathTemplate`, interpolate placeholders, normalize, and guard against escaping workspace.
     - `.../validation` - full instance validation and deterministic issue sorting.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation (`sha256:*`).
     - `.../storage` - filesystem checks and atomic write.
@@ -504,7 +504,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Read schema, parse YAML/JSON AST, and check duplicate keys.
     - Validate top-level shape (`version/entity/description`) and `schema.entity`.
-    - Extract reference slots for `entity_ref` and `array.items.type=entity_ref`.
+    - Extract reference slots for `entityRef` and `array.items.type=entityRef`.
     - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages: none.
 
@@ -561,7 +561,7 @@ Compact project map for fast entry into the code.
     - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> load schema -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
     - Return contractual JSON response (`updated/noop/changes/entity/validation`) with one domain-error mapping layer.
-    - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<section_name>}`.
+    - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
   - Subpackages:
     - `update/internal/options` - parse/norm of `update` options and conflict checks.
     - `update/internal/schema` - raw schema loading and read/write contract building.
@@ -586,8 +586,8 @@ Compact project map for fast entry into the code.
     - `internal/entity/parser.go` - `ParseType`
   - Responsibilities:
     - Read schema, parse YAML/JSON, run deep duplicate-key checks, validate top-level shape.
-    - Build `Schema.EntityTypes` for `update` (`meta/content/path_pattern/write contract`).
-    - Parse `entity.<type>` including `id_prefix`, `path_pattern`, `meta.fields`, `content.sections`, allow-set/allow-unset/allow-set-file paths, required/enum/ref constraints, and `array.items.type=entity_ref` (`items.refTypes`) projection into `refs.<field>`.
+    - Build `Schema.EntityTypes` for `update` (`meta/content/pathTemplate/write contract`).
+    - Parse `entity.<type>` including `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, allow-set/allow-unset/allow-set-file paths, required/enum/ref constraints, and `array.items.type=entityRef` (`items.refTypes`) projection into `refs.<field>`.
     - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages:
     - `update/internal/schema/internal/entity` - order-aware entity-type parser and write-contract builder.
@@ -608,13 +608,13 @@ Compact project map for fast entry into the code.
   - Entrypoint: `execute.go` - `Execute`.
   - Responsibilities:
     - Resolve target and enforce optimistic concurrency on persisted `revision`.
-    - Apply patch ops / whole-body changes, bump `updated_date`, resolve scalar/array `entity_ref`, evaluate `path_pattern`.
+    - Apply patch ops / whole-body changes, bump `updatedDate`, resolve scalar/array `entityRef`, evaluate `pathTemplate`.
     - Run full post-update validation and map deterministic issues into `VALIDATION_FAILED`.
     - Serialize markdown/frontmatter, recompute `revision`, perform dry-run or commit (atomic write / move), build `changes` / `entity` payload.
   - Subpackages:
     - `.../writes` - preflight write-contract checks, typed YAML parsing, section/body patching, deterministic diff.
-    - `.../refresolve` - scalar and array `entity_ref` resolution with deterministic `missing|ambiguous|type_mismatch` diagnostics.
-    - `.../pathcalc` - `path_pattern` case selection, placeholder interpolation, workspace-boundary guard.
+    - `.../refresolve` - scalar and array `entityRef` resolution with deterministic `missing|ambiguous|type_mismatch` diagnostics.
+    - `.../pathcalc` - `pathTemplate` case selection, placeholder interpolation, workspace-boundary guard.
     - `.../validation` - built-in/meta/content/global rules, `required_when`, section-title checks.
     - `.../storage` - atomic write/move, rollback on rename failure, path conflict checks, test-only write-failure injection.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation.
@@ -701,6 +701,14 @@ Compact project map for fast entry into the code.
     - Map domain codes to process exit codes.
   - Subpackages: none.
 
+- `internal/domain/reservedkeys`
+  - Entrypoint: `keys.go` - package constants.
+  - Responsibilities:
+    - Centralize reserved schema/frontmatter/ref names (`idPrefix`, `pathTemplate`, `entityRef`, `createdDate`, `updatedDate`, `dirPath`, and service model names).
+    - Provide one shared source of reserved-key literals for parsers/validators and expression contexts.
+    - Keep strict no-compatibility behavior: old `snake_case` names are rejected by closed-world schema checks.
+  - Subpackages: none.
+
 - `internal/domain/validation`
   - Entrypoint: `issue.go` - public types `IssueLevel`, `Entity`, `Issue`.
   - Responsibilities:
@@ -751,8 +759,8 @@ Compact project map for fast entry into the code.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
-    - Cover scalar and array `entity_ref` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
-    - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entity_ref`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
+    - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
+    - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entityRef`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
   - Subpackages:
     - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, placeholder/path utilities, stderr/response/workspace assertions, permission setup).
@@ -761,24 +769,24 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.
     - `tests/integration/cases/validate/40_instance_meta_content/*` - `meta.fields` and `content.sections`.
-    - `tests/integration/cases/validate/50_path_pattern_expr/*` - `path_pattern.cases[].when` scenarios.
-    - `tests/integration/cases/validate/60_entity_ref_context/*` - scalar/array `entity_ref`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dir_path`.
+    - `tests/integration/cases/validate/50_pathTemplate_expr/*` - `pathTemplate.cases[].when` scenarios.
+    - `tests/integration/cases/validate/60_entityRef_context/*` - scalar/array `entityRef`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dirPath`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
-    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entity_ref` under `refs.<field>`.
+    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`.
     - `tests/integration/cases/query/30_where/*` - `--where-json` happy/negative scenarios.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
-    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entity_ref` under `refs.<field>`.
+    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
     - `tests/integration/cases/add/10_happy/*` - happy-path `add`.
     - `tests/integration/cases/add/20_args/*` - `add` CLI errors.
     - `tests/integration/cases/add/30_contract/*` - `add` write-contract failures.
-    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints and array `entity_ref` diagnostics.
+    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints and array `entityRef` diagnostics.
     - `tests/integration/cases/add/50_conflict/*` - `add` path conflicts.
     - `tests/integration/cases/update/10_happy/*` - happy-path `update`.
-    - `tests/integration/cases/update/20_noop/*` - `update` no-op scenarios, including array `entity_ref` idempotent set.
+    - `tests/integration/cases/update/20_noop/*` - `update` no-op scenarios, including array `entityRef` idempotent set.
     - `tests/integration/cases/update/30_args/*` - `update` argument/conflict failures.
     - `tests/integration/cases/update/40_contract/*` - `update` write-contract failures.
     - `tests/integration/cases/update/50_validation/*` - `update` validation failures, including array-ref failure with no partial writes.
@@ -805,10 +813,10 @@ Compact project map for fast entry into the code.
 ## Current Command Status
 
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
-- `validate` - support for `expressions`, `entity_ref`, and `path_pattern.cases[].when` is implemented.
+- `validate` - support for `expressions`, `entityRef`, and `pathTemplate.cases[].when` is implemented.
 - `query` - read-only pipeline is implemented (schema index, `where-json`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
-- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entity_ref` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
-- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including full-replace array patch semantics, array `entity_ref` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `version` - baseline version command is implemented (single build-time source `Version` with fallback `dev`, JSON contract, contract error-path cases).

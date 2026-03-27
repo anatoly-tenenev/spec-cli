@@ -86,8 +86,8 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 			"id":           entity.ID,
 			"slug":         entity.Slug,
 			"revision":     entity.Revision,
-			"created_date": entity.CreatedDate,
-			"updated_date": entity.UpdatedDate,
+			"createdDate": entity.CreatedDate,
+			"updatedDate": entity.UpdatedDate,
 			"meta":         meta,
 			"refs":         refs,
 			"content": map[string]any{
@@ -175,8 +175,8 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 		)
 	}
 
-	createdDate, _ := readStringField(frontmatter, "created_date")
-	updatedDate, _ := readStringField(frontmatter, "updated_date")
+	createdDate, _ := readStringField(frontmatter, "createdDate")
+	updatedDate, _ := readStringField(frontmatter, "updatedDate")
 	normalizedFrontmatter := normalizeMap(frontmatter)
 
 	revisionHash := sha256.Sum256(raw)
@@ -199,7 +199,7 @@ func buildMetadata(frontmatter map[string]any, refFields map[string]struct{}) ma
 	meta := map[string]any{}
 	for key, value := range frontmatter {
 		switch key {
-		case "type", "id", "slug", "created_date", "updated_date":
+		case "type", "id", "slug", "createdDate", "updatedDate":
 			continue
 		default:
 			if _, isRefField := refFields[key]; isRefField {

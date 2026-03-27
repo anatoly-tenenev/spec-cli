@@ -8,7 +8,7 @@
         "summary": "Typed values"
       }
     },
-    "created_date": "2026-03-10",
+    "createdDate": "2026-03-10",
     "id": "FEAT-5",
     "meta": {
       "enabled": true,
@@ -26,7 +26,7 @@
     "revision": "sha256:f68dcca7cb3ff94a2154261d6781af3587f6b354025b9ff9e7e56fe4030388ef",
     "slug": "typed-values",
     "type": "feature",
-    "updated_date": "2026-03-10"
+    "updatedDate": "2026-03-10"
   },
   "result_state": "valid",
   "validation": {

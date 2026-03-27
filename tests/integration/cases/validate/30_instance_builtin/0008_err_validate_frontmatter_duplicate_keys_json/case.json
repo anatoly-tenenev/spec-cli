@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0008_err_validate_frontmatter_duplicate_keys_json",
-  "description": "validate returns instance error when frontmatter contains duplicate keys",
+  "description": "validate_30_0008_err_validate_frontmatter_duplicate_keys_json",
   "command": "validate",
   "args": [
     "--workspace",

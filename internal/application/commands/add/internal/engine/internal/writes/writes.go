@@ -297,7 +297,7 @@ func isTypeCompatible(field model.MetaField, rawValue any) bool {
 	case "array":
 		_, ok := value.([]any)
 		return ok
-	case "entity_ref":
+	case "entityRef":
 		text, ok := value.(string)
 		return ok && strings.TrimSpace(text) != ""
 	default:
@@ -326,7 +326,7 @@ func describeValueType(rawValue any) string {
 }
 
 func isForbiddenWritePath(path string) bool {
-	if path == "type" || path == "id" || path == "slug" || path == "created_date" || path == "updated_date" {
+	if path == "type" || path == "id" || path == "slug" || path == "createdDate" || path == "updatedDate" {
 		return true
 	}
 	if path == "content" || path == "content.raw" || path == "content.sections" {

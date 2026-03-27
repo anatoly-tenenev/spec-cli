@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0001_err_validate_required_when_meta_and_sections_json",
-  "description": "validate evaluates required_when expressions for metadata fields and content sections",
+  "description": "validate_40_0001_err_validate_required_when_meta_and_sections_json",
   "command": "validate",
   "args": [
     "--workspace",

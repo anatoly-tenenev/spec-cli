@@ -1,11 +1,11 @@
 version: "0.0.4"
 entity:
   doc:
-    id_prefix: DOC
-    path_pattern:
+    idPrefix: DOC
+    pathTemplate:
       cases:
         - when:
-            eq?: [meta.created_date, "2026-03-01"]
+            eq?: [meta.createdDate, "2026-03-01"]
           use: "entity_a.md"
         - use: "entity_b.md"
     meta:

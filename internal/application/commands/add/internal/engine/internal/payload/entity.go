@@ -49,8 +49,8 @@ func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[
 		"id":           candidate.ID,
 		"slug":         candidate.Slug,
 		"revision":     candidate.Revision,
-		"created_date": candidate.CreatedDate,
-		"updated_date": candidate.UpdatedDate,
+		"createdDate": candidate.CreatedDate,
+		"updatedDate": candidate.UpdatedDate,
 		"meta":         metaPayload,
 		"refs":         refsPayload,
 		"content": map[string]any{

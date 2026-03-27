@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0007_err_validate_frontmatter_not_first_line_json",
-  "description": "validate returns instance error when frontmatter does not start on first line",
+  "description": "validate_30_0007_err_validate_frontmatter_not_first_line_json",
   "command": "validate",
   "args": [
     "--workspace",

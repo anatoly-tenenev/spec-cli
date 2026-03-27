@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0007_ok_validate_happy_full_matrix_json",
-  "description": "validate succeeds for a mixed workspace with five valid entities",
+  "description": "validate_10_0007_ok_validate_happy_full_matrix_json",
   "command": "validate",
   "args": [
     "--workspace",

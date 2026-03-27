@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0006_err_validate_required_when_all_any_not_json",
-  "description": "validate evaluates nested all/any/not required_when expression and triggers required field only for matching branch",
+  "description": "validate_40_0006_err_validate_required_when_all_any_not_json",
   "command": "validate",
   "args": [
     "--workspace",

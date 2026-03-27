@@ -2,8 +2,8 @@
 type: feature
 id: FEAT-1
 slug: retry-window
-created_date: 2026-03-05
-updated_date: 2026-03-11
+createdDate: 2026-03-05
+updatedDate: 2026-03-11
 status: active
 owner: SVC-2
 reviewer: SVC-1

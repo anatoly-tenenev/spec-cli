@@ -18,12 +18,12 @@ func ParseType(
 	typeNode *yaml.Node,
 	usedPrefixes map[string]string,
 ) (model.EntityTypeSpec, *domainerrors.AppError) {
-	idPrefix, idPrefixErr := parseIDPrefix(typeName, rawType["id_prefix"], usedPrefixes)
+	idPrefix, idPrefixErr := parseIDPrefix(typeName, rawType["idPrefix"], usedPrefixes)
 	if idPrefixErr != nil {
 		return model.EntityTypeSpec{}, idPrefixErr
 	}
 
-	pathPattern, pathPatternErr := parsePathPattern(typeName, rawType["path_pattern"])
+	pathPattern, pathPatternErr := parsePathPattern(typeName, rawType["pathTemplate"])
 	if pathPatternErr != nil {
 		return model.EntityTypeSpec{}, pathPatternErr
 	}
@@ -72,7 +72,7 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	if !ok || strings.TrimSpace(idPrefix) == "" {
 		return "", newSchemaError(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.id_prefix must be a non-empty string", typeName),
+			fmt.Sprintf("schema.entity.%s.idPrefix must be a non-empty string", typeName),
 			nil,
 		)
 	}
@@ -81,8 +81,8 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	if existingType, exists := usedPrefixes[idPrefix]; exists {
 		return "", newSchemaError(
 			domainerrors.CodeSchemaInvalid,
-			"schema contains duplicated id_prefix across entity types",
-			map[string]any{"id_prefix": idPrefix, "types": []string{existingType, typeName}},
+			"schema contains duplicated idPrefix across entity types",
+			map[string]any{"idPrefix": idPrefix, "types": []string{existingType, typeName}},
 		)
 	}
 	usedPrefixes[idPrefix] = typeName
@@ -93,7 +93,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 	if rawPathPattern == nil {
 		return model.PathPattern{}, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.path_pattern is required", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate is required", typeName),
 			nil,
 		)
 	}
@@ -103,7 +103,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 		if strings.TrimSpace(typed) == "" {
 			return model.PathPattern{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern must be non-empty", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate must be non-empty", typeName),
 				nil,
 			)
 		}
@@ -112,7 +112,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 		if len(typed) == 0 {
 			return model.PathPattern{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern array must be non-empty", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate array must be non-empty", typeName),
 				nil,
 			)
 		}
@@ -122,7 +122,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 			if !ok || strings.TrimSpace(useValue) == "" {
 				return model.PathPattern{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.path_pattern[%d] must be a non-empty string", typeName, idx),
+					fmt.Sprintf("schema.entity.%s.pathTemplate[%d] must be a non-empty string", typeName, idx),
 					nil,
 				)
 			}
@@ -134,7 +134,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 		if !ok || len(rawCases) == 0 {
 			return model.PathPattern{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases must be a non-empty array", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases must be a non-empty array", typeName),
 				nil,
 			)
 		}
@@ -146,7 +146,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 			if !ok {
 				return model.PathPattern{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d] must be a mapping", typeName, idx),
+					fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d] must be a mapping", typeName, idx),
 					nil,
 				)
 			}
@@ -154,7 +154,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 			if !ok || strings.TrimSpace(useValue) == "" {
 				return model.PathPattern{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].use must be non-empty string", typeName, idx),
+					fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use must be non-empty string", typeName, idx),
 					nil,
 				)
 			}
@@ -172,7 +172,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 		if !hasFallback {
 			return model.PathPattern{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern must include unconditional fallback case", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate must include unconditional fallback case", typeName),
 				nil,
 			)
 		}
@@ -181,7 +181,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 	default:
 		return model.PathPattern{}, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.path_pattern has unsupported format", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate has unsupported format", typeName),
 			nil,
 		)
 	}
@@ -303,7 +303,7 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 		}
 	}
 
-	if typeValue == "entity_ref" {
+	if typeValue == "entityRef" {
 		field.IsEntityRef = true
 		if rawRefTypes, exists := schemaMap["refTypes"]; exists {
 			refTypes, ok := support.ToSlice(rawRefTypes)
@@ -329,7 +329,7 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 	}
 
 	switch typeValue {
-	case "string", "integer", "number", "boolean", "null", "array", "entity_ref":
+	case "string", "integer", "number", "boolean", "null", "array", "entityRef":
 	default:
 		return model.MetaField{}, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
@@ -379,7 +379,7 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 			}
 			field.HasItems = true
 			field.ItemType = strings.TrimSpace(itemType)
-			if field.ItemType == "entity_ref" {
+			if field.ItemType == "entityRef" {
 				field.IsEntityRefArray = true
 				if rawItemRefTypes, hasItemRefTypes := itemsMap["refTypes"]; hasItemRefTypes {
 					itemRefTypes, ok := support.ToSlice(rawItemRefTypes)
@@ -405,7 +405,7 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 			} else if _, hasItemRefTypes := itemsMap["refTypes"]; hasItemRefTypes {
 				return model.MetaField{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes is allowed only for items.type entity_ref", typeName, fieldName),
+					fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes is allowed only for items.type entityRef", typeName, fieldName),
 					nil,
 				)
 			}

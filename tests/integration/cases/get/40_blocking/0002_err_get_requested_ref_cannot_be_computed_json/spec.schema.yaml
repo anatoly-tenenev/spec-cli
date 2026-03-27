@@ -1,8 +1,8 @@
 version: "0.0.4"
 entity:
   service:
-    id_prefix: SVC
-    path_pattern: "services/{slug}.md"
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
     meta:
       fields:
         status:
@@ -17,8 +17,8 @@ entity:
         summary: {}
 
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         status:
@@ -27,7 +27,7 @@ entity:
             enum: [draft, active, deprecated]
         container:
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
         score:
           schema:

@@ -1,6 +1,6 @@
 {
   "id": "query_20_0009_ok_query_select_missing_implementation_null_json",
-  "description": "QRY-SELECT-06 adapted: missing content section -> null",
+  "description": "query_20_0009_ok_query_select_missing_implementation_null_json",
   "command": "query",
   "args": [
     "--workspace",

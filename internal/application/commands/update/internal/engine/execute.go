@@ -97,7 +97,7 @@ func Execute(
 		now = time.Now
 	}
 	if applied.UserChanged {
-		applied.Frontmatter["updated_date"] = now().UTC().Format("2006-01-02")
+		applied.Frontmatter["updatedDate"] = now().UTC().Format("2006-01-02")
 	}
 
 	candidate := buildCandidate(applied.Frontmatter, applied.Body)
@@ -161,12 +161,12 @@ func Execute(
 	if candidate.PathAbs == "" {
 		return nil, validation.AsAppError([]domainvalidation.Issue{
 			{
-				Code:        "instance.path_pattern.no_matching_case",
+				Code:        "instance.pathTemplate.no_matching_case",
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
-				Message:     "path_pattern has no matching case for updated entity",
+				Message:     "pathTemplate has no matching case for updated entity",
 				StandardRef: "12.4",
-				Field:       "schema.path_pattern",
+				Field:       "schema.pathTemplate",
 				Entity:      issueEntity(candidate),
 			},
 		})
@@ -235,8 +235,8 @@ func buildCandidate(frontmatter map[string]any, body string) *model.Candidate {
 	entityType, _ := workspace.ReadStringField(frontmatter, "type")
 	id, _ := workspace.ReadStringField(frontmatter, "id")
 	slug, _ := workspace.ReadStringField(frontmatter, "slug")
-	createdDate, _ := workspace.ReadStringField(frontmatter, "created_date")
-	updatedDate, _ := workspace.ReadStringField(frontmatter, "updated_date")
+	createdDate, _ := workspace.ReadStringField(frontmatter, "createdDate")
+	updatedDate, _ := workspace.ReadStringField(frontmatter, "updatedDate")
 
 	return &model.Candidate{
 		Type:         entityType,
@@ -300,12 +300,12 @@ func hydrateMetaAndRefIDs(candidate *model.Candidate, typeSpec model.EntityTypeS
 
 func pathMismatchIssue(candidate *model.Candidate) domainvalidation.Issue {
 	return domainvalidation.Issue{
-		Code:        "instance.path_pattern.path_mismatch",
+		Code:        "instance.pathTemplate.path_mismatch",
 		Level:       domainvalidation.LevelError,
 		Class:       "InstanceError",
-		Message:     "entity path does not match canonical path_pattern result",
+		Message:     "entity path does not match canonical pathTemplate result",
 		StandardRef: "12.4",
-		Field:       "schema.path_pattern",
+		Field:       "schema.pathTemplate",
 		Entity:      issueEntity(candidate),
 	}
 }

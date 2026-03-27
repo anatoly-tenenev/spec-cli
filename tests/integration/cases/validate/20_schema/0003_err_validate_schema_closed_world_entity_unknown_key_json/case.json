@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0003_err_validate_schema_closed_world_entity_unknown_key_json",
-  "description": "validate returns schema error for unsupported entity type keys",
+  "description": "validate_20_0003_err_validate_schema_closed_world_entity_unknown_key_json",
   "command": "validate",
   "args": [
     "--workspace",

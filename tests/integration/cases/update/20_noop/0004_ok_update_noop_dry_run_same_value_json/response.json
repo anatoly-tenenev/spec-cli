@@ -2,7 +2,7 @@
   "changes": [],
   "dry_run": true,
   "entity": {
-    "created_date": "2026-01-15",
+    "createdDate": "2026-01-15",
     "id": "FEAT-3",
     "meta": {
       "owner": "team-risk",
@@ -21,7 +21,7 @@
     "revision": "sha256:faa1b991ea3cdf5d886ac3264b73664fced030d5dc3a1e23f95c8573d6a85dfe",
     "slug": "batch-replay",
     "type": "feature",
-    "updated_date": "2026-03-14"
+    "updatedDate": "2026-03-14"
   },
   "noop": true,
   "result_state": "valid",

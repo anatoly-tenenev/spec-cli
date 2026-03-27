@@ -1,0 +1,31 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nRetry window rules.",
+      "sections": {
+        "summary": "Retry window rules."
+      }
+    },
+    "createdDate": "2026-03-10",
+    "id": "FEAT-5",
+    "meta": {
+      "status": "draft"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-3"
+      }
+    },
+    "revision": "sha256:118bac4719eba3377e1c31d6e3ad41fb43eaf0a8e36841456716e0c15b072d88",
+    "slug": "retry-window",
+    "type": "feature",
+    "updatedDate": "2026-03-10"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

@@ -33,13 +33,13 @@
       "code": "builtin.date_format_invalid",
       "level": "error",
       "class": "InstanceError",
-      "message": "field 'created_date' must be in YYYY-MM-DD format",
+      "message": "field 'createdDate' must be in YYYY-MM-DD format",
       "standard_ref": "11.3",
       "entity": {
         "type": "doc",
         "slug": "duplicate"
       },
-      "field": "frontmatter.created_date"
+      "field": "frontmatter.createdDate"
     },
     {
       "code": "meta.required_enum_mismatch",

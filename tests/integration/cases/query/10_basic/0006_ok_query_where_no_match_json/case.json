@@ -1,6 +1,6 @@
 {
   "id": "query_10_0006_ok_query_where_no_match_json",
-  "description": "QRY-HAPPY-02 adapted to current fixtures",
+  "description": "query_10_0006_ok_query_where_no_match_json",
   "command": "query",
   "args": [
     "--workspace",

@@ -1,0 +1,16 @@
+version: 0.0.4
+entity:
+  doc:
+    idPrefix: "DOC"
+    pathTemplate:
+      cases:
+        - when:
+            exists: meta.owner
+          use: "docs/{refs.owner.id}/{slug}.md"
+        - use: "{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: false
+          schema:
+            type: entityRef

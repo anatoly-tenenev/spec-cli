@@ -1,6 +1,6 @@
 {
   "id": "query_30_0022_ok_query_where_meta_score_lte_json",
-  "description": "QRY-WHERE-10 adapted: meta.priority -> meta.score",
+  "description": "query_30_0022_ok_query_where_meta_score_lte_json",
   "command": "query",
   "args": [
     "--workspace",

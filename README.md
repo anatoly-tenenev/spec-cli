@@ -57,8 +57,8 @@ specs/
 type: adr
 id: ADR-12
 slug: retry-policy
-created_date: 2026-03-10
-updated_date: 2026-03-10
+createdDate: 2026-03-10
+updatedDate: 2026-03-10
 status: accepted
 decision_makers:
   - payments-arch
@@ -83,9 +83,9 @@ spec-cli query \
   --where-json '{"field":"meta.status","op":"eq","value":"accepted"}' \
   --select id \
   --select slug \
-  --select created_date \
+  --select createdDate \
   --select content.sections.decision \
-  --sort created_date:desc \
+  --sort createdDate:desc \
   --format json
 ```
 

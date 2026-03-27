@@ -1,6 +1,6 @@
 {
   "id": "query_20_0010_ok_query_select_ref_leaf_selectors_json",
-  "description": "query supports refs.<field>.id|resolved|type|slug selectors",
+  "description": "query_20_0010_ok_query_select_ref_leaf_selectors_json",
   "command": "query",
   "args": [
     "--workspace",

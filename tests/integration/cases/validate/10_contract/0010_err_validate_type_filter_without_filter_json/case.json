@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0010_err_validate_type_filter_without_filter_json",
-  "description": "validate without type filter includes invalid doc entity",
+  "description": "validate_10_0010_err_validate_type_filter_without_filter_json",
   "command": "validate",
   "args": [
     "--workspace",

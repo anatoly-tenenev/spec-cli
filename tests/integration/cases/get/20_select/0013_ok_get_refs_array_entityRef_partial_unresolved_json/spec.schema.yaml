@@ -1,0 +1,37 @@
+version: "0.0.4"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+    meta:
+      fields:
+        status:
+          schema:
+            type: string
+            enum: [active, deprecated]
+        tier:
+          schema:
+            type: integer
+    content:
+      sections:
+        summary: {}
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        reviewers:
+          schema:
+            type: array
+            items:
+              type: entityRef
+              refTypes: [service]
+    content:
+      sections:
+        summary: {}
+        implementation: {}

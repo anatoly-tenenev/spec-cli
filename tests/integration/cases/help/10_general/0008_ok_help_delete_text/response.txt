@@ -13,7 +13,7 @@ Schema
     entity:
       feature:
         description: Feature specifications
-        id_prefix: FEAT
+        idPrefix: FEAT
         meta:
           status:
             description: Lifecycle status
@@ -30,7 +30,7 @@ Schema
             schema:
               type: array
               items:
-                type: entity_ref
+                type: entityRef
                 refTypes:
                   - service
         refs:
@@ -40,7 +40,7 @@ Schema
               when:
                 eq?: [meta.status, active]
             schema:
-              type: entity_ref
+              type: entityRef
               refTypes:
                 - service
         content:
@@ -53,7 +53,7 @@ Schema
               title:
                 - Summary
       service:
-        id_prefix: SVC
+        idPrefix: SVC
         meta:
           tier:
             required: true
@@ -88,8 +88,8 @@ Options
 
 Rules
   - Target lookup uses exact id match only.
-  - Deletion is blocked when incoming entity_ref references exist.
-  - Blocking checks include scalar entity_ref and array items with entity_ref type.
+  - Deletion is blocked when incoming entityRef references exist.
+  - Blocking checks include scalar entityRef and array items with entityRef type.
   - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
 
 Examples

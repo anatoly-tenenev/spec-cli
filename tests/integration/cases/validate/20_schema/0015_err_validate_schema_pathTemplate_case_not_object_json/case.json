@@ -1,0 +1,24 @@
+{
+  "id": "validate_20_0015_err_validate_schema_pathTemplate_case_not_object_json",
+  "description": "validate_20_0015_err_validate_schema_pathTemplate_case_not_object_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

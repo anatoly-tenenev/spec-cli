@@ -1,9 +1,9 @@
 version: "0.0.4"
 entity:
   doc:
-    id_prefix: DOC
-    path_pattern: "{slug}.md"
+    idPrefix: DOC
+    pathTemplate: "{slug}.md"
 entity:
   doc2:
-    id_prefix: DOC2
-    path_pattern: "{slug}.md"
+    idPrefix: DOC2
+    pathTemplate: "{slug}.md"

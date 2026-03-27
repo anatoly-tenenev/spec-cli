@@ -6,7 +6,7 @@
         "issues": [
           {
             "class": "InstanceError",
-            "code": "meta.entity_ref_type_mismatch",
+            "code": "meta.entityRef_type_mismatch",
             "entity": {
               "id": "FEAT-1",
               "slug": "retry-window",
@@ -14,7 +14,7 @@
             },
             "field": "frontmatter.container",
             "level": "error",
-            "message": "entity_ref 'container' points to type 'note' outside refTypes",
+            "message": "entityRef 'container' points to type 'note' outside refTypes",
             "standard_ref": "11.5"
           }
         ]

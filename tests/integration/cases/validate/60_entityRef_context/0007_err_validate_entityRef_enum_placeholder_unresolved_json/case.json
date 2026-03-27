@@ -1,0 +1,24 @@
+{
+  "id": "validate_60_0007_err_validate_entityRef_enum_placeholder_unresolved_json",
+  "description": "validate_60_0007_err_validate_entityRef_enum_placeholder_unresolved_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

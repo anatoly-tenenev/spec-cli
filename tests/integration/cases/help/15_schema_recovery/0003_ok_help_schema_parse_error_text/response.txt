@@ -100,8 +100,8 @@ query
   Rules
     - projection-namespace argument is --select.
     - filter-namespace arguments are --sort and where-json.field.
-    - projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
-    - filter-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
+    - projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
+    - filter-namespace leaf paths: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.
     - --type uses schema-derived entity type keys and is not part of projection-namespace or filter-namespace.
     - If --select is omitted, default projection is type, id, slug, meta and refs.
     - Query guarantees deterministic ordering.
@@ -124,7 +124,7 @@ query
     spec-cli query --where-json '{"op":"and","filters":[{"field":"meta.status","op":"eq","value":"active"},{"field":"refs.owner.id","op":"eq","value":"SVC-2"}]}'
     spec-cli query --where-json '{"field":"content.sections.summary","op":"contains","value":"retry"}'
     spec-cli query --where-json '{"field":"refs.owner.id","op":"eq","value":"SVC-2"}'
-    spec-cli query --sort updated_date:desc --limit 50 --offset 0
+    spec-cli query --sort updatedDate:desc --limit 50 --offset 0
 
 get
   Syntax
@@ -147,11 +147,11 @@ get
       schema_derivation: selectors from CLI projection-namespace
       description: Projection-namespace selector.
   Rules
-    - Projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
+    - Projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
     - --select uses projection-namespace selectors.
     - --id addresses one entity by exact id and returns a single-entity read result.
     - If --select is omitted, default projection is type, id, slug, meta and refs.
-    - entity_ref scalar fields are exposed through refs.<field> and are not projected under meta.<name>.
+    - entityRef scalar fields are exposed through refs.<field> and are not projected under meta.<name>.
     - If selected content.sections.<name> is absent, the field must be present with null value.
     - Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.
   Examples
@@ -221,13 +221,13 @@ add
   Rules
     - Write-namespace arguments are --set and --set-file.
     - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
-    - Projection from raw schema: non-entity_ref metadata -> meta.<name>; entity_ref metadata (scalar or array items.type=entity_ref) -> refs.<field>; sections -> content.sections.<name>.
+    - Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.
     - Allowed write-paths are derived from the effective schema.
     - refs.<field> values are target entity ids (scalar id or YAML array of ids).
     - --set-file is allowed only for content.sections.<name>.
     - Whole-body inputs --content-file and --content-stdin are not write-namespace paths.
-    - For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<section_name>}`.
-    - Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.
+    - For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<sectionName>}`.
+    - Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.
     - --content-file and --content-stdin are mutually exclusive.
   Examples
     spec-cli add --type feature --slug login-flow --set meta.status=active
@@ -315,13 +315,13 @@ update
   Rules
     - Write-namespace arguments are --set, --set-file and --unset.
     - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
-    - Projection from raw schema: non-entity_ref metadata -> meta.<name>; entity_ref metadata (scalar or array items.type=entity_ref) -> refs.<field>; sections -> content.sections.<name>.
+    - Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.
     - Allowed write-paths are derived from the effective schema.
     - refs.<field> values are target entity ids (scalar id or YAML array of ids).
     - --set-file is allowed only for content.sections.<name>.
     - Whole-body operations are --content-file, --content-stdin and --clear-content; they are not write-namespace paths.
-    - For whole-body operations --content-file/--content-stdin, use headings like `## <title> {#<section_name>}`.
-    - Built-in fields and aggregate content paths are not writable: type, id, slug, created_date, updated_date, content, content.raw, content.sections.
+    - For whole-body operations --content-file/--content-stdin, use headings like `## <title> {#<sectionName>}`.
+    - Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.
     - At least one patch operation must be provided.
     - --unset removes a writable slot by write-namespace path.
     - Whole-body operations and content.sections.<name> path-based operations cannot be mixed.
@@ -364,8 +364,8 @@ delete
       description: Run full checks without filesystem mutation.
   Rules
     - Target lookup uses exact id match only.
-    - Deletion is blocked when incoming entity_ref references exist.
-    - Blocking checks include scalar entity_ref and array items with entity_ref type.
+    - Deletion is blocked when incoming entityRef references exist.
+    - Blocking checks include scalar entityRef and array items with entityRef type.
     - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
   Examples
     spec-cli delete --id FEAT-8

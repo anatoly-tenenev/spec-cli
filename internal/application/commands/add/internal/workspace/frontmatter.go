@@ -79,7 +79,7 @@ func BuildMeta(frontmatter map[string]any) map[string]any {
 	meta := map[string]any{}
 	for key, value := range frontmatter {
 		switch key {
-		case "type", "id", "slug", "created_date", "updated_date":
+		case "type", "id", "slug", "createdDate", "updatedDate":
 			continue
 		default:
 			meta[key] = support.NormalizeValue(value)

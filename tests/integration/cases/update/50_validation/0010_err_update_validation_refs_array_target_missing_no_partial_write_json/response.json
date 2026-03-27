@@ -5,10 +5,10 @@
       "validation": {
         "issues": [
           {
-            "code": "meta.entity_ref_target_missing",
+            "code": "meta.entityRef_target_missing",
             "level": "error",
             "class": "InstanceError",
-            "message": "entity_ref 'watchers[0]' points to missing id 'SVC-999'",
+            "message": "entityRef 'watchers[0]' points to missing id 'SVC-999'",
             "standard_ref": "11.5",
             "entity": {
               "type": "feature",

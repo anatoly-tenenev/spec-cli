@@ -32,11 +32,11 @@ func HelpSpec() helpmodel.CommandSpec {
 			},
 		},
 		Rules: []string{
-			"Projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.",
+			"Projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.",
 			"--select uses projection-namespace selectors.",
 			"--id addresses one entity by exact id and returns a single-entity read result.",
 			"If --select is omitted, default projection is type, id, slug, meta and refs.",
-			"entity_ref scalar fields are exposed through refs.<field> and are not projected under meta.<name>.",
+			"entityRef scalar fields are exposed through refs.<field> and are not projected under meta.<name>.",
 			"If selected content.sections.<name> is absent, the field must be present with null value.",
 			"Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.",
 		},

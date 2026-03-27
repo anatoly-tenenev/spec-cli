@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0010_err_validate_frontmatter_root_not_mapping_json",
-  "description": "validate returns instance error when frontmatter root is not a mapping",
+  "description": "validate_30_0010_err_validate_frontmatter_root_not_mapping_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0003_err_validate_type_unknown_json",
-  "description": "validate returns instance error when frontmatter type is not declared in schema",
+  "description": "validate_30_0003_err_validate_type_unknown_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -5,7 +5,7 @@ import "testing"
 func TestCompile_Success(t *testing.T) {
 	context := CompileContext{MetaFields: map[string]MetaFieldSpec{
 		"status": {Type: "string", Comparable: true},
-		"owner":  {Type: "entity_ref", Comparable: true, EntityRef: true},
+		"owner":  {Type: "entityRef", Comparable: true, EntityRef: true},
 	}}
 
 	expression, issues := Compile(map[string]any{
@@ -25,7 +25,7 @@ func TestCompile_Success(t *testing.T) {
 
 func TestCompile_RefsShorthandRejectedInComparableOperator(t *testing.T) {
 	context := CompileContext{MetaFields: map[string]MetaFieldSpec{
-		"owner": {Type: "entity_ref", Comparable: true, EntityRef: true},
+		"owner": {Type: "entityRef", Comparable: true, EntityRef: true},
 	}}
 
 	expression, issues := Compile(map[string]any{"eq": []any{"refs.owner", "SRV-1"}}, "schema.path", context)

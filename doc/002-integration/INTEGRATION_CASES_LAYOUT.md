@@ -214,8 +214,8 @@ where:
 - `20_schema`
 - `30_instance_builtin`
 - `40_instance_meta_content`
-- `50_path_pattern_expr`
-- `60_entity_ref_context`
+- `50_pathTemplate_expr`
+- `60_entityRef_context`
 - `70_global_uniqueness`
 - `80_profile_conformance`
 

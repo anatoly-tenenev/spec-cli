@@ -1,0 +1,26 @@
+version: "0.0.4"
+entity:
+  service:
+    idPrefix: SRV
+    pathTemplate: "services/{slug}.md"
+    content:
+      sections:
+        goal: {}
+  doc:
+    idPrefix: DOC
+    pathTemplate: "docs/{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: false
+          schema:
+            type: entityRef
+            refTypes: [service]
+        owner_slug_snapshot:
+          required: true
+          schema:
+            type: string
+            const: "{refs.owner.slug}"
+    content:
+      sections:
+        goal: {}

@@ -155,7 +155,7 @@ func Parse(
 			)
 		}
 
-		if ruleType == "entity_ref" {
+		if ruleType == "entityRef" {
 			refTypesRaw, hasRefTypes := schemaRaw["refTypes"]
 			if hasRefTypes {
 				refTypes, refTypesErr := parseRefTypes(fieldPath+".schema.refTypes", refTypesRaw, typeSet)
@@ -167,7 +167,7 @@ func Parse(
 		} else if _, hasRefTypes := schemaRaw["refTypes"]; hasRefTypes {
 			return nil, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("%s.schema.refTypes is allowed only for type entity_ref", fieldPath),
+				fmt.Sprintf("%s.schema.refTypes is allowed only for type entityRef", fieldPath),
 				nil,
 			)
 		}
@@ -274,7 +274,7 @@ func parseArrayConstraints(
 		rule.HasItemType = true
 		rule.ItemType = itemType
 
-		if itemType == "entity_ref" {
+		if itemType == "entityRef" {
 			if refTypesRaw, hasRefTypes := itemsMap["refTypes"]; hasRefTypes {
 				itemRefTypes, refTypesErr := parseRefTypes(fieldPath+".schema.items.refTypes", refTypesRaw, typeSet)
 				if refTypesErr != nil {
@@ -285,7 +285,7 @@ func parseArrayConstraints(
 		} else if _, hasRefTypes := itemsMap["refTypes"]; hasRefTypes {
 			return domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("%s.schema.items.refTypes is allowed only for items.type entity_ref", fieldPath),
+				fmt.Sprintf("%s.schema.items.refTypes is allowed only for items.type entityRef", fieldPath),
 				nil,
 			)
 		}

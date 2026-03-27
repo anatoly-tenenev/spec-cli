@@ -1,0 +1,24 @@
+{
+  "id": "validate_60_0009_ok_validate_array_entityRef_with_ref_types_json",
+  "description": "validate_60_0009_ok_validate_array_entityRef_with_ref_types_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

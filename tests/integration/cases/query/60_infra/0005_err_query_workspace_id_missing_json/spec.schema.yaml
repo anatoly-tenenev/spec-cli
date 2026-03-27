@@ -5,7 +5,7 @@ entity:
       fields:
         owner:
           schema:
-            type: entity_ref
+            type: entityRef
         status:
           schema:
             type: string

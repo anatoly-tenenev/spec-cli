@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0007_err_validate_required_when_eval_error_instance_json",
-  "description": "validate returns instance expression error when strict required_when evaluates with missing operand",
+  "description": "validate_40_0007_err_validate_required_when_eval_error_instance_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -13,7 +13,7 @@
     "--set",
     "meta.owner=team-core",
     "--expect-revision",
-    "sha256:66eb026dcb7cfe3eebdcefb4c0d7a8e82641356a5f438626d8b12c6ff41401cd"
+    "sha256:bf5995d28355d53a8a459fd5bf615f989856150e0811a765672c3a68c983cdbc"
   ],
   "expect": {
     "exit_code": 0,
@@ -23,10 +23,11 @@
   "workspace": {
     "input_dir": "workspace.in",
     "output_dir": "workspace.out",
-    "assert_output": true,
-    "permissions": []
+    "assert_output": true
   },
   "runtime": {
-    "fixed_now_utc": "2026-03-14"
+    "fixed_now_utc": "2026-03-14",
+    "stdin_file": "",
+    "cwd": ""
   }
 }

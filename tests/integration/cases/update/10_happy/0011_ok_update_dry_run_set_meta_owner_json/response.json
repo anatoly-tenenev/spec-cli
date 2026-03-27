@@ -9,7 +9,7 @@
   ],
   "dry_run": true,
   "entity": {
-    "created_date": "2026-02-08",
+    "createdDate": "2026-02-08",
     "id": "FEAT-1",
     "meta": {
       "owner": "team-platform",
@@ -28,7 +28,7 @@
     "revision": "sha256:c4af12ff22628eb9796cac0c34de4414d4f0c46f73be9170692d5e464febd9ca",
     "slug": "retry-window",
     "type": "feature",
-    "updated_date": "2026-03-14"
+    "updatedDate": "2026-03-14"
   },
   "noop": false,
   "result_state": "valid",

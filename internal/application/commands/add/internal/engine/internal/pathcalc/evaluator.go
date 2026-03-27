@@ -28,10 +28,10 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 			matched, evalErr := expr.Evaluate(pathCase.When, lookupValues)
 			if evalErr != nil {
 				pathIssues = append(pathIssues, issues.New(
-					"instance.path_pattern.when_evaluation_failed",
-					"failed to evaluate path_pattern.when expression",
+					"instance.pathTemplate.when_evaluation_failed",
+					"failed to evaluate pathTemplate.when expression",
 					"12.4",
-					"schema.path_pattern.when",
+					"schema.pathTemplate.when",
 					candidate,
 				))
 				continue
@@ -46,10 +46,10 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 
 	if selectedUse == "" {
 		pathIssues = append(pathIssues, issues.New(
-			"instance.path_pattern.no_matching_case",
-			"path_pattern has no matching case for created entity",
+			"instance.pathTemplate.no_matching_case",
+			"pathTemplate has no matching case for created entity",
 			"12.4",
-			"schema.path_pattern",
+			"schema.pathTemplate",
 			candidate,
 		))
 		return "", pathIssues
@@ -59,10 +59,10 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 	if len(unresolved) > 0 {
 		for _, placeholder := range unresolved {
 			pathIssues = append(pathIssues, issues.New(
-				"instance.path_pattern.placeholder_unresolved",
-				"path_pattern placeholder cannot be resolved: "+placeholder,
+				"instance.pathTemplate.placeholder_unresolved",
+				"pathTemplate placeholder cannot be resolved: "+placeholder,
 				"12.4",
-				"schema.path_pattern",
+				"schema.pathTemplate",
 				candidate,
 			))
 		}
@@ -72,10 +72,10 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 	normalized := path.Clean(strings.ReplaceAll(rendered, "\\", "/"))
 	if normalized == "." || strings.HasPrefix(normalized, "../") || strings.HasPrefix(normalized, "/") {
 		pathIssues = append(pathIssues, issues.New(
-			"instance.path_pattern.placeholder_unresolved",
-			"path_pattern resolved outside workspace",
+			"instance.pathTemplate.placeholder_unresolved",
+			"pathTemplate resolved outside workspace",
 			"12.4",
-			"schema.path_pattern",
+			"schema.pathTemplate",
 			candidate,
 		))
 		return "", pathIssues

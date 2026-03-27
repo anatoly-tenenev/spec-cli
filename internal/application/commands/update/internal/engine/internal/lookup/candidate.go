@@ -23,9 +23,9 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 		return l.Candidate.ID, true
 	case "slug":
 		return l.Candidate.Slug, true
-	case "created_date":
+	case "createdDate":
 		return l.Candidate.CreatedDate, true
-	case "updated_date":
+	case "updatedDate":
 		return l.Candidate.UpdatedDate, true
 	}
 
@@ -55,7 +55,7 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 					"type":     ref.Type,
 					"id":       ref.ID,
 					"slug":     ref.Slug,
-					"dir_path": ref.DirPath,
+					"dirPath": ref.DirPath,
 				}, true
 			}
 
@@ -72,7 +72,7 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 				if len(parts) == 2 {
 					return ref.Slug, true
 				}
-			case "dir_path":
+			case "dirPath":
 				if len(parts) == 2 {
 					return ref.DirPath, true
 				}
@@ -101,7 +101,7 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 				"type":     item.Type,
 				"id":       item.ID,
 				"slug":     item.Slug,
-				"dir_path": item.DirPath,
+				"dirPath": item.DirPath,
 			})
 		}
 		return values, true

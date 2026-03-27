@@ -1,0 +1,14 @@
+version: "0.0.4"
+entity:
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        owner:
+          required: false
+          schema:
+            type: entityRef
+    content:
+      sections:
+        goal: {}

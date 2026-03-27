@@ -74,8 +74,8 @@ func HelpSpec() helpmodel.CommandSpec {
 		Rules: []string{
 			"projection-namespace argument is --select.",
 			"filter-namespace arguments are --sort and where-json.field.",
-			"projection-namespace selectors: type, id, slug, revision, created_date, updated_date, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.",
-			"filter-namespace leaf paths: type, id, slug, revision, created_date, updated_date, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.",
+			"projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.",
+			"filter-namespace leaf paths: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, content.raw, content.sections.<name>.",
 			"--type uses schema-derived entity type keys and is not part of projection-namespace or filter-namespace.",
 			"If --select is omitted, default projection is type, id, slug, meta and refs.",
 			"Query guarantees deterministic ordering.",
@@ -99,7 +99,7 @@ func HelpSpec() helpmodel.CommandSpec {
 			"spec-cli query --where-json '{\"op\":\"and\",\"filters\":[{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"active\"},{\"field\":\"refs.owner.id\",\"op\":\"eq\",\"value\":\"SVC-2\"}]}'",
 			"spec-cli query --where-json '{\"field\":\"content.sections.summary\",\"op\":\"contains\",\"value\":\"retry\"}'",
 			"spec-cli query --where-json '{\"field\":\"refs.owner.id\",\"op\":\"eq\",\"value\":\"SVC-2\"}'",
-			"spec-cli query --sort updated_date:desc --limit 50 --offset 0",
+			"spec-cli query --sort updatedDate:desc --limit 50 --offset 0",
 		},
 	}
 }

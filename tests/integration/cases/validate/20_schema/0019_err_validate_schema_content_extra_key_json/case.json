@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0019_err_validate_schema_content_extra_key_json",
-  "description": "validate returns schema error for unsupported key in content object",
+  "description": "validate_20_0019_err_validate_schema_content_extra_key_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -41,7 +41,7 @@ Reason: the baseline explicitly allows a tolerant mode for `get`; deletion needs
 3. The target entity may be deleted even if it is data-invalid, as long as it can be parsed deterministically far enough to obtain `type`, `id`, filesystem path, and `revision`.
 Reason: this follows from the tolerant approach used by `get` and from the practical meaning of a delete command.
 
-4. Deletion must be blocked if it would leave broken `entity_ref` links pointing to the deleted `id`.
+4. Deletion must be blocked if it would leave broken `entityRef` links pointing to the deleted `id`.
 Reason: standard `§6.3`, `§11.4`, `§12.3`, `§14.2` requires referential integrity and dataset conformance.
 
 5. Deletion blocking uses a dedicated domain error code `DELETE_BLOCKED_BY_REFERENCES` with `result_state: "invalid"` and `error.exit_code = 1`.
@@ -89,9 +89,9 @@ Not needed in the baseline implementation:
 
 - Load and parse the schema file from `--schema`.
 - Use raw schema as the runtime rule source rather than `schema.model`.
-- Prepare the list of entity types, their `id_prefix`, and reference slots from the schema:
-  - scalar `entity_ref`;
-  - `array` where `items.type = entity_ref`.
+- Prepare the list of entity types, their `idPrefix`, and reference slots from the schema:
+  - scalar `entityRef`;
+  - `array` where `items.type = entityRef`.
 - If the schema is missing, unreadable, or unparseable such that types and references cannot be resolved reliably, return a top-level schema error with `exit_code = 4`.
 
 ### Step 3. Build a Tolerant Workspace Entity Index
@@ -126,8 +126,8 @@ Not needed in the baseline implementation:
 
 - Check all parseable workspace documents for references to `target.id`.
 - At minimum, inspect:
-  - `meta.<field>` where the schema declares `schema.type: entity_ref`;
-  - arrays where the schema declares `type: array` and `items.type: entity_ref`.
+  - `meta.<field>` where the schema declares `schema.type: entityRef`;
+  - arrays where the schema declares `type: array` and `items.type: entityRef`.
 - Any exact raw reference to `target.id` in a schema-declared reference slot of a parseable document is blocking, even if the document as a whole is invalid.
 - If incoming references are found, return top-level `DELETE_BLOCKED_BY_REFERENCES`.
 - The error response must return structured details about blocking entities without exposing their filesystem paths.
@@ -135,7 +135,7 @@ Not needed in the baseline implementation:
   - `blocking_refs[].source_id`
   - `blocking_refs[].source_type`
   - `blocking_refs[].field`
-- Full post-delete validation of the entire workspace is not required; for the baseline it is enough to guarantee that deletion does not create new broken `entity_ref` links.
+- Full post-delete validation of the entire workspace is not required; for the baseline it is enough to guarantee that deletion does not create new broken `entityRef` links.
 
 ### Step 7. Execute the Deletion
 
@@ -231,8 +231,8 @@ When describing and implementing each individual test case, remove from its fixt
 The minimal schema in `fixtures/delete/base` must contain at least three types:
 
 - `service` without required outgoing links, usable as a safe deletion target;
-- `feature` with a scalar `entity_ref` to `service`;
-- `release` or an equivalent type with an array of `entity_ref` links to `feature`.
+- `feature` with a scalar `entityRef` to `service`;
+- `release` or an equivalent type with an array of `entityRef` links to `feature`.
 
 Additionally, the base workspace needs at least one document where `target.id` appears in a regular string field or in the body, but not in a schema-declared reference slot. This is a separate negative guard against a false-positive reverse-ref implementation based on text grep.
 
@@ -262,7 +262,7 @@ In all successful cases without `--dry-run`, additionally check:
 - exactly one expected file is physically removed;
 - the other workspace documents are unchanged;
 - for fixtures that are intended to stay fully valid after deletion, a follow-up `spec-cli validate --workspace <tmp> --schema <schema> --format json` succeeds;
-- for tolerant fixtures with pre-existing unrelated invalidity, do not assert full validate success, only that `delete` did not create new broken `entity_ref` links and did not worsen referential integrity relative to the initial state.
+- for tolerant fixtures with pre-existing unrelated invalidity, do not assert full validate success, only that `delete` did not create new broken `entityRef` links and did not worsen referential integrity relative to the initial state.
 
 In all successful cases with `--dry-run`, additionally check:
 
@@ -308,10 +308,10 @@ For `DELETE_BLOCKED_BY_REFERENCES`, additionally check:
 
 #### Reverse References
 
-- `DLT-REF-01`: deletion is blocked if a scalar `entity_ref` points to the target.
-- `DLT-REF-02`: deletion is blocked if an `entity_ref` array element points to the target.
+- `DLT-REF-01`: deletion is blocked if a scalar `entityRef` points to the target.
+- `DLT-REF-02`: deletion is blocked if an `entityRef` array element points to the target.
 - `DLT-REF-03`: a parseable but overall invalid document with a raw reference to `target.id` in a schema-declared reference slot also blocks deletion.
-- `DLT-REF-04`: a plain textual occurrence of `target.id` in a regular string field or body does not block deletion if that slot is not declared as `entity_ref`.
+- `DLT-REF-04`: a plain textual occurrence of `target.id` in a regular string field or body does not block deletion if that slot is not declared as `entityRef`.
 - `DLT-REF-05`: on `DELETE_BLOCKED_BY_REFERENCES`, the response returns a minimal `blocking_refs[]` without paths and with correct `source_id`, `source_type`, `field`.
 - `DLT-REF-06`: `dry-run` does not bypass reverse-ref checks; when blocking references exist, it must also fail with `DELETE_BLOCKED_BY_REFERENCES`.
 
@@ -331,7 +331,7 @@ For `DELETE_BLOCKED_BY_REFERENCES`, additionally check:
 
 In addition to black-box scenarios, it is useful to lock down several narrow component tests to avoid catching regressions only through the integration layer:
 
-- extraction of reference slots from raw schema distinguishes scalar `entity_ref`, `array<entity_ref>`, and regular string/array fields;
+- extraction of reference slots from raw schema distinguishes scalar `entityRef`, `array<entityRef>`, and regular string/array fields;
 - the tolerant workspace index ignores unparseable unrelated documents but does not hide duplicate `id`;
 - the reverse-ref checker looks only at schema-declared reference slots and does not count arbitrary textual matches;
 - the delete executor uses the same pipeline for normal and `dry-run` modes up to the commit phase;
@@ -344,8 +344,8 @@ The `delete` implementation can be considered complete if all of the following a
 - all mandatory black-box cases from section 7.3 pass;
 - the command reliably finds the target by `id`;
 - `--expect-revision` really protects against stale delete;
-- deletion does not leave new broken `entity_ref` links;
+- deletion does not leave new broken `entityRef` links;
 - `dry-run` repeats the normal pipeline without writing to disk;
 - JSON success and JSON errors match the baseline contract;
 - filesystem paths do not leak into the user-facing contract;
-- at least one dedicated test proves that reverse-ref checks do not produce false positives from ordinary text outside `entity_ref` slots.
+- at least one dedicated test proves that reverse-ref checks do not produce false positives from ordinary text outside `entityRef` slots.

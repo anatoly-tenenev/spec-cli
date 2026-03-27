@@ -1,8 +1,8 @@
 version: "0.0.4"
 entity:
   service:
-    id_prefix: SVC
-    path_pattern: "services/{slug}/index.md"
+    idPrefix: SVC
+    pathTemplate: "services/{slug}/index.md"
     meta:
       fields:
         owner:

@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0012_err_validate_id_non_numeric_suffix_json",
-  "description": "validate returns instance error when id suffix is not numeric",
+  "description": "validate_30_0012_err_validate_id_non_numeric_suffix_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0005_err_validate_schema_not_found_json",
-  "description": "validate returns top-level schema error when schema file is not found",
+  "description": "validate_10_0005_err_validate_schema_not_found_json",
   "command": "validate",
   "args": [
     "--workspace",

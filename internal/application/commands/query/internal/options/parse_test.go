@@ -18,14 +18,14 @@ func TestParse_Defaults(t *testing.T) {
 }
 
 func TestParse_CollectsRepeatableFlags(t *testing.T) {
-	opts, err := Parse([]string{"--type", "feature", "--type", "service", "--select", "id", "--select", "meta.status", "--sort", "updated_date:desc", "--limit", "50", "--offset", "2"})
+	opts, err := Parse([]string{"--type", "feature", "--type", "service", "--select", "id", "--select", "meta.status", "--sort", "updatedDate:desc", "--limit", "50", "--offset", "2"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(opts.TypeFilters) != 2 || len(opts.Selects) != 2 || len(opts.Sorts) != 1 {
 		t.Fatalf("unexpected parsed options: %#v", opts)
 	}
-	if opts.Sorts[0] != (model.SortTerm{Path: "updated_date", Direction: model.SortDirectionDesc}) {
+	if opts.Sorts[0] != (model.SortTerm{Path: "updatedDate", Direction: model.SortDirectionDesc}) {
 		t.Fatalf("unexpected sort term: %#v", opts.Sorts[0])
 	}
 }

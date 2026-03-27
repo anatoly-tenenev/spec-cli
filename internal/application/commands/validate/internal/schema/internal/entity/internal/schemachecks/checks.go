@@ -6,6 +6,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
+	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
 type StrictMissingUsage struct {
@@ -23,6 +24,7 @@ func EnsureOnlyKeys(path string, values map[string]any, allowed ...string) *doma
 		if _, ok := allowedSet[key]; ok {
 			continue
 		}
+
 		return domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("%s has unsupported key '%s'", path, key),
@@ -75,7 +77,7 @@ func referencePotentiallyMissing(reference expressions.Reference, fieldsByName m
 
 func isBuiltinMetaField(name string) bool {
 	switch name {
-	case "type", "id", "slug", "created_date", "updated_date":
+	case reservedkeys.BuiltinType, reservedkeys.BuiltinID, reservedkeys.BuiltinSlug, reservedkeys.BuiltinCreatedDate, reservedkeys.BuiltinUpdatedDate:
 		return true
 	default:
 		return false

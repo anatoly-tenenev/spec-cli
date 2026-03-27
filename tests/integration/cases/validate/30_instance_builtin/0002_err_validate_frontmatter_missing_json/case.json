@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0002_err_validate_frontmatter_missing_json",
-  "description": "validate returns instance error when markdown file has no frontmatter block",
+  "description": "validate_30_0002_err_validate_frontmatter_missing_json",
   "command": "validate",
   "args": [
     "--workspace",

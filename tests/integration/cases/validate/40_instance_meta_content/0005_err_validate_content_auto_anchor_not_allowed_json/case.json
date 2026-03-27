@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0005_err_validate_content_auto_anchor_not_allowed_json",
-  "description": "validate returns missing required section when heading has no explicit section label",
+  "description": "validate_40_0005_err_validate_content_auto_anchor_not_allowed_json",
   "command": "validate",
   "args": [
     "--workspace",

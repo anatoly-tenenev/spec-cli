@@ -32,7 +32,7 @@ func Execute(opts model.Options, schema model.Schema, snapshot model.Snapshot) (
 	if len(blockingRefs) > 0 {
 		return nil, domainerrors.New(
 			domainerrors.CodeDeleteBlockedByRefs,
-			"delete is blocked by incoming entity_ref references",
+			"delete is blocked by incoming entityRef references",
 			map[string]any{"blocking_refs": blockingRefsAsAny(blockingRefs)},
 		)
 	}

@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0008_err_validate_meta_required_missing_json",
-  "description": "validate returns instance error when required metadata field is missing",
+  "description": "validate_40_0008_err_validate_meta_required_missing_json",
   "command": "validate",
   "args": [
     "--workspace",

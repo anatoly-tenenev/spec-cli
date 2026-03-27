@@ -2,5 +2,5 @@ version: 0.0.4
 x-extra: true
 entity:
   doc:
-    id_prefix: "DOC"
-    path_pattern: "{slug}.md"
+    idPrefix: "DOC"
+    pathTemplate: "{slug}.md"

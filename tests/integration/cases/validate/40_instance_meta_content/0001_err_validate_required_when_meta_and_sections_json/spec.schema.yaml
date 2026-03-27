@@ -1,8 +1,8 @@
 version: "0.0.4"
 entity:
   doc:
-    id_prefix: DOC
-    path_pattern:
+    idPrefix: DOC
+    pathTemplate:
       cases:
         - when:
             eq?: [meta.owner, "core"]

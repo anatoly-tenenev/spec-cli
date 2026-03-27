@@ -14,7 +14,7 @@ Schema
     entity:
       feature:
         description: Feature specifications
-        id_prefix: FEAT
+        idPrefix: FEAT
         meta:
           status:
             description: Lifecycle status
@@ -31,7 +31,7 @@ Schema
             schema:
               type: array
               items:
-                type: entity_ref
+                type: entityRef
                 refTypes:
                   - service
         refs:
@@ -41,7 +41,7 @@ Schema
               when:
                 eq?: [meta.status, active]
             schema:
-              type: entity_ref
+              type: entityRef
               refTypes:
                 - service
         content:
@@ -54,7 +54,7 @@ Schema
               title:
                 - Summary
       service:
-        id_prefix: SVC
+        idPrefix: SVC
         meta:
           tier:
             required: true

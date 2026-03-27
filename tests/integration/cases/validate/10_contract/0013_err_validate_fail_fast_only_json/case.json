@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0013_err_validate_fail_fast_only_json",
-  "description": "validate stops after first failing entity when --fail-fast is enabled without type filter",
+  "description": "validate_10_0013_err_validate_fail_fast_only_json",
   "command": "validate",
   "args": [
     "--workspace",

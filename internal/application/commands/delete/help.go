@@ -42,8 +42,8 @@ func HelpSpec() helpmodel.CommandSpec {
 		},
 		Rules: []string{
 			"Target lookup uses exact id match only.",
-			"Deletion is blocked when incoming entity_ref references exist.",
-			"Blocking checks include scalar entity_ref and array items with entity_ref type.",
+			"Deletion is blocked when incoming entityRef references exist.",
+			"Blocking checks include scalar entityRef and array items with entityRef type.",
 			"--expect-revision is an optimistic concurrency guard; command fails on revision mismatch.",
 		},
 		Examples: []string{

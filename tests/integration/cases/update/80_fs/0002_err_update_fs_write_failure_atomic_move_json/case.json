@@ -13,7 +13,7 @@
     "--set",
     "refs.container=SVC-3",
     "--expect-revision",
-    "sha256:3fa4c7d2f71f132edffb1ec1f675a4410b04d8077a58dabecbc058aed2cedaa2"
+    "sha256:9dd184608f536be2d752bf158c53fcb6b3c593337476e0f0467c3adbccbae295"
   ],
   "expect": {
     "exit_code": 3,

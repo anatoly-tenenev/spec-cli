@@ -13,8 +13,8 @@ func TestLoadAndBuildIndex_FromStandardSchema(t *testing.T) {
 	schemaText := `version: "0.0.4"
 entity:
   service:
-    id_prefix: SVC
-    path_pattern: "services/{slug}.md"
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
     meta:
       fields:
         status:
@@ -25,8 +25,8 @@ entity:
       sections:
         summary: {}
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         status:
@@ -35,7 +35,7 @@ entity:
             enum: [draft, active]
         owner:
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
         score:
           schema:
@@ -83,7 +83,7 @@ entity:
 		t.Fatal("refs.owner.resolved sort field is missing")
 	}
 	if _, ok := index.SelectorPaths["meta.owner"]; ok {
-		t.Fatal("meta.owner selector must not be available for entity_ref")
+		t.Fatal("meta.owner selector must not be available for entityRef")
 	}
 	if _, ok := index.FilterFields["content.sections.summary"]; !ok {
 		t.Fatal("content.sections.summary filter field is missing")

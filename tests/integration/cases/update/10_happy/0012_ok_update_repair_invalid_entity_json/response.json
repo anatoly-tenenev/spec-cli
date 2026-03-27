@@ -23,7 +23,7 @@
   ],
   "dry_run": false,
   "entity": {
-    "created_date": "2026-02-10",
+    "createdDate": "2026-02-10",
     "id": "FEAT-9",
     "meta": {
       "status": "draft"
@@ -36,7 +36,7 @@
     "revision": "sha256:3092bf38a7832be38ade9842ace280731b210da74f96d0073994dddb3de83764",
     "slug": "broken-retry-window",
     "type": "feature",
-    "updated_date": "2026-03-14"
+    "updatedDate": "2026-03-14"
   },
   "noop": false,
   "result_state": "valid",

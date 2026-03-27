@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0007_err_validate_schema_required_when_invalid_operator_json",
-  "description": "validate returns schema error for invalid required_when expression operator",
+  "description": "validate_20_0007_err_validate_schema_required_when_invalid_operator_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -132,8 +132,8 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 	}
 
 	slug, _ := readStringField(frontmatter, "slug")
-	createdDate, _ := readStringField(frontmatter, "created_date")
-	updatedDate, _ := readStringField(frontmatter, "updated_date")
+	createdDate, _ := readStringField(frontmatter, "createdDate")
+	updatedDate, _ := readStringField(frontmatter, "updatedDate")
 
 	revisionHash := sha256.Sum256(raw)
 	revision := "sha256:" + hex.EncodeToString(revisionHash[:])

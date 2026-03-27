@@ -8,9 +8,9 @@
         "slug": "intro",
         "type": "doc"
       },
-      "field": "frontmatter.created_date",
+      "field": "frontmatter.createdDate",
       "level": "error",
-      "message": "built-in field 'created_date' is required",
+      "message": "built-in field 'createdDate' is required",
       "standard_ref": "11.3"
     },
     {

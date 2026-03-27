@@ -1,6 +1,6 @@
 {
   "id": "query_30_0023_ok_query_where_content_section_exists_json",
-  "description": "QRY-WHERE-13 adapted to current fixtures",
+  "description": "query_30_0023_ok_query_where_content_section_exists_json",
   "command": "query",
   "args": [
     "--workspace",

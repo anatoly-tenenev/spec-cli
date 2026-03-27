@@ -1,6 +1,6 @@
 {
   "id": "query_30_0024_ok_query_where_or_status_or_owner_ref_json",
-  "description": "QRY-WHERE-15 adapted: refs.container.id -> refs.owner.id",
+  "description": "query_30_0024_ok_query_where_or_status_or_owner_ref_json",
   "command": "query",
   "args": [
     "--workspace",

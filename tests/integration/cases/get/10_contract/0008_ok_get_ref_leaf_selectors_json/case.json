@@ -1,6 +1,6 @@
 {
   "id": "get_10_0008_ok_get_ref_leaf_selectors_json",
-  "description": "get supports refs.<field>.id|resolved|type|slug selectors",
+  "description": "get_10_0008_ok_get_ref_leaf_selectors_json",
   "command": "get",
   "args": [
     "--workspace",

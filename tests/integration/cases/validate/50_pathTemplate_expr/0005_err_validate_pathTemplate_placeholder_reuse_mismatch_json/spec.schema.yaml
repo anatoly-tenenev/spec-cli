@@ -1,0 +1,8 @@
+version: "0.0.4"
+entity:
+  doc:
+    idPrefix: DOC
+    pathTemplate: "docs/{slug}/{slug}.md"
+    content:
+      sections:
+        goal: {}

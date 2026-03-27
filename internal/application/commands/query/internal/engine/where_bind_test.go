@@ -62,7 +62,7 @@ func TestBindWhereNode_RejectsEnumMismatch(t *testing.T) {
 
 func TestBindWhereNode_RejectsInvalidDateValueForRange(t *testing.T) {
 	index := newEngineTestIndex()
-	raw, err := parseWhereJSON(`{"field":"updated_date","op":"gte","value":"2026/03/01"}`)
+	raw, err := parseWhereJSON(`{"field":"updatedDate","op":"gte","value":"2026/03/01"}`)
 	if err != nil {
 		t.Fatalf("parse error: %v", err)
 	}

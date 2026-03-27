@@ -64,10 +64,10 @@ func BuildEntityView(
 		view["slug"] = target.Slug
 	}
 	if target.CreatedDate != "" {
-		view["created_date"] = target.CreatedDate
+		view["createdDate"] = target.CreatedDate
 	}
 	if target.UpdatedDate != "" {
-		view["updated_date"] = target.UpdatedDate
+		view["updatedDate"] = target.UpdatedDate
 	}
 	if plan.RequiresRefs {
 		view["refs"] = refs

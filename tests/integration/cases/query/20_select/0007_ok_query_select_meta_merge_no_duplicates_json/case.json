@@ -1,6 +1,6 @@
 {
   "id": "query_20_0007_ok_query_select_meta_merge_no_duplicates_json",
-  "description": "QRY-SELECT-05 adapted to current fixtures",
+  "description": "query_20_0007_ok_query_select_meta_merge_no_duplicates_json",
   "command": "query",
   "args": [
     "--workspace",

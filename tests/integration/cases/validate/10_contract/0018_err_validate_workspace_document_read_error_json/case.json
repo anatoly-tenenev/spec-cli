@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0018_err_validate_workspace_document_read_error_json",
-  "description": "validate returns WRITE_FAILED when a workspace document is not readable",
+  "description": "validate_10_0018_err_validate_workspace_document_read_error_json",
   "command": "validate",
   "args": [
     "--workspace",

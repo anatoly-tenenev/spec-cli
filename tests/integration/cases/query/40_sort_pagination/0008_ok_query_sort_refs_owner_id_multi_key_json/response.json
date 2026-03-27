@@ -1,7 +1,7 @@
 {
   "items": [
     {
-      "created_date": "2026-03-04",
+      "createdDate": "2026-03-04",
       "id": "FEAT-2",
       "refs": {
         "owner": {
@@ -13,7 +13,7 @@
       }
     },
     {
-      "created_date": "2026-03-05",
+      "createdDate": "2026-03-05",
       "id": "FEAT-1",
       "refs": {
         "owner": {
@@ -29,7 +29,7 @@
   "page": {
     "effective_sort": [
       "refs.owner.id:asc",
-      "created_date:desc",
+      "createdDate:desc",
       "type:asc",
       "id:asc"
     ],

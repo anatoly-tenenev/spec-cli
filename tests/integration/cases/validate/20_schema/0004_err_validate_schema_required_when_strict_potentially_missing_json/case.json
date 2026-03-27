@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0004_err_validate_schema_required_when_strict_potentially_missing_json",
-  "description": "validate returns schema error for strict required_when with potentially missing operand",
+  "description": "validate_20_0004_err_validate_schema_required_when_strict_potentially_missing_json",
   "command": "validate",
   "args": [
     "--workspace",

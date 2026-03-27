@@ -1,6 +1,6 @@
 {
   "id": "query_60_0001_err_query_workspace_missing_json",
-  "description": "QRY-INFRA-01 adapted: deterministic missing workspace path",
+  "description": "query_60_0001_err_query_workspace_missing_json",
   "command": "query",
   "args": [
     "--workspace",

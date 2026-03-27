@@ -1,0 +1,24 @@
+{
+  "id": "validate_30_0004_err_validate_idPrefix_mismatch_with_type_json",
+  "description": "validate_30_0004_err_validate_idPrefix_mismatch_with_type_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}

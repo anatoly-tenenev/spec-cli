@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0002_ok_validate_required_when_in_safe_missing_false_json",
-  "description": "validate keeps field optional when required_when uses in? with missing operand",
+  "description": "validate_40_0002_ok_validate_required_when_in_safe_missing_false_json",
   "command": "validate",
   "args": [
     "--workspace",

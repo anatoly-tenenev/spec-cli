@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0009_ok_validate_happy_type_multi_json",
-  "description": "validate succeeds with repeated --type flags independent of order",
+  "description": "validate_10_0009_ok_validate_happy_type_multi_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -192,7 +192,7 @@ func parseReferenceSlots(typeName string, typeConfig map[string]any) ([]model.Re
 		typeValue = strings.TrimSpace(typeValue)
 
 		switch typeValue {
-		case "entity_ref":
+		case "entityRef":
 			slots = append(slots, model.ReferenceSlot{FieldName: fieldName, Kind: model.ReferenceSlotScalar})
 		case "array":
 			itemsRaw, hasItems := schemaMap["items"]
@@ -219,7 +219,7 @@ func parseReferenceSlots(typeName string, typeConfig map[string]any) ([]model.Re
 					nil,
 				)
 			}
-			if strings.TrimSpace(itemType) == "entity_ref" {
+			if strings.TrimSpace(itemType) == "entityRef" {
 				slots = append(slots, model.ReferenceSlot{FieldName: fieldName, Kind: model.ReferenceSlotArray})
 			}
 		}

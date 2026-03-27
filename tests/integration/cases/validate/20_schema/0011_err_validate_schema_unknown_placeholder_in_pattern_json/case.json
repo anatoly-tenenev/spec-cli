@@ -1,6 +1,6 @@
 {
   "id": "validate_20_0011_err_validate_schema_unknown_placeholder_in_pattern_json",
-  "description": "validate returns schema error for unsupported path_pattern placeholder",
+  "description": "validate_20_0011_err_validate_schema_unknown_placeholder_in_pattern_json",
   "command": "validate",
   "args": [
     "--workspace",

@@ -8,7 +8,7 @@
         "summary": "Line one.\nLine two."
       }
     },
-    "created_date": "2026-03-10",
+    "createdDate": "2026-03-10",
     "id": "FEAT-5",
     "meta": {
       "status": "draft"
@@ -21,7 +21,7 @@
     "revision": "sha256:951203e9a87ceb5991e4f9814acc5e430ff300e29ff1a6867e03430f2190e71d",
     "slug": "set-file-summary",
     "type": "feature",
-    "updated_date": "2026-03-10"
+    "updatedDate": "2026-03-10"
   },
   "result_state": "valid",
   "validation": {

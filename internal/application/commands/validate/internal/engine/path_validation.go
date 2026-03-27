@@ -34,10 +34,10 @@ func validatePathPattern(
 			value, evalErr := expressions.Evaluate(caseRule.WhenExpr, context)
 			if evalErr != nil {
 				addIssue(issues, entity, domainvalidation.Issue{
-					Code:        "instance.path_pattern.when_evaluation_failed",
+					Code:        "instance.pathTemplate.when_evaluation_failed",
 					Level:       domainvalidation.LevelError,
 					Class:       "InstanceError",
-					Message:     fmt.Sprintf("failed to evaluate path_pattern case condition: %s", evalErr.Message),
+					Message:     fmt.Sprintf("failed to evaluate pathTemplate case condition: %s", evalErr.Message),
 					StandardRef: evalErr.StandardRef,
 					Field:       caseRule.WhenPath,
 				})
@@ -56,10 +56,10 @@ func validatePathPattern(
 
 	if selected == nil {
 		addIssue(issues, entity, domainvalidation.Issue{
-			Code:        "instance.path_pattern.no_matching_case",
+			Code:        "instance.pathTemplate.no_matching_case",
 			Level:       domainvalidation.LevelError,
 			Class:       "InstanceError",
-			Message:     "path_pattern has no matching case for entity",
+			Message:     "pathTemplate has no matching case for entity",
 			StandardRef: "8.4",
 		})
 		return
@@ -68,7 +68,7 @@ func validatePathPattern(
 	expectedPath, renderErr := renderPathTemplate(selected.Use, context)
 	if renderErr != nil {
 		addIssue(issues, entity, domainvalidation.Issue{
-			Code:        "instance.path_pattern.placeholder_unresolved",
+			Code:        "instance.pathTemplate.placeholder_unresolved",
 			Level:       domainvalidation.LevelError,
 			Class:       "InstanceError",
 			Message:     renderErr.Error(),
@@ -97,7 +97,7 @@ func renderPathTemplate(template string, context runtimeExpressionContext) (stri
 	for idx := 0; idx < len(template); idx++ {
 		current := template[idx]
 		if current == '}' {
-			return "", fmt.Errorf("path_pattern template contains unexpected '}'")
+			return "", fmt.Errorf("pathTemplate template contains unexpected '}'")
 		}
 		if current != '{' {
 			builder.WriteByte(current)
@@ -106,11 +106,11 @@ func renderPathTemplate(template string, context runtimeExpressionContext) (stri
 
 		endOffset := strings.IndexByte(template[idx+1:], '}')
 		if endOffset < 0 {
-			return "", fmt.Errorf("path_pattern template contains unclosed '{'")
+			return "", fmt.Errorf("pathTemplate template contains unclosed '{'")
 		}
 		token := template[idx+1 : idx+1+endOffset]
 		if token == "" {
-			return "", fmt.Errorf("path_pattern template contains empty placeholder")
+			return "", fmt.Errorf("pathTemplate template contains empty placeholder")
 		}
 
 		value, valueErr := resolvePathPlaceholder(token, context)
@@ -127,10 +127,10 @@ func renderPathTemplate(template string, context runtimeExpressionContext) (stri
 
 func resolvePathPlaceholder(token string, context runtimeExpressionContext) (string, error) {
 	switch token {
-	case "id", "slug", "created_date", "updated_date":
+	case "id", "slug", "createdDate", "updatedDate":
 		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: token, Raw: "meta." + token})
 		if !exists {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' is missing", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' is missing", token)
 		}
 		return stringifyPathValue(value, token)
 	}
@@ -138,11 +138,11 @@ func resolvePathPlaceholder(token string, context runtimeExpressionContext) (str
 	if strings.HasPrefix(token, "meta.") {
 		fieldName := strings.TrimPrefix(token, "meta.")
 		if fieldName == "" || strings.Contains(fieldName, ".") {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' has invalid format", token)
 		}
 		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: fieldName, Raw: "meta." + fieldName})
 		if !exists {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' is missing", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' is missing", token)
 		}
 		return stringifyPathValue(value, token)
 	}
@@ -150,20 +150,20 @@ func resolvePathPlaceholder(token string, context runtimeExpressionContext) (str
 	if strings.HasPrefix(token, "refs.") {
 		parts := strings.Split(token, ".")
 		if len(parts) != 3 {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' has invalid format", token)
 		}
 		if parts[1] == "" {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' has invalid format", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' has invalid format", token)
 		}
 		reference := expressions.Reference{Kind: expressions.ReferenceRefs, Field: parts[1], Part: parts[2], Raw: "refs." + parts[1] + "." + parts[2]}
 		value, exists := context.ResolveReference(reference)
 		if !exists {
-			return "", fmt.Errorf("path_pattern placeholder '{%s}' is missing", token)
+			return "", fmt.Errorf("pathTemplate placeholder '{%s}' is missing", token)
 		}
 		return stringifyPathValue(value, token)
 	}
 
-	return "", fmt.Errorf("unsupported path_pattern placeholder '{%s}'", token)
+	return "", fmt.Errorf("unsupported pathTemplate placeholder '{%s}'", token)
 }
 
 func stringifyPathValue(value any, token string) (string, error) {
@@ -202,7 +202,7 @@ func stringifyPathValue(value any, token string) (string, error) {
 	case float64:
 		return strconv.FormatFloat(typed, 'f', -1, 64), nil
 	default:
-		return "", fmt.Errorf("path_pattern placeholder '{%s}' resolved to non-scalar value", token)
+		return "", fmt.Errorf("pathTemplate placeholder '{%s}' resolved to non-scalar value", token)
 	}
 }
 

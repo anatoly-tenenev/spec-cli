@@ -70,7 +70,7 @@ func (context runtimeExpressionContext) ResolveReference(reference expressions.R
 			return resolved.Type, true
 		case "slug":
 			return resolved.Slug, true
-		case "dir_path":
+		case "dirPath":
 			return resolved.DirPath, true
 		default:
 			return nil, false

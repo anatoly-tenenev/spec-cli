@@ -1,6 +1,6 @@
 {
   "id": "query_50_0001_err_query_offset_invalid_json",
-  "description": "QRY-ERR-14 adapted to current fixtures",
+  "description": "query_50_0001_err_query_offset_invalid_json",
   "command": "query",
   "args": [
     "--workspace",

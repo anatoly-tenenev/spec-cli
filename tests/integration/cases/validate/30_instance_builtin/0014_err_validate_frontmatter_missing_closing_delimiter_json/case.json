@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0014_err_validate_frontmatter_missing_closing_delimiter_json",
-  "description": "validate returns instance error when frontmatter closing delimiter is missing",
+  "description": "validate_30_0014_err_validate_frontmatter_missing_closing_delimiter_json",
   "command": "validate",
   "args": [
     "--workspace",

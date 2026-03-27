@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0004_err_validate_schema_error_json_single_error_payload_json",
-  "description": "validate returns schema-level diagnostics in standard validate result payload",
+  "description": "validate_10_0004_err_validate_schema_error_json_single_error_payload_json",
   "command": "validate",
   "args": [
     "--workspace",

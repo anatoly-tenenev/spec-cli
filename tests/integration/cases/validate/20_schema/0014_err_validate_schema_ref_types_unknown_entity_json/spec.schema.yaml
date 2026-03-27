@@ -1,14 +1,14 @@
 version: "0.0.4"
 entity:
   doc:
-    id_prefix: DOC
-    path_pattern: "docs/{slug}.md"
+    idPrefix: DOC
+    pathTemplate: "docs/{slug}.md"
     meta:
       fields:
         owner:
           required: false
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [ghost_type]
     content:
       sections:

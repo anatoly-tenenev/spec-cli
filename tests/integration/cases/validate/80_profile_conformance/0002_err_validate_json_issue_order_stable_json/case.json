@@ -1,6 +1,6 @@
 {
   "id": "validate_80_0002_err_validate_json_issue_order_stable_json",
-  "description": "validate emits json issues in deterministic order for stable input",
+  "description": "validate_80_0002_err_validate_json_issue_order_stable_json",
   "command": "validate",
   "args": [
     "--workspace",

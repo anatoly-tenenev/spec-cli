@@ -1,6 +1,6 @@
 {
   "id": "query_30_0028_err_query_where_and_empty_filters_json",
-  "description": "QRY-ERR-06 adapted to current fixtures",
+  "description": "query_30_0028_err_query_where_and_empty_filters_json",
   "command": "query",
   "args": [
     "--workspace",

@@ -53,18 +53,18 @@ func Validate(
 	if _, err := time.Parse("2006-01-02", candidate.CreatedDate); err != nil {
 		validationIssues = append(validationIssues, issues.New(
 			"builtin.date_format_invalid",
-			"field 'created_date' must be in YYYY-MM-DD format",
+			"field 'createdDate' must be in YYYY-MM-DD format",
 			"11.3",
-			"frontmatter.created_date",
+			"frontmatter.createdDate",
 			candidate,
 		))
 	}
 	if _, err := time.Parse("2006-01-02", candidate.UpdatedDate); err != nil {
 		validationIssues = append(validationIssues, issues.New(
 			"builtin.date_format_invalid",
-			"field 'updated_date' must be in YYYY-MM-DD format",
+			"field 'updatedDate' must be in YYYY-MM-DD format",
 			"11.4",
-			"frontmatter.updated_date",
+			"frontmatter.updatedDate",
 			candidate,
 		))
 	}
@@ -91,7 +91,7 @@ func Validate(
 	}
 
 	allowedFrontmatterKeys := map[string]struct{}{
-		"type": {}, "id": {}, "slug": {}, "created_date": {}, "updated_date": {},
+		"type": {}, "id": {}, "slug": {}, "createdDate": {}, "updatedDate": {},
 	}
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		allowedFrontmatterKeys[fieldName] = struct{}{}
@@ -270,7 +270,7 @@ func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *
 		if value != nil {
 			typeMismatch("null")
 		}
-	case "entity_ref":
+	case "entityRef":
 		text, ok := value.(string)
 		if !ok || strings.TrimSpace(text) == "" {
 			typeMismatch("non-empty string")
@@ -382,7 +382,7 @@ func isValueOfType(value any, typeName string) bool {
 		return ok
 	case "null":
 		return value == nil
-	case "entity_ref":
+	case "entityRef":
 		text, ok := value.(string)
 		return ok && strings.TrimSpace(text) != ""
 	default:

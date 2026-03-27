@@ -1,6 +1,6 @@
 {
   "id": "validate_40_0009_err_validate_meta_array_constraints_json",
-  "description": "validate returns instance errors when array metadata violates items, uniqueItems and maxItems",
+  "description": "validate_40_0009_err_validate_meta_array_constraints_json",
   "command": "validate",
   "args": [
     "--workspace",

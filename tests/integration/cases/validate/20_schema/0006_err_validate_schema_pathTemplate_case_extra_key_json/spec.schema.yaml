@@ -1,0 +1,8 @@
+version: 0.0.4
+entity:
+  doc:
+    idPrefix: "DOC"
+    pathTemplate:
+      cases:
+        - use: "{slug}.md"
+          note: "unsupported"

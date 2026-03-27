@@ -1,6 +1,6 @@
 {
   "id": "query_40_0012_ok_query_page_limit_offset_outside_json",
-  "description": "QRY-PAGE-04 adapted to current fixtures",
+  "description": "query_40_0012_ok_query_page_limit_offset_outside_json",
   "command": "query",
   "args": [
     "--workspace",

@@ -19,9 +19,9 @@ func Parse(
 ) (model.PathPatternRule, []domainvalidation.Issue, *domainerrors.AppError) {
 	if rawPathPattern == nil {
 		return model.PathPatternRule{}, []domainvalidation.Issue{schemaIssue(
-			"schema.path_pattern.missing",
-			fmt.Sprintf("schema.entity.%s.path_pattern is required", typeName),
-			fmt.Sprintf("schema.entity.%s.path_pattern", typeName),
+			"schema.pathTemplate.missing",
+			fmt.Sprintf("schema.entity.%s.pathTemplate is required", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate", typeName),
 			"8",
 		)}, nil
 	}
@@ -40,7 +40,7 @@ func Parse(
 		if !ok {
 			return model.PathPatternRule{}, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d] must be an object", typeName, idx),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d] must be an object", typeName, idx),
 				nil,
 			)
 		}
@@ -53,15 +53,15 @@ func Parse(
 		if !hasUse || !ok || strings.TrimSpace(usePattern) == "" {
 			return model.PathPatternRule{}, nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].use must be non-empty string", typeName, idx),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use must be non-empty string", typeName, idx),
 				nil,
 			)
 		}
 		usePattern = strings.TrimSpace(usePattern)
 		issues = append(issues, validateTemplate(typeName, idx, usePattern, fieldsByName)...)
-		usePath := fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].use", typeName, idx)
+		usePath := fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, idx)
 
-		pathCase := model.PathPatternCase{Use: usePattern, WhenPath: fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].when", typeName, idx)}
+		pathCase := model.PathPatternCase{Use: usePattern, WhenPath: fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].when", typeName, idx)}
 		rawWhen, hasWhen := caseMap["when"]
 		if !hasWhen {
 			unconditionalIndexes = append(unconditionalIndexes, idx)
@@ -99,27 +99,27 @@ func Parse(
 
 	if len(cases) == 0 {
 		issues = append(issues, schemaIssue(
-			"schema.path_pattern.empty_cases",
-			fmt.Sprintf("schema.entity.%s.path_pattern.cases must be non-empty", typeName),
-			fmt.Sprintf("schema.entity.%s.path_pattern.cases", typeName),
+			"schema.pathTemplate.empty_cases",
+			fmt.Sprintf("schema.entity.%s.pathTemplate.cases must be non-empty", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate.cases", typeName),
 			"8.3",
 		))
 	}
 
 	if len(unconditionalIndexes) != 1 {
 		issues = append(issues, schemaIssue(
-			"schema.path_pattern.unconditional_case_count",
-			fmt.Sprintf("schema.entity.%s.path_pattern must contain exactly one unconditional case", typeName),
-			fmt.Sprintf("schema.entity.%s.path_pattern.cases", typeName),
+			"schema.pathTemplate.unconditional_case_count",
+			fmt.Sprintf("schema.entity.%s.pathTemplate must contain exactly one unconditional case", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate.cases", typeName),
 			"8.3",
 		))
 	}
 
 	if len(unconditionalIndexes) == 1 && unconditionalIndexes[0] != len(cases)-1 {
 		issues = append(issues, schemaIssue(
-			"schema.path_pattern.unconditional_case_position",
-			fmt.Sprintf("schema.entity.%s.path_pattern unconditional case must be the last one", typeName),
-			fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d]", typeName, unconditionalIndexes[0]),
+			"schema.pathTemplate.unconditional_case_position",
+			fmt.Sprintf("schema.entity.%s.pathTemplate unconditional case must be the last one", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d]", typeName, unconditionalIndexes[0]),
 			"8.3",
 		))
 	}
@@ -141,7 +141,7 @@ func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
 		if !exists {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases is required", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases is required", typeName),
 				nil,
 			)
 		}
@@ -149,7 +149,7 @@ func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
 		if !ok {
 			return nil, domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases must be a list", typeName),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases must be a list", typeName),
 				nil,
 			)
 		}
@@ -157,7 +157,7 @@ func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
 	default:
 		return nil, domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.path_pattern must be string, list, or object", typeName),
+			fmt.Sprintf("schema.entity.%s.pathTemplate must be string, list, or object", typeName),
 			nil,
 		)
 	}
@@ -170,7 +170,7 @@ func validatePathPatternObjectKeys(typeName string, values map[string]any) *doma
 		}
 		return domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.path_pattern has unsupported key '%s'", typeName, key),
+			fmt.Sprintf("schema.entity.%s.pathTemplate has unsupported key '%s'", typeName, key),
 			nil,
 		)
 	}
@@ -185,7 +185,7 @@ func validateCaseKeys(typeName string, caseIndex int, values map[string]any) *do
 		default:
 			return domainerrors.New(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d] has unsupported key '%s'", typeName, caseIndex, key),
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d] has unsupported key '%s'", typeName, caseIndex, key),
 				nil,
 			)
 		}
@@ -199,11 +199,11 @@ func validateTemplate(
 	template string,
 	fieldsByName map[string]model.RequiredFieldRule,
 ) []domainvalidation.Issue {
-	path := fmt.Sprintf("schema.entity.%s.path_pattern.cases[%d].use", typeName, caseIndex)
+	path := fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, caseIndex)
 	placeholders, err := extractPlaceholders(template)
 	if err != nil {
 		return []domainvalidation.Issue{schemaIssue(
-			"schema.path_pattern.invalid_placeholder",
+			"schema.pathTemplate.invalid_placeholder",
 			err.Error(),
 			path,
 			"9",
@@ -213,7 +213,7 @@ func validateTemplate(
 	issues := make([]domainvalidation.Issue, 0)
 	for _, token := range placeholders {
 		switch token {
-		case "id", "slug", "created_date", "updated_date":
+		case "id", "slug", "createdDate", "updatedDate":
 			continue
 		}
 
@@ -221,7 +221,7 @@ func validateTemplate(
 			fieldName := strings.TrimPrefix(token, "meta.")
 			if fieldName == "" || strings.Contains(fieldName, ".") {
 				issues = append(issues, schemaIssue(
-					"schema.path_pattern.invalid_placeholder",
+					"schema.pathTemplate.invalid_placeholder",
 					fmt.Sprintf("meta placeholder '%s' must use format meta.<field>", token),
 					path,
 					"8.5",
@@ -233,19 +233,19 @@ func validateTemplate(
 			if !exists {
 				issues = append(issues, schemaIssue(
 					"schema.expression.invalid_reference",
-					fmt.Sprintf("unknown meta field '%s' in path_pattern placeholder", fieldName),
+					fmt.Sprintf("unknown meta field '%s' in pathTemplate placeholder", fieldName),
 					path,
 					"8.5",
 				))
 				continue
 			}
-			if rule.Type == "entity_ref" {
+			if rule.Type == "entityRef" {
 				continue
 			}
 			if !(rule.Type == "string" || rule.Type == "integer" || rule.Type == "boolean" || rule.Type == "null") {
 				issues = append(issues, schemaIssue(
 					"schema.expression.invalid_reference",
-					fmt.Sprintf("meta placeholder '%s' requires field type string|integer|boolean|null|entity_ref", token),
+					fmt.Sprintf("meta placeholder '%s' requires field type string|integer|boolean|null|entityRef", token),
 					path,
 					"8.5",
 				))
@@ -266,7 +266,7 @@ func validateTemplate(
 			parts := strings.Split(token, ".")
 			if len(parts) != 3 {
 				issues = append(issues, schemaIssue(
-					"schema.path_pattern.invalid_placeholder",
+					"schema.pathTemplate.invalid_placeholder",
 					fmt.Sprintf("refs placeholder '%s' must use format refs.<field>.<part>", token),
 					path,
 					"8.5",
@@ -278,7 +278,7 @@ func validateTemplate(
 			part := parts[2]
 			if fieldName == "" {
 				issues = append(issues, schemaIssue(
-					"schema.path_pattern.invalid_placeholder",
+					"schema.pathTemplate.invalid_placeholder",
 					fmt.Sprintf("refs placeholder '%s' must include field name", token),
 					path,
 					"8.5",
@@ -286,20 +286,20 @@ func validateTemplate(
 				continue
 			}
 			rule, exists := fieldsByName[fieldName]
-			if !exists || rule.Type != "entity_ref" {
+			if !exists || rule.Type != "entityRef" {
 				issues = append(issues, schemaIssue(
 					"schema.expression.invalid_reference",
-					fmt.Sprintf("refs placeholder '%s' requires entity_ref field '%s'", token, fieldName),
+					fmt.Sprintf("refs placeholder '%s' requires entityRef field '%s'", token, fieldName),
 					path,
 					"8.5",
 				))
 				continue
 			}
 			switch part {
-			case "id", "type", "slug", "dir_path":
+			case "id", "type", "slug", "dirPath":
 			default:
 				issues = append(issues, schemaIssue(
-					"schema.path_pattern.invalid_placeholder",
+					"schema.pathTemplate.invalid_placeholder",
 					fmt.Sprintf("unsupported refs placeholder part '%s'", part),
 					path,
 					"8.5",
@@ -309,7 +309,7 @@ func validateTemplate(
 		}
 
 		issues = append(issues, schemaIssue(
-			"schema.path_pattern.invalid_placeholder",
+			"schema.pathTemplate.invalid_placeholder",
 			fmt.Sprintf("unsupported placeholder '{%s}'", token),
 			path,
 			"9",
@@ -337,7 +337,7 @@ func validateStrictWhenOperands(
 		return domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf(
-				"schema.entity.%s.path_pattern.cases[%d].when uses strict operator '%s' with potentially missing operand '%s'",
+				"schema.entity.%s.pathTemplate.cases[%d].when uses strict operator '%s' with potentially missing operand '%s'",
 				typeName,
 				caseIndex,
 				usage.Operator,
@@ -387,7 +387,7 @@ func validateTemplatePlaceholderAvailability(
 		return domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf(
-				"schema.entity.%s.path_pattern.cases[%d].use placeholder '{%s}' references potentially missing value without static guard",
+				"schema.entity.%s.pathTemplate.cases[%d].use placeholder '{%s}' references potentially missing value without static guard",
 				typeName,
 				caseIndex,
 				token,
@@ -404,7 +404,7 @@ func validateTemplatePlaceholderAvailability(
 
 func placeholderReference(token string) (expressions.Reference, bool) {
 	switch token {
-	case "id", "slug", "created_date", "updated_date":
+	case "id", "slug", "createdDate", "updatedDate":
 		return expressions.Reference{}, false
 	}
 
@@ -429,7 +429,7 @@ func placeholderReference(token string) (expressions.Reference, bool) {
 			return expressions.Reference{}, false
 		}
 		switch parts[2] {
-		case "id", "type", "slug", "dir_path":
+		case "id", "type", "slug", "dirPath":
 		default:
 			return expressions.Reference{}, false
 		}
@@ -511,7 +511,7 @@ func presenceKeyForReference(reference expressions.Reference, fieldsByName map[s
 
 func isBuiltinMetaField(name string) bool {
 	switch name {
-	case "type", "id", "slug", "created_date", "updated_date":
+	case "type", "id", "slug", "createdDate", "updatedDate":
 		return true
 	default:
 		return false

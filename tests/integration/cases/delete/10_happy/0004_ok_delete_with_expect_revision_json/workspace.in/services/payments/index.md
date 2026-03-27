@@ -2,8 +2,8 @@
 type: service
 id: SVC-2
 slug: payments
-created_date: 2026-03-02
-updated_date: 2026-03-11
+createdDate: 2026-03-02
+updatedDate: 2026-03-11
 owner: billing
 ---
 

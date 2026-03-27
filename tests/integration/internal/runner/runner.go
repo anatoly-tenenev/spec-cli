@@ -9,7 +9,10 @@ import (
 	"strings"
 )
 
-var tempFilePattern = regexp.MustCompile(`\.spec-cli-(?:add|update(?:-backup)?)-[0-9]+\.tmp`)
+var (
+	tempFilePattern = regexp.MustCompile(`\.spec-cli-(?:add|update(?:-backup)?)-[0-9]+\.tmp`)
+	revisionPattern = regexp.MustCompile(`sha256:[0-9a-f]{64}`)
+)
 
 type WorkspacePermission struct {
 	Path string
@@ -91,5 +94,6 @@ func normalizeDynamicReason(value string) string {
 		normalized = "<workspace>" + normalized[idx+len("/workspace"):]
 	}
 	normalized = tempFilePattern.ReplaceAllString(normalized, ".spec-cli-add-<tmp>.tmp")
+	normalized = revisionPattern.ReplaceAllString(normalized, "sha256:<opaque>")
 	return normalized
 }

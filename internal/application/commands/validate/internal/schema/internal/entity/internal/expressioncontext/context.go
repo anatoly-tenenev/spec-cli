@@ -3,15 +3,16 @@ package expressioncontext
 import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
 var builtinMetaSpecs = map[string]expressions.MetaFieldSpec{
-	"type":         {Type: "string", Comparable: true},
-	"id":           {Type: "string", Comparable: true},
-	"slug":         {Type: "string", Comparable: true},
-	"created_date": {Type: "string", Comparable: true},
-	"updated_date": {Type: "string", Comparable: true},
+	reservedkeys.BuiltinType:        {Type: "string", Comparable: true},
+	reservedkeys.BuiltinID:          {Type: "string", Comparable: true},
+	reservedkeys.BuiltinSlug:        {Type: "string", Comparable: true},
+	reservedkeys.BuiltinCreatedDate: {Type: "string", Comparable: true},
+	reservedkeys.BuiltinUpdatedDate: {Type: "string", Comparable: true},
 }
 
 func Build(fields []model.RequiredFieldRule) expressions.CompileContext {
@@ -23,7 +24,7 @@ func Build(fields []model.RequiredFieldRule) expressions.CompileContext {
 		metaSpecs[field.Name] = expressions.MetaFieldSpec{
 			Type:       field.Type,
 			Comparable: isComparableFieldType(field.Type),
-			EntityRef:  field.Type == "entity_ref",
+			EntityRef:  field.Type == reservedkeys.SchemaTypeEntityRef,
 		}
 	}
 	return expressions.CompileContext{MetaFields: metaSpecs}
@@ -36,7 +37,7 @@ func IsBuiltinMetaField(fieldName string) bool {
 
 func isComparableFieldType(typeName string) bool {
 	switch typeName {
-	case "string", "integer", "number", "boolean", "null", "entity_ref":
+	case "string", "integer", "number", "boolean", "null", reservedkeys.SchemaTypeEntityRef:
 		return true
 	default:
 		return false

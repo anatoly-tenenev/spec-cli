@@ -402,7 +402,7 @@ func describeValueType(rawValue any) string {
 }
 
 func isForbiddenWritePath(path string) bool {
-	if path == "type" || path == "id" || path == "slug" || path == "created_date" || path == "updated_date" {
+	if path == "type" || path == "id" || path == "slug" || path == "createdDate" || path == "updatedDate" {
 		return true
 	}
 	if path == "content" || path == "content.raw" || path == "content.sections" {

@@ -1,6 +1,6 @@
 {
   "id": "validate_30_0005_err_validate_slug_regex_invalid_json",
-  "description": "validate returns instance error when slug format is invalid",
+  "description": "validate_30_0005_err_validate_slug_regex_invalid_json",
   "command": "validate",
   "args": [
     "--workspace",

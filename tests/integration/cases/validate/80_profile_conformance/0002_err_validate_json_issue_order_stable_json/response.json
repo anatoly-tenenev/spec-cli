@@ -14,13 +14,13 @@
     },
     {
       "class": "InstanceError",
-      "code": "instance.path_pattern.placeholder_unresolved",
+      "code": "instance.pathTemplate.placeholder_unresolved",
       "entity": {
         "id": "DOC-1",
         "type": "doc"
       },
       "level": "error",
-      "message": "path_pattern placeholder '{slug}' is missing",
+      "message": "pathTemplate placeholder '{slug}' is missing",
       "standard_ref": "8.5"
     },
     {
@@ -37,13 +37,13 @@
     },
     {
       "class": "InstanceError",
-      "code": "instance.path_pattern.placeholder_unresolved",
+      "code": "instance.pathTemplate.placeholder_unresolved",
       "entity": {
         "id": "DOC-2",
         "type": "doc"
       },
       "level": "error",
-      "message": "path_pattern placeholder '{slug}' is missing",
+      "message": "pathTemplate placeholder '{slug}' is missing",
       "standard_ref": "8.5"
     }
   ],

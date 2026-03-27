@@ -1,5 +1,5 @@
 version: "1.0"
 entity:
   doc:
-    id_prefix: "DOC"
-    path_pattern: "docs/{slug}.md"
+    idPrefix: "DOC"
+    pathTemplate: "docs/{slug}.md"

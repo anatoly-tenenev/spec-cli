@@ -1,6 +1,6 @@
 {
   "id": "query_60_0005_err_query_workspace_id_missing_json",
-  "description": "QRY-INFRA-05: missing entity id must fail query",
+  "description": "query_60_0005_err_query_workspace_id_missing_json",
   "command": "query",
   "args": [
     "--workspace",

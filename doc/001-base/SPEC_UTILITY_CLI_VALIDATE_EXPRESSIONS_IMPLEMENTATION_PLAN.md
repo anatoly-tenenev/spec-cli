@@ -7,7 +7,7 @@ This document defines a realistic transition plan from the MVP (`SPEC_UTILITY_CL
 Target result:
 
 - `required_when` is evaluated according to the standard for `meta.fields[]` and `content.sections[]`;
-- `path_pattern.cases[].when` is evaluated using the same expression model;
+- `pathTemplate.cases[].when` is evaluated using the same expression model;
 - the semantics of `missing`, strict/safe operators, and the `meta/ref` context are respected;
 - diagnostics land in the correct classes (`SchemaError` / `InstanceError` / `ProfileError`);
 - `summary.validator_conformant=true` only when the profile is deterministic and the requirements are fully covered.
@@ -17,11 +17,11 @@ Target result:
 The implementation must rely strictly on:
 
 - `SPEC_STANDARD_RU_REVISED_V3.md`:
-  - section `8` (`path_pattern`, `cases[].when`);
+  - section `8` (`pathTemplate`, `cases[].when`);
   - section `9` (placeholders and `ref:*`);
   - section `11.5` (requiredness model);
   - section `11.6` (expression operators, `missing`, typing);
-  - section `12.3` (`entity_ref` resolution and `ref` context);
+  - section `12.3` (`entityRef` resolution and `ref` context);
   - sections `14.3`/`14.4` (`Validator-conformant`, diagnostic classes).
 - `SPEC_UTILITY_CLI_API_RU.md`:
   - section `5.1 validate` (`summary.validator_conformant`, CLI contract, and output formats).
@@ -33,11 +33,11 @@ The implementation must rely strictly on:
 - Object-form expressions with exactly one operator:
   - `eq`, `eq?`, `in`, `in?`, `all`, `any`, `not`, `exists`.
 - Boolean `required_when` (literal `true/false`) and object form.
-- Left-to-right evaluation of `path_pattern.cases[].when`.
+- Left-to-right evaluation of `pathTemplate.cases[].when`.
 - Full expression context:
-  - `meta.<field_name>` (including built-in fields);
-  - `ref.<field_name>.<part>` (`id|type|slug|dir_path`).
-- `meta.<entity_ref_field>` semantics as an alias for `ref.<field_name>.id` (after resolution).
+  - `meta.<fieldName>` (including built-in fields);
+  - `ref.<fieldName>.<part>` (`id|type|slug|dirPath`).
+- `meta.<entityRef_field>` semantics as an alias for `ref.<fieldName>.id` (after resolution).
 - `eq`/`in` behavior on `missing` as `InstanceError`.
 
 ### 3.2. Excluded from This Plan
@@ -74,15 +74,15 @@ The per-entity context must be built after:
 
 1. parsing frontmatter;
 2. validating built-in fields (`type/id/slug/date`);
-3. resolving `entity_ref` (at minimum: target index + `refTypes` checks + `dir_path`).
+3. resolving `entityRef` (at minimum: target index + `refTypes` checks + `dirPath`).
 
 Context structure:
 
 - `meta`: map of literal frontmatter fields;
-- `refs`: map of resolved links with `id/type/slug/dir_path` attributes;
+- `refs`: map of resolved links with `id/type/slug/dirPath` attributes;
 - `presence`:
-  - for `meta.<non_entity_ref>`: the key exists in YAML (`null` counts as present);
-  - for `meta.<entity_ref>` and `ref.*`: present only when the link resolves successfully.
+  - for `meta.<non_entityRef>`: the key exists in YAML (`null` counts as present);
+  - for `meta.<entityRef>` and `ref.*`: present only when the link resolves successfully.
 
 ### 4.3. Evaluation Semantics (Core)
 
@@ -124,20 +124,20 @@ Strict comparison typing:
    - evaluate `content.sections.required_when` through the expression evaluator;
    - string `const/enum` with placeholders continues to use the shared context (`meta/ref`) and a single value resolver.
 4. `Path checks`:
-   - select the `path_pattern` case via `cases[].when`;
+   - select the `pathTemplate` case via `cases[].when`;
    - on `InstanceError` in a strict operator, do not automatically move to the next case;
    - record the problem as an entity violation.
 5. `Finalize summary`:
-   - `validator_conformant=false` if the `entity_ref/ref` resolution profile is not loaded or is non-deterministic.
+   - `validator_conformant=false` if the `entityRef/ref` resolution profile is not loaded or is non-deterministic.
 
 ### 5.2. Evaluation Order Inside One Entity
 
 1. built-ins + basic frontmatter typing;
-2. `entity_ref` type/resolution and `ref` context construction;
+2. `entityRef` type/resolution and `ref` context construction;
 3. `required_when` for `meta.fields`;
 4. schema checks of `meta.fields` values (`type/const/enum/...`);
 5. `required_when` for `content.sections`;
-6. `path_pattern.cases[].when` and path validation.
+6. `pathTemplate.cases[].when` and path validation.
 
 This order avoids false `missing` on `ref.*` and prevents cyclic dependencies.
 
@@ -153,10 +153,10 @@ This order avoids false `missing` on `ref.*` and prevents cyclic dependencies.
   - invalid literal type constraints.
 - `InstanceError`:
   - `eq`/`in` receives `missing`;
-  - `exists`/links point to an unresolved `entity_ref` in entity data;
-  - `path_pattern` selection fails due to a non-evaluable strict condition.
+  - `exists`/links point to an unresolved `entityRef` in entity data;
+  - `pathTemplate` selection fails due to a non-evaluable strict condition.
 - `ProfileError`:
-  - no deterministic `entity_ref/ref` resolution profile is available.
+  - no deterministic `entityRef/ref` resolution profile is available.
 
 ### 6.2. Recommended Minimal Set of Code IDs
 
@@ -165,7 +165,7 @@ This order avoids false `missing` on `ref.*` and prevents cyclic dependencies.
 - `schema.expression.invalid_operand_type`
 - `schema.expression.invalid_reference`
 - `instance.expression.missing_operand_strict`
-- `instance.path_pattern.when_evaluation_failed`
+- `instance.pathTemplate.when_evaluation_failed`
 - `profile.expression_context_unavailable`
 
 The naming can be adapted to the current conventions, but the semantics and class must remain intact.
@@ -185,7 +185,7 @@ Completion criterion:
 ### Stage 2. Context and Dependency Resolution
 
 - Shared `EntityRuntimeContext`.
-- `entity_ref` resolution with deterministic `dir_path`.
+- `entityRef` resolution with deterministic `dirPath`.
 - Explicit implementation-profile check/flag.
 
 Completion criterion:
@@ -201,9 +201,9 @@ Completion criterion:
 
 - conditional requiredness works per the standard, including `missing`.
 
-### Stage 4. `path_pattern.cases[].when`
+### Stage 4. `pathTemplate.cases[].when`
 
-- Canonicalize `path_pattern` and evaluate cases.
+- Canonicalize `pathTemplate` and evaluate cases.
 - Correctly handle strict errors without silent fallback.
 
 Completion criterion:
@@ -233,8 +233,8 @@ Completion criterion:
 
 - `meta.fields.required_when` on built-in and user-defined fields;
 - `content.sections.required_when`;
-- `path_pattern` with multiple `cases` and mixed strict/safe conditions;
-- scenarios with `entity_ref` + `ref.<field>.dir_path`.
+- `pathTemplate` with multiple `cases` and mixed strict/safe conditions;
+- scenarios with `entityRef` + `ref.<field>.dirPath`.
 
 ### 8.3. Contract
 
@@ -244,7 +244,7 @@ Completion criterion:
 
 ## 9. Risks and Mitigations
 
-- Risk: non-deterministic `entity_ref` resolution breaks the `ref` context.
+- Risk: non-deterministic `entityRef` resolution breaks the `ref` context.
   - Mitigation: explicit profile validation before the validate run, `ProfileError` + `validator_conformant=false`.
 - Risk: cascading errors from strict operators.
   - Mitigation: one shared policy of "one primary evaluation error per expression + limit secondary messages".
@@ -254,7 +254,7 @@ Completion criterion:
 ## 10. Completion Criteria
 
 - All required expression operators are implemented and covered by tests.
-- `required_when` and `path_pattern.cases[].when` work deterministically.
+- `required_when` and `pathTemplate.cases[].when` work deterministically.
 - Diagnostic classes match section `14.4`.
 - `summary.validator_conformant` correctly reflects profile completeness.
 - `validate` output remains compatible with the API contract (`json/ndjson`, exit codes).

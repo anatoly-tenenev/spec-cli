@@ -1,0 +1,12 @@
+version: "0.0.4"
+entity:
+  doc:
+    idPrefix: DOC
+    pathTemplate:
+      cases:
+        - when: true
+          use: "docs/{slug}.md"
+        - use: "   "
+    content:
+      sections:
+        goal: {}

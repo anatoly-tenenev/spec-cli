@@ -1,6 +1,6 @@
 {
   "id": "query_30_0026_ok_query_where_nested_and_or_not_json",
-  "description": "QRY-WHERE-17 adapted: refs.container.id -> refs.owner.id",
+  "description": "query_30_0026_ok_query_where_nested_and_or_not_json",
   "command": "query",
   "args": [
     "--workspace",

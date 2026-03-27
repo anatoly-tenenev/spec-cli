@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0012_ok_validate_warnings_only_exit_code_json",
-  "description": "validate keeps exit code 0 when diagnostics contain warnings only",
+  "description": "validate_10_0012_ok_validate_warnings_only_exit_code_json",
   "command": "validate",
   "args": [
     "--workspace",

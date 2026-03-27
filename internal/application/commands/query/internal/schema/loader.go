@@ -270,7 +270,7 @@ func parseEntityRefMetadataField(
 	schemaNode map[string]any,
 ) (bool, string, *domainerrors.AppError) {
 	normalizedType := strings.TrimSpace(rawType)
-	if normalizedType == "entity_ref" {
+	if normalizedType == "entityRef" {
 		return true, extractSingleRefTypeHint(schemaNode), nil
 	}
 	if normalizedType != "array" {
@@ -298,7 +298,7 @@ func parseEntityRefMetadataField(
 			nil,
 		)
 	}
-	if strings.TrimSpace(rawItemType) != "entity_ref" {
+	if strings.TrimSpace(rawItemType) != "entityRef" {
 		return false, "", nil
 	}
 
@@ -345,7 +345,7 @@ func schemaTypeToFieldKind(
 			return model.FieldKindDate, nil
 		}
 		return model.FieldKindString, nil
-	case "entity_ref":
+	case "entityRef":
 		return model.FieldKindString, nil
 	default:
 		return "", newSchemaError(

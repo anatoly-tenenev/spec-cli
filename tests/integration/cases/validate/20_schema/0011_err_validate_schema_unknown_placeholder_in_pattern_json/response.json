@@ -18,12 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.path_pattern.invalid_placeholder",
+      "code": "schema.pathTemplate.invalid_placeholder",
       "level": "error",
       "class": "SchemaError",
       "message": "unsupported placeholder '{unknown}'",
       "standard_ref": "9",
-      "field": "schema.entity.doc.path_pattern.cases[0].use"
+      "field": "schema.entity.doc.pathTemplate.cases[0].use"
     }
   ]
 }

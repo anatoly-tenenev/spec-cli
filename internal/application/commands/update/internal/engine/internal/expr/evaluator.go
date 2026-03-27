@@ -155,7 +155,7 @@ func isReferencePath(value string) bool {
 		return false
 	}
 	switch value {
-	case "type", "id", "slug", "created_date", "updated_date":
+	case "type", "id", "slug", "createdDate", "updatedDate":
 		return true
 	}
 	return strings.HasPrefix(value, "meta.") || strings.HasPrefix(value, "refs.")

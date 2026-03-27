@@ -12,6 +12,7 @@ import (
 	schemachecks "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/schemachecks"
 	sections "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/sections"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
+	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -25,11 +26,19 @@ func ParseType(
 	typeSet map[string]struct{},
 	usedPrefixes map[string]string,
 ) (model.SchemaEntityType, []domainvalidation.Issue, *domainerrors.AppError) {
-	if keyErr := schemachecks.EnsureOnlyKeys(fmt.Sprintf("schema.entity.%s", typeName), typeConfig, "id_prefix", "path_pattern", "meta", "content", "description"); keyErr != nil {
+	if keyErr := schemachecks.EnsureOnlyKeys(
+		fmt.Sprintf("schema.entity.%s", typeName),
+		typeConfig,
+		reservedkeys.SchemaKeyIDPrefix,
+		reservedkeys.SchemaKeyPathTemplate,
+		"meta",
+		"content",
+		"description",
+	); keyErr != nil {
 		return model.SchemaEntityType{}, nil, keyErr
 	}
 
-	idPrefix, idPrefixErr := parseIDPrefix(typeName, typeConfig["id_prefix"], usedPrefixes)
+	idPrefix, idPrefixErr := parseIDPrefix(typeName, typeConfig[reservedkeys.SchemaKeyIDPrefix], usedPrefixes)
 	if idPrefixErr != nil {
 		return model.SchemaEntityType{}, nil, idPrefixErr
 	}
@@ -49,7 +58,7 @@ func ParseType(
 		return model.SchemaEntityType{}, nil, requiredSectionsErr
 	}
 
-	pathRule, pathIssues, pathErr := pathpattern.Parse(typeName, typeConfig["path_pattern"], expressionContext, fieldByName)
+	pathRule, pathIssues, pathErr := pathpattern.Parse(typeName, typeConfig[reservedkeys.SchemaKeyPathTemplate], expressionContext, fieldByName)
 	if pathErr != nil {
 		return model.SchemaEntityType{}, nil, pathErr
 	}
@@ -73,7 +82,7 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	if !ok || strings.TrimSpace(idPrefix) == "" {
 		return "", domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.id_prefix must be a non-empty string", typeName),
+			fmt.Sprintf("schema.entity.%s.%s must be a non-empty string", typeName, reservedkeys.SchemaKeyIDPrefix),
 			nil,
 		)
 	}
@@ -81,7 +90,7 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	if !idPrefixPattern.MatchString(idPrefix) {
 		return "", domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf("schema.entity.%s.id_prefix has invalid format", typeName),
+			fmt.Sprintf("schema.entity.%s.%s has invalid format", typeName, reservedkeys.SchemaKeyIDPrefix),
 			nil,
 		)
 	}
@@ -89,8 +98,8 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	if existingType, exists := usedPrefixes[idPrefix]; exists {
 		return "", domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
-			"schema contains duplicated id_prefix across entity types",
-			map[string]any{"id_prefix": idPrefix, "types": []string{existingType, typeName}},
+			fmt.Sprintf("schema contains duplicated %s across entity types", reservedkeys.SchemaKeyIDPrefix),
+			map[string]any{reservedkeys.SchemaKeyIDPrefix: idPrefix, "types": []string{existingType, typeName}},
 		)
 	}
 

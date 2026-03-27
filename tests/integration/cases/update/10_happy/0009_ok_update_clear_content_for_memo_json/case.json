@@ -12,7 +12,7 @@
     "MEMO-1",
     "--clear-content",
     "--expect-revision",
-    "sha256:f5f2bc6737372a813f335ba587c0ebbc5b1821d7f25c030ed219bbf1f1c7a90f"
+    "sha256:a1f7f7a5c243f9f911abe0d00b56603dca67f1afd654fa607e754d4f4aef7018"
   ],
   "expect": {
     "exit_code": 0,
@@ -22,10 +22,11 @@
   "workspace": {
     "input_dir": "workspace.in",
     "output_dir": "workspace.out",
-    "assert_output": true,
-    "permissions": []
+    "assert_output": true
   },
   "runtime": {
-    "fixed_now_utc": "2026-03-14"
+    "fixed_now_utc": "2026-03-14",
+    "stdin_file": "",
+    "cwd": ""
   }
 }

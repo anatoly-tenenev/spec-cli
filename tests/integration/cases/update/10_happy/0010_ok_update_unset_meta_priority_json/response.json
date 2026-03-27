@@ -9,7 +9,7 @@
   ],
   "dry_run": false,
   "entity": {
-    "created_date": "2026-02-08",
+    "createdDate": "2026-02-08",
     "id": "FEAT-1",
     "meta": {
       "owner": "team-payments",
@@ -27,7 +27,7 @@
     "revision": "sha256:e8a7ad831ca5b01a5d5a5ebaffb1058c4870e7621a4f2daa083fed26d23abd89",
     "slug": "retry-window",
     "type": "feature",
-    "updated_date": "2026-03-14"
+    "updatedDate": "2026-03-14"
   },
   "noop": false,
   "result_state": "valid",

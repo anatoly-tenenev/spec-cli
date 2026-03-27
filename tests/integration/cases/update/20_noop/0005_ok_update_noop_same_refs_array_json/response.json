@@ -2,7 +2,7 @@
   "changes": [],
   "dry_run": false,
   "entity": {
-    "created_date": "2026-03-01",
+    "createdDate": "2026-03-01",
     "id": "FEAT-1",
     "meta": {
       "status": "draft"
@@ -23,7 +23,7 @@
     "revision": "sha256:16e7a41f6cbf28c6b9239c2dfda2e7d056387f31634bc736a390622d874dcea4",
     "slug": "idempotency-keys",
     "type": "feature",
-    "updated_date": "2026-03-01"
+    "updatedDate": "2026-03-01"
   },
   "noop": true,
   "result_state": "valid",

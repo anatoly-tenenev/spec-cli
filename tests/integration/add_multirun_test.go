@@ -46,7 +46,7 @@ func TestAddHappy07DryRunMatchesRealRevision(t *testing.T) {
 }
 
 func TestAddFS04DifferentBodyProducesDifferentRevision(t *testing.T) {
-	caseDir := filepath.Join("cases", "add", "10_happy", "0001_ok_add_create_feature_ref_dir_path_json")
+	caseDir := filepath.Join("cases", "add", "10_happy", "0001_ok_add_create_feature_ref_dirPath_json")
 
 	argsA := []string{
 		"--workspace", "${WORKSPACE}",
@@ -83,7 +83,7 @@ func TestAddFS04DifferentBodyProducesDifferentRevision(t *testing.T) {
 }
 
 func TestAddFS05IdenticalInputsDeterministicRevisionAndOrder(t *testing.T) {
-	caseDir := filepath.Join("cases", "add", "10_happy", "0001_ok_add_create_feature_ref_dir_path_json")
+	caseDir := filepath.Join("cases", "add", "10_happy", "0001_ok_add_create_feature_ref_dirPath_json")
 
 	args := []string{
 		"--workspace", "${WORKSPACE}",
@@ -122,7 +122,7 @@ func TestAddFS05IdenticalInputsDeterministicRevisionAndOrder(t *testing.T) {
 	}
 
 	keys := extractFrontmatterKeys(string(rawA))
-	expectedOrder := []string{"type", "id", "slug", "created_date", "updated_date", "status", "container"}
+	expectedOrder := []string{"type", "id", "slug", "createdDate", "updatedDate", "status", "container"}
 	if !reflect.DeepEqual(keys, expectedOrder) {
 		t.Fatalf("unexpected frontmatter key order: expected=%v actual=%v", expectedOrder, keys)
 	}

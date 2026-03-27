@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0011_ok_validate_type_filter_excludes_invalid_json",
-  "description": "validate with --type service excludes invalid doc entities",
+  "description": "validate_10_0011_ok_validate_type_filter_excludes_invalid_json",
   "command": "validate",
   "args": [
     "--workspace",

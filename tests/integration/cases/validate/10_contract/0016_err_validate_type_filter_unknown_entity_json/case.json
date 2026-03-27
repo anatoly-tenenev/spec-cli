@@ -1,6 +1,6 @@
 {
   "id": "validate_10_0016_err_validate_type_filter_unknown_entity_json",
-  "description": "validate returns ENTITY_TYPE_UNKNOWN when --type references unknown schema entity",
+  "description": "validate_10_0016_err_validate_type_filter_unknown_entity_json",
   "command": "validate",
   "args": [
     "--workspace",

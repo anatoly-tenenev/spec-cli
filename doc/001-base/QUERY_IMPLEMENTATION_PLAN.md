@@ -104,8 +104,8 @@ Built-in fields:
 - `type`
 - `id`
 - `slug`
-- `created_date`
-- `updated_date`
+- `createdDate`
+- `updatedDate`
 - `revision`
 
 Meta paths:
@@ -139,7 +139,7 @@ Content paths:
 
 Only leaf paths with orderable values are allowed for `--sort`:
 
-- built-ins: `type`, `id`, `slug`, `created_date`, `updated_date`, `revision`
+- built-ins: `type`, `id`, `slug`, `createdDate`, `updatedDate`, `revision`
 - `meta.<name>`
 - `refs.<field>.type`
 - `refs.<field>.id`
@@ -164,8 +164,8 @@ Allowed filter leaf fields:
 - `id`
 - `slug`
 - `revision`
-- `created_date`
-- `updated_date`
+- `createdDate`
+- `updatedDate`
 - `meta.<name>`
 - `refs.<field>.type`
 - `refs.<field>.id`
@@ -190,8 +190,8 @@ Minimal sufficient schema shape:
 version: "0.0.4"
 entity:
   feature:
-    id_prefix: FEAT
-    path_pattern: "features/{slug}.md"
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         status:
@@ -200,7 +200,7 @@ entity:
             enum: [draft, active, deprecated]
         owner:
           schema:
-            type: entity_ref
+            type: entityRef
             refTypes: [service]
     content:
       sections:
@@ -216,7 +216,7 @@ From this model `query` must derive:
 - the list of allowed leaf fields for `where-json`;
 - field types for operator compatibility checks;
 - enum values for `meta.<name>`, if declared;
-- allowed `refs.<field>` from metadata fields of type `entity_ref`;
+- allowed `refs.<field>` from metadata fields of type `entityRef`;
 - allowed `content.sections.<name>` from `content.sections`.
 
 Rule:
@@ -336,7 +336,7 @@ By date:
 
 ```json
 {
-  "field": "updated_date",
+  "field": "updatedDate",
   "op": "gte",
   "value": "2026-03-01"
 }
@@ -508,8 +508,8 @@ Recommended full read-view:
   "id": "FEAT-8",
   "slug": "retry-window",
   "revision": "sha256:def456",
-  "created_date": "2026-03-10",
-  "updated_date": "2026-03-10",
+  "createdDate": "2026-03-10",
+  "updatedDate": "2026-03-10",
   "meta": {
     "status": "active",
     "owner": "platform"
@@ -571,7 +571,7 @@ Build from the standard schema (`schema.entity`) an index known to all later ste
 - allowed filter fields;
 - type of each leaf field;
 - enum restrictions;
-- mapping from metadata `entity_ref` to `refs.<field>.type|id|slug`;
+- mapping from metadata `entityRef` to `refs.<field>.type|id|slug`;
 - mapping of `content.sections.<name>`.
 
 Recommended structure:

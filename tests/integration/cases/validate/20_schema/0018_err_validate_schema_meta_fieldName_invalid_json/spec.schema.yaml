@@ -1,0 +1,13 @@
+version: "0.0.4"
+entity:
+  doc:
+    idPrefix: DOC
+    pathTemplate: "docs/{slug}.md"
+    meta:
+      fields:
+        bad field:
+          schema:
+            type: string
+    content:
+      sections:
+        goal: {}

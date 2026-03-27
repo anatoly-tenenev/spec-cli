@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var builtinFrontmatterOrder = []string{"type", "id", "slug", "created_date", "updated_date"}
+var builtinFrontmatterOrder = []string{"type", "id", "slug", "createdDate", "updatedDate"}
 
 func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byte, error) {
 	mapping := &yaml.Node{Kind: yaml.MappingNode}

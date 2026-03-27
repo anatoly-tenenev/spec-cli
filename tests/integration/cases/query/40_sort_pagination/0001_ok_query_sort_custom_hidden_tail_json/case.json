@@ -2,7 +2,7 @@
   "id": "query_40_0001_ok_query_sort_custom_hidden_tail_json",
   "description": "query_40_0001_ok_query_sort_custom_hidden_tail_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--sort","updated_date:desc"],
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--sort","updatedDate:desc"],
   "expect": {
     "exit_code": 0,
     "response_file": "response.json"
