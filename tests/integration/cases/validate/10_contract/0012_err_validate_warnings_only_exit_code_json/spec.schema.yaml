@@ -6,8 +6,7 @@ entity:
     meta:
       fields:
         status:
-          required_when:
-            eq?: [meta.slug, "never-required"]
+          required: "${slug == 'never-required'}"
           schema:
             type: string
             const: approved

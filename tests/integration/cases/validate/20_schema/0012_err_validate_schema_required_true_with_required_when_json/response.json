@@ -18,11 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.invalid",
+      "code": "schema.expression.invalid_boolean_type",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.meta.fields.owner cannot set required=true together with required_when",
-      "standard_ref": "7"
+      "message": "schema.entity.doc.meta.fields.owner.required has invalid expression in required context: expression for boolean context cannot be deterministically null (offset: 0)",
+      "standard_ref": "11.5",
+      "field": "schema.entity.doc.meta.fields.owner.required"
     }
   ]
 }

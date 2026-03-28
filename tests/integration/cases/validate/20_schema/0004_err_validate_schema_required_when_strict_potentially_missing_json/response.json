@@ -18,12 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.required_when.strict_potentially_missing",
+      "code": "schema.expression.unknown_property",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.meta.fields.reviewer.required_when uses strict operator 'eq' with potentially missing operand 'meta.owner'",
-      "standard_ref": "11.6",
-      "field": "schema.entity.doc.meta.fields.reviewer.required_when"
+      "message": "schema.entity.doc.meta.fields.reviewer.required has invalid expression in required context: unknown property \"__missing__\" (offset: 29)",
+      "standard_ref": "11.5",
+      "field": "schema.entity.doc.meta.fields.reviewer.required"
     }
   ]
 }

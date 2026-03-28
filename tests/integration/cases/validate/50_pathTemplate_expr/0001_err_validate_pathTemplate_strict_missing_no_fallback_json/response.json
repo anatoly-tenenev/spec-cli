@@ -18,11 +18,11 @@
   },
   "issues": [
     {
-      "code": "schema.invalid",
+      "code": "schema.expression.invalid_boolean_type",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.pathTemplate.cases[0].when uses strict operator 'eq' with potentially missing operand 'meta.owner'",
-      "standard_ref": "7",
+      "message": "schema.entity.doc.pathTemplate.cases[0].when has invalid expression in when context: expression for boolean context cannot be deterministically null (offset: 0)",
+      "standard_ref": "11.6",
       "field": "schema.entity.doc.pathTemplate.cases[0].when"
     }
   ]

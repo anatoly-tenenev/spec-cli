@@ -2,13 +2,13 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "docs/{slug}.md"
+    pathTemplate: "docs/${slug}.md"
     content:
       sections:
         goal: {}
   service:
     idPrefix: DOC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
     content:
       sections:
         goal: {}

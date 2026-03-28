@@ -2,12 +2,7 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate:
-      cases:
-        - when:
-            in: [meta.owner, [core, edge]]
-          use: "core/{slug}.md"
-        - use: "misc/{slug}.md"
+    pathTemplate: "misc/${slug}.md"
     meta:
       fields:
         owner:
@@ -15,6 +10,11 @@ entity:
           schema:
             type: string
             enum: [core, edge]
+        owner_snapshot:
+          required: false
+          schema:
+            type: string
+            const: "${meta}"
     content:
       sections:
         goal: {}

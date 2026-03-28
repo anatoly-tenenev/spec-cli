@@ -4,10 +4,9 @@ entity:
     idPrefix: DOC
     pathTemplate:
       cases:
-        - when:
-            eq: [meta.owner, "core"]
-          use: "core/{slug}.md"
-        - use: "misc/{slug}.md"
+        - when: "${`null`}"
+          use: "core/${slug}.md"
+        - use: "misc/${slug}.md"
     meta:
       fields:
         owner:

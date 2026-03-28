@@ -18,11 +18,11 @@
   },
   "issues": [
     {
-      "code": "schema.pathTemplate.invalid_placeholder",
+      "code": "schema.expression.unknown_property",
       "level": "error",
       "class": "SchemaError",
-      "message": "unsupported refs placeholder part 'unknown_part'",
-      "standard_ref": "8.5",
+      "message": "schema.entity.feature.pathTemplate.cases[0].use has invalid interpolation in pathTemplate.use context: unknown property \"unknown_part\" (offset: 11)",
+      "standard_ref": "9.1",
       "field": "schema.entity.feature.pathTemplate.cases[0].use"
     }
   ]

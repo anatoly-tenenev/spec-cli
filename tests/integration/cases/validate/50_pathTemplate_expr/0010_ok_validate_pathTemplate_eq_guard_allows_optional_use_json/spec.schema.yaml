@@ -1,0 +1,21 @@
+version: "0.0.4"
+entity:
+  feature:
+    idPrefix: FEAT
+    pathTemplate:
+      cases:
+        - when: "${meta.owner == 'SRV-1'}"
+          use: "services/${meta.owner}/${slug}.md"
+        - use: "features/${slug}.md"
+    meta:
+      fields:
+        owner:
+          required: false
+          schema:
+            type: string
+            enum:
+              - SRV-1
+              - SRV-2
+    content:
+      sections:
+        goal: {}

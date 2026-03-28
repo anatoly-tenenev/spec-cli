@@ -24,34 +24,37 @@ type SchemaEntityType struct {
 }
 
 type RequiredFieldRule struct {
-	Name             string
-	Type             string
-	RefTypes         []string
-	Enum             []any
-	HasValue         bool
-	Value            any
-	HasItemType      bool
-	ItemType         string
-	ItemRefTypes     []string
-	UniqueItems      bool
-	HasMinItems      bool
-	MinItems         int
-	HasMaxItems      bool
-	MaxItems         int
-	Required         bool
-	RequiredWhen     bool
-	RequiredWhenExpr *expressions.Expression
-	RequiredWhenPath string
+	Name         string
+	Type         string
+	RefTypes     []string
+	Enum         []RuleValue
+	HasValue     bool
+	Value        RuleValue
+	HasItemType  bool
+	ItemType     string
+	ItemRefTypes []string
+	UniqueItems  bool
+	HasMinItems  bool
+	MinItems     int
+	HasMaxItems  bool
+	MaxItems     int
+	Required     bool
+	RequiredExpr *expressions.CompiledExpression
+	RequiredPath string
 }
 
 type RequiredSectionRule struct {
-	Name             string
-	HasTitle         bool
-	Title            string
-	Required         bool
-	RequiredWhen     bool
-	RequiredWhenExpr *expressions.Expression
-	RequiredWhenPath string
+	Name         string
+	HasTitle     bool
+	Title        string
+	Required     bool
+	RequiredExpr *expressions.CompiledExpression
+	RequiredPath string
+}
+
+type RuleValue struct {
+	Literal  any
+	Template *expressions.CompiledTemplate
 }
 
 type PathPatternRule struct {
@@ -59,11 +62,12 @@ type PathPatternRule struct {
 }
 
 type PathPatternCase struct {
-	Use      string
-	HasWhen  bool
-	When     bool
-	WhenExpr *expressions.Expression
-	WhenPath string
+	Use         string
+	UseTemplate *expressions.CompiledTemplate
+	HasWhen     bool
+	When        bool
+	WhenExpr    *expressions.CompiledExpression
+	WhenPath    string
 }
 
 type WorkspaceCandidate struct {

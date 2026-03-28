@@ -4,5 +4,5 @@ entity:
     idPrefix: "DOC"
     pathTemplate:
       cases:
-        - use: "{slug}.md"
+        - use: "${slug}.md"
           note: "unsupported"

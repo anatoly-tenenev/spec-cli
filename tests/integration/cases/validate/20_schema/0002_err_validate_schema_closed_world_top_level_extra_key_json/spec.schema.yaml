@@ -3,4 +3,4 @@ x-extra: true
 entity:
   doc:
     idPrefix: "DOC"
-    pathTemplate: "{slug}.md"
+    pathTemplate: "${slug}.md"

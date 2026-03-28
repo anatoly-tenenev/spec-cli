@@ -2,13 +2,13 @@ version: "0.0.4"
 entity:
   service:
     idPrefix: SRV
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
     content:
       sections:
         goal: {}
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{refs.owner.unknown_part}/{slug}.md"
+    pathTemplate: "features/${refs.owner.unknown_part}/${slug}.md"
     meta:
       fields:
         owner:

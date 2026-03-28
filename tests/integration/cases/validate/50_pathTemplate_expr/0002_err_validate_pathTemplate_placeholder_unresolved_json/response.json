@@ -18,11 +18,11 @@
   },
   "issues": [
     {
-      "code": "schema.invalid",
+      "code": "schema.pathTemplate.use_missing_guard",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.pathTemplate.cases[0].use placeholder '{meta.owner}' references potentially missing value without static guard",
-      "standard_ref": "7",
+      "message": "schema.entity.doc.pathTemplate.cases[0].use interpolation '${meta.owner}' is not protected by missing when guard for path 'meta.owner'",
+      "standard_ref": "8.6",
       "field": "schema.entity.doc.pathTemplate.cases[0].use"
     }
   ]

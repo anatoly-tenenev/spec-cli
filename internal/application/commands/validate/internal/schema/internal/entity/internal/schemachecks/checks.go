@@ -3,16 +3,8 @@ package schemachecks
 import (
 	"fmt"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
-
-type StrictMissingUsage struct {
-	Operator expressions.Operator
-	Operand  expressions.Reference
-}
 
 func EnsureOnlyKeys(path string, values map[string]any, allowed ...string) *domainerrors.AppError {
 	allowedSet := make(map[string]struct{}, len(allowed))
@@ -32,54 +24,4 @@ func EnsureOnlyKeys(path string, values map[string]any, allowed ...string) *doma
 		)
 	}
 	return nil
-}
-
-func StrictMissingUsageInRequiredWhen(
-	expression *expressions.Expression,
-	fieldsByName map[string]model.RequiredFieldRule,
-) (StrictMissingUsage, bool) {
-	if expression == nil {
-		return StrictMissingUsage{}, false
-	}
-
-	for _, usage := range expressions.CollectStrictReferenceUsages(expression) {
-		if !referencePotentiallyMissing(usage.Reference, fieldsByName) {
-			continue
-		}
-		return StrictMissingUsage{Operator: usage.Operator, Operand: usage.Reference}, true
-	}
-
-	return StrictMissingUsage{}, false
-}
-
-func referencePotentiallyMissing(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) bool {
-	switch reference.Kind {
-	case expressions.ReferenceMeta:
-		if isBuiltinMetaField(reference.Field) {
-			return false
-		}
-
-		rule, exists := fieldsByName[reference.Field]
-		if !exists {
-			return false
-		}
-		if !rule.Required {
-			return true
-		}
-		return rule.RequiredWhen || rule.RequiredWhenExpr != nil
-	case expressions.ReferenceRefs:
-		_, exists := fieldsByName[reference.Field]
-		return exists
-	default:
-		return true
-	}
-}
-
-func isBuiltinMetaField(name string) bool {
-	switch name {
-	case reservedkeys.BuiltinType, reservedkeys.BuiltinID, reservedkeys.BuiltinSlug, reservedkeys.BuiltinCreatedDate, reservedkeys.BuiltinUpdatedDate:
-		return true
-	default:
-		return false
-	}
 }

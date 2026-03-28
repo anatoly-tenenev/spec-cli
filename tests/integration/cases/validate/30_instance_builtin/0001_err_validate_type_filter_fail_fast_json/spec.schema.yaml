@@ -8,7 +8,7 @@ entity:
         goal: {}
   service:
     idPrefix: SRV
-    pathTemplate: "service/{slug}.md"
+    pathTemplate: "service/${slug}.md"
     content:
       sections:
         goal: {}

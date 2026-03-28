@@ -1,455 +1,262 @@
 package expressions
 
 import (
+	"errors"
 	"fmt"
-	"sort"
 	"strings"
+	"sync"
+
+	jmespath "github.com/anatoly-tenenev/go-jmespath"
 )
 
-type Operator string
+type CompileMode string
 
 const (
-	OpEq     Operator = "eq"
-	OpEqSafe Operator = "eq?"
-	OpIn     Operator = "in"
-	OpInSafe Operator = "in?"
-	OpAll    Operator = "all"
-	OpAny    Operator = "any"
-	OpNot    Operator = "not"
-	OpExists Operator = "exists"
+	CompileModeScalar       CompileMode = "scalar"
+	CompileModeTemplatePart CompileMode = "template-part"
 )
 
-type ReferenceKind string
-
-const (
-	ReferenceMeta ReferenceKind = "meta"
-	ReferenceRefs ReferenceKind = "refs"
-)
-
-type Reference struct {
-	Kind  ReferenceKind
-	Field string
-	Part  string
-	Raw   string
+var staticErrorCodeMap = map[string]string{
+	"unsupported_schema":        "schema.expression.unsupported_schema",
+	"unknown_property":          "schema.expression.unknown_property",
+	"unverifiable_property":     "schema.expression.unverifiable_property",
+	"invalid_field_target":      "schema.expression.invalid_field_target",
+	"invalid_index_target":      "schema.expression.invalid_index_target",
+	"invalid_projection_target": "schema.expression.invalid_projection_target",
+	"invalid_comparator_types":  "schema.expression.invalid_comparator_types",
+	"unknown_function":          "schema.expression.unknown_function",
+	"invalid_function_arity":    "schema.expression.invalid_function_arity",
+	"invalid_function_arg_type": "schema.expression.invalid_function_arg_type",
+	"unverifiable_type":         "schema.expression.unverifiable_type",
+	"invalid_enum_value":        "schema.expression.invalid_enum_value",
 }
 
-type Operand struct {
-	Literal   any
-	Reference *Reference
+type Engine struct {
+	mu             sync.RWMutex
+	entityType     string
+	compiledSchema *jmespath.CompiledSchema
+	cache          map[string]compiledCacheEntry
 }
 
-type Expression struct {
-	Operator       Operator
-	Operands       []Operand
-	ListOperands   []Operand
-	Subexpressions []*Expression
-	Subexpression  *Expression
-	ExistsRef      *Reference
+type compiledCacheEntry struct {
+	query    *jmespath.JMESPath
+	inferred *jmespath.InferredType
 }
 
-type MetaFieldSpec struct {
-	Type       string
-	Comparable bool
-	EntityRef  bool
+type CompiledExpression struct {
+	Source   string
+	Mode     CompileMode
+	query    *jmespath.JMESPath
+	inferred *jmespath.InferredType
 }
 
-type CompileContext struct {
-	MetaFields map[string]MetaFieldSpec
+type CompileError struct {
+	Code       string
+	Message    string
+	Expression string
+	Offset     int
 }
 
-type CompileIssue struct {
-	Code        string
-	Message     string
-	Field       string
-	StandardRef string
+func NewEngine() *Engine {
+	return &Engine{cache: make(map[string]compiledCacheEntry)}
 }
 
-type StrictReferenceUsage struct {
-	Operator  Operator
-	Reference Reference
-}
-
-func Compile(raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	expression, issues := compileExpression(raw, path, ctx)
-	if len(issues) > 0 {
-		return nil, issues
-	}
-	return expression, nil
-}
-
-func compileExpression(raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	rawMap, ok := raw.(map[string]any)
-	if !ok {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			"expression must be an object with a single operator",
-			path,
-		)}
+func NewSchemaAwareEngine(entityType string, schema jmespath.JSONSchema) (*Engine, *CompileError) {
+	compiledSchema, err := jmespath.CompileSchema(schema)
+	if err != nil {
+		compileErr := mapCompileError("", err)
+		compileErr.Message = fmt.Sprintf("failed to compile expression context schema: %s", compileErr.Message)
+		return nil, compileErr
 	}
 
-	if len(rawMap) != 1 {
-		keys := make([]string, 0, len(rawMap))
-		for key := range rawMap {
-			keys = append(keys, key)
+	return &Engine{
+		entityType:     strings.TrimSpace(entityType),
+		compiledSchema: compiledSchema,
+		cache:          make(map[string]compiledCacheEntry),
+	}, nil
+}
+
+func (e *Engine) Compile(source string, mode CompileMode) (*CompiledExpression, *CompileError) {
+	trimmed := strings.TrimSpace(source)
+	if trimmed == "" {
+		return nil, &CompileError{
+			Code:       "schema.expression.empty",
+			Message:    "expression is empty",
+			Expression: source,
+			Offset:     0,
 		}
-		sort.Strings(keys)
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_arity",
-			fmt.Sprintf("expression must contain exactly one operator, got: %s", strings.Join(keys, ", ")),
-			path,
-		)}
 	}
 
-	var (
-		opName string
-		opRaw  any
-	)
-	for key, value := range rawMap {
-		opName = key
-		opRaw = value
+	if mode == "" {
+		mode = CompileModeScalar
 	}
 
-	switch Operator(opName) {
-	case OpEq, OpEqSafe:
-		return compileBinaryComparison(Operator(opName), opRaw, path, ctx)
-	case OpIn, OpInSafe:
-		return compileMembership(Operator(opName), opRaw, path, ctx)
-	case OpAll, OpAny:
-		return compileLogicalList(Operator(opName), opRaw, path, ctx)
-	case OpNot:
-		return compileNot(opRaw, path, ctx)
-	case OpExists:
-		return compileExists(opRaw, path, ctx)
-	default:
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operator",
-			fmt.Sprintf("unsupported expression operator '%s'", opName),
-			path,
-		)}
+	cacheKey := e.cacheKey(trimmed, mode)
+	e.mu.RLock()
+	cached, exists := e.cache[cacheKey]
+	e.mu.RUnlock()
+	if exists {
+		return &CompiledExpression{Source: trimmed, Mode: mode, query: cached.query, inferred: cached.inferred}, nil
 	}
+
+	compiled, inferred, compileErr := e.compileWithMode(trimmed, mode)
+	if compileErr != nil {
+		return nil, compileErr
+	}
+
+	e.mu.Lock()
+	if existing, ok := e.cache[cacheKey]; ok {
+		e.mu.Unlock()
+		return &CompiledExpression{Source: trimmed, Mode: mode, query: existing.query, inferred: existing.inferred}, nil
+	}
+	e.cache[cacheKey] = compiledCacheEntry{query: compiled, inferred: inferred}
+	e.mu.Unlock()
+
+	return &CompiledExpression{Source: trimmed, Mode: mode, query: compiled, inferred: inferred}, nil
 }
 
-func compileBinaryComparison(operator Operator, raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	operandsRaw, ok := raw.([]any)
-	if !ok {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			fmt.Sprintf("operator '%s' expects a list", operator),
-			path,
-		)}
-	}
-	if len(operandsRaw) != 2 {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_arity",
-			fmt.Sprintf("operator '%s' expects exactly 2 operands", operator),
-			path,
-		)}
-	}
-
-	left, leftIssues := compileComparableOperand(operandsRaw[0], fmt.Sprintf("%s.%s[0]", path, operator), ctx)
-	right, rightIssues := compileComparableOperand(operandsRaw[1], fmt.Sprintf("%s.%s[1]", path, operator), ctx)
-	issues := mergeIssues(leftIssues, rightIssues)
-	if len(issues) > 0 {
-		return nil, issues
-	}
-
-	return &Expression{Operator: operator, Operands: []Operand{left, right}}, nil
+func (e *Engine) cacheKey(source string, mode CompileMode) string {
+	return e.entityType + "\x00" + string(mode) + "\x00" + source
 }
 
-func compileMembership(operator Operator, raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	outer, ok := raw.([]any)
-	if !ok {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			fmt.Sprintf("operator '%s' expects a list", operator),
-			path,
-		)}
-	}
-	if len(outer) != 2 {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_arity",
-			fmt.Sprintf("operator '%s' expects exactly 2 operands", operator),
-			path,
-		)}
-	}
-
-	needle, needleIssues := compileComparableOperand(outer[0], fmt.Sprintf("%s.%s[0]", path, operator), ctx)
-	issues := append([]CompileIssue{}, needleIssues...)
-
-	haystackRaw, ok := outer[1].([]any)
-	if !ok {
-		issues = append(issues, newIssue(
-			"schema.expression.invalid_operand_type",
-			fmt.Sprintf("operator '%s' expects the second operand to be a list", operator),
-			fmt.Sprintf("%s.%s[1]", path, operator),
-		))
-		return nil, issues
-	}
-	if len(haystackRaw) == 0 {
-		issues = append(issues, newIssue(
-			"schema.expression.invalid_arity",
-			fmt.Sprintf("operator '%s' expects a non-empty list of values", operator),
-			fmt.Sprintf("%s.%s[1]", path, operator),
-		))
-		return nil, issues
-	}
-
-	haystack := make([]Operand, 0, len(haystackRaw))
-	for idx, item := range haystackRaw {
-		operand, operandIssues := compileComparableOperand(item, fmt.Sprintf("%s.%s[1][%d]", path, operator, idx), ctx)
-		if len(operandIssues) > 0 {
-			issues = append(issues, operandIssues...)
-			continue
+func (e *Engine) compileWithMode(source string, mode CompileMode) (*jmespath.JMESPath, *jmespath.InferredType, *CompileError) {
+	if e.compiledSchema == nil {
+		compiled, err := jmespath.Compile(source)
+		if err != nil {
+			return nil, nil, mapCompileError(source, err)
 		}
-		haystack = append(haystack, operand)
+		return compiled, nil, nil
 	}
 
-	if len(issues) > 0 {
-		return nil, issues
+	compiled, err := jmespath.CompileWithCompiledSchema(source, e.compiledSchema)
+	if err != nil {
+		return nil, nil, mapCompileError(source, err)
 	}
 
-	return &Expression{Operator: operator, Operands: []Operand{needle}, ListOperands: haystack}, nil
+	inferred, inferErr := jmespath.InferTypeWithCompiledSchema(source, e.compiledSchema)
+	if inferErr != nil {
+		return nil, nil, mapCompileError(source, inferErr)
+	}
+
+	if typeErr := validateInferredTypeForMode(source, mode, inferred); typeErr != nil {
+		return nil, nil, typeErr
+	}
+
+	return compiled, inferred, nil
 }
 
-func compileLogicalList(operator Operator, raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	rawList, ok := raw.([]any)
-	if !ok {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			fmt.Sprintf("operator '%s' expects a list of expressions", operator),
-			path,
-		)}
-	}
-	if len(rawList) == 0 {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_arity",
-			fmt.Sprintf("operator '%s' expects a non-empty list", operator),
-			path,
-		)}
-	}
-
-	subexpressions := make([]*Expression, 0, len(rawList))
-	issues := make([]CompileIssue, 0)
-	for idx, item := range rawList {
-		sub, subIssues := compileExpression(item, fmt.Sprintf("%s.%s[%d]", path, operator, idx), ctx)
-		if len(subIssues) > 0 {
-			issues = append(issues, subIssues...)
-			continue
-		}
-		subexpressions = append(subexpressions, sub)
-	}
-
-	if len(issues) > 0 {
-		return nil, issues
-	}
-
-	return &Expression{Operator: operator, Subexpressions: subexpressions}, nil
-}
-
-func compileNot(raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	sub, issues := compileExpression(raw, fmt.Sprintf("%s.%s", path, OpNot), ctx)
-	if len(issues) > 0 {
-		return nil, issues
-	}
-	return &Expression{Operator: OpNot, Subexpression: sub}, nil
-}
-
-func compileExists(raw any, path string, ctx CompileContext) (*Expression, []CompileIssue) {
-	ref, issues := compileReferenceOperand(raw, fmt.Sprintf("%s.%s", path, OpExists), ctx, false)
-	if len(issues) > 0 {
-		return nil, issues
-	}
-	return &Expression{Operator: OpExists, ExistsRef: ref}, nil
-}
-
-func compileComparableOperand(raw any, path string, ctx CompileContext) (Operand, []CompileIssue) {
-	if text, ok := raw.(string); ok && seemsReference(text) {
-		ref, issues := compileReferenceOperand(raw, path, ctx, true)
-		if len(issues) > 0 {
-			return Operand{}, issues
-		}
-		return Operand{Reference: ref}, nil
-	}
-
-	if !isScalarLiteral(raw) {
-		return Operand{}, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			"operand must be a scalar literal or a context reference",
-			path,
-		)}
-	}
-
-	return Operand{Literal: raw}, nil
-}
-
-func compileReferenceOperand(raw any, path string, ctx CompileContext, requireComparable bool) (*Reference, []CompileIssue) {
-	text, ok := raw.(string)
-	if !ok {
-		return nil, []CompileIssue{newIssue(
-			"schema.expression.invalid_operand_type",
-			"operand must be a context reference string",
-			path,
-		)}
-	}
-
-	if strings.HasPrefix(text, "meta.") {
-		field := strings.TrimPrefix(text, "meta.")
-		if field == "" {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				"meta reference must include a field name",
-				path,
-			)}
-		}
-
-		spec, exists := ctx.MetaFields[field]
-		if !exists {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				fmt.Sprintf("unknown meta field '%s'", field),
-				path,
-			)}
-		}
-		if requireComparable && !spec.Comparable {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				fmt.Sprintf("meta field '%s' cannot be used in comparison operators", field),
-				path,
-			)}
-		}
-
-		return &Reference{Kind: ReferenceMeta, Field: field, Raw: text}, nil
-	}
-
-	if strings.HasPrefix(text, "refs.") {
-		parts := strings.Split(text, ".")
-		if len(parts) != 2 && len(parts) != 3 {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				"refs reference must have format refs.<field> or refs.<field>.<part>",
-				path,
-			)}
-		}
-
-		field := parts[1]
-		if field == "" {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				"refs reference must include a field name",
-				path,
-			)}
-		}
-
-		spec, exists := ctx.MetaFields[field]
-		if !exists || !spec.EntityRef {
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				fmt.Sprintf("refs field '%s' is not declared as entityRef", field),
-				path,
-			)}
-		}
-
-		if len(parts) == 2 {
-			if requireComparable {
-				return nil, []CompileIssue{newIssue(
-					"schema.expression.invalid_reference",
-					"refs.<field> is allowed only for exists operator",
-					path,
-				)}
-			}
-			return &Reference{Kind: ReferenceRefs, Field: field, Raw: text}, nil
-		}
-
-		part := parts[2]
-		switch part {
-		case "id", "type", "slug", "dirPath":
-		default:
-			return nil, []CompileIssue{newIssue(
-				"schema.expression.invalid_reference",
-				fmt.Sprintf("unsupported refs part '%s'", part),
-				path,
-			)}
-		}
-
-		return &Reference{Kind: ReferenceRefs, Field: field, Part: part, Raw: text}, nil
-	}
-
-	return nil, []CompileIssue{newIssue(
-		"schema.expression.invalid_reference",
-		"reference must use meta.<field>, refs.<field>, or refs.<field>.<part> syntax",
-		path,
-	)}
-}
-
-func seemsReference(value string) bool {
-	return strings.HasPrefix(value, "meta.") || strings.HasPrefix(value, "refs.") || strings.HasPrefix(value, "ref.")
-}
-
-func isScalarLiteral(value any) bool {
-	if value == nil {
-		return true
-	}
-
-	switch value.(type) {
-	case string, bool:
-		return true
-	case int, int8, int16, int32, int64:
-		return true
-	case uint, uint8, uint16, uint32, uint64:
-		return true
-	case float32, float64:
-		return true
-	default:
-		return false
-	}
-}
-
-func mergeIssues(left []CompileIssue, right []CompileIssue) []CompileIssue {
-	issues := make([]CompileIssue, 0, len(left)+len(right))
-	issues = append(issues, left...)
-	issues = append(issues, right...)
-	return issues
-}
-
-func CollectStrictReferenceUsages(expression *Expression) []StrictReferenceUsage {
-	if expression == nil {
+func validateInferredTypeForMode(expression string, mode CompileMode, inferred *jmespath.InferredType) *CompileError {
+	if inferred == nil {
 		return nil
 	}
 
-	usages := make([]StrictReferenceUsage, 0)
-	switch expression.Operator {
-	case OpEq, OpIn:
-		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.Operands)...)
-		usages = append(usages, collectStrictReferenceUsagesFromOperands(expression.Operator, expression.ListOperands)...)
-	case OpAll, OpAny:
-		for _, subexpression := range expression.Subexpressions {
-			usages = append(usages, CollectStrictReferenceUsages(subexpression)...)
+	switch mode {
+	case CompileModeScalar:
+		if inferred.IsNull() {
+			return &CompileError{
+				Code:       "schema.expression.invalid_boolean_type",
+				Message:    "expression for boolean context cannot be deterministically null",
+				Expression: expression,
+				Offset:     0,
+			}
 		}
-	case OpNot:
-		usages = append(usages, CollectStrictReferenceUsages(expression.Subexpression)...)
+	case CompileModeTemplatePart:
+		if inferred.MayBeString() || inferred.MayBeNumber() || inferred.MayBeBoolean() {
+			return nil
+		}
+		return &CompileError{
+			Code:       "schema.interpolation.invalid_result_type",
+			Message:    "interpolation expression must be string, number, or boolean in at least one deterministic branch",
+			Expression: expression,
+			Offset:     0,
+		}
 	}
-	return usages
+
+	return nil
 }
 
-func collectStrictReferenceUsagesFromOperands(operator Operator, operands []Operand) []StrictReferenceUsage {
-	usages := make([]StrictReferenceUsage, 0)
-	for _, operand := range operands {
-		if operand.Reference == nil {
-			continue
-		}
-		usages = append(usages, StrictReferenceUsage{
-			Operator:  operator,
-			Reference: *operand.Reference,
-		})
+func (e *CompileError) AsStaticCode() string {
+	if e == nil {
+		return ""
 	}
-	return usages
+	if mapped, ok := staticErrorCodeMap[e.Code]; ok {
+		return mapped
+	}
+	return ""
 }
 
-func newIssue(code string, message string, field string) CompileIssue {
-	return CompileIssue{
-		Code:        code,
-		Message:     message,
-		Field:       field,
-		StandardRef: "11.6",
+func (e *CompileError) StaticOffset() int {
+	if e == nil {
+		return 0
 	}
+	return e.Offset
+}
+
+func mapCompileError(expression string, err error) *CompileError {
+	var syntaxErr jmespath.SyntaxError
+	if errors.As(err, &syntaxErr) {
+		return &CompileError{
+			Code:       "schema.expression.syntax_error",
+			Message:    "invalid expression syntax",
+			Expression: expression,
+			Offset:     syntaxErr.Offset,
+		}
+	}
+
+	var staticErr *jmespath.StaticError
+	if errors.As(err, &staticErr) {
+		mappedCode, ok := staticErrorCodeMap[staticErr.Code]
+		if !ok {
+			mappedCode = "schema.expression.static_error"
+		}
+		return &CompileError{
+			Code:       mappedCode,
+			Message:    staticErrorMessage(staticErr),
+			Expression: expression,
+			Offset:     staticErr.Offset,
+		}
+	}
+
+	return &CompileError{
+		Code:       "schema.expression.compile_error",
+		Message:    "failed to compile expression",
+		Expression: expression,
+		Offset:     0,
+	}
+}
+
+func staticErrorMessage(staticErr *jmespath.StaticError) string {
+	if staticErr == nil {
+		return "static expression error"
+	}
+	message := strings.TrimSpace(staticErr.Message)
+	if message == "" {
+		return "static expression error"
+	}
+	return message
+}
+
+func (e *CompiledExpression) ProtectsWhenTrue(path string) bool {
+	if e == nil || e.query == nil {
+		return false
+	}
+	return e.query.ProtectsWhenTrue(path)
+}
+
+func (e *CompiledExpression) GuardedPathsWhenTrue() []string {
+	if e == nil || e.query == nil {
+		return nil
+	}
+	guards := e.query.GuardsWhenTrue()
+	if guards == nil {
+		return nil
+	}
+	return guards.ProtectedPaths()
+}
+
+func (e *CompiledExpression) InferredType() *jmespath.InferredType {
+	if e == nil {
+		return nil
+	}
+	return e.inferred
 }

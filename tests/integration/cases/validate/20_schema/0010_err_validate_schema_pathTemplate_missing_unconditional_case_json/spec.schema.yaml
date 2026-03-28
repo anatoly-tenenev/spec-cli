@@ -5,9 +5,9 @@ entity:
     pathTemplate:
       cases:
         - when: true
-          use: "docs/{slug}.md"
+          use: "docs/${slug}.md"
         - when: false
-          use: "draft/{slug}.md"
+          use: "draft/${slug}.md"
     content:
       sections:
         goal: {}

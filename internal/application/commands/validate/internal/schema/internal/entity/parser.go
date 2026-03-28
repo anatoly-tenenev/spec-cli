@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
-	expressioncontext "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext"
 	metafields "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/metafields"
 	pathpattern "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern"
 	schemachecks "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/schemachecks"
@@ -43,7 +43,7 @@ func ParseType(
 		return model.SchemaEntityType{}, nil, idPrefixErr
 	}
 
-	requiredFields, fieldIssues, requiredFieldErr := metafields.Parse(typeName, typeConfig["meta"], typeSet)
+	requiredFields, expressionEngine, requiredFieldErr := metafields.Parse(typeName, typeConfig["meta"], typeSet)
 	if requiredFieldErr != nil {
 		return model.SchemaEntityType{}, nil, requiredFieldErr
 	}
@@ -52,20 +52,17 @@ func ParseType(
 		fieldByName[fieldRule.Name] = fieldRule
 	}
 
-	expressionContext := expressioncontext.Build(requiredFields)
-	requiredSections, sectionIssues, requiredSectionsErr := sections.Parse(typeName, typeConfig["content"], expressionContext, fieldByName)
+	requiredSections, requiredSectionsErr := sections.Parse(typeName, typeConfig["content"], expressionEngine)
 	if requiredSectionsErr != nil {
 		return model.SchemaEntityType{}, nil, requiredSectionsErr
 	}
 
-	pathRule, pathIssues, pathErr := pathpattern.Parse(typeName, typeConfig[reservedkeys.SchemaKeyPathTemplate], expressionContext, fieldByName)
+	pathRule, pathIssues, pathErr := pathpattern.Parse(typeName, typeConfig[reservedkeys.SchemaKeyPathTemplate], expressionEngine, fieldByName)
 	if pathErr != nil {
 		return model.SchemaEntityType{}, nil, pathErr
 	}
 
-	issues := make([]domainvalidation.Issue, 0, len(fieldIssues)+len(sectionIssues)+len(pathIssues))
-	issues = append(issues, fieldIssues...)
-	issues = append(issues, sectionIssues...)
+	issues := make([]domainvalidation.Issue, 0, len(pathIssues))
 	issues = append(issues, pathIssues...)
 
 	return model.SchemaEntityType{
@@ -83,6 +80,13 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 		return "", domainerrors.New(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.%s must be a non-empty string", typeName, reservedkeys.SchemaKeyIDPrefix),
+			nil,
+		)
+	}
+	if expressions.ContainsInterpolation(idPrefix) {
+		return "", domainerrors.New(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.%s does not allow interpolation ${...}", typeName, reservedkeys.SchemaKeyIDPrefix),
 			nil,
 		)
 	}

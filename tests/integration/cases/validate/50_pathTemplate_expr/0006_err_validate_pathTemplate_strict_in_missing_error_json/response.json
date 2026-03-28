@@ -18,12 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.invalid",
+      "code": "schema.interpolation.invalid_result_type",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.pathTemplate.cases[0].when uses strict operator 'in' with potentially missing operand 'meta.owner'",
-      "standard_ref": "7",
-      "field": "schema.entity.doc.pathTemplate.cases[0].when"
+      "message": "schema.entity.doc.meta.fields.owner_snapshot.schema.const has invalid interpolation in schema.const: interpolation expression must be string, number, or boolean in at least one deterministic branch (offset: 0)",
+      "standard_ref": "9.4",
+      "field": "schema.entity.doc.meta.fields.owner_snapshot.schema.const"
     }
   ]
 }

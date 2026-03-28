@@ -2,10 +2,12 @@ package pathpattern
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	expressioncontext "github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -14,7 +16,7 @@ import (
 func Parse(
 	typeName string,
 	rawPathPattern any,
-	compileContext expressions.CompileContext,
+	engine *expressions.Engine,
 	fieldsByName map[string]model.RequiredFieldRule,
 ) (model.PathPatternRule, []domainvalidation.Issue, *domainerrors.AppError) {
 	if rawPathPattern == nil {
@@ -58,10 +60,28 @@ func Parse(
 			)
 		}
 		usePattern = strings.TrimSpace(usePattern)
-		issues = append(issues, validateTemplate(typeName, idx, usePattern, fieldsByName)...)
-		usePath := fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, idx)
+		useFieldPath := fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, idx)
 
-		pathCase := model.PathPatternCase{Use: usePattern, WhenPath: fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].when", typeName, idx)}
+		useTemplate, compileErr := expressions.CompileTemplate(usePattern, engine)
+		if compileErr != nil {
+			return model.PathPatternRule{}, nil, domainerrors.New(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s has invalid interpolation in pathTemplate.use context: %s", useFieldPath, compileErr.Message),
+				map[string]any{
+					"code":         compileErr.Code,
+					"field":        useFieldPath,
+					"offset":       compileErr.Offset,
+					"standard_ref": "9.1",
+				},
+			)
+		}
+
+		pathCase := model.PathPatternCase{
+			Use:         usePattern,
+			UseTemplate: useTemplate,
+			WhenPath:    fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].when", typeName, idx),
+		}
+
 		rawWhen, hasWhen := caseMap["when"]
 		if !hasWhen {
 			unconditionalIndexes = append(unconditionalIndexes, idx)
@@ -70,30 +90,34 @@ func Parse(
 			switch typed := rawWhen.(type) {
 			case bool:
 				pathCase.When = typed
-			case map[string]any:
-				expression, compileIssues := expressions.Compile(typed, pathCase.WhenPath, compileContext)
-				if len(compileIssues) > 0 {
-					for _, compileIssue := range compileIssues {
-						issues = append(issues, fromCompileIssue(compileIssue))
-					}
-				} else {
-					pathCase.WhenExpr = expression
+			case string:
+				expression, expressionErr := expressions.CompileScalarInterpolation(typed, engine)
+				if expressionErr != nil {
+					return model.PathPatternRule{}, nil, domainerrors.New(
+						domainerrors.CodeSchemaInvalid,
+						fmt.Sprintf("%s has invalid expression in when context: %s", pathCase.WhenPath, expressionErr.Message),
+						map[string]any{
+							"code":         expressionErr.Code,
+							"field":        pathCase.WhenPath,
+							"offset":       expressionErr.Offset,
+							"standard_ref": "11.6",
+						},
+					)
 				}
+				pathCase.WhenExpr = expression
 			default:
 				return model.PathPatternRule{}, nil, domainerrors.New(
 					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("%s must be boolean or expression object", pathCase.WhenPath),
+					fmt.Sprintf("%s must be boolean or string interpolation ${expr}", pathCase.WhenPath),
 					nil,
 				)
 			}
 		}
 
-		if strictErr := validateStrictWhenOperands(typeName, idx, pathCase, fieldsByName); strictErr != nil {
-			return model.PathPatternRule{}, nil, strictErr
+		if guardErr := validateUseGuardSafety(typeName, idx, useFieldPath, pathCase, fieldsByName); guardErr != nil {
+			return model.PathPatternRule{}, nil, guardErr
 		}
-		if placeholderErr := validateTemplatePlaceholderAvailability(typeName, idx, usePattern, usePath, pathCase, fieldsByName); placeholderErr != nil {
-			return model.PathPatternRule{}, nil, placeholderErr
-		}
+
 		cases = append(cases, pathCase)
 	}
 
@@ -125,6 +149,77 @@ func Parse(
 	}
 
 	return model.PathPatternRule{Cases: cases}, issues, nil
+}
+
+func validateUseGuardSafety(
+	typeName string,
+	caseIndex int,
+	useFieldPath string,
+	pathCase model.PathPatternCase,
+	fieldsByName map[string]model.RequiredFieldRule,
+) *domainerrors.AppError {
+	if pathCase.HasWhen && pathCase.WhenExpr == nil && !pathCase.When {
+		return nil
+	}
+
+	for _, part := range pathCase.UseTemplate.Parts {
+		if part.Expression == nil {
+			continue
+		}
+
+		requiredRoots := requiredGuardRoots(part.Expression, fieldsByName)
+		for _, root := range requiredRoots {
+			if expressioncontext.IsPathGuaranteedBySchema(root, fieldsByName) {
+				continue
+			}
+			if pathCase.WhenExpr != nil && pathCase.WhenExpr.ProtectsWhenTrue(root) {
+				continue
+			}
+			guardLabel := pathCase.WhenPath
+			if !pathCase.HasWhen {
+				guardLabel = "missing when guard"
+			}
+
+			return domainerrors.New(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s interpolation '${%s}' is not protected by %s for path '%s'", useFieldPath, part.Expression.Source, guardLabel, root),
+				map[string]any{
+					"code":         "schema.pathTemplate.use_missing_guard",
+					"field":        useFieldPath,
+					"standard_ref": "8.6",
+				},
+			)
+		}
+	}
+
+	return nil
+}
+
+func requiredGuardRoots(expression *expressions.CompiledExpression, fieldsByName map[string]model.RequiredFieldRule) []string {
+	paths := expression.GuardedPathsWhenTrue()
+	if len(paths) == 0 {
+		return nil
+	}
+
+	roots := map[string]struct{}{}
+	for _, path := range paths {
+		root, requiresGuard := expressioncontext.GuardRootForPath(path, fieldsByName)
+		if !requiresGuard {
+			continue
+		}
+		roots[root] = struct{}{}
+	}
+
+	if len(roots) == 0 {
+		return nil
+	}
+
+	result := make([]string, 0, len(roots))
+	for root := range roots {
+		result = append(result, root)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func normalizeCases(typeName string, raw any) ([]any, *domainerrors.AppError) {
@@ -191,377 +286,6 @@ func validateCaseKeys(typeName string, caseIndex int, values map[string]any) *do
 		}
 	}
 	return nil
-}
-
-func validateTemplate(
-	typeName string,
-	caseIndex int,
-	template string,
-	fieldsByName map[string]model.RequiredFieldRule,
-) []domainvalidation.Issue {
-	path := fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, caseIndex)
-	placeholders, err := extractPlaceholders(template)
-	if err != nil {
-		return []domainvalidation.Issue{schemaIssue(
-			"schema.pathTemplate.invalid_placeholder",
-			err.Error(),
-			path,
-			"9",
-		)}
-	}
-
-	issues := make([]domainvalidation.Issue, 0)
-	for _, token := range placeholders {
-		switch token {
-		case "id", "slug", "createdDate", "updatedDate":
-			continue
-		}
-
-		if strings.HasPrefix(token, "meta.") {
-			fieldName := strings.TrimPrefix(token, "meta.")
-			if fieldName == "" || strings.Contains(fieldName, ".") {
-				issues = append(issues, schemaIssue(
-					"schema.pathTemplate.invalid_placeholder",
-					fmt.Sprintf("meta placeholder '%s' must use format meta.<field>", token),
-					path,
-					"8.5",
-				))
-				continue
-			}
-
-			rule, exists := fieldsByName[fieldName]
-			if !exists {
-				issues = append(issues, schemaIssue(
-					"schema.expression.invalid_reference",
-					fmt.Sprintf("unknown meta field '%s' in pathTemplate placeholder", fieldName),
-					path,
-					"8.5",
-				))
-				continue
-			}
-			if rule.Type == "entityRef" {
-				continue
-			}
-			if !(rule.Type == "string" || rule.Type == "integer" || rule.Type == "boolean" || rule.Type == "null") {
-				issues = append(issues, schemaIssue(
-					"schema.expression.invalid_reference",
-					fmt.Sprintf("meta placeholder '%s' requires field type string|integer|boolean|null|entityRef", token),
-					path,
-					"8.5",
-				))
-				continue
-			}
-			if len(rule.Enum) == 0 {
-				issues = append(issues, schemaIssue(
-					"schema.expression.invalid_reference",
-					fmt.Sprintf("meta placeholder '%s' requires schema.enum on the field", token),
-					path,
-					"8.5",
-				))
-			}
-			continue
-		}
-
-		if strings.HasPrefix(token, "refs.") {
-			parts := strings.Split(token, ".")
-			if len(parts) != 3 {
-				issues = append(issues, schemaIssue(
-					"schema.pathTemplate.invalid_placeholder",
-					fmt.Sprintf("refs placeholder '%s' must use format refs.<field>.<part>", token),
-					path,
-					"8.5",
-				))
-				continue
-			}
-
-			fieldName := parts[1]
-			part := parts[2]
-			if fieldName == "" {
-				issues = append(issues, schemaIssue(
-					"schema.pathTemplate.invalid_placeholder",
-					fmt.Sprintf("refs placeholder '%s' must include field name", token),
-					path,
-					"8.5",
-				))
-				continue
-			}
-			rule, exists := fieldsByName[fieldName]
-			if !exists || rule.Type != "entityRef" {
-				issues = append(issues, schemaIssue(
-					"schema.expression.invalid_reference",
-					fmt.Sprintf("refs placeholder '%s' requires entityRef field '%s'", token, fieldName),
-					path,
-					"8.5",
-				))
-				continue
-			}
-			switch part {
-			case "id", "type", "slug", "dirPath":
-			default:
-				issues = append(issues, schemaIssue(
-					"schema.pathTemplate.invalid_placeholder",
-					fmt.Sprintf("unsupported refs placeholder part '%s'", part),
-					path,
-					"8.5",
-				))
-			}
-			continue
-		}
-
-		issues = append(issues, schemaIssue(
-			"schema.pathTemplate.invalid_placeholder",
-			fmt.Sprintf("unsupported placeholder '{%s}'", token),
-			path,
-			"9",
-		))
-	}
-
-	return issues
-}
-
-func validateStrictWhenOperands(
-	typeName string,
-	caseIndex int,
-	pathCase model.PathPatternCase,
-	fieldsByName map[string]model.RequiredFieldRule,
-) *domainerrors.AppError {
-	if pathCase.WhenExpr == nil {
-		return nil
-	}
-
-	for _, usage := range expressions.CollectStrictReferenceUsages(pathCase.WhenExpr) {
-		if !referencePotentiallyMissing(usage.Reference, fieldsByName) {
-			continue
-		}
-
-		return domainerrors.New(
-			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf(
-				"schema.entity.%s.pathTemplate.cases[%d].when uses strict operator '%s' with potentially missing operand '%s'",
-				typeName,
-				caseIndex,
-				usage.Operator,
-				usage.Reference.Raw,
-			),
-			map[string]any{
-				"field":    pathCase.WhenPath,
-				"operator": string(usage.Operator),
-				"operand":  usage.Reference.Raw,
-			},
-		)
-	}
-
-	return nil
-}
-
-func validateTemplatePlaceholderAvailability(
-	typeName string,
-	caseIndex int,
-	template string,
-	usePath string,
-	pathCase model.PathPatternCase,
-	fieldsByName map[string]model.RequiredFieldRule,
-) *domainerrors.AppError {
-	placeholders, err := extractPlaceholders(template)
-	if err != nil {
-		return nil
-	}
-
-	guardKeys := collectCaseGuardKeys(pathCase, fieldsByName)
-	for _, token := range placeholders {
-		reference, hasReference := placeholderReference(token)
-		if !hasReference {
-			continue
-		}
-		if !referencePotentiallyMissing(reference, fieldsByName) {
-			continue
-		}
-		targetKey := presenceKeyForReference(reference, fieldsByName)
-		if targetKey == "" {
-			continue
-		}
-		if _, guarded := guardKeys[targetKey]; guarded {
-			continue
-		}
-
-		return domainerrors.New(
-			domainerrors.CodeSchemaInvalid,
-			fmt.Sprintf(
-				"schema.entity.%s.pathTemplate.cases[%d].use placeholder '{%s}' references potentially missing value without static guard",
-				typeName,
-				caseIndex,
-				token,
-			),
-			map[string]any{
-				"field":       usePath,
-				"placeholder": token,
-			},
-		)
-	}
-
-	return nil
-}
-
-func placeholderReference(token string) (expressions.Reference, bool) {
-	switch token {
-	case "id", "slug", "createdDate", "updatedDate":
-		return expressions.Reference{}, false
-	}
-
-	if strings.HasPrefix(token, "meta.") {
-		field := strings.TrimPrefix(token, "meta.")
-		if field == "" || strings.Contains(field, ".") {
-			return expressions.Reference{}, false
-		}
-		return expressions.Reference{
-			Kind:  expressions.ReferenceMeta,
-			Field: field,
-			Raw:   "meta." + field,
-		}, true
-	}
-
-	if strings.HasPrefix(token, "refs.") {
-		parts := strings.Split(token, ".")
-		if len(parts) != 3 {
-			return expressions.Reference{}, false
-		}
-		if parts[1] == "" {
-			return expressions.Reference{}, false
-		}
-		switch parts[2] {
-		case "id", "type", "slug", "dirPath":
-		default:
-			return expressions.Reference{}, false
-		}
-		return expressions.Reference{
-			Kind:  expressions.ReferenceRefs,
-			Field: parts[1],
-			Part:  parts[2],
-			Raw:   "refs." + parts[1] + "." + parts[2],
-		}, true
-	}
-
-	return expressions.Reference{}, false
-}
-
-func referencePotentiallyMissing(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) bool {
-	switch reference.Kind {
-	case expressions.ReferenceMeta:
-		if isBuiltinMetaField(reference.Field) {
-			return false
-		}
-
-		rule, exists := fieldsByName[reference.Field]
-		if !exists {
-			return false
-		}
-		if !rule.Required {
-			return true
-		}
-		return rule.RequiredWhen || rule.RequiredWhenExpr != nil
-	case expressions.ReferenceRefs:
-		_, exists := fieldsByName[reference.Field]
-		return exists
-	default:
-		return true
-	}
-}
-
-func collectCaseGuardKeys(
-	pathCase model.PathPatternCase,
-	fieldsByName map[string]model.RequiredFieldRule,
-) map[string]struct{} {
-	guards := map[string]struct{}{}
-	if !pathCase.HasWhen || pathCase.WhenExpr == nil {
-		return guards
-	}
-
-	switch pathCase.WhenExpr.Operator {
-	case expressions.OpExists:
-		if pathCase.WhenExpr.ExistsRef != nil {
-			guards[presenceKeyForReference(*pathCase.WhenExpr.ExistsRef, fieldsByName)] = struct{}{}
-		}
-	case expressions.OpAll:
-		for _, subexpression := range pathCase.WhenExpr.Subexpressions {
-			if subexpression == nil || subexpression.Operator != expressions.OpExists || subexpression.ExistsRef == nil {
-				continue
-			}
-			guards[presenceKeyForReference(*subexpression.ExistsRef, fieldsByName)] = struct{}{}
-		}
-	}
-
-	return guards
-}
-
-func presenceKeyForReference(reference expressions.Reference, fieldsByName map[string]model.RequiredFieldRule) string {
-	_ = fieldsByName
-
-	switch reference.Kind {
-	case expressions.ReferenceMeta:
-		if isBuiltinMetaField(reference.Field) {
-			return "builtin:" + reference.Field
-		}
-		return "meta:" + reference.Field
-	case expressions.ReferenceRefs:
-		return "refs:" + reference.Field
-	default:
-		return ""
-	}
-}
-
-func isBuiltinMetaField(name string) bool {
-	switch name {
-	case "type", "id", "slug", "createdDate", "updatedDate":
-		return true
-	default:
-		return false
-	}
-}
-
-func extractPlaceholders(template string) ([]string, error) {
-	placeholders := make([]string, 0)
-	for idx := 0; idx < len(template); idx++ {
-		if template[idx] == '}' {
-			return nil, fmt.Errorf("template contains unexpected '}'")
-		}
-		if template[idx] != '{' {
-			continue
-		}
-
-		endOffset := strings.IndexByte(template[idx+1:], '}')
-		if endOffset < 0 {
-			return nil, fmt.Errorf("template contains unclosed '{'")
-		}
-
-		token := template[idx+1 : idx+1+endOffset]
-		if token == "" {
-			return nil, fmt.Errorf("template contains empty placeholder '{}'")
-		}
-		if strings.Contains(token, "{") || strings.Contains(token, "}") {
-			return nil, fmt.Errorf("template contains nested braces")
-		}
-
-		placeholders = append(placeholders, token)
-		idx = idx + endOffset + 1
-	}
-
-	return placeholders, nil
-}
-
-func fromCompileIssue(issue expressions.CompileIssue) domainvalidation.Issue {
-	standardRef := issue.StandardRef
-	if standardRef == "" {
-		standardRef = "11.6"
-	}
-
-	return domainvalidation.Issue{
-		Code:        issue.Code,
-		Level:       domainvalidation.LevelError,
-		Class:       "SchemaError",
-		Message:     issue.Message,
-		StandardRef: standardRef,
-		Field:       issue.Field,
-	}
 }
 
 func schemaIssue(code string, message string, field string, standardRef string) domainvalidation.Issue {

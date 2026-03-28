@@ -4,9 +4,9 @@ entity:
     idPrefix: DOC
     pathTemplate:
       cases:
-        - use: "docs/{slug}.md"
+        - use: "docs/${slug}.md"
         - when: true
-          use: "draft/{slug}.md"
+          use: "draft/${slug}.md"
     content:
       sections:
         goal: {}

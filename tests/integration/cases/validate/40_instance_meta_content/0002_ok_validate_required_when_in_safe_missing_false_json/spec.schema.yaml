@@ -2,7 +2,7 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "{slug}.md"
+    pathTemplate: "${slug}.md"
     meta:
       fields:
         owner:
@@ -13,9 +13,7 @@ entity:
               - core
               - platform
         checklist:
-          required: false
-          required_when:
-            in?: [meta.owner, [core]]
+          required: "${contains(['core'], meta.owner)}"
           schema:
             type: string
     content:

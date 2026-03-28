@@ -4,10 +4,9 @@ entity:
     idPrefix: "DOC"
     pathTemplate:
       cases:
-        - when:
-            exists: meta.owner
-          use: "docs/{refs.owner.id}/{slug}.md"
-        - use: "{slug}.md"
+        - when: "${meta.owner != `null`}"
+          use: "docs/${refs.owner.id}/${slug}.md"
+        - use: "${slug}.md"
     meta:
       fields:
         owner:

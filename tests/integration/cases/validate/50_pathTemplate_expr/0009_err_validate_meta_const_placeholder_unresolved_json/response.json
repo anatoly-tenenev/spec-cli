@@ -2,7 +2,7 @@
   "issues": [
     {
       "class": "InstanceError",
-      "code": "meta.required_const_placeholder_unresolved",
+      "code": "meta.required_const_interpolation_failed",
       "entity": {
         "id": "DOC-1",
         "slug": "intro",
@@ -10,7 +10,7 @@
       },
       "field": "frontmatter.owner_slug_snapshot",
       "level": "error",
-      "message": "metadata field 'owner_slug_snapshot' const placeholder is unresolved: placeholder '{refs.owner.slug}' is missing",
+      "message": "metadata field 'owner_slug_snapshot' const interpolation failed: interpolation result must be string, number, or boolean",
       "standard_ref": "9.4"
     }
   ],

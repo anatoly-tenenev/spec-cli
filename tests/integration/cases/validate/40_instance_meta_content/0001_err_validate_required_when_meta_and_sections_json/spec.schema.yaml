@@ -4,10 +4,9 @@ entity:
     idPrefix: DOC
     pathTemplate:
       cases:
-        - when:
-            eq?: [meta.owner, "core"]
-          use: "core/{slug}.md"
-        - use: "misc/{slug}.md"
+        - when: "${meta.owner == 'core'}"
+          use: "core/${slug}.md"
+        - use: "misc/${slug}.md"
     meta:
       fields:
         status:
@@ -24,15 +23,11 @@ entity:
               - core
               - platform
         test_file:
-          required: false
-          required_when:
-            in: [meta.status, [approved]]
+          required: "${contains(['approved'], meta.status)}"
           schema:
             type: string
     content:
       sections:
         goal: {}
         scope:
-          required: false
-          required_when:
-            eq?: [meta.status, "approved"]
+          required: "${meta.status == 'approved'}"

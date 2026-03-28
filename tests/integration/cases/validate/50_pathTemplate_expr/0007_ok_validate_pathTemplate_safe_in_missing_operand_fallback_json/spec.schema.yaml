@@ -4,10 +4,9 @@ entity:
     idPrefix: DOC
     pathTemplate:
       cases:
-        - when:
-            in?: [meta.owner, [core, edge]]
-          use: "core/{slug}.md"
-        - use: "misc/{slug}.md"
+        - when: "${contains(['core', 'edge'], meta.owner)}"
+          use: "core/${slug}.md"
+        - use: "misc/${slug}.md"
     meta:
       fields:
         owner:

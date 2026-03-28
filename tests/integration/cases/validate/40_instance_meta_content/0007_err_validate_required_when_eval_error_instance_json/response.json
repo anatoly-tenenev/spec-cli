@@ -15,15 +15,15 @@
     },
     {
       "class": "InstanceError",
-      "code": "instance.expression.missing_operand_strict",
+      "code": "meta.required_expression_evaluation_failed",
       "entity": {
         "id": "DOC-1",
         "slug": "intro",
         "type": "doc"
       },
-      "field": "schema.entity.doc.meta.fields.owner.required_when",
+      "field": "schema.entity.doc.meta.fields.owner.required",
       "level": "error",
-      "message": "failed to evaluate required_when for metadata field 'owner': operator 'eq' received missing operand",
+      "message": "failed to evaluate required for metadata field 'owner': invalid type for: <nil>, expected: []jmespath.jpType{\"string\", \"array\", \"object\"}",
       "standard_ref": "11.6"
     }
   ],

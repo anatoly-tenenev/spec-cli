@@ -2,7 +2,7 @@ version: 0.0.4
 entity:
   doc:
     idPrefix: "DOC"
-    pathTemplate: "{slug}.md"
+    pathTemplate: "${slug}.md"
     meta:
       fields:
         owner:
@@ -11,9 +11,7 @@ entity:
             type: string
             enum: [core, edge]
         reviewer:
-          required: false
-          required_when:
-            eq: [meta.owner, core]
+          required: "${meta.owner == 'core' && meta.__missing__}"
           schema:
             type: string
             enum: [ops]

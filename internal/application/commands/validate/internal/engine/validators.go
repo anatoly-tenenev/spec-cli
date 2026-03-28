@@ -17,9 +17,9 @@ var slugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 func validateAllowedFrontmatterKeys(issues *[]domainvalidation.Issue, entity *model.CheckedEntity, frontmatter map[string]any, typeSpec model.SchemaEntityType) {
 	allowed := map[string]struct{}{
-		"type":         {},
-		"id":           {},
-		"slug":         {},
+		"type":        {},
+		"id":          {},
+		"slug":        {},
 		"createdDate": {},
 		"updatedDate": {},
 	}

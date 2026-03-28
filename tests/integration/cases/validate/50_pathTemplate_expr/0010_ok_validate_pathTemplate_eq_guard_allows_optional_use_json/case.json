@@ -1,6 +1,6 @@
 {
-  "id": "validate_10_0012_ok_validate_warnings_only_exit_code_json",
-  "description": "validate_10_0012_ok_validate_warnings_only_exit_code_json",
+  "id": "validate_50_0010_ok_validate_pathTemplate_eq_guard_allows_optional_use_json",
+  "description": "validate_50_0010_ok_validate_pathTemplate_eq_guard_allows_optional_use_json",
   "command": "validate",
   "args": [
     "--workspace",

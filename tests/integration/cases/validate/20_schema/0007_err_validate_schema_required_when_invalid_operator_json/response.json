@@ -18,12 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.expression.invalid_operator",
+      "code": "schema.expression.unknown_function",
       "level": "error",
       "class": "SchemaError",
-      "message": "unsupported expression operator 'xor'",
-      "standard_ref": "11.6",
-      "field": "schema.entity.doc.meta.fields.owner.required_when"
+      "message": "schema.entity.doc.meta.fields.owner.required has invalid expression in required context: unknown function \"xor\" (offset: 0)",
+      "standard_ref": "11.5",
+      "field": "schema.entity.doc.meta.fields.owner.required"
     }
   ]
 }

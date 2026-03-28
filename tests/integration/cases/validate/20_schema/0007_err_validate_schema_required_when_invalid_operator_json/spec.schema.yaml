@@ -2,13 +2,11 @@ version: 0.0.4
 entity:
   doc:
     idPrefix: "DOC"
-    pathTemplate: "{slug}.md"
+    pathTemplate: "${slug}.md"
     meta:
       fields:
         owner:
-          required: false
-          required_when:
-            xor: [meta.slug, core]
+          required: "${xor(meta.slug, 'core')}"
           schema:
             type: string
             enum: [core, edge]

@@ -5,4 +5,4 @@ entity:
     pathTemplate:
       mode: strict
       cases:
-        - use: "{slug}.md"
+        - use: "${slug}.md"

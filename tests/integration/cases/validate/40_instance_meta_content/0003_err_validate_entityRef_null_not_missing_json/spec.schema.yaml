@@ -2,7 +2,7 @@ version: "0.0.4"
 entity:
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         owner:

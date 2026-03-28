@@ -2,7 +2,7 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "docs/{slug}.md"
+    pathTemplate: "docs/${slug}.md"
     meta:
       fields:
         profile:
@@ -15,14 +15,7 @@ entity:
           schema:
             type: boolean
         owner:
-          required: false
-          required_when:
-            all:
-              - any:
-                  - eq?: [meta.profile, "core"]
-                  - eq?: [meta.profile, "edge"]
-              - not:
-                  eq?: [meta.flag, true]
+          required: "${contains(['core', 'edge'], meta.profile) && !(meta.flag == `true`)}"
           schema:
             type: string
     content:

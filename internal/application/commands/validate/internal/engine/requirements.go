@@ -16,19 +16,21 @@ func validateRequiredFields(
 	frontmatter map[string]any,
 	typeSpec model.SchemaEntityType,
 	idIndex map[string][]resolvedEntityRef,
-	context runtimeExpressionContext,
+	context map[string]any,
 ) {
 	for _, rule := range typeSpec.RequiredFields {
-		requiredWhen := evaluateRequiredWhen(
-			issues,
-			entity,
-			rule.RequiredWhen,
-			rule.RequiredWhenExpr,
-			rule.RequiredWhenPath,
-			fmt.Sprintf("metadata field '%s'", rule.Name),
-			context,
-		)
-		required := rule.Required || requiredWhen
+		required, requiredErr := evaluateRequiredConstraint(rule.Required, rule.RequiredExpr, context)
+		if requiredErr != nil {
+			addIssue(issues, entity, domainvalidation.Issue{
+				Code:        "meta.required_expression_evaluation_failed",
+				Level:       domainvalidation.LevelError,
+				Class:       "InstanceError",
+				Message:     fmt.Sprintf("failed to evaluate required for metadata field '%s': %s", rule.Name, requiredErr.Message),
+				StandardRef: "11.6",
+				Field:       rule.RequiredPath,
+			})
+			required = false
+		}
 
 		value, exists := frontmatter[rule.Name]
 		if !exists {
@@ -74,13 +76,13 @@ func validateRequiredFields(
 			validateArrayField(issues, entity, rule, arrayValue, idIndex)
 		}
 
-		resolvedEnum, enumResolveErr := resolveStringRuleValues(rule.Enum, context)
+		resolvedEnum, enumResolveErr := resolveRuleValues(rule.Enum, context)
 		if enumResolveErr != nil {
 			addIssue(issues, entity, domainvalidation.Issue{
-				Code:        "meta.required_enum_placeholder_unresolved",
+				Code:        "meta.required_enum_interpolation_failed",
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
-				Message:     fmt.Sprintf("metadata field '%s' enum placeholder is unresolved: %s", rule.Name, enumResolveErr.Error()),
+				Message:     fmt.Sprintf("metadata field '%s' enum interpolation failed: %s", rule.Name, enumResolveErr.Message),
 				StandardRef: "9.4",
 				Field:       fmt.Sprintf("frontmatter.%s", rule.Name),
 			})
@@ -98,34 +100,30 @@ func validateRequiredFields(
 			})
 		}
 
-		resolvedValue := rule.Value
 		if rule.HasValue {
-			resolvedValues, valueResolveErr := resolveStringRuleValues([]any{rule.Value}, context)
-			if valueResolveErr != nil {
+			resolvedConst, constResolveErr := resolveRuleValue(rule.Value, context)
+			if constResolveErr != nil {
 				addIssue(issues, entity, domainvalidation.Issue{
-					Code:        "meta.required_const_placeholder_unresolved",
+					Code:        "meta.required_const_interpolation_failed",
 					Level:       domainvalidation.LevelError,
 					Class:       "InstanceError",
-					Message:     fmt.Sprintf("metadata field '%s' const placeholder is unresolved: %s", rule.Name, valueResolveErr.Error()),
+					Message:     fmt.Sprintf("metadata field '%s' const interpolation failed: %s", rule.Name, constResolveErr.Message),
 					StandardRef: "9.4",
 					Field:       fmt.Sprintf("frontmatter.%s", rule.Name),
 				})
 				continue
 			}
-			if len(resolvedValues) == 1 {
-				resolvedValue = resolvedValues[0]
-			}
-		}
 
-		if rule.HasValue && !support.LiteralEqual(value, resolvedValue) {
-			addIssue(issues, entity, domainvalidation.Issue{
-				Code:        "meta.required_value_mismatch",
-				Level:       domainvalidation.LevelError,
-				Class:       "InstanceError",
-				Message:     fmt.Sprintf("metadata field '%s' does not match required value", rule.Name),
-				StandardRef: "12.3",
-				Field:       fmt.Sprintf("frontmatter.%s", rule.Name),
-			})
+			if !support.LiteralEqual(value, resolvedConst) {
+				addIssue(issues, entity, domainvalidation.Issue{
+					Code:        "meta.required_value_mismatch",
+					Level:       domainvalidation.LevelError,
+					Class:       "InstanceError",
+					Message:     fmt.Sprintf("metadata field '%s' does not match required value", rule.Name),
+					StandardRef: "12.3",
+					Field:       fmt.Sprintf("frontmatter.%s", rule.Name),
+				})
+			}
 		}
 	}
 }
@@ -224,108 +222,13 @@ func validateArrayField(
 	}
 }
 
-func resolveStringRuleValues(values []any, context runtimeExpressionContext) ([]any, error) {
-	if len(values) == 0 {
-		return nil, nil
-	}
-
-	resolved := make([]any, 0, len(values))
-	for _, value := range values {
-		stringValue, ok := value.(string)
-		if !ok || !strings.Contains(stringValue, "{") {
-			resolved = append(resolved, value)
-			continue
-		}
-
-		rendered, renderErr := renderMetadataTemplate(stringValue, context)
-		if renderErr != nil {
-			return nil, renderErr
-		}
-		resolved = append(resolved, rendered)
-	}
-
-	return resolved, nil
-}
-
-func renderMetadataTemplate(template string, context runtimeExpressionContext) (string, error) {
-	var builder strings.Builder
-	for idx := 0; idx < len(template); idx++ {
-		current := template[idx]
-		if current == '}' {
-			return "", fmt.Errorf("template contains unexpected '}'")
-		}
-		if current != '{' {
-			builder.WriteByte(current)
-			continue
-		}
-
-		endOffset := strings.IndexByte(template[idx+1:], '}')
-		if endOffset < 0 {
-			return "", fmt.Errorf("template contains unclosed '{'")
-		}
-		token := template[idx+1 : idx+1+endOffset]
-		if token == "" {
-			return "", fmt.Errorf("template contains empty placeholder")
-		}
-
-		resolvedValue, resolveErr := resolveMetadataPlaceholder(token, context)
-		if resolveErr != nil {
-			return "", resolveErr
-		}
-		builder.WriteString(resolvedValue)
-		idx = idx + endOffset + 1
-	}
-	return builder.String(), nil
-}
-
-func resolveMetadataPlaceholder(token string, context runtimeExpressionContext) (string, error) {
-	switch token {
-	case "id", "slug", "createdDate", "updatedDate":
-		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: token, Raw: "meta." + token})
-		if !exists {
-			return "", fmt.Errorf("placeholder '{%s}' is missing", token)
-		}
-		return stringifyPathValue(value, token)
-	}
-
-	if strings.HasPrefix(token, "meta.") {
-		fieldName := strings.TrimPrefix(token, "meta.")
-		if fieldName == "" || strings.Contains(fieldName, ".") {
-			return "", fmt.Errorf("placeholder '{%s}' has invalid format", token)
-		}
-		value, exists := context.ResolveReference(expressions.Reference{Kind: expressions.ReferenceMeta, Field: fieldName, Raw: "meta." + fieldName})
-		if !exists {
-			return "", fmt.Errorf("placeholder '{%s}' is missing", token)
-		}
-		return stringifyPathValue(value, token)
-	}
-
-	if strings.HasPrefix(token, "refs.") {
-		parts := strings.Split(token, ".")
-		if len(parts) != 3 {
-			return "", fmt.Errorf("placeholder '{%s}' has invalid format", token)
-		}
-		if parts[1] == "" {
-			return "", fmt.Errorf("placeholder '{%s}' has invalid format", token)
-		}
-		reference := expressions.Reference{Kind: expressions.ReferenceRefs, Field: parts[1], Part: parts[2], Raw: "refs." + parts[1] + "." + parts[2]}
-		value, exists := context.ResolveReference(reference)
-		if !exists {
-			return "", fmt.Errorf("placeholder '{%s}' is missing", token)
-		}
-		return stringifyPathValue(value, token)
-	}
-
-	return "", fmt.Errorf("unsupported placeholder '{%s}'", token)
-}
-
 func validateRequiredSections(
 	issues *[]domainvalidation.Issue,
 	entity *model.CheckedEntity,
 	sections map[string]string,
 	duplicateLabels []string,
 	typeSpec model.SchemaEntityType,
-	context runtimeExpressionContext,
+	context map[string]any,
 ) {
 	for _, label := range duplicateLabels {
 		addIssue(issues, entity, domainvalidation.Issue{
@@ -338,17 +241,19 @@ func validateRequiredSections(
 	}
 
 	for _, sectionRule := range typeSpec.RequiredSections {
-		requiredWhen := evaluateRequiredWhen(
-			issues,
-			entity,
-			sectionRule.RequiredWhen,
-			sectionRule.RequiredWhenExpr,
-			sectionRule.RequiredWhenPath,
-			fmt.Sprintf("content section '%s'", sectionRule.Name),
-			context,
-		)
+		required, requiredErr := evaluateRequiredConstraint(sectionRule.Required, sectionRule.RequiredExpr, context)
+		if requiredErr != nil {
+			addIssue(issues, entity, domainvalidation.Issue{
+				Code:        "content.required_expression_evaluation_failed",
+				Level:       domainvalidation.LevelError,
+				Class:       "InstanceError",
+				Message:     fmt.Sprintf("failed to evaluate required for content section '%s': %s", sectionRule.Name, requiredErr.Message),
+				StandardRef: "11.6",
+				Field:       sectionRule.RequiredPath,
+			})
+			required = false
+		}
 
-		required := sectionRule.Required || requiredWhen
 		if !required {
 			continue
 		}
@@ -378,31 +283,49 @@ func validateRequiredSections(
 	}
 }
 
-func evaluateRequiredWhen(
-	issues *[]domainvalidation.Issue,
-	entity *model.CheckedEntity,
+func evaluateRequiredConstraint(
 	literal bool,
-	expression *expressions.Expression,
-	fieldPath string,
-	label string,
-	context runtimeExpressionContext,
-) bool {
+	expression *expressions.CompiledExpression,
+	context map[string]any,
+) (bool, *expressions.EvalError) {
 	if expression == nil {
-		return literal
+		return literal, nil
 	}
 
 	value, evalErr := expressions.Evaluate(expression, context)
-	if evalErr == nil {
-		return value
+	if evalErr != nil {
+		return false, evalErr
 	}
 
-	addIssue(issues, entity, domainvalidation.Issue{
-		Code:        evalErr.Code,
-		Level:       domainvalidation.LevelError,
-		Class:       "InstanceError",
-		Message:     fmt.Sprintf("failed to evaluate required_when for %s: %s", label, evalErr.Message),
-		StandardRef: evalErr.StandardRef,
-		Field:       fieldPath,
-	})
-	return false
+	return expressions.IsTruthy(value), nil
+}
+
+func resolveRuleValues(values []model.RuleValue, context map[string]any) ([]any, *expressions.EvalError) {
+	if len(values) == 0 {
+		return nil, nil
+	}
+
+	resolved := make([]any, 0, len(values))
+	for _, value := range values {
+		resolvedValue, resolveErr := resolveRuleValue(value, context)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		resolved = append(resolved, resolvedValue)
+	}
+
+	return resolved, nil
+}
+
+func resolveRuleValue(value model.RuleValue, context map[string]any) (any, *expressions.EvalError) {
+	if value.Template == nil {
+		return value.Literal, nil
+	}
+
+	rendered, renderErr := expressions.RenderTemplate(value.Template, context)
+	if renderErr != nil {
+		return nil, renderErr
+	}
+
+	return rendered, nil
 }

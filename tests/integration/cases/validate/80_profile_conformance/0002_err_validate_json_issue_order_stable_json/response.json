@@ -14,14 +14,14 @@
     },
     {
       "class": "InstanceError",
-      "code": "instance.pathTemplate.placeholder_unresolved",
+      "code": "instance.pathTemplate.use_interpolation_failed",
       "entity": {
         "id": "DOC-1",
         "type": "doc"
       },
       "level": "error",
-      "message": "pathTemplate placeholder '{slug}' is missing",
-      "standard_ref": "8.5"
+      "message": "failed to evaluate pathTemplate use: interpolation result must be string, number, or boolean",
+      "standard_ref": "8.6"
     },
     {
       "class": "InstanceError",
@@ -37,14 +37,14 @@
     },
     {
       "class": "InstanceError",
-      "code": "instance.pathTemplate.placeholder_unresolved",
+      "code": "instance.pathTemplate.use_interpolation_failed",
       "entity": {
         "id": "DOC-2",
         "type": "doc"
       },
       "level": "error",
-      "message": "pathTemplate placeholder '{slug}' is missing",
-      "standard_ref": "8.5"
+      "message": "failed to evaluate pathTemplate use: interpolation result must be string, number, or boolean",
+      "standard_ref": "8.6"
     }
   ],
   "result_state": "invalid",

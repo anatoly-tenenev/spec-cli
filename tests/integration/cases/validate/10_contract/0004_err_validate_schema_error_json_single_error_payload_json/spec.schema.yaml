@@ -2,7 +2,7 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "{slug}.md"
+    pathTemplate: "${slug}.md"
   doc:
     idPrefix: DOC2
-    pathTemplate: "other/{slug}.md"
+    pathTemplate: "other/${slug}.md"

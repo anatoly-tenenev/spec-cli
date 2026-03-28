@@ -4,8 +4,7 @@ entity:
     idPrefix: DOC
     pathTemplate:
       cases:
-        - when:
-            eq?: [meta.createdDate, "2026-03-01"]
+        - when: "${createdDate == '2026-03-01'}"
           use: "entity_a.md"
         - use: "entity_b.md"
     meta:

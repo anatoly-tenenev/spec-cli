@@ -2,12 +2,11 @@ version: "0.0.4"
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "docs/{slug}.md"
+    pathTemplate: "docs/${slug}.md"
     meta:
       fields:
         owner:
-          required: true
-          required_when: true
+          required: "${`null`}"
           schema:
             type: string
     content:

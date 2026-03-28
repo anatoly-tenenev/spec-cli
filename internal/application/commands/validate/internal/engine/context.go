@@ -3,7 +3,8 @@ package engine
 import (
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
 type resolvedEntityRef struct {
@@ -13,69 +14,78 @@ type resolvedEntityRef struct {
 	DirPath string
 }
 
-type runtimeExpressionContext struct {
-	metaValues   map[string]any
-	metaPresence map[string]bool
-	refs         map[string]resolvedEntityRef
-}
-
-func buildRuntimeExpressionContext(
+func buildRuntimeEvaluationContext(
 	frontmatter map[string]any,
 	resolvedRefs map[string]resolvedEntityRef,
-) runtimeExpressionContext {
-	metaValues := make(map[string]any, len(frontmatter))
-	metaPresence := make(map[string]bool, len(frontmatter))
-	for key, value := range frontmatter {
-		metaPresence[key] = true
-		if dateValue, ok := value.(time.Time); ok {
-			metaValues[key] = dateValue.Format("2006-01-02")
+	typeSpec model.SchemaEntityType,
+) map[string]any {
+	meta := make(map[string]any, len(typeSpec.RequiredFields))
+	refs := make(map[string]any)
+	topLevel := map[string]any{}
+
+	builtinKeys := []string{
+		reservedkeys.BuiltinType,
+		reservedkeys.BuiltinID,
+		reservedkeys.BuiltinSlug,
+		reservedkeys.BuiltinCreatedDate,
+		reservedkeys.BuiltinUpdatedDate,
+	}
+	for _, key := range builtinKeys {
+		value, exists := frontmatter[key]
+		if !exists {
+			topLevel[key] = nil
 			continue
 		}
-		metaValues[key] = value
+		topLevel[key] = normalizeContextValue(value)
 	}
-	return runtimeExpressionContext{
-		metaValues:   metaValues,
-		metaPresence: metaPresence,
-		refs:         resolvedRefs,
+
+	for _, fieldRule := range typeSpec.RequiredFields {
+		if expressionContextBuiltinField(fieldRule.Name) {
+			continue
+		}
+
+		if fieldRule.Type != reservedkeys.SchemaTypeEntityRef {
+			if value, exists := frontmatter[fieldRule.Name]; exists {
+				meta[fieldRule.Name] = normalizeContextValue(value)
+			}
+			continue
+		}
+		refs[fieldRule.Name] = nil
+	}
+
+	for fieldName, resolved := range resolvedRefs {
+		if _, exists := refs[fieldName]; !exists {
+			continue
+		}
+		refs[fieldName] = map[string]any{
+			"id":      resolved.ID,
+			"type":    resolved.Type,
+			"slug":    resolved.Slug,
+			"dirPath": resolved.DirPath,
+		}
+	}
+
+	topLevel["meta"] = meta
+	topLevel["refs"] = refs
+	return topLevel
+}
+
+func expressionContextBuiltinField(fieldName string) bool {
+	switch fieldName {
+	case reservedkeys.BuiltinType,
+		reservedkeys.BuiltinID,
+		reservedkeys.BuiltinSlug,
+		reservedkeys.BuiltinCreatedDate,
+		reservedkeys.BuiltinUpdatedDate:
+		return true
+	default:
+		return false
 	}
 }
 
-func (context runtimeExpressionContext) ResolveReference(reference expressions.Reference) (any, bool) {
-	switch reference.Kind {
-	case expressions.ReferenceMeta:
-		presence, exists := context.metaPresence[reference.Field]
-		if !exists || !presence {
-			return nil, false
-		}
-
-		value, exists := context.metaValues[reference.Field]
-		if !exists {
-			return nil, false
-		}
-		return value, true
-	case expressions.ReferenceRefs:
-		resolved, exists := context.refs[reference.Field]
-		if !exists {
-			return nil, false
-		}
-
-		if reference.Part == "" {
-			return true, true
-		}
-
-		switch reference.Part {
-		case "id":
-			return resolved.ID, true
-		case "type":
-			return resolved.Type, true
-		case "slug":
-			return resolved.Slug, true
-		case "dirPath":
-			return resolved.DirPath, true
-		default:
-			return nil, false
-		}
-	default:
-		return nil, false
+func normalizeContextValue(value any) any {
+	if dateValue, ok := value.(time.Time); ok {
+		return dateValue.Format("2006-01-02")
 	}
+	return value
 }

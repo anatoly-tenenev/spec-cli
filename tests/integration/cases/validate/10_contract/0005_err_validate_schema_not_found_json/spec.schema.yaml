@@ -2,4 +2,4 @@ version: "1.0"
 entity:
   doc:
     idPrefix: "DOC"
-    pathTemplate: "docs/{slug}.md"
+    pathTemplate: "docs/${slug}.md"

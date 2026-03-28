@@ -18,12 +18,12 @@
   },
   "issues": [
     {
-      "code": "schema.invalid",
+      "code": "schema.expression.unknown_property",
       "level": "error",
       "class": "SchemaError",
-      "message": "schema.entity.doc.pathTemplate.cases[0].use placeholder '{refs.owner.id}' references potentially missing value without static guard",
-      "standard_ref": "7",
-      "field": "schema.entity.doc.pathTemplate.cases[0].use"
+      "message": "schema.entity.doc.pathTemplate.cases[0].when has invalid expression in when context: unknown property \"owner\" (offset: 5)",
+      "standard_ref": "11.6",
+      "field": "schema.entity.doc.pathTemplate.cases[0].when"
     }
   ]
 }

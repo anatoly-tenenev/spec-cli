@@ -18,10 +18,10 @@
   },
   "issues": [
     {
-      "code": "meta.required_enum_placeholder_unresolved",
+      "code": "meta.required_enum_interpolation_failed",
       "level": "error",
       "class": "InstanceError",
-      "message": "metadata field 'owner_slug_snapshot' enum placeholder is unresolved: placeholder '{refs.owner.slug}' is missing",
+      "message": "metadata field 'owner_slug_snapshot' enum interpolation failed: interpolation result must be string, number, or boolean",
       "standard_ref": "9.4",
       "entity": {
         "type": "doc",

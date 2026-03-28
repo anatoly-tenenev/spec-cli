@@ -71,7 +71,7 @@ Compact project map for fast entry into the code.
     - `validate/internal/options` - option parsing and path normalization.
     - `validate/internal/schema` - schema loading and compile-time validation.
     - `validate/internal/workspace` - markdown workspace scan and frontmatter/content parsing.
-    - `validate/internal/expressions` - expression compiler/evaluator.
+    - `validate/internal/expressions` - JMESPath adapter (compile/cache/evaluate/interpolate).
     - `validate/internal/engine` - runtime validation pipeline.
     - `validate/internal/model` - internal command-state types.
     - `validate/internal/support` - pure helpers for YAML, collections, and values.
@@ -100,14 +100,14 @@ Compact project map for fast entry into the code.
   - Entrypoint: `parser.go` - `ParseType`.
   - Responsibilities:
     - Validate closed-world keys at `entity.<type>` level (`idPrefix`, `pathTemplate`, `meta`, `content`, `description`).
-    - Parse `idPrefix` and enforce uniqueness across types.
-    - Orchestrate parsing of `meta.fields`, `content.sections`, and `pathTemplate` through specialized subpackages.
-    - Build field maps and expression compile context, and aggregate schema issues from subpackages.
+    - Parse `idPrefix`, reject interpolation in `idPrefix`, and enforce uniqueness across types.
+    - Create one expression engine instance per `entity.<type>` and pass it to all schema subparsers.
+    - Orchestrate parsing of `meta.fields`, `content.sections`, and `pathTemplate`, then aggregate schema issues.
   - Subpackages:
     - `.../metafields` - parse and compile-time checks for `meta.fields` and `meta.fields[].schema`.
     - `.../sections` - parse and compile-time checks for `content.sections`.
-    - `.../requiredconstraint` - shared parsing for `required` / `required_when`.
-    - `.../expressioncontext` - expression compile context and compile-issue mapping.
+    - `.../requiredconstraint` - shared parsing for `required: boolean | "${expr}"`.
+    - `.../expressioncontext` - built-in meta field-name guard (`type`, `id`, `slug`, `createdDate`, `updatedDate`).
     - `.../names` - schema-key validation for `meta.fields` and `content.sections`.
     - `.../pathpattern` - parsing and validation of `pathTemplate`.
     - `.../schemachecks` - reusable schema check helpers.
@@ -119,33 +119,34 @@ Compact project map for fast entry into the code.
     - Validate `meta`, `meta.fields[]`, and `meta.fields[].schema` structure and closed-world keys.
     - Parse field schema attributes (`type`, `enum`, `const`, `refTypes`, `items`, `uniqueItems`, `minItems`, `maxItems`) and validate links to entity types.
     - Validate `schema.items.refTypes` only for `schema.items.type=entityRef` (non-empty, no duplicates, known entity types) and keep deterministic sorted `refTypes`.
-    - Parse `required` / `required_when` through `requiredconstraint.Parse`.
-    - Run static checks for strict `eq/in` operators on potentially-missing operands.
+    - Build one schema-aware expression context per `entity.<type>` and construct one shared expression engine for all expression-bearing keys in the type.
+    - Parse `required` through `requiredconstraint.Parse` (default `required=true`, expression form `${expr}`) and compile `schema.const`/`schema.enum` interpolations with schema-aware checks and inferred-type constraints.
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/sections`
   - Entrypoint: `parser.go` - `Parse`.
   - Responsibilities:
     - Validate `content.sections` structure and section-rule closed-world keys.
-    - Parse section rules (`title`, `required`, `required_when`).
-    - Parse section `required` / `required_when` through `requiredconstraint.Parse`.
-    - Run static checks for strict `eq/in` operators on potentially-missing operands.
+    - Parse section rules (`title`, `description`, `required`) with strict type checks.
+    - Parse section `required` through `requiredconstraint.Parse` (boolean or `${expr}`).
+    - Reject interpolation in section `title`/`description`.
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/requiredconstraint`
   - Entrypoint: `parser.go` - `Parse`.
   - Responsibilities:
     - Parse shared requiredness rules for fields and sections.
-    - Compile object-form `required_when` and return compile issues as schema issues.
-    - Enforce invariants `required=true` + `required_when` (error) and implicit `required=false` when only `required_when` is present (warning).
+    - Apply default `required=true` when key is absent.
+    - Accept only `required: boolean` or `required: "${expr}"`, compile expression form via the shared JMESPath engine, and map compile errors to schema diagnostics.
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext`
-  - Entrypoint: `context.go` - `Build`, `FromCompileIssue`, `IsBuiltinMetaField`.
+  - Entrypoint: `context.go` - `IsBuiltinMetaField`, `BuildEntityExpressionSchema`.
   - Responsibilities:
-    - Describe built-in meta fields for compile context (`type`, `id`, `slug`, `createdDate`, `updatedDate`).
-    - Build `expressions.CompileContext` from built-ins and schema-defined `meta.fields`.
-    - Map expression compiler issues into schema issue format.
+    - Keep the canonical built-in frontmatter keys set for schema name checks and shared validations.
+    - Build JSON Schema context for expression compilation (`type/id/slug/createdDate/updatedDate/meta/refs`) with deterministic `additionalProperties=false` constraints where required.
+    - Project scalar `entityRef` fields into `refs.<field> = {id,type,slug,dirPath}` schema shape for static validation.
+    - Provide guard helpers for schema-level path checks (`IsPathGuaranteedBySchema`, `GuardRootForPath`).
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/names`
@@ -158,10 +159,11 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern`
   - Entrypoint: `parser.go` - `Parse`.
   - Responsibilities:
-    - Normalize `pathTemplate` from `string | list | object`.
-    - Validate closed-world keys of the `pathTemplate` object and `cases[]`.
-    - Compile `cases[].when` expressions.
-    - Validate placeholders (`meta:*`, `ref:*`), strict operators, static `exists` guards, and the single-unconditional-case-at-end rule.
+    - Normalize `pathTemplate` from `string | list(cases) | object{cases}` to one canonical cases list.
+    - Validate closed-world keys of the `pathTemplate` object and each case (`use`, `when`).
+    - Compile `cases[].use` as string templates and `cases[].when` as `boolean | "${expr}"` with schema-aware expression checks.
+    - Apply guard-analysis-based schema validation for `cases[].use` against optional/missing paths and `cases[].when` protections.
+    - Emit schema issues for empty/no-unconditional/misplaced-unconditional case configurations.
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/workspace`
@@ -176,12 +178,16 @@ Compact project map for fast entry into the code.
 
 - `internal/application/commands/validate/internal/expressions`
   - Entrypoints:
-    - `compiler.go` - `Compile`
-    - `evaluator.go` - `Evaluate`
+    - `compiler.go` - `NewEngine`, `NewSchemaAwareEngine`, `(*Engine).Compile`
+    - `interpolation.go` - `ContainsInterpolation`, `CompileScalarInterpolation`, `CompileTemplate`, `RenderTemplate`
+    - `evaluator.go` - `Evaluate`, `IsTruthy`, `StringifyInterpolationValue`
   - Responsibilities:
-    - Compile expression AST (`eq`, `eq?`, `in`, `in?`, `all`, `any`, `not`, `exists`) with arity/type/reference checks.
-    - Validate `meta/ref` references against compile context.
-    - Evaluate strict/safe operators at runtime and report evaluation errors.
+    - Wrap `github.com/anatoly-tenenev/go-jmespath` as the only expression backend, with schema-aware and non-schema compile modes.
+    - Compile expressions with cache key `<entityType, mode, source>`, including inferred-type analysis for boolean and interpolation contexts.
+    - Map JMESPath static errors to stable schema diagnostic codes and expose offset for diagnostics.
+    - Parse `${expr}` templates and locate interpolation boundaries with JMESPath-aware brace/quote tracking.
+    - Expose guard analysis (`ProtectsWhenTrue`, guarded paths) for schema-level checks and execute runtime evaluation with JMESPath truthiness.
+    - Convert interpolation values to deterministic strings and reject unsupported runtime types (`null`, `array`, `object`) for string interpolation.
   - Subpackages: none.
 
 - `internal/application/commands/validate/internal/engine`
@@ -190,8 +196,10 @@ Compact project map for fast entry into the code.
     - `issues.go` - `CountIssuesByLevel`
   - Responsibilities:
     - Run the full validation pipeline: parse candidates, built-in checks, schema-driven checks.
+    - Build runtime evaluation context for each entity (`type/id/slug/createdDate/updatedDate`, `meta`, `refs`) with `refs.<field>=null` default for unresolved/missing scalar refs.
+    - Evaluate `required` expressions for `meta.fields` and `content.sections` via JMESPath truthiness, and resolve interpolated `schema.const` / `schema.enum` values before comparison.
+    - Select first truth-like `pathTemplate` case left-to-right, evaluate only selected `use`, and map runtime failures to instance diagnostics.
     - Resolve scalar `entityRef` and `array.items.type=entityRef` targets (including `refTypes`, `missing|ambiguous|type_mismatch`) and reject blank array `entityRef` items as item-type mismatches.
-    - Evaluate `required_when`, validate `pathTemplate`, and keep deterministic issue ordering.
     - Aggregate entity/global issues and compute coverage, validity, and conformance metrics.
   - Subpackages: none.
 
@@ -769,7 +777,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.
     - `tests/integration/cases/validate/40_instance_meta_content/*` - `meta.fields` and `content.sections`.
-    - `tests/integration/cases/validate/50_pathTemplate_expr/*` - `pathTemplate.cases[].when` scenarios.
+    - `tests/integration/cases/validate/50_pathTemplate_expr/*` - `pathTemplate.cases[].when` scenarios, including optional-field guards that permit `${meta.<field>}` reuse in `use`.
     - `tests/integration/cases/validate/60_entityRef_context/*` - scalar/array `entityRef`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dirPath`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
@@ -813,7 +821,7 @@ Compact project map for fast entry into the code.
 ## Current Command Status
 
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
-- `validate` - support for `expressions`, `entityRef`, and `pathTemplate.cases[].when` is implemented.
+- `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented (schema index, `where-json`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
 - `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
