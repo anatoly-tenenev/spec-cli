@@ -184,7 +184,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Wrap `github.com/anatoly-tenenev/go-jmespath` as the only expression backend, with schema-aware and non-schema compile modes.
     - Compile expressions with cache key `<entityType, mode, source>`, including inferred-type analysis for boolean and interpolation contexts.
-    - Map JMESPath static errors to stable schema diagnostic codes and expose offset for diagnostics.
+    - Map JMESPath static errors to stable schema diagnostic codes, including `unsafe_optional_argument`, and expose offset for diagnostics.
     - Parse `${expr}` templates and locate interpolation boundaries with JMESPath-aware brace/quote tracking.
     - Expose guard analysis (`ProtectsWhenTrue`, guarded paths) for schema-level checks and execute runtime evaluation with JMESPath truthiness.
     - Convert interpolation values to deterministic strings and reject unsupported runtime types (`null`, `array`, `object`) for string interpolation.
@@ -774,7 +774,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, placeholder/path utilities, stderr/response/workspace assertions, permission setup).
     - `tests/integration/internal/runner` - response normalization and workspace permission adapter used by harness and selected tests.
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
-    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays.
+    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays and `required` expressions rejected by static nullable-function checks.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.
     - `tests/integration/cases/validate/40_instance_meta_content/*` - `meta.fields` and `content.sections`.
     - `tests/integration/cases/validate/50_pathTemplate_expr/*` - `pathTemplate.cases[].when` scenarios, including optional-field guards that permit `${meta.<field>}` reuse in `use`.

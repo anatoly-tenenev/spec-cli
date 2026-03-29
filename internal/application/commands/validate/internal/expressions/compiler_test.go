@@ -50,6 +50,18 @@ func TestCompileMapsInvalidFunctionArgTypeToStaticCode(t *testing.T) {
 	}
 }
 
+func TestCompileMapsUnsafeOptionalArgumentToStaticCode(t *testing.T) {
+	engine := mustNewSchemaAwareEngine(t, "doc")
+
+	_, compileErr := CompileScalarInterpolation("${length(meta.owner) > `0`}", engine)
+	if compileErr == nil {
+		t.Fatalf("expected compile error")
+	}
+	if compileErr.Code != "schema.expression.unsafe_optional_argument" {
+		t.Fatalf("unexpected compile error code: %s", compileErr.Code)
+	}
+}
+
 func TestInferTypeBooleanCompatibleForWhen(t *testing.T) {
 	engine := mustNewSchemaAwareEngine(t, "doc")
 

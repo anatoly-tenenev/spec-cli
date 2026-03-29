@@ -27,6 +27,7 @@ var staticErrorCodeMap = map[string]string{
 	"unknown_function":          "schema.expression.unknown_function",
 	"invalid_function_arity":    "schema.expression.invalid_function_arity",
 	"invalid_function_arg_type": "schema.expression.invalid_function_arg_type",
+	"unsafe_optional_argument":  "schema.expression.unsafe_optional_argument",
 	"unverifiable_type":         "schema.expression.unverifiable_type",
 	"invalid_enum_value":        "schema.expression.invalid_enum_value",
 }

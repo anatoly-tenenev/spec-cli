@@ -1,5 +1,5 @@
-github.com/anatoly-tenenev/go-jmespath v0.0.0-20260328172208-377134aab5ba h1:XjK7DmL2sUk8Ne0hShzJzL5KfHWAutRPrRCq2u7ji/Q=
-github.com/anatoly-tenenev/go-jmespath v0.0.0-20260328172208-377134aab5ba/go.mod h1:9q/H2q+NnDAjvmDxh0iG0fDUUs4n4+x8HI8fvlGXenk=
+github.com/anatoly-tenenev/go-jmespath v0.0.0-20260329141219-2c80ed602138 h1:QaE0mjVgettAUuaIE2GWsGonVJlSzEXlu17CtF2KTys=
+github.com/anatoly-tenenev/go-jmespath v0.0.0-20260329141219-2c80ed602138/go.mod h1:9q/H2q+NnDAjvmDxh0iG0fDUUs4n4+x8HI8fvlGXenk=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

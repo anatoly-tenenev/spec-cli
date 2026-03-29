@@ -1,6 +1,6 @@
 {
-  "id": "validate_40_0007_err_validate_required_when_eval_error_instance_json",
-  "description": "validate_40_0007_err_validate_required_when_eval_error_instance_json",
+  "id": "validate_20_0026_err_validate_schema_required_when_unsafe_optional_function_arg_json",
+  "description": "validate_20_0026_err_validate_schema_required_when_unsafe_optional_function_arg_json",
   "command": "validate",
   "args": [
     "--workspace",
