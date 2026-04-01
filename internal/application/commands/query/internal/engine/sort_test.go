@@ -10,7 +10,7 @@ import (
 func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	index := newEngineTestIndex()
 
-	terms, err := buildEffectiveSort(nil, index)
+	terms, err := buildEffectiveSort(nil, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -19,7 +19,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	}
 
 	custom := []model.SortTerm{{Path: "updatedDate", Direction: model.SortDirectionDesc}}
-	effective, err := buildEffectiveSort(custom, index)
+	effective, err := buildEffectiveSort(custom, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -30,7 +30,36 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 
 func TestBuildEffectiveSort_InvalidField(t *testing.T) {
 	index := newEngineTestIndex()
-	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta", Direction: model.SortDirectionAsc}}, index)
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if err.Code != domainerrors.CodeInvalidArgs {
+		t.Fatalf("unexpected error code: %s", err.Code)
+	}
+}
+
+func TestBuildEffectiveSort_RejectsMetaEntityRefAcrossActiveSet(t *testing.T) {
+	index := model.QuerySchemaIndex{
+		EntityTypes: map[string]model.EntityTypeSpec{
+			"feature": {
+				Name:       "feature",
+				MetaFields: map[string]model.MetadataFieldSpec{},
+				RefFields: map[string]model.RefFieldSpec{
+					"owner": {Name: "owner", Cardinality: model.RefCardinalityScalar, RefTypes: []string{"service"}},
+				},
+			},
+			"service": {
+				Name: "service",
+				MetaFields: map[string]model.MetadataFieldSpec{
+					"owner": {Name: "owner", Kind: model.FieldKindString, Required: true},
+				},
+				RefFields: map[string]model.RefFieldSpec{},
+			},
+		},
+	}
+
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta.owner", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}

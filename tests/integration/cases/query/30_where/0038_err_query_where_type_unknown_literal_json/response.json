@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY",
+    "message": "invalid_enum_value at offset 9: literal \"unknown\" is not allowed by enum of field type",
+    "exit_code": 2
+  }
+}

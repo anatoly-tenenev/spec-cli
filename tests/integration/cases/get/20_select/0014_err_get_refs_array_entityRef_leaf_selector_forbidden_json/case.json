@@ -1,0 +1,25 @@
+{
+  "id": "get_20_0014_err_get_refs_array_entityRef_leaf_selector_forbidden_json",
+  "description": "get_20_0014_err_get_refs_array_entityRef_leaf_selector_forbidden_json",
+  "command": "get",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "get",
+    "--id",
+    "FEAT-8",
+    "--select",
+    "refs.reviewers.id"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

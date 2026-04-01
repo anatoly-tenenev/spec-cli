@@ -2,7 +2,15 @@
   "id": "query_30_0004_ok_query_where_contains_string_json",
   "description": "query_30_0004_ok_query_where_contains_string_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"content.sections.summary\",\"op\":\"contains\",\"value\":\"Retry window\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "contains(content.sections.summary, 'Retry window')"
+  ],
   "expect": {
     "exit_code": 0,
     "response_file": "response.json"

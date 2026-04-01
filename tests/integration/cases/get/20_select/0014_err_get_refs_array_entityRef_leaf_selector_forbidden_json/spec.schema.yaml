@@ -1,0 +1,17 @@
+version: "0.0.4"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        reviewers:
+          schema:
+            type: array
+            items:
+              type: entityRef
+              refTypes: [service]

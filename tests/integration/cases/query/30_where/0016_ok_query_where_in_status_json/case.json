@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"meta.status\",\"op\":\"in\",\"value\":[\"draft\",\"deprecated\"]}"
+    "--where",
+    "contains(`[\"draft\",\"deprecated\"]`, meta.status)"
   ],
   "expect": {
     "exit_code": 0,

@@ -2,7 +2,7 @@
   "error": {
     "code": "INVALID_QUERY",
     "exit_code": 2,
-    "message": "logical op 'and' requires non-empty array 'filters'"
+    "message": "SyntaxError: Invalid token: tRparen"
   },
   "result_state": "invalid"
 }

@@ -11,5 +11,8 @@ tags:
   - auth
 ---
 
+## Summary {#summary}
+Login flow for user authentication.
+
 ## Implementation {#implementation}
 Login flow implementation draft.

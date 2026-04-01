@@ -1,6 +1,6 @@
 {
   "error": {
-    "code": "WRITE_FAILED",
+    "code": "READ_FAILED",
     "details": {
       "validation": {
         "issues": [

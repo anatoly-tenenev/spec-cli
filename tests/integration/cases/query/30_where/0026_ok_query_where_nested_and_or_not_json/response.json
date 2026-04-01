@@ -10,7 +10,13 @@
         ]
       },
       "refs": {
-        "owner": null
+        "owner": {
+          "id": "SVC-404",
+          "resolved": false,
+          "slug": null,
+          "type": "service",
+          "reason": "missing"
+        }
       },
       "slug": "orphan",
       "type": "feature"

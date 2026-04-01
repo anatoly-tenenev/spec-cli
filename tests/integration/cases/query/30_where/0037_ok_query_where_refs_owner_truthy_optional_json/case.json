@@ -1,0 +1,23 @@
+{
+  "id": "query_30_0037_ok_query_where_refs_owner_truthy_optional_json",
+  "description": "query_30_0037_ok_query_where_refs_owner_truthy_optional_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "refs.owner"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

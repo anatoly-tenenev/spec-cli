@@ -8,8 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--where-json",
-    "{\"op\":\"and\",\"filters\":[{\"field\":\"type\",\"op\":\"eq\",\"value\":\"feature\"},{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"active\"},{\"field\":\"refs.owner.id\",\"op\":\"exists\"}]}"
+    "--where",
+    "(type == 'feature') && (refs.owner.resolved == `true`)"
   ],
   "expect": {
     "exit_code": 0,

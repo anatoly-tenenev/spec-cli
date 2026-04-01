@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "unknown projection-namespace selector 'meta.owner'",
+    "message": "selector 'meta.owner' is forbidden for entityRef field",
     "exit_code": 2
   }
 }

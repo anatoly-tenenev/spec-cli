@@ -3,6 +3,7 @@ package schema
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
@@ -61,38 +62,33 @@ entity:
 		t.Fatalf("unexpected index error: %v", indexErr)
 	}
 
-	if _, ok := index.EntityTypes["feature"]; !ok {
+	feature, ok := index.EntityTypes["feature"]
+	if !ok {
 		t.Fatal("feature type is missing")
 	}
-	if _, ok := index.SelectorPaths["revision"]; !ok {
-		t.Fatal("revision selector is missing")
+	if _, ok := feature.MetaFields["status"]; !ok {
+		t.Fatal("feature.meta.status is missing")
 	}
-	if _, ok := index.SelectorPaths["refs.owner"]; !ok {
-		t.Fatal("refs.owner selector is missing")
+	if _, ok := feature.MetaFields["owner"]; ok {
+		t.Fatal("feature.meta.owner must not be in non-ref meta fields")
 	}
-	if _, ok := index.SelectorPaths["refs.owner.id"]; ok {
-		t.Fatal("refs.owner.id selector must not be available in projection namespace")
+
+	ownerRef, ok := feature.RefFields["owner"]
+	if !ok {
+		t.Fatal("feature.refs.owner is missing")
 	}
-	if _, ok := index.SortFields["meta.score"]; !ok {
-		t.Fatal("meta.score sort field is missing")
+	if ownerRef.Cardinality != model.RefCardinalityScalar {
+		t.Fatalf("unexpected ref cardinality: %s", ownerRef.Cardinality)
 	}
-	if _, ok := index.FilterFields["refs.owner.resolved"]; !ok {
-		t.Fatal("refs.owner.resolved filter field is missing")
+	if len(ownerRef.RefTypes) != 1 || ownerRef.RefTypes[0] != "service" {
+		t.Fatalf("unexpected refTypes: %#v", ownerRef.RefTypes)
 	}
-	if _, ok := index.SortFields["refs.owner.resolved"]; !ok {
-		t.Fatal("refs.owner.resolved sort field is missing")
+
+	if _, ok := feature.SectionFields["summary"]; !ok {
+		t.Fatal("feature section 'summary' is missing")
 	}
-	if _, ok := index.SelectorPaths["meta.owner"]; ok {
-		t.Fatal("meta.owner selector must not be available for entityRef")
-	}
-	if _, ok := index.FilterFields["content.sections.summary"]; !ok {
-		t.Fatal("content.sections.summary filter field is missing")
-	}
-	if _, ok := index.FilterFields["content.raw"]; ok {
-		t.Fatal("content.raw must not be available as where-json filter field")
-	}
-	if _, ok := index.SortFields["content.raw"]; !ok {
-		t.Fatal("content.raw sort field is missing")
+	if _, ok := feature.SectionFields["implementation"]; !ok {
+		t.Fatal("feature section 'implementation' is missing")
 	}
 }
 
@@ -111,7 +107,61 @@ func TestLoad_RejectsMissingEntity(t *testing.T) {
 	}
 }
 
-func TestBuildIndex_ConflictingFieldTypeAcrossEntities(t *testing.T) {
+func TestLoad_RejectsInvalidRequiredInterpolation(t *testing.T) {
+	schemaText := `version: "0.0.4"
+entity:
+  feature:
+    meta:
+      fields:
+        priority:
+          required: "${refs.owner.slug"
+          schema:
+            type: string
+`
+
+	path := filepath.Join(t.TempDir(), "spec.schema.yaml")
+	if err := os.WriteFile(path, []byte(schemaText), 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	_, loadErr := Load(path)
+	if loadErr == nil {
+		t.Fatal("expected load error")
+	}
+	if loadErr.Code != domainerrors.CodeSchemaInvalid {
+		t.Fatalf("unexpected error code: %s", loadErr.Code)
+	}
+	if !strings.Contains(loadErr.Message, "has invalid expression in required context") {
+		t.Fatalf("unexpected error message: %s", loadErr.Message)
+	}
+}
+
+func TestLoad_RejectsObjectMetadataFieldType(t *testing.T) {
+	schemaText := `version: "0.0.4"
+entity:
+  feature:
+    meta:
+      fields:
+        payload:
+          schema:
+            type: object
+`
+
+	path := filepath.Join(t.TempDir(), "spec.schema.yaml")
+	if err := os.WriteFile(path, []byte(schemaText), 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	_, loadErr := Load(path)
+	if loadErr == nil {
+		t.Fatal("expected load error")
+	}
+	if loadErr.Code != domainerrors.CodeSchemaInvalid {
+		t.Fatalf("unexpected error code: %s", loadErr.Code)
+	}
+}
+
+func TestBuildIndex_AllowsConflictingMetaKindsAcrossTypes(t *testing.T) {
 	loaded := LoadedSchema{EntityTypes: map[string]EntityType{
 		"a": {
 			Name: "a",
@@ -127,11 +177,14 @@ func TestBuildIndex_ConflictingFieldTypeAcrossEntities(t *testing.T) {
 		},
 	}}
 
-	_, err := BuildIndex(loaded)
-	if err == nil {
-		t.Fatal("expected conflict error")
+	index, err := BuildIndex(loaded)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if err.Code != domainerrors.CodeSchemaInvalid {
-		t.Fatalf("unexpected error code: %s", err.Code)
+	if _, ok := index.EntityTypes["a"]; !ok {
+		t.Fatal("type a is missing")
+	}
+	if _, ok := index.EntityTypes["b"]; !ok {
+		t.Fatal("type b is missing")
 	}
 }

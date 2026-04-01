@@ -3,6 +3,7 @@ package schema
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
@@ -104,6 +105,11 @@ func LoadReadModel(path string, displayPath string) (model.ReadModel, *domainerr
 		readModel.AllowedSelectors[selector] = struct{}{}
 	}
 
+	typeSet := map[string]struct{}{}
+	for _, typeName := range support.SortedMapKeys(rawEntity) {
+		typeSet[typeName] = struct{}{}
+	}
+
 	for _, entityTypeName := range support.SortedMapKeys(rawEntity) {
 		rawType, ok := support.ToStringMap(rawEntity[entityTypeName])
 		if !ok {
@@ -114,7 +120,7 @@ func LoadReadModel(path string, displayPath string) (model.ReadModel, *domainerr
 			)
 		}
 
-		typeSpec, parseErr := parseEntityType(entityTypeName, rawType)
+		typeSpec, parseErr := parseEntityType(entityTypeName, rawType, typeSet)
 		if parseErr != nil {
 			return model.ReadModel{}, parseErr
 		}
@@ -123,9 +129,12 @@ func LoadReadModel(path string, displayPath string) (model.ReadModel, *domainerr
 		for field := range typeSpec.MetaFields {
 			readModel.AllowedSelectors["meta."+field] = struct{}{}
 		}
-		for field := range typeSpec.RefFields {
+		for field, refSpec := range typeSpec.RefFields {
 			readModel.AllowedSelectors["refs."+field] = struct{}{}
-			for _, leaf := range []string{"id", "resolved", "type", "slug"} {
+			if refSpec.Cardinality == model.RefCardinalityArray {
+				continue
+			}
+			for _, leaf := range []string{"id", "resolved", "type", "slug", "reason"} {
 				readModel.AllowedSelectors["refs."+field+"."+leaf] = struct{}{}
 			}
 		}
@@ -161,12 +170,11 @@ func validateTopLevelKeys(values map[string]any) *domainerrors.AppError {
 	return nil
 }
 
-func parseEntityType(name string, rawType map[string]any) (model.EntityTypeSpec, *domainerrors.AppError) {
+func parseEntityType(name string, rawType map[string]any, typeSet map[string]struct{}) (model.EntityTypeSpec, *domainerrors.AppError) {
 	typeSpec := model.EntityTypeSpec{
 		Name:          name,
 		MetaFields:    map[string]struct{}{},
-		RefFields:     map[string]struct{}{},
-		RefTypeHints:  map[string]string{},
+		RefFields:     map[string]model.RefFieldSpec{},
 		SectionFields: map[string]struct{}{},
 	}
 
@@ -202,15 +210,20 @@ func parseEntityType(name string, rawType map[string]any) (model.EntityTypeSpec,
 					)
 				}
 
-				parsedField, parseErr := parseMetadataField(name, metadataFieldName, rawField)
+				parsedField, parseErr := parseMetadataField(name, metadataFieldName, rawField, typeSet)
 				if parseErr != nil {
 					return model.EntityTypeSpec{}, parseErr
 				}
 
 				if parsedField.IsRef {
-					typeSpec.RefFields[metadataFieldName] = struct{}{}
-					if parsedField.DeterministicType != "" {
-						typeSpec.RefTypeHints[metadataFieldName] = parsedField.DeterministicType
+					cardinality := model.RefCardinalityScalar
+					if parsedField.IsArrayRef {
+						cardinality = model.RefCardinalityArray
+					}
+					typeSpec.RefFields[metadataFieldName] = model.RefFieldSpec{
+						Name:        metadataFieldName,
+						Cardinality: cardinality,
+						RefTypes:    append([]string(nil), parsedField.RefTypes...),
 					}
 				} else {
 					typeSpec.MetaFields[metadataFieldName] = struct{}{}
@@ -250,11 +263,12 @@ func parseEntityType(name string, rawType map[string]any) (model.EntityTypeSpec,
 }
 
 type parsedMetadataField struct {
-	IsRef             bool
-	DeterministicType string
+	IsRef      bool
+	IsArrayRef bool
+	RefTypes   []string
 }
 
-func parseMetadataField(entityTypeName string, fieldName string, rawField map[string]any) (parsedMetadataField, *domainerrors.AppError) {
+func parseMetadataField(entityTypeName string, fieldName string, rawField map[string]any, typeSet map[string]struct{}) (parsedMetadataField, *domainerrors.AppError) {
 	rawSchema, ok := rawField["schema"]
 	if !ok {
 		return parsedMetadataField{}, newSchemaError(
@@ -288,17 +302,26 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 		parsed := parsedMetadataField{}
 		if normalizedType == "entityRef" {
 			parsed.IsRef = true
-			parsed.DeterministicType = extractSingleRefTypeHint(schemaNode)
+			refTypes, refErr := extractRefTypes(
+				fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes", entityTypeName, fieldName),
+				schemaNode,
+				typeSet,
+			)
+			if refErr != nil {
+				return parsedMetadataField{}, refErr
+			}
+			parsed.RefTypes = refTypes
 			return parsed, nil
 		}
 		if normalizedType == "array" {
-			isArrayRef, deterministicType, parseErr := parseArrayEntityRefMetadataField(entityTypeName, fieldName, schemaNode)
+			isArrayRef, refTypes, parseErr := parseArrayEntityRefMetadataField(entityTypeName, fieldName, schemaNode, typeSet)
 			if parseErr != nil {
 				return parsedMetadataField{}, parseErr
 			}
 			if isArrayRef {
 				parsed.IsRef = true
-				parsed.DeterministicType = deterministicType
+				parsed.IsArrayRef = true
+				parsed.RefTypes = refTypes
 			}
 		}
 		return parsed, nil
@@ -315,14 +338,15 @@ func parseArrayEntityRefMetadataField(
 	entityTypeName string,
 	fieldName string,
 	schemaNode map[string]any,
-) (bool, string, *domainerrors.AppError) {
+	typeSet map[string]struct{},
+) (bool, []string, *domainerrors.AppError) {
 	rawItems, hasItems := schemaNode["items"]
 	if !hasItems {
-		return false, "", nil
+		return false, nil, nil
 	}
 	itemsNode, ok := support.ToStringMap(rawItems)
 	if !ok {
-		return false, "", newSchemaError(
+		return false, nil, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items must be a mapping", entityTypeName, fieldName),
 			nil,
@@ -331,37 +355,73 @@ func parseArrayEntityRefMetadataField(
 
 	rawItemType, ok := itemsNode["type"].(string)
 	if !ok || strings.TrimSpace(rawItemType) == "" {
-		return false, "", newSchemaError(
+		return false, nil, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type must be a non-empty string", entityTypeName, fieldName),
 			nil,
 		)
 	}
 	if strings.TrimSpace(rawItemType) != "entityRef" {
-		return false, "", nil
+		return false, nil, nil
 	}
 
-	return true, extractSingleRefTypeHint(itemsNode), nil
+	refTypes, refErr := extractRefTypes(
+		fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes", entityTypeName, fieldName),
+		itemsNode,
+		typeSet,
+	)
+	if refErr != nil {
+		return false, nil, refErr
+	}
+	return true, refTypes, nil
 }
 
-func extractSingleRefTypeHint(schemaNode map[string]any) string {
+func extractRefTypes(path string, schemaNode map[string]any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
 	rawRefTypes, ok := schemaNode["refTypes"]
 	if !ok {
-		return ""
+		return nil, nil
 	}
 	values, ok := rawRefTypes.([]any)
-	if !ok || len(values) != 1 {
-		return ""
+	if !ok || len(values) == 0 {
+		return nil, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s must be a non-empty array", path),
+			nil,
+		)
 	}
-	refType, ok := values[0].(string)
-	if !ok {
-		return ""
+
+	refTypes := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for idx, raw := range values {
+		refType, ok := raw.(string)
+		if !ok || strings.TrimSpace(refType) == "" {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s[%d] must be non-empty string", path, idx),
+				nil,
+			)
+		}
+		refType = strings.TrimSpace(refType)
+		if _, duplicate := seen[refType]; duplicate {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s contains duplicate '%s'", path, refType),
+				nil,
+			)
+		}
+		if _, exists := typeSet[refType]; !exists {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s references unknown entity type '%s'", path, refType),
+				nil,
+			)
+		}
+		seen[refType] = struct{}{}
+		refTypes = append(refTypes, refType)
 	}
-	refType = strings.TrimSpace(refType)
-	if refType == "" {
-		return ""
-	}
-	return refType
+
+	sort.Strings(refTypes)
+	return refTypes, nil
 }
 
 func newSchemaError(code domainerrors.Code, message string, details map[string]any) *domainerrors.AppError {

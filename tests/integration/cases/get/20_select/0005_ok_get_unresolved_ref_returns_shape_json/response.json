@@ -5,7 +5,8 @@
         "id": "SVC-404",
         "resolved": false,
         "slug": null,
-        "type": "service"
+        "type": "service",
+        "reason": "missing"
       }
     }
   },

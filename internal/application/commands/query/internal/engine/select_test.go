@@ -7,7 +7,7 @@ import (
 
 func TestBuildSelectTree_RejectsUnknownSelector(t *testing.T) {
 	index := newEngineTestIndex()
-	_, err := buildSelectTree([]string{"meta.unknown"}, index)
+	_, err := buildSelectTree([]string{"meta.unknown"}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -15,7 +15,7 @@ func TestBuildSelectTree_RejectsUnknownSelector(t *testing.T) {
 
 func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 	index := newEngineTestIndex()
-	tree, err := buildSelectTree([]string{"type", "id", "refs.owner", "content.sections.summary"}, index)
+	tree, err := buildSelectTree([]string{"type", "id", "refs.owner", "content.sections.summary"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 
 func TestProjectEntity_OverlappingSelectorsMerged(t *testing.T) {
 	index := newEngineTestIndex()
-	tree, err := buildSelectTree([]string{"meta.status", "meta.score"}, index)
+	tree, err := buildSelectTree([]string{"meta.status", "meta.score"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

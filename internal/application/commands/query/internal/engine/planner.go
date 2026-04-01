@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -20,39 +20,37 @@ func BuildPlan(opts model.Options, index model.QuerySchemaIndex) (model.QueryPla
 	if err := validateTypeFilters(opts.TypeFilters, index); err != nil {
 		return model.QueryPlan{}, err
 	}
+	activeTypeSet := resolveActiveTypeSet(opts.TypeFilters, index)
 
 	selects := opts.Selects
 	if len(selects) == 0 {
 		selects = append([]string(nil), defaultSelects...)
 	}
 
-	selectTree, selectErr := buildSelectTree(selects, index)
+	selectTree, selectErr := buildSelectTree(selects, index, activeTypeSet)
 	if selectErr != nil {
 		return model.QueryPlan{}, selectErr
 	}
 
-	effectiveSort, sortErr := buildEffectiveSort(opts.Sorts, index)
+	effectiveSort, sortErr := buildEffectiveSort(opts.Sorts, index, activeTypeSet)
 	if sortErr != nil {
 		return model.QueryPlan{}, sortErr
 	}
 
-	var typedFilter *model.FilterNode
-	if opts.WhereJSON != "" {
-		rawNode, parseErr := parseWhereJSON(opts.WhereJSON)
-		if parseErr != nil {
-			return model.QueryPlan{}, parseErr
+	var wherePlan *model.WherePlan
+	if opts.WhereExpr != "" {
+		compiled, compileErr := compileWhereExpression(opts.WhereExpr, index, activeTypeSet)
+		if compileErr != nil {
+			return model.QueryPlan{}, compileErr
 		}
-		boundNode, bindErr := bindWhereNode(rawNode, index)
-		if bindErr != nil {
-			return model.QueryPlan{}, bindErr
-		}
-		typedFilter = &boundNode
+		wherePlan = compiled
 	}
 
 	return model.QueryPlan{
 		SelectTree:        selectTree,
-		TypedFilter:       typedFilter,
+		Where:             wherePlan,
 		EffectiveSort:     effectiveSort,
+		ActiveTypeSet:     append([]string(nil), activeTypeSet...),
 		OriginalSelects:   selects,
 		OriginalSortTerms: opts.Sorts,
 		Limit:             opts.Limit,
@@ -74,10 +72,14 @@ func validateTypeFilters(typeFilters []string, index model.QuerySchemaIndex) *do
 	return nil
 }
 
-func ParseJSONPayload(raw string) (any, error) {
-	var parsed any
-	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
-		return nil, err
+func resolveActiveTypeSet(typeFilters []string, index model.QuerySchemaIndex) []string {
+	if len(typeFilters) == 0 {
+		return support.SortedMapKeys(index.EntityTypes)
 	}
-	return parsed, nil
+
+	set := map[string]struct{}{}
+	for _, typeName := range typeFilters {
+		set[typeName] = struct{}{}
+	}
+	return support.SortedMapKeys(set)
 }

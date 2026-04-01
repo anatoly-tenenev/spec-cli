@@ -30,5 +30,5 @@ func isOptionalRefLeaf(path string) bool {
 	if parts[0] != "refs" {
 		return false
 	}
-	return parts[2] == "type" || parts[2] == "slug"
+	return parts[2] == "type" || parts[2] == "slug" || parts[2] == "reason"
 }

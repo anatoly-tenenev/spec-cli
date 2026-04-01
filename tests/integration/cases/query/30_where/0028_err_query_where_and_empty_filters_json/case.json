@@ -8,8 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--where-json",
-    "{\"op\":\"and\",\"filters\":[]}"
+    "--where",
+    "()"
   ],
   "expect": {
     "exit_code": 2,

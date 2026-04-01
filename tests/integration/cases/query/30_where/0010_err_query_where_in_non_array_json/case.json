@@ -2,7 +2,15 @@
   "id": "query_30_0010_err_query_where_in_non_array_json",
   "description": "query_30_0010_err_query_where_in_non_array_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"meta.status\",\"op\":\"in\",\"value\":\"active\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "sort(meta.status)"
+  ],
   "expect": {
     "exit_code": 2,
     "response_file": "response.json"

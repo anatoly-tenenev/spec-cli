@@ -11,13 +11,23 @@ type EntityType struct {
 	Name            string
 	MetadataFields  map[string]Field
 	EntityRefFields map[string]Field
-	ContentSections map[string]struct{}
+	ContentSections map[string]SectionField
 }
 
 type Field struct {
 	Name        string
 	Kind        model.SchemaFieldKind
+	ItemKind    model.SchemaFieldKind
 	EnumValues  []any
+	HasConst    bool
+	ConstValue  any
+	Required    bool
 	IsEntityRef bool
-	RefTypeHint string
+	IsArrayRef  bool
+	RefTypes    []string
+}
+
+type SectionField struct {
+	Name     string
+	Required bool
 }

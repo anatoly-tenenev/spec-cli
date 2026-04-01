@@ -1,0 +1,27 @@
+{
+  "id": "query_40_0014_err_query_sort_meta_owner_forbidden_mixed_types_json",
+  "description": "query_40_0014_err_query_sort_meta_owner_forbidden_mixed_types_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--select",
+    "type",
+    "--select",
+    "id",
+    "--sort",
+    "meta.owner"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

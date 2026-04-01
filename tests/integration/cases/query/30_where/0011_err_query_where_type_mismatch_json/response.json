@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "type mismatch for field 'meta.score': expected number",
+    "message": "invalid_function_arg_type at offset 16: invalid argument 1 for function \"starts_with\"",
     "exit_code": 2
   }
 }

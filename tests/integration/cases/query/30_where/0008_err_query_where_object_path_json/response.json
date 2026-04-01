@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "unknown filter-namespace field 'meta'",
+    "message": "invalid_field_target at offset 12: field access requires object target",
     "exit_code": 2
   }
 }

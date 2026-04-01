@@ -8,8 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--where-json",
-    "{\"field\":\"meta.score\",\"op\":\"gt\",\"value\":\"team-a\"}"
+    "--where",
+    "meta.score > 'team-a'"
   ],
   "expect": {
     "exit_code": 2,

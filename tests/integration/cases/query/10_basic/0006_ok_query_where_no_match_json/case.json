@@ -8,8 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--where-json",
-    "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"NOPE-1\"}"
+    "--where",
+    "id == 'NOPE-1'"
   ],
   "expect": {
     "exit_code": 0,

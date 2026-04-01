@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "--where-json must be valid JSON",
+    "message": "SyntaxError: Incomplete expression",
     "exit_code": 2
   }
 }

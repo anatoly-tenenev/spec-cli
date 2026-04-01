@@ -1,0 +1,23 @@
+{
+  "id": "query_30_0039_err_query_where_contains_optional_section_without_fallback_json",
+  "description": "query_30_0039_err_query_where_contains_optional_section_without_fallback_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "contains(content.sections.summary, 'Retry window')"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

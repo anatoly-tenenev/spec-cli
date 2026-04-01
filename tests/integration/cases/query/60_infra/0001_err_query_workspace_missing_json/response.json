@@ -1,6 +1,6 @@
 {
   "error": {
-    "code": "WRITE_FAILED",
+    "code": "READ_FAILED",
     "details": {
       "reason": "lstat /__spec_cli_tests__/missing-workspace: no such file or directory"
     },

@@ -5,47 +5,31 @@ import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/
 func newEngineTestIndex() model.QuerySchemaIndex {
 	return model.QuerySchemaIndex{
 		EntityTypes: map[string]model.EntityTypeSpec{
-			"feature": {Name: "feature", RefFields: map[string]struct{}{"owner": {}}, RefTypeHints: map[string]string{"owner": "service"}, SectionFields: map[string]struct{}{"summary": {}}},
-			"service": {Name: "service", RefFields: map[string]struct{}{}, SectionFields: map[string]struct{}{"summary": {}}},
-		},
-		SelectorPaths: map[string]struct{}{
-			"type":                     {},
-			"id":                       {},
-			"slug":                     {},
-			"meta":                     {},
-			"meta.status":              {},
-			"meta.score":               {},
-			"meta.tags":                {},
-			"refs":                     {},
-			"refs.owner":               {},
-			"content.raw":              {},
-			"content.sections":         {},
-			"content.sections.summary": {},
-		},
-		SortFields: map[string]model.SchemaFieldSpec{
-			"type":                     {Path: "type", Kind: model.FieldKindString},
-			"id":                       {Path: "id", Kind: model.FieldKindString},
-			"updatedDate":             {Path: "updatedDate", Kind: model.FieldKindDate},
-			"meta.score":               {Path: "meta.score", Kind: model.FieldKindNumber},
-			"meta.status":              {Path: "meta.status", Kind: model.FieldKindString},
-			"refs.owner.id":            {Path: "refs.owner.id", Kind: model.FieldKindString},
-			"refs.owner.resolved":      {Path: "refs.owner.resolved", Kind: model.FieldKindBoolean},
-			"refs.owner.type":          {Path: "refs.owner.type", Kind: model.FieldKindString},
-			"refs.owner.slug":          {Path: "refs.owner.slug", Kind: model.FieldKindString},
-			"content.sections.summary": {Path: "content.sections.summary", Kind: model.FieldKindString},
-		},
-		FilterFields: map[string]model.SchemaFieldSpec{
-			"type":                     {Path: "type", Kind: model.FieldKindString},
-			"id":                       {Path: "id", Kind: model.FieldKindString},
-			"updatedDate":             {Path: "updatedDate", Kind: model.FieldKindDate},
-			"meta.status":              {Path: "meta.status", Kind: model.FieldKindString, EnumValues: []any{"draft", "active", "deprecated"}},
-			"meta.score":               {Path: "meta.score", Kind: model.FieldKindNumber},
-			"meta.tags":                {Path: "meta.tags", Kind: model.FieldKindArray},
-			"content.sections.summary": {Path: "content.sections.summary", Kind: model.FieldKindString},
-			"refs.owner.id":            {Path: "refs.owner.id", Kind: model.FieldKindString},
-			"refs.owner.resolved":      {Path: "refs.owner.resolved", Kind: model.FieldKindBoolean},
-			"refs.owner.type":          {Path: "refs.owner.type", Kind: model.FieldKindString},
-			"refs.owner.slug":          {Path: "refs.owner.slug", Kind: model.FieldKindString},
+			"feature": {
+				Name: "feature",
+				MetaFields: map[string]model.MetadataFieldSpec{
+					"status": {Name: "status", Kind: model.FieldKindString, EnumValues: []any{"draft", "active", "deprecated"}, Required: true},
+					"score":  {Name: "score", Kind: model.FieldKindNumber, Required: true},
+					"tags":   {Name: "tags", Kind: model.FieldKindArray, ItemKind: model.FieldKindString, Required: true},
+				},
+				RefFields: map[string]model.RefFieldSpec{
+					"owner": {Name: "owner", Cardinality: model.RefCardinalityScalar, RefTypes: []string{"service"}},
+				},
+				SectionFields: map[string]model.SectionFieldSpec{
+					"summary": {Name: "summary", Required: true},
+				},
+			},
+			"service": {
+				Name: "service",
+				MetaFields: map[string]model.MetadataFieldSpec{
+					"status": {Name: "status", Kind: model.FieldKindString, Required: true},
+					"score":  {Name: "score", Kind: model.FieldKindNumber, Required: true},
+				},
+				RefFields: map[string]model.RefFieldSpec{},
+				SectionFields: map[string]model.SectionFieldSpec{
+					"summary": {Name: "summary", Required: true},
+				},
+			},
 		},
 	}
 }

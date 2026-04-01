@@ -21,9 +21,21 @@
           "type": "service"
         }
       }
+    },
+    {
+      "id": "FEAT-3",
+      "refs": {
+        "owner": {
+          "id": "SVC-404",
+          "resolved": false,
+          "slug": null,
+          "type": "service",
+          "reason": "missing"
+        }
+      }
     }
   ],
-  "matched": 2,
+  "matched": 3,
   "page": {
     "effective_sort": [
       "type:asc",
@@ -34,7 +46,7 @@
     "mode": "offset",
     "next_offset": null,
     "offset": 0,
-    "returned": 2
+    "returned": 3
   },
   "result_state": "valid"
 }

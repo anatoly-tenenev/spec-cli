@@ -8,10 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--type",
-    "feature",
-    "--where-json",
-    "{\"field\":\"refs.owner.id\",\"op\":\"not_exists\"}"
+    "--where",
+    "refs.owner.id == `null`"
   ],
   "expect": {
     "exit_code": 0,

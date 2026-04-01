@@ -8,7 +8,7 @@
           {
             "class": "InstanceError",
             "level": "error",
-            "message": "requested refs field 'container' cannot be computed deterministically",
+            "message": "requested refs field 'container' has invalid value in frontmatter",
             "standard_ref": "6"
           }
         ]

@@ -2,7 +2,15 @@
   "id": "query_30_0002_ok_query_where_exists_json",
   "description": "query_30_0002_ok_query_where_exists_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"refs.owner.id\",\"op\":\"exists\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "refs.owner.slug != `null`"
+  ],
   "expect": {
     "exit_code": 0,
     "response_file": "response.json"

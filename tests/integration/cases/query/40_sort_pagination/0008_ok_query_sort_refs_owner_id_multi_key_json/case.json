@@ -10,8 +10,6 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"refs.owner.id\",\"op\":\"exists\"}",
     "--select",
     "id",
     "--select",

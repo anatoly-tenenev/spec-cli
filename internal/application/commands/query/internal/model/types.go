@@ -1,6 +1,10 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	jmespath "github.com/anatoly-tenenev/go-jmespath"
+)
 
 type SortDirection string
 
@@ -16,7 +20,7 @@ type SortTerm struct {
 
 type Options struct {
 	TypeFilters []string
-	WhereJSON   string
+	WhereExpr   string
 	Selects     []string
 	Sorts       []SortTerm
 	Limit       int
@@ -31,77 +35,66 @@ const (
 	FieldKindNumber  SchemaFieldKind = "number"
 	FieldKindArray   SchemaFieldKind = "array"
 	FieldKindBoolean SchemaFieldKind = "boolean"
+	FieldKindObject  SchemaFieldKind = "object"
+	FieldKindNull    SchemaFieldKind = "null"
 )
 
-type SchemaFieldSpec struct {
-	Path       string
-	Kind       SchemaFieldKind
+type MetadataFieldSpec struct {
+	Name      string
+	Kind      SchemaFieldKind
+	ItemKind  SchemaFieldKind
 	EnumValues []any
+	HasConst  bool
+	ConstValue any
+	Required  bool
+}
+
+type SectionFieldSpec struct {
+	Name     string
+	Required bool
+}
+
+type RefCardinality string
+
+const (
+	RefCardinalityScalar RefCardinality = "scalar"
+	RefCardinalityArray  RefCardinality = "array"
+)
+
+type RefFieldSpec struct {
+	Name        string
+	Cardinality RefCardinality
+	RefTypes    []string
 }
 
 type EntityTypeSpec struct {
 	Name          string
-	RefFields     map[string]struct{}
-	RefTypeHints  map[string]string
-	SectionFields map[string]struct{}
+	MetaFields    map[string]MetadataFieldSpec
+	RefFields     map[string]RefFieldSpec
+	SectionFields map[string]SectionFieldSpec
 }
 
 type QuerySchemaIndex struct {
-	EntityTypes   map[string]EntityTypeSpec
-	SelectorPaths map[string]struct{}
-	SortFields    map[string]SchemaFieldSpec
-	FilterFields  map[string]SchemaFieldSpec
+	EntityTypes map[string]EntityTypeSpec
 }
 
 type EntityView struct {
-	Type string
-	ID   string
-	View map[string]any
+	Type         string
+	ID           string
+	View         map[string]any
+	WhereContext map[string]any
 }
 
-type RawFilterNodeKind string
-
-const (
-	RawFilterNodeLeaf RawFilterNodeKind = "leaf"
-	RawFilterNodeAnd  RawFilterNodeKind = "and"
-	RawFilterNodeOr   RawFilterNodeKind = "or"
-	RawFilterNodeNot  RawFilterNodeKind = "not"
-)
-
-type RawFilterNode struct {
-	Kind     RawFilterNodeKind
-	Field    string
-	Op       string
-	Value    any
-	HasValue bool
-	Filters  []RawFilterNode
-	Filter   *RawFilterNode
-}
-
-type FilterNodeKind string
-
-const (
-	FilterNodeLeaf FilterNodeKind = "leaf"
-	FilterNodeAnd  FilterNodeKind = "and"
-	FilterNodeOr   FilterNodeKind = "or"
-	FilterNodeNot  FilterNodeKind = "not"
-)
-
-type FilterNode struct {
-	Kind     FilterNodeKind
-	Field    string
-	Op       string
-	Value    any
-	HasValue bool
-	Spec     SchemaFieldSpec
-	Filters  []FilterNode
-	Filter   *FilterNode
+type WherePlan struct {
+	Source string
+	Query  *jmespath.JMESPath
 }
 
 type QueryPlan struct {
 	SelectTree        *SelectNode
 	EffectiveSort     []SortTerm
-	TypedFilter       *FilterNode
+	Where             *WherePlan
+	ActiveTypeSet     []string
 	OriginalSelects   []string
 	OriginalSortTerms []SortTerm
 	Limit             int

@@ -2,7 +2,15 @@
   "id": "query_30_0008_err_query_where_object_path_json",
   "description": "query_30_0008_err_query_where_object_path_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"meta\",\"op\":\"eq\",\"value\":\"x\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.status.foo == 'x'"
+  ],
   "expect": {
     "exit_code": 2,
     "response_file": "response.json"

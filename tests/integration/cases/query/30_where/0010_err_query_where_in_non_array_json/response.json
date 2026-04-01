@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "operator 'in' requires array value",
+    "message": "invalid_function_arg_type at offset 9: invalid argument 1 for function \"sort\"",
     "exit_code": 2
   }
 }

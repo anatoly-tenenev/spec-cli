@@ -2,7 +2,15 @@
   "id": "query_30_0007_err_query_where_unknown_field_json",
   "description": "query_30_0007_err_query_where_unknown_field_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"meta.unknown\",\"op\":\"eq\",\"value\":\"x\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.unknown == 'x'"
+  ],
   "expect": {
     "exit_code": 2,
     "response_file": "response.json"

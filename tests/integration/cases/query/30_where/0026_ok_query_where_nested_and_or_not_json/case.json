@@ -8,8 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--where-json",
-    "{\"op\":\"and\",\"filters\":[{\"field\":\"type\",\"op\":\"eq\",\"value\":\"feature\"},{\"op\":\"or\",\"filters\":[{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"draft\"},{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"deprecated\"}]},{\"op\":\"not\",\"filter\":{\"field\":\"refs.owner.id\",\"op\":\"eq\",\"value\":\"SVC-1\"}}]}"
+    "--where",
+    "(type == 'feature') && ((meta.status == 'draft') || (meta.status == 'deprecated')) && (!(refs.owner.id == 'SVC-1'))"
   ],
   "expect": {
     "exit_code": 0,

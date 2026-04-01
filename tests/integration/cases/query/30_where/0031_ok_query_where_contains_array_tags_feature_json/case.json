@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"meta.tags\",\"op\":\"contains\",\"value\":\"billing\"}"
+    "--where",
+    "contains(meta.tags, 'billing')"
   ],
   "expect": {
     "exit_code": 0,

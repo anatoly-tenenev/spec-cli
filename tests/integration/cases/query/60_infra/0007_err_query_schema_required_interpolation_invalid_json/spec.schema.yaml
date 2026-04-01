@@ -1,0 +1,9 @@
+version: "0.0.4"
+entity:
+  feature:
+    meta:
+      fields:
+        priority:
+          required: "${refs.owner.slug"
+          schema:
+            type: string

@@ -50,12 +50,22 @@ func TestParse_InvalidSortDirection(t *testing.T) {
 	}
 }
 
-func TestParse_WhereJSONEmpty(t *testing.T) {
-	_, err := Parse([]string{"--where-json", "   "})
+func TestParse_WhereEmpty(t *testing.T) {
+	_, err := Parse([]string{"--where", "   "})
 	if err == nil {
 		t.Fatal("expected error")
 	}
 	if err.Code != domainerrors.CodeInvalidQuery {
+		t.Fatalf("unexpected error code: %s", err.Code)
+	}
+}
+
+func TestParse_WhereDuplicate(t *testing.T) {
+	_, err := Parse([]string{"--where", "type == 'feature'", "--where", "id == 'FEAT-1'"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if err.Code != domainerrors.CodeInvalidArgs {
 		t.Fatalf("unexpected error code: %s", err.Code)
 	}
 }

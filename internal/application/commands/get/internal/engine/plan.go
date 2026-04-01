@@ -18,7 +18,15 @@ var defaultSelectors = []string{
 	"refs",
 }
 
-func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct{}) (model.SelectorPlan, *domainerrors.AppError) {
+var refLeafSelectors = map[string]struct{}{
+	"id":       {},
+	"resolved": {},
+	"type":     {},
+	"slug":     {},
+	"reason":   {},
+}
+
+func BuildSelectorPlan(rawSelectors []string, readModel model.ReadModel) (model.SelectorPlan, *domainerrors.AppError) {
 	selectors := rawSelectors
 	if len(selectors) == 0 {
 		selectors = append([]string(nil), defaultSelectors...)
@@ -27,12 +35,8 @@ func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct
 	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
 	for _, selector := range selectors {
 		normalized := strings.TrimSpace(selector)
-		if _, exists := allowedSelectors[normalized]; !exists {
-			return model.SelectorPlan{}, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				fmt.Sprintf("unknown selector '%s'", normalized),
-				nil,
-			)
+		if err := validateSelector(normalized, readModel); err != nil {
+			return model.SelectorPlan{}, err
 		}
 		insertSelector(root, strings.Split(normalized, "."))
 	}
@@ -101,6 +105,60 @@ func BuildSelectorPlan(rawSelectors []string, allowedSelectors map[string]struct
 		RequiresContent:      requiresContent,
 		RequiresContentRaw:   requiresContentRaw,
 	}, nil
+}
+
+func validateSelector(selector string, readModel model.ReadModel) *domainerrors.AppError {
+	if _, exists := readModel.AllowedSelectors[selector]; !exists {
+		return domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("unknown selector '%s'", selector),
+			nil,
+		)
+	}
+
+	parts := strings.Split(selector, ".")
+	if len(parts) != 3 || parts[0] != "refs" {
+		return nil
+	}
+
+	if _, ok := refLeafSelectors[parts[2]]; !ok {
+		return nil
+	}
+
+	compatible, exists := refLeafCompatibility(parts[1], readModel)
+	if !exists {
+		return domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("unknown selector '%s'", selector),
+			nil,
+		)
+	}
+	if compatible {
+		return nil
+	}
+
+	return domainerrors.New(
+		domainerrors.CodeInvalidArgs,
+		fmt.Sprintf("selector '%s' is forbidden: path-based ref leaf requires scalar ref across schema read model", selector),
+		nil,
+	)
+}
+
+func refLeafCompatibility(refField string, readModel model.ReadModel) (compatible bool, exists bool) {
+	hasScalar := false
+	for _, typeName := range support.SortedMapKeys(readModel.EntityTypes) {
+		entityType := readModel.EntityTypes[typeName]
+		refSpec, present := entityType.RefFields[refField]
+		if !present {
+			continue
+		}
+		exists = true
+		if refSpec.Cardinality == model.RefCardinalityArray {
+			return false, true
+		}
+		hasScalar = true
+	}
+	return hasScalar, exists
 }
 
 func insertSelector(root *model.SelectNode, parts []string) {

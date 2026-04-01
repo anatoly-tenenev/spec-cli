@@ -1,0 +1,8 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_ARGS",
+    "message": "sort field 'meta.owner' is forbidden for entityRef field; use refs.owner",
+    "exit_code": 2
+  }
+}

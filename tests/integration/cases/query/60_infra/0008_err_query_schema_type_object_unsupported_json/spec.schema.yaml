@@ -1,0 +1,8 @@
+version: "0.0.4"
+entity:
+  doc:
+    meta:
+      fields:
+        payload:
+          schema:
+            type: object

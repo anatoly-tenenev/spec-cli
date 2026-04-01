@@ -5,6 +5,7 @@ slug: orphan
 createdDate: 2026-03-06
 updatedDate: 2026-03-06
 status: deprecated
+owner: SVC-404
 score: 1
 tags:
   - legacy
@@ -12,3 +13,6 @@ tags:
 
 ## Summary {#summary}
 Legacy flow.
+
+## Implementation {#implementation}
+Legacy flow remains available while owner resolution is pending.

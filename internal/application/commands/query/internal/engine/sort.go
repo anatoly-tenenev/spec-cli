@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
@@ -14,19 +15,25 @@ var defaultSort = []model.SortTerm{
 	{Path: "id", Direction: model.SortDirectionAsc},
 }
 
-func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex) ([]model.SortTerm, *domainerrors.AppError) {
+var builtinSortKinds = map[string]model.SchemaFieldKind{
+	"type":        model.FieldKindString,
+	"id":          model.FieldKindString,
+	"slug":        model.FieldKindString,
+	"revision":    model.FieldKindString,
+	"createdDate": model.FieldKindDate,
+	"updatedDate": model.FieldKindDate,
+	"content.raw": model.FieldKindString,
+}
+
+func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex, activeTypeSet []string) ([]model.SortTerm, *domainerrors.AppError) {
 	terms := requested
 	if len(terms) == 0 {
 		terms = append([]model.SortTerm(nil), defaultSort...)
 	}
 
 	for _, term := range terms {
-		if _, exists := index.SortFields[term.Path]; !exists {
-			return nil, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				fmt.Sprintf("invalid filter-namespace sort field '%s'", term.Path),
-				nil,
-			)
+		if err := validateSortPath(term.Path, index, activeTypeSet); err != nil {
+			return nil, err
 		}
 	}
 
@@ -42,6 +49,156 @@ func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex
 		)
 	}
 	return effective, nil
+}
+
+func validateSortPath(path string, index model.QuerySchemaIndex, activeTypeSet []string) *domainerrors.AppError {
+	if kind, builtin := builtinSortKinds[path]; builtin {
+		if !isOrderableKind(kind) {
+			return domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
+				nil,
+			)
+		}
+		return nil
+	}
+
+	parts := strings.Split(path, ".")
+	if len(parts) == 2 && parts[0] == "meta" {
+		if hasRefFieldAcrossActiveSet(parts[1], index, activeTypeSet) {
+			return domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				fmt.Sprintf("sort field '%s' is forbidden for entityRef field; use refs.%s", path, parts[1]),
+				nil,
+			)
+		}
+		kinds := gatherMetaSortKinds(parts[1], index, activeTypeSet)
+		return validateSortKinds(path, kinds)
+	}
+	if len(parts) == 3 && parts[0] == "content" && parts[1] == "sections" {
+		kinds := gatherSectionSortKinds(parts[2], index, activeTypeSet)
+		return validateSortKinds(path, kinds)
+	}
+	if len(parts) == 3 && parts[0] == "refs" {
+		leaf := parts[2]
+		if leaf != "id" && leaf != "resolved" && leaf != "type" && leaf != "slug" && leaf != "reason" {
+			return domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
+				nil,
+			)
+		}
+		kinds, compatErr := gatherRefSortKinds(parts[1], leaf, index, activeTypeSet)
+		if compatErr != nil {
+			return compatErr
+		}
+		return validateSortKinds(path, kinds)
+	}
+
+	return domainerrors.New(
+		domainerrors.CodeInvalidArgs,
+		fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
+		nil,
+	)
+}
+
+func gatherMetaSortKinds(field string, index model.QuerySchemaIndex, activeTypeSet []string) map[model.SchemaFieldKind]struct{} {
+	kinds := map[model.SchemaFieldKind]struct{}{}
+	for _, typeName := range activeTypeSet {
+		entityType := index.EntityTypes[typeName]
+		if _, isRef := entityType.RefFields[field]; isRef {
+			continue
+		}
+		metaSpec, exists := entityType.MetaFields[field]
+		if !exists {
+			continue
+		}
+		kinds[metaSpec.Kind] = struct{}{}
+	}
+	return kinds
+}
+
+func gatherSectionSortKinds(section string, index model.QuerySchemaIndex, activeTypeSet []string) map[model.SchemaFieldKind]struct{} {
+	kinds := map[model.SchemaFieldKind]struct{}{}
+	for _, typeName := range activeTypeSet {
+		entityType := index.EntityTypes[typeName]
+		if _, exists := entityType.SectionFields[section]; !exists {
+			continue
+		}
+		kinds[model.FieldKindString] = struct{}{}
+	}
+	return kinds
+}
+
+func gatherRefSortKinds(
+	refField string,
+	leaf string,
+	index model.QuerySchemaIndex,
+	activeTypeSet []string,
+) (map[model.SchemaFieldKind]struct{}, *domainerrors.AppError) {
+	kinds := map[model.SchemaFieldKind]struct{}{}
+	found := false
+	for _, typeName := range activeTypeSet {
+		entityType := index.EntityTypes[typeName]
+		refSpec, exists := entityType.RefFields[refField]
+		if !exists {
+			continue
+		}
+		found = true
+		if refSpec.Cardinality == model.RefCardinalityArray {
+			return nil, domainerrors.New(
+				domainerrors.CodeInvalidQuery,
+				fmt.Sprintf("invalid sort field '%s': path-based ref leaf is forbidden for array refs in active type set", "refs."+refField+"."+leaf),
+				nil,
+			)
+		}
+
+		if leaf == "resolved" {
+			kinds[model.FieldKindBoolean] = struct{}{}
+		} else {
+			kinds[model.FieldKindString] = struct{}{}
+		}
+	}
+	if !found {
+		return map[model.SchemaFieldKind]struct{}{}, nil
+	}
+	return kinds, nil
+}
+
+func validateSortKinds(path string, kinds map[model.SchemaFieldKind]struct{}) *domainerrors.AppError {
+	if len(kinds) == 0 {
+		return domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
+			nil,
+		)
+	}
+	if len(kinds) > 1 {
+		return domainerrors.New(
+			domainerrors.CodeInvalidQuery,
+			fmt.Sprintf("invalid sort field '%s': incompatible sort kinds across active type set", path),
+			nil,
+		)
+	}
+	for kind := range kinds {
+		if !isOrderableKind(kind) {
+			return domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
+				nil,
+			)
+		}
+	}
+	return nil
+}
+
+func isOrderableKind(kind model.SchemaFieldKind) bool {
+	switch kind {
+	case model.FieldKindString, model.FieldKindDate, model.FieldKindNumber, model.FieldKindBoolean:
+		return true
+	default:
+		return false
+	}
 }
 
 func SortEntities(entities []model.EntityView, terms []model.SortTerm) {

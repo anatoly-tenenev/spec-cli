@@ -34,11 +34,20 @@ type parsedEntity struct {
 	RawContent  string
 }
 
+type resolvedRef struct {
+	ID       string
+	Resolved bool
+	Type     any
+	Slug     any
+	Reason   any
+}
+
 const (
 	queryWorkspaceFrontmatterStandardRef = "10.2"
 	queryWorkspaceTypeStandardRef        = "5.3"
 	queryWorkspaceIDStandardRef          = "11.1"
 	queryWorkspaceSlugStandardRef        = "11.2"
+	queryWorkspaceRefsStandardRef        = "6"
 )
 
 func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilters []string) ([]model.EntityView, *domainerrors.AppError) {
@@ -56,6 +65,18 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 		allEntities = append(allEntities, *parsed)
 	}
 
+	for _, entity := range allEntities {
+		if _, known := index.EntityTypes[entity.Type]; known {
+			continue
+		}
+		return nil, newWorkspaceReadError(
+			"failed to determine entity type",
+			fmt.Sprintf("entity type '%s' is not declared in schema.entity", entity.Type),
+			queryWorkspaceTypeStandardRef,
+			nil,
+		)
+	}
+
 	idIndex := buildIDIndex(allEntities)
 	allowedTypes := make(map[string]struct{}, len(typeFilters))
 	for _, typeName := range typeFilters {
@@ -70,32 +91,49 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 			}
 		}
 
-		entityTypeSpec, knownType := index.EntityTypes[entity.Type]
-		if !knownType {
-			entityTypeSpec = model.EntityTypeSpec{
-				Name:          entity.Type,
-				RefFields:     map[string]struct{}{},
-				RefTypeHints:  map[string]string{},
-				SectionFields: map[string]struct{}{},
-			}
+		entityType := index.EntityTypes[entity.Type]
+		metaPublic := buildMetadata(entity.Frontmatter, entityType.MetaFields)
+		metaWhere := buildMetadata(entity.Frontmatter, entityType.MetaFields)
+		refsPublic, refsWhere, refsErr := resolveRefs(entity.Frontmatter, entityType.RefFields, idIndex)
+		if refsErr != nil {
+			return nil, refsErr
 		}
-		meta := buildMetadata(entity.Frontmatter, entityTypeSpec.RefFields)
-		refs := resolveRefs(entity, entityTypeSpec, idIndex)
-		view := map[string]any{
+
+		publicView := map[string]any{
 			"type":         entity.Type,
 			"id":           entity.ID,
 			"slug":         entity.Slug,
 			"revision":     entity.Revision,
-			"createdDate": entity.CreatedDate,
-			"updatedDate": entity.UpdatedDate,
-			"meta":         meta,
-			"refs":         refs,
+			"createdDate":  entity.CreatedDate,
+			"updatedDate":  entity.UpdatedDate,
+			"meta":         metaPublic,
+			"refs":         refsPublic,
 			"content": map[string]any{
 				"raw":      entity.RawContent,
 				"sections": sectionsToAnyMap(entity.Sections),
 			},
 		}
-		views = append(views, model.EntityView{Type: entity.Type, ID: entity.ID, View: view})
+
+		whereView := map[string]any{
+			"type":         entity.Type,
+			"id":           entity.ID,
+			"slug":         entity.Slug,
+			"revision":     entity.Revision,
+			"createdDate":  entity.CreatedDate,
+			"updatedDate":  entity.UpdatedDate,
+			"meta":         metaWhere,
+			"refs":         refsWhere,
+			"content": map[string]any{
+				"sections": buildWhereSections(entity.Sections, entityType.SectionFields),
+			},
+		}
+
+		views = append(views, model.EntityView{
+			Type:         entity.Type,
+			ID:           entity.ID,
+			View:         publicView,
+			WhereContext: whereView,
+		})
 	}
 
 	return views, nil
@@ -117,7 +155,7 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 	})
 	if walkErr != nil {
 		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
 			map[string]any{"reason": walkErr.Error()},
 		)
@@ -131,7 +169,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+			domainerrors.CodeReadFailed,
 			"failed to read workspace document",
 			map[string]any{"reason": err.Error()},
 		)
@@ -139,7 +177,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 
 	frontmatter, body, parseErr := parseFrontmatter(raw)
 	if parseErr != nil {
-		return nil, newWorkspaceValidationError(
+		return nil, newWorkspaceReadError(
 			"failed to parse workspace document",
 			parseErr.Error(),
 			queryWorkspaceFrontmatterStandardRef,
@@ -149,7 +187,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 
 	typeName, ok := readStringField(frontmatter, "type")
 	if !ok {
-		return nil, newWorkspaceValidationError(
+		return nil, newWorkspaceReadError(
 			"failed to determine entity type",
 			requiredBuiltinFieldMessage("type"),
 			queryWorkspaceTypeStandardRef,
@@ -158,7 +196,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 	}
 	id, ok := readStringField(frontmatter, "id")
 	if !ok {
-		return nil, newWorkspaceValidationError(
+		return nil, newWorkspaceReadError(
 			"failed to determine entity id",
 			requiredBuiltinFieldMessage("id"),
 			queryWorkspaceIDStandardRef,
@@ -167,7 +205,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 	}
 	slug, ok := readStringField(frontmatter, "slug")
 	if !ok {
-		return nil, newWorkspaceValidationError(
+		return nil, newWorkspaceReadError(
 			"failed to determine entity slug",
 			requiredBuiltinFieldMessage("slug"),
 			queryWorkspaceSlugStandardRef,
@@ -195,20 +233,28 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 	}, nil
 }
 
-func buildMetadata(frontmatter map[string]any, refFields map[string]struct{}) map[string]any {
+func buildMetadata(frontmatter map[string]any, knownMeta map[string]model.MetadataFieldSpec) map[string]any {
 	meta := map[string]any{}
-	for key, value := range frontmatter {
-		switch key {
-		case "type", "id", "slug", "createdDate", "updatedDate":
+	for _, field := range support.SortedMapKeys(knownMeta) {
+		value, exists := frontmatter[field]
+		if !exists {
 			continue
-		default:
-			if _, isRefField := refFields[key]; isRefField {
-				continue
-			}
-			meta[key] = normalizeValue(value)
 		}
+		meta[field] = normalizeValue(value)
 	}
 	return meta
+}
+
+func buildWhereSections(parsedSections map[string]string, knownSections map[string]model.SectionFieldSpec) map[string]any {
+	sections := map[string]any{}
+	for _, sectionName := range support.SortedMapKeys(knownSections) {
+		sectionValue, exists := parsedSections[sectionName]
+		if !exists {
+			continue
+		}
+		sections[sectionName] = sectionValue
+	}
+	return sections
 }
 
 func normalizeMap(values map[string]any) map[string]any {
@@ -220,6 +266,10 @@ func normalizeMap(values map[string]any) map[string]any {
 }
 
 func normalizeValue(value any) any {
+	if number, ok := support.NumberToFloat64(value); ok {
+		return number
+	}
+
 	switch typed := value.(type) {
 	case time.Time:
 		return typed.Format("2006-01-02")
@@ -243,76 +293,194 @@ func normalizeValue(value any) any {
 func buildIDIndex(entities []parsedEntity) map[string][]entityIdentity {
 	idIndex := map[string][]entityIdentity{}
 	for _, entity := range entities {
-		idIndex[entity.ID] = append(idIndex[entity.ID], entityIdentity{Type: entity.Type, ID: entity.ID, Slug: entity.Slug})
+		idIndex[entity.ID] = append(idIndex[entity.ID], entityIdentity{
+			Type: entity.Type,
+			ID:   entity.ID,
+			Slug: entity.Slug,
+		})
 	}
 	return idIndex
 }
 
-func resolveRefs(entity parsedEntity, entityType model.EntityTypeSpec, idIndex map[string][]entityIdentity) map[string]any {
-	refs := map[string]any{}
-	for _, refField := range support.SortedMapKeys(entityType.RefFields) {
-		rawTarget, exists := entity.Frontmatter[refField]
+func resolveRefs(
+	frontmatter map[string]any,
+	refFields map[string]model.RefFieldSpec,
+	idIndex map[string][]entityIdentity,
+) (map[string]any, map[string]any, *domainerrors.AppError) {
+	publicRefs := map[string]any{}
+	whereRefs := map[string]any{}
+
+	for _, refField := range support.SortedMapKeys(refFields) {
+		refSpec := refFields[refField]
+		rawTarget, exists := frontmatter[refField]
 		if !exists {
-			refs[refField] = nil
+			publicRefs[refField] = nil
 			continue
 		}
-		hintedType := entityType.RefTypeHints[refField]
-		refValue, ok := resolveRefValue(rawTarget, hintedType, idIndex)
-		if !ok {
-			refs[refField] = nil
+
+		if refSpec.Cardinality == model.RefCardinalityArray {
+			publicValue, whereValue, err := resolveArrayRef(rawTarget, refSpec, idIndex, refField)
+			if err != nil {
+				return nil, nil, err
+			}
+			publicRefs[refField] = publicValue
+			whereRefs[refField] = whereValue
 			continue
 		}
-		refs[refField] = refValue
+
+		publicValue, whereValue, includeInWhere, err := resolveScalarRef(rawTarget, refSpec, idIndex, refField)
+		if err != nil {
+			return nil, nil, err
+		}
+		publicRefs[refField] = publicValue
+		if includeInWhere {
+			whereRefs[refField] = whereValue
+		}
 	}
-	return refs
+
+	return publicRefs, whereRefs, nil
 }
 
-func resolveRefValue(rawTarget any, hintedType string, idIndex map[string][]entityIdentity) (any, bool) {
-	if items, ok := rawTarget.([]any); ok {
-		resolvedItems := make([]any, 0, len(items))
-		for _, item := range items {
-			targetID, ok := readRefID(item)
-			if !ok {
-				return nil, false
-			}
-			resolvedItems = append(resolvedItems, buildResolvedRefValue(targetID, hintedType, idIndex))
-		}
-		return resolvedItems, true
+func resolveScalarRef(
+	rawTarget any,
+	refSpec model.RefFieldSpec,
+	idIndex map[string][]entityIdentity,
+	refField string,
+) (public any, where any, includeInWhere bool, err *domainerrors.AppError) {
+	if rawTarget == nil {
+		return nil, nil, false, nil
 	}
 
 	targetID, ok := readRefID(rawTarget)
 	if !ok {
-		return nil, false
+		return nil, nil, false, invalidRefReadError(refField)
 	}
-	return buildResolvedRefValue(targetID, hintedType, idIndex), true
+
+	resolved := classifyResolvedRef(targetID, refSpec, idIndex)
+	return toPublicRefObject(resolved), toWhereRefObject(resolved), true, nil
 }
 
-func buildResolvedRefValue(targetID string, hintedType string, idIndex map[string][]entityIdentity) map[string]any {
+func resolveArrayRef(
+	rawTarget any,
+	refSpec model.RefFieldSpec,
+	idIndex map[string][]entityIdentity,
+	refField string,
+) (any, any, *domainerrors.AppError) {
+	if rawTarget == nil {
+		return nil, nil, nil
+	}
+
+	items, ok := rawTarget.([]any)
+	if !ok {
+		return nil, nil, invalidRefReadError(refField)
+	}
+
+	publicItems := make([]any, 0, len(items))
+	whereItems := make([]any, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			publicItems = append(publicItems, nil)
+			whereItems = append(whereItems, nil)
+			continue
+		}
+		targetID, ok := readRefID(item)
+		if !ok {
+			return nil, nil, invalidRefReadError(refField)
+		}
+		resolved := classifyResolvedRef(targetID, refSpec, idIndex)
+		publicItems = append(publicItems, toPublicRefObject(resolved))
+		whereItems = append(whereItems, toWhereRefObject(resolved))
+	}
+
+	return publicItems, whereItems, nil
+}
+
+func classifyResolvedRef(targetID string, refSpec model.RefFieldSpec, idIndex map[string][]entityIdentity) resolvedRef {
 	targets := idIndex[targetID]
-	compatibleTargets := filterTargetsByHint(targets, hintedType)
-	refValue := map[string]any{
-		"id":       targetID,
-		"resolved": false,
-		"type":     nil,
-		"slug":     nil,
+	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.RefTypes)
+
+	if len(compatibleTargets) == 1 {
+		target := compatibleTargets[0]
+		return resolvedRef{
+			ID:       targetID,
+			Resolved: true,
+			Type:     target.Type,
+			Slug:     target.Slug,
+			Reason:   nil,
+		}
 	}
 
-	if len(targets) == 1 && isResolvedRefTarget(targets[0], hintedType) {
-		target := targets[0]
-		refValue["resolved"] = true
-		refValue["type"] = target.Type
-		refValue["slug"] = target.Slug
-		return refValue
+	reason := "ambiguous"
+	switch {
+	case len(targets) == 0:
+		reason = "missing"
+	case len(compatibleTargets) == 0:
+		reason = "type_mismatch"
 	}
 
-	if deterministicType := deterministicRefType(compatibleTargets, hintedType); deterministicType != "" {
-		refValue["type"] = deterministicType
+	return resolvedRef{
+		ID:       targetID,
+		Resolved: false,
+		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.RefTypes),
+		Slug:     nil,
+		Reason:   reason,
 	}
-	if deterministicSlug := deterministicRefSlug(compatibleTargets); deterministicSlug != "" {
-		refValue["slug"] = deterministicSlug
-	}
+}
 
-	return refValue
+func toPublicRefObject(ref resolvedRef) map[string]any {
+	value := map[string]any{
+		"resolved": ref.Resolved,
+		"id":       ref.ID,
+		"type":     ref.Type,
+		"slug":     ref.Slug,
+	}
+	if !ref.Resolved {
+		value["reason"] = ref.Reason
+	}
+	return value
+}
+
+func toWhereRefObject(ref resolvedRef) map[string]any {
+	return map[string]any{
+		"resolved": ref.Resolved,
+		"id":       ref.ID,
+		"type":     ref.Type,
+		"slug":     ref.Slug,
+		"reason":   ref.Reason,
+	}
+}
+
+func filterTargetsByRefTypes(targets []entityIdentity, refTypes []string) []entityIdentity {
+	if len(refTypes) == 0 {
+		return targets
+	}
+	allowed := map[string]struct{}{}
+	for _, refType := range refTypes {
+		allowed[refType] = struct{}{}
+	}
+	filtered := make([]entityIdentity, 0, len(targets))
+	for _, target := range targets {
+		if _, ok := allowed[target.Type]; ok {
+			filtered = append(filtered, target)
+		}
+	}
+	return filtered
+}
+
+func deterministicRefTypeHint(targets []entityIdentity, refTypes []string) any {
+	if len(refTypes) == 1 {
+		return refTypes[0]
+	}
+	if len(targets) == 0 {
+		return nil
+	}
+	candidate := targets[0].Type
+	for idx := 1; idx < len(targets); idx++ {
+		if targets[idx].Type != candidate {
+			return nil
+		}
+	}
+	return candidate
 }
 
 func readRefID(rawTarget any) (string, bool) {
@@ -342,55 +510,6 @@ func normalizeRefID(raw string) (string, bool) {
 	return targetID, true
 }
 
-func isResolvedRefTarget(target entityIdentity, hintedType string) bool {
-	hintedType = strings.TrimSpace(hintedType)
-	return hintedType == "" || target.Type == hintedType
-}
-
-func filterTargetsByHint(targets []entityIdentity, hintedType string) []entityIdentity {
-	hintedType = strings.TrimSpace(hintedType)
-	if hintedType == "" {
-		return targets
-	}
-	filtered := make([]entityIdentity, 0, len(targets))
-	for _, target := range targets {
-		if target.Type == hintedType {
-			filtered = append(filtered, target)
-		}
-	}
-	return filtered
-}
-
-func deterministicRefType(targets []entityIdentity, hintedType string) string {
-	hintedType = strings.TrimSpace(hintedType)
-	if hintedType != "" {
-		return hintedType
-	}
-	if len(targets) == 0 {
-		return ""
-	}
-	deterministic := targets[0].Type
-	for idx := 1; idx < len(targets); idx++ {
-		if targets[idx].Type != deterministic {
-			return ""
-		}
-	}
-	return deterministic
-}
-
-func deterministicRefSlug(targets []entityIdentity) string {
-	if len(targets) == 0 {
-		return ""
-	}
-	deterministic := targets[0].Slug
-	for idx := 1; idx < len(targets); idx++ {
-		if targets[idx].Slug != deterministic {
-			return ""
-		}
-	}
-	return deterministic
-}
-
 func sectionsToAnyMap(sections map[string]string) map[string]any {
 	mapped := make(map[string]any, len(sections))
 	for name, value := range sections {
@@ -403,7 +522,16 @@ func requiredBuiltinFieldMessage(field string) string {
 	return fmt.Sprintf("built-in field '%s' is required", field)
 }
 
-func newWorkspaceValidationError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
+func invalidRefReadError(refField string) *domainerrors.AppError {
+	return newWorkspaceReadError(
+		"failed to compute refs",
+		fmt.Sprintf("refs field '%s' has invalid value in frontmatter", refField),
+		queryWorkspaceRefsStandardRef,
+		map[string]any{"field": refField},
+	)
+}
+
+func newWorkspaceReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
 	issue := support.ValidationIssue(
 		support.ValidationIssueLevelError,
 		support.ValidationIssueClassInstanceError,
@@ -411,7 +539,7 @@ func newWorkspaceValidationError(message string, issueMessage string, standardRe
 		standardRef,
 	)
 	return domainerrors.New(
-		domainerrors.CodeWriteFailed,
+		domainerrors.CodeReadFailed,
 		message,
 		support.WithValidationIssues(details, issue),
 	)

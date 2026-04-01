@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"meta.status\",\"op\":\"not_in\",\"value\":[\"draft\"]}"
+    "--where",
+    "!contains(`[\"draft\"]`, meta.status)"
   ],
   "expect": {
     "exit_code": 0,

@@ -33,6 +33,7 @@ func HelpSpec() helpmodel.CommandSpec {
 		},
 		Rules: []string{
 			"Projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.",
+			"Path-based ref leaf selectors refs.<field>.id|resolved|type|slug|reason are allowed only for scalar entityRef fields.",
 			"--select uses projection-namespace selectors.",
 			"--id addresses one entity by exact id and returns a single-entity read result.",
 			"If --select is omitted, default projection is type, id, slug, meta and refs.",

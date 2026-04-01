@@ -40,9 +40,30 @@
       },
       "slug": "login",
       "type": "feature"
+    },
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-404",
+          "resolved": false,
+          "slug": null,
+          "type": "service",
+          "reason": "missing"
+        }
+      },
+      "slug": "orphan",
+      "type": "feature"
     }
   ],
-  "matched": 2,
+  "matched": 3,
   "page": {
     "effective_sort": [
       "type:asc",
@@ -53,7 +74,7 @@
     "mode": "offset",
     "next_offset": null,
     "offset": 0,
-    "returned": 2
+    "returned": 3
   },
   "result_state": "valid"
 }

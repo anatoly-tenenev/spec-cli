@@ -287,7 +287,7 @@ func TestHelpSelectedCases(t *testing.T) {
 		assertContains(t, result.Stdout, "RecoveryClass: provide_explicit_schema")
 		assertContains(t, result.Stdout, "RetryCommand: spec-cli --schema <path> help")
 		assertContains(t, result.Stdout, "schema_derived: true")
-		assertContains(t, result.Stdout, "options marked schema_derived (--type, --where-json, --select, --sort) keep derivation rules, but concrete schema-derived values are intentionally not listed.")
+		assertContains(t, result.Stdout, "options marked schema_derived (--type, --where, --select, --sort) keep derivation rules, but concrete schema-derived values are intentionally not listed.")
 	})
 }
 

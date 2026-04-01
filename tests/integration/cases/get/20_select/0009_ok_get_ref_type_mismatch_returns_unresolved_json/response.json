@@ -5,7 +5,8 @@
         "id": "OWNER-1",
         "resolved": false,
         "slug": null,
-        "type": "service"
+        "type": "service",
+        "reason": "type_mismatch"
       }
     }
   },

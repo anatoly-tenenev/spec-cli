@@ -1,0 +1,15 @@
+version: "0.0.4"
+entity:
+  feature:
+    meta:
+      fields:
+        owner:
+          schema:
+            type: entityRef
+            refTypes: [service]
+  service:
+    meta:
+      fields:
+        owner:
+          schema:
+            type: string

@@ -2,7 +2,15 @@
   "id": "query_30_0012_err_query_where_enum_mismatch_json",
   "description": "query_30_0012_err_query_where_enum_mismatch_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"ACTIVE\"}"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.status == 'ACTIVE'"
+  ],
   "expect": {
     "exit_code": 2,
     "response_file": "response.json"

@@ -210,16 +210,16 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `query`: parse options -> normalize paths -> load schema -> build schema index -> build query plan -> load workspace views -> execute.
     - Build contractual JSON response (`items`, `matched`, `page`).
-    - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `where-json.field`.
+    - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
     - Own `query` help inside shared `help`.
     - Provide one place for mapping `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, schema errors, and read errors.
   - Subpackages:
-    - `query/internal/options` - `--type`, `--where-json`, `--select`, `--sort`, `--limit`, `--offset`.
+    - `query/internal/options` - `--type`, `--where`, `--select`, `--sort`, `--limit`, `--offset`.
     - `query/internal/schema` - standard-schema loading and `QuerySchemaIndex`.
     - `query/internal/workspace` - full read-view building and `refs.<field>` resolution.
-    - `query/internal/engine` - planner, `where-json` evaluator, sorting, pagination, projection.
+    - `query/internal/engine` - planner, schema-aware JMESPath `--where` compile/evaluate, sorting, pagination, projection.
     - `query/internal/model` - internal request/plan/index/AST/response types.
-    - `query/internal/support` - pure helpers for YAML, collections, and literal/value operations.
+    - `query/internal/support` - pure helpers for YAML, collections, literal/value operations, and interpolation syntax checks reused by schema loading.
 
 - `internal/application/commands/query/internal/options`
   - Entrypoints:
@@ -237,9 +237,10 @@ Compact project map for fast entry into the code.
     - `index.go` - `BuildIndex`
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Parse metadata/read/content info for every entity type, including scalar `entityRef` and `array.items.type=entityRef` hints (`refTypes` single-type deterministic hint).
-    - Build `QuerySchemaIndex` with namespace split: public projection selectors (`refs`, `refs.<name>`) and filter/sort leaf fields (`refs.<name>.resolved|type|id|slug`) used for where/sort and hidden projection compatibility.
-    - Exclude scalar and array `entityRef` from `meta.<name>` selector/filter/sort namespaces and keep type-conflict validation across entity types.
+    - Parse metadata/read/content info for every entity type, including scalar/array `entityRef`, `required`, `refTypes`, and syntax validation for string `required` interpolations.
+    - Build `QuerySchemaIndex` with type-local field specs used by active-type-set validation for `--select`, `--sort`, and `--where`.
+    - Keep namespace split: public selectors (`refs`, `refs.<name>`) and ref leaf paths (`resolved|type|id|slug|reason`) for hidden projection/sort compatibility.
+    - Exclude scalar and array `entityRef` from `meta.<name>` selector/filter/sort namespaces and reject unsupported metadata `schema.type: object`.
   - Subpackages: none.
 
 - `internal/application/commands/query/internal/workspace`
@@ -248,18 +249,21 @@ Compact project map for fast entry into the code.
     - Deterministically scan `.md` files and parse entity frontmatter/body.
     - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.raw/content.sections`).
     - Exclude scalar and array `entityRef` slots from projected `meta`.
-    - Build global `id` index and resolve `refs.<field>` into `{id,resolved,type,slug}` for scalar refs and arrays of this shape for array refs, with `null`/unresolved semantics and deterministic fallback hints.
-    - Mark `resolved=true` only when the resolved target is unique and compatible with `refTypes` hint; incompatible unique target keeps unresolved fallback shape.
-    - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`) and compute opaque `revision` (`sha256:<hex>`).
+    - Build global `id` index and resolve `refs.<field>` into scalar/array refs with unresolved classification `missing|ambiguous|type_mismatch`; unresolved public refs include `reason`.
+    - Distinguish explicit scalar `null` ref (public `null`) from unresolved ref object; where-context skips explicit-null scalar refs and keeps `reason` leaf for unresolved/resolved paths.
+    - Materialize where-context as schema-known `meta` (non-ref fields only), `refs`, and `content.sections` (schema-known sections only; empty object when absent).
+    - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`, numeric scalars -> `float64`) and compute opaque `revision` (`sha256:<hex>`).
+    - Return `READ_FAILED` for unknown entity types in workspace and syntactically invalid scalar/array ref values.
   - Subpackages: none.
 
 - `internal/application/commands/query/internal/engine`
   - Entrypoint: `planner.go` - `BuildPlan`.
   - Responsibilities:
-    - Validate type filters and build select-tree projector against `projection-namespace`, including hidden compatibility selectors `refs.<field>.id|resolved|type|slug`.
+    - Validate type filters and build active type set used by path validation and where-schema compilation.
+    - Validate `--select` against `projection-namespace`, including `refs.<field>.reason` and array-ref leaf restrictions.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
-    - Parse and bind typed `--where-json` AST with `field/op/value`, type, and enum checks against `filter-namespace`.
-    - Build effective sort (default + hidden tail) and deterministic comparator for missing values, including `refs.<name>.type/slug` missing semantics when non-deterministic.
+    - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks (`content.raw`, root `content`, `meta.<entityRef>`).
+    - Build effective sort (default + hidden tail), including `refs.<field>.reason`, with active-type-set sort-kind compatibility checks, `meta.<entityRef>` rejection, and array-ref leaf restrictions.
     - Execute filter/sort/paginate/project pipeline and build page metadata (`matched`, `returned`, `has_more`, `next_offset`, `effective_sort`).
   - Subpackages: none.
 
@@ -324,7 +328,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read.
-    - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>` and compatible leaf selectors `refs.<name>.id|resolved|type|slug`.
+    - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>`; path-based ref leaf selectors `refs.<name>.id|resolved|type|slug|reason` are scalar-only and are rejected for array refs or scalar/array conflicts across schema types.
     - Own `get` help inside shared `help`.
     - Handle `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`.
   - Subpackages:
@@ -350,7 +354,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
     - Build read-model from `schema.entity`: non-ref meta fields, scalar `entityRef` fields, and `array.items.type=entityRef` fields (with single-`refTypes` deterministic type hint), plus `content.sections` per type.
-    - Build canonical selector allowlist (`built-in`, `meta.<non_ref>`, `refs`, `refs.<name>`, `content.raw`, `content.sections`, `content.sections.<name>`).
+    - Build canonical selector allowlist (`built-in`, `meta.<non_ref>`, `refs`, `refs.<name>`, scalar-only `refs.<name>.id|resolved|type|slug|reason`, `content.raw`, `content.sections`, `content.sections.<name>`) together with ref cardinality metadata for selector validation.
     - Return `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` with `validation.issues`.
   - Subpackages: none.
 
@@ -368,11 +372,11 @@ Compact project map for fast entry into the code.
     - `plan.go` - `BuildSelectorPlan`
     - `entity.go` - `BuildEntityView`
   - Responsibilities:
-    - Validate selectors against schema read-model and build terminal select tree.
+    - Validate selectors against schema read-model and build terminal select tree, including rejection of path-based ref leaf selectors for array refs and scalar/array conflicts across schema types.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
     - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for `refs.<name>`/`refs.<name>.<leaf>` and `content.sections.<name>`.
-    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with refs shape `{id,resolved,type,slug}` for scalar refs and arrays of this shape for array refs, plus unresolved fallback semantics.
-    - Mark `resolved=true` only for unique ref target compatible with `refTypes` hint; unique incompatible target stays unresolved with deterministic fallback.
+    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with scalar/array refs and unresolved classification `missing|ambiguous|type_mismatch` (`reason` in unresolved public refs).
+    - Mark `resolved=true` only for unique ref target compatible with `refTypes` hint; unique incompatible target stays unresolved with deterministic fallback and `reason`.
     - Apply blocking policy only when a requested ref slot is structurally unreadable and deterministic `id` cannot be obtained.
     - Project only the selected response subtree.
   - Subpackages: none.
@@ -767,7 +771,8 @@ Compact project map for fast entry into the code.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
-    - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where-json`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
+    - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
+    - Cover schema-aware `--where` literal validation for built-in entity `type`: unknown literals such as `type == 'unknown'` fail as `INVALID_QUERY` before workspace scan, so their fixtures stay on `workspace.in/.keep`.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entityRef`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
   - Subpackages:
@@ -782,10 +787,10 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
     - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`.
-    - `tests/integration/cases/query/30_where/*` - `--where-json` happy/negative scenarios.
+    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, and schema-aware rejection of unknown built-in `type` literals.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
-    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>`.
+    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>` and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
     - `tests/integration/cases/add/10_happy/*` - happy-path `add`.
@@ -822,7 +827,7 @@ Compact project map for fast entry into the code.
 
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
-- `query` - read-only pipeline is implemented (schema index, `where-json`, projection, deterministic sort, offset pagination, JSON contract).
+- `query` - read-only pipeline is implemented (active-type-set schema index, schema-aware JMESPath `--where`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
 - `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.

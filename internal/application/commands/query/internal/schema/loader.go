@@ -3,6 +3,7 @@ package schema
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
@@ -79,8 +80,14 @@ func Load(path string) (LoadedSchema, *domainerrors.AppError) {
 		)
 	}
 
+	typeNames := support.SortedMapKeys(entityNode)
+	typeSet := make(map[string]struct{}, len(typeNames))
+	for _, typeName := range typeNames {
+		typeSet[typeName] = struct{}{}
+	}
+
 	entityTypes := make(map[string]EntityType, len(entityNode))
-	for _, entityTypeName := range support.SortedMapKeys(entityNode) {
+	for _, entityTypeName := range typeNames {
 		rawType, ok := support.ToStringMap(entityNode[entityTypeName])
 		if !ok {
 			return LoadedSchema{}, newSchemaError(
@@ -90,7 +97,7 @@ func Load(path string) (LoadedSchema, *domainerrors.AppError) {
 			)
 		}
 
-		parsedType, parseErr := parseEntityType(entityTypeName, rawType)
+		parsedType, parseErr := parseEntityType(entityTypeName, rawType, typeSet)
 		if parseErr != nil {
 			return LoadedSchema{}, parseErr
 		}
@@ -119,7 +126,7 @@ func validateTopLevelKeys(values map[string]any) *domainerrors.AppError {
 	return nil
 }
 
-func parseEntityType(name string, rawType map[string]any) (EntityType, *domainerrors.AppError) {
+func parseEntityType(name string, rawType map[string]any, typeSet map[string]struct{}) (EntityType, *domainerrors.AppError) {
 	metadataFields := map[string]Field{}
 	entityRefFields := map[string]Field{}
 
@@ -155,7 +162,7 @@ func parseEntityType(name string, rawType map[string]any) (EntityType, *domainer
 					)
 				}
 
-				field, parseErr := parseMetadataField(name, metadataFieldName, rawField)
+				field, parseErr := parseMetadataField(name, metadataFieldName, rawField, typeSet)
 				if parseErr != nil {
 					return EntityType{}, parseErr
 				}
@@ -167,7 +174,7 @@ func parseEntityType(name string, rawType map[string]any) (EntityType, *domainer
 		}
 	}
 
-	contentSections := map[string]struct{}{}
+	contentSections := map[string]SectionField{}
 	if rawContent, hasContent := rawType["content"]; hasContent {
 		contentNode, ok := support.ToStringMap(rawContent)
 		if !ok {
@@ -189,7 +196,22 @@ func parseEntityType(name string, rawType map[string]any) (EntityType, *domainer
 				)
 			}
 			for _, sectionName := range support.SortedMapKeys(sectionsNode) {
-				contentSections[sectionName] = struct{}{}
+				rawSection, ok := support.ToStringMap(sectionsNode[sectionName])
+				if !ok {
+					return EntityType{}, newSchemaError(
+						domainerrors.CodeSchemaInvalid,
+						fmt.Sprintf("schema.entity.%s.content.sections.%s must be a mapping", name, sectionName),
+						nil,
+					)
+				}
+				required, requiredErr := parseRequiredFlag(rawSection, fmt.Sprintf("schema.entity.%s.content.sections.%s.required", name, sectionName))
+				if requiredErr != nil {
+					return EntityType{}, requiredErr
+				}
+				contentSections[sectionName] = SectionField{
+					Name:     sectionName,
+					Required: required,
+				}
 			}
 		}
 	}
@@ -202,7 +224,12 @@ func parseEntityType(name string, rawType map[string]any) (EntityType, *domainer
 	}, nil
 }
 
-func parseMetadataField(entityTypeName string, fieldName string, rawField map[string]any) (Field, *domainerrors.AppError) {
+func parseMetadataField(
+	entityTypeName string,
+	fieldName string,
+	rawField map[string]any,
+	typeSet map[string]struct{},
+) (Field, *domainerrors.AppError) {
 	rawSchema, ok := rawField["schema"]
 	if !ok {
 		return Field{}, newSchemaError(
@@ -230,21 +257,30 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 		)
 	}
 
-	fieldKind, kindErr := schemaTypeToFieldKind(entityTypeName, fieldName, rawType, schemaNode)
+	kind, itemKind, kindErr := schemaTypeToFieldKind(entityTypeName, fieldName, rawType, schemaNode)
 	if kindErr != nil {
 		return Field{}, kindErr
 	}
-	isEntityRef, refTypeHint, refErr := parseEntityRefMetadataField(entityTypeName, fieldName, rawType, schemaNode)
+
+	required, requiredErr := parseRequiredFlag(rawField, fmt.Sprintf("schema.entity.%s.meta.fields.%s.required", entityTypeName, fieldName))
+	if requiredErr != nil {
+		return Field{}, requiredErr
+	}
+
+	isEntityRef, isArrayRef, refTypes, refErr := parseEntityRefMetadataField(entityTypeName, fieldName, rawType, schemaNode, typeSet)
 	if refErr != nil {
 		return Field{}, refErr
 	}
 
 	field := Field{
 		Name:        fieldName,
-		Kind:        fieldKind,
+		Kind:        kind,
+		ItemKind:    itemKind,
 		EnumValues:  []any{},
+		Required:    required,
 		IsEntityRef: isEntityRef,
-		RefTypeHint: refTypeHint,
+		IsArrayRef:  isArrayRef,
+		RefTypes:    append([]string(nil), refTypes...),
 	}
 
 	rawEnum, hasEnum := schemaNode["enum"]
@@ -260,7 +296,39 @@ func parseMetadataField(entityTypeName string, fieldName string, rawField map[st
 		field.EnumValues = append(field.EnumValues, enumValues...)
 	}
 
+	if rawConst, hasConst := schemaNode["const"]; hasConst {
+		field.HasConst = true
+		field.ConstValue = rawConst
+	}
+
 	return field, nil
+}
+
+func parseRequiredFlag(rawRule map[string]any, path string) (bool, *domainerrors.AppError) {
+	required := true
+	rawRequired, exists := rawRule["required"]
+	if !exists {
+		return required, nil
+	}
+	switch typed := rawRequired.(type) {
+	case bool:
+		return typed, nil
+	case string:
+		if err := support.ValidateSingleInterpolation(typed); err != nil {
+			return false, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s has invalid expression in required context: %s", path, err.Error()),
+				nil,
+			)
+		}
+		return false, nil
+	default:
+		return false, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s must be boolean or string interpolation ${expr}", path),
+			nil,
+		)
+	}
 }
 
 func parseEntityRefMetadataField(
@@ -268,22 +336,31 @@ func parseEntityRefMetadataField(
 	fieldName string,
 	rawType string,
 	schemaNode map[string]any,
-) (bool, string, *domainerrors.AppError) {
+	typeSet map[string]struct{},
+) (bool, bool, []string, *domainerrors.AppError) {
 	normalizedType := strings.TrimSpace(rawType)
 	if normalizedType == "entityRef" {
-		return true, extractSingleRefTypeHint(schemaNode), nil
+		refTypes, err := extractRefTypes(
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.refTypes", entityTypeName, fieldName),
+			schemaNode,
+			typeSet,
+		)
+		if err != nil {
+			return false, false, nil, err
+		}
+		return true, false, refTypes, nil
 	}
 	if normalizedType != "array" {
-		return false, "", nil
+		return false, false, nil, nil
 	}
 
 	rawItems, hasItems := schemaNode["items"]
 	if !hasItems {
-		return false, "", nil
+		return false, false, nil, nil
 	}
 	itemsNode, ok := support.ToStringMap(rawItems)
 	if !ok {
-		return false, "", newSchemaError(
+		return false, false, nil, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items must be a mapping", entityTypeName, fieldName),
 			nil,
@@ -292,37 +369,73 @@ func parseEntityRefMetadataField(
 
 	rawItemType, ok := itemsNode["type"].(string)
 	if !ok || strings.TrimSpace(rawItemType) == "" {
-		return false, "", newSchemaError(
+		return false, false, nil, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type must be a non-empty string", entityTypeName, fieldName),
 			nil,
 		)
 	}
 	if strings.TrimSpace(rawItemType) != "entityRef" {
-		return false, "", nil
+		return false, false, nil, nil
 	}
 
-	return true, extractSingleRefTypeHint(itemsNode), nil
+	refTypes, err := extractRefTypes(
+		fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.refTypes", entityTypeName, fieldName),
+		itemsNode,
+		typeSet,
+	)
+	if err != nil {
+		return false, false, nil, err
+	}
+	return true, true, refTypes, nil
 }
 
-func extractSingleRefTypeHint(schemaNode map[string]any) string {
+func extractRefTypes(path string, schemaNode map[string]any, typeSet map[string]struct{}) ([]string, *domainerrors.AppError) {
 	rawRefTypes, ok := schemaNode["refTypes"]
 	if !ok {
-		return ""
+		return nil, nil
 	}
+
 	values, ok := support.ToSlice(rawRefTypes)
-	if !ok || len(values) != 1 {
-		return ""
+	if !ok || len(values) == 0 {
+		return nil, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s must be a non-empty array", path),
+			nil,
+		)
 	}
-	refType, ok := values[0].(string)
-	if !ok {
-		return ""
+
+	result := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for idx, item := range values {
+		refType, ok := item.(string)
+		if !ok || strings.TrimSpace(refType) == "" {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s[%d] must be non-empty string", path, idx),
+				nil,
+			)
+		}
+		refType = strings.TrimSpace(refType)
+		if _, exists := typeSet[refType]; !exists {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s references unknown entity type '%s'", path, refType),
+				nil,
+			)
+		}
+		if _, duplicate := seen[refType]; duplicate {
+			return nil, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("%s contains duplicate '%s'", path, refType),
+				nil,
+			)
+		}
+		seen[refType] = struct{}{}
+		result = append(result, refType)
 	}
-	refType = strings.TrimSpace(refType)
-	if refType == "" {
-		return ""
-	}
-	return refType
+	sort.Strings(result)
+	return result, nil
 }
 
 func schemaTypeToFieldKind(
@@ -330,25 +443,32 @@ func schemaTypeToFieldKind(
 	fieldName string,
 	rawType string,
 	rawFieldSchema map[string]any,
-) (model.SchemaFieldKind, *domainerrors.AppError) {
+) (model.SchemaFieldKind, model.SchemaFieldKind, *domainerrors.AppError) {
 	normalizedType := strings.TrimSpace(rawType)
 
 	switch normalizedType {
 	case "integer", "number":
-		return model.FieldKindNumber, nil
+		return model.FieldKindNumber, "", nil
 	case "boolean":
-		return model.FieldKindBoolean, nil
+		return model.FieldKindBoolean, "", nil
 	case "array":
-		return model.FieldKindArray, nil
+		itemKind, itemErr := parseArrayItemKind(entityTypeName, fieldName, rawFieldSchema)
+		if itemErr != nil {
+			return "", "", itemErr
+		}
+		return model.FieldKindArray, itemKind, nil
 	case "string":
 		if format, ok := rawFieldSchema["format"].(string); ok && strings.TrimSpace(format) == "date" {
-			return model.FieldKindDate, nil
+			return model.FieldKindDate, "", nil
 		}
-		return model.FieldKindString, nil
+		return model.FieldKindString, "", nil
+	case "null":
+		return model.FieldKindNull, "", nil
 	case "entityRef":
-		return model.FieldKindString, nil
+		// entityRef is exposed under refs namespace as an object.
+		return model.FieldKindString, "", nil
 	default:
-		return "", newSchemaError(
+		return "", "", newSchemaError(
 			domainerrors.CodeSchemaInvalid,
 			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.type uses unsupported type", entityTypeName, fieldName),
 			map[string]any{"type": normalizedType},
@@ -356,10 +476,58 @@ func schemaTypeToFieldKind(
 	}
 }
 
+func parseArrayItemKind(
+	entityTypeName string,
+	fieldName string,
+	rawFieldSchema map[string]any,
+) (model.SchemaFieldKind, *domainerrors.AppError) {
+	rawItems, hasItems := rawFieldSchema["items"]
+	if !hasItems {
+		return "", nil
+	}
+	itemsNode, ok := support.ToStringMap(rawItems)
+	if !ok {
+		return "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items must be a mapping", entityTypeName, fieldName),
+			nil,
+		)
+	}
+	rawItemType, ok := itemsNode["type"].(string)
+	if !ok || strings.TrimSpace(rawItemType) == "" {
+		return "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type must be a non-empty string", entityTypeName, fieldName),
+			nil,
+		)
+	}
+
+	switch strings.TrimSpace(rawItemType) {
+	case "string", "entityRef":
+		return model.FieldKindString, nil
+	case "integer", "number":
+		return model.FieldKindNumber, nil
+	case "boolean":
+		return model.FieldKindBoolean, nil
+	case "null":
+		return model.FieldKindNull, nil
+	case "object":
+		return model.FieldKindObject, nil
+	case "array":
+		return model.FieldKindArray, nil
+	default:
+		return "", newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.schema.items.type uses unsupported type", entityTypeName, fieldName),
+			map[string]any{"type": strings.TrimSpace(rawItemType)},
+		)
+	}
+}
+
 func newSchemaError(code domainerrors.Code, message string, details map[string]any) *domainerrors.AppError {
 	issue := support.ValidationIssue(
-		support.ValidationIssueLevelError,
-		support.ValidationIssueClassSchemaError,
+		"error",
+		"SchemaError",
 		message,
 		querySchemaBlockingStandardRef,
 	)

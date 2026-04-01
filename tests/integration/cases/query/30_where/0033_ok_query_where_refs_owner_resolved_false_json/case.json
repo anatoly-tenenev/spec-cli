@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"refs.owner.resolved\",\"op\":\"eq\",\"value\":false}",
+    "--where",
+    "refs.owner.resolved == `false`",
     "--sort",
     "id:asc"
   ],

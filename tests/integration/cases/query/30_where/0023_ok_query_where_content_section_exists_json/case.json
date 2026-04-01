@@ -8,10 +8,8 @@
     "--schema",
     "${SCHEMA}",
     "query",
-    "--type",
-    "feature",
-    "--where-json",
-    "{\"field\":\"content.sections.implementation\",\"op\":\"exists\"}"
+    "--where",
+    "content.sections.implementation != `null`"
   ],
   "expect": {
     "exit_code": 0,

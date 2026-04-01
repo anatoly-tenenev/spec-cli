@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "unknown filter-namespace field 'meta.owner'",
+    "message": "forbidden where path: 'meta.owner' points to entityRef; use refs.owner",
     "exit_code": 2
   }
 }

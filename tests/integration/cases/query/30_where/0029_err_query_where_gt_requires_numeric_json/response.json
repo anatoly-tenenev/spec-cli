@@ -2,7 +2,7 @@
   "error": {
     "code": "INVALID_QUERY",
     "exit_code": 2,
-    "message": "operator 'gt' requires numeric value for field 'meta.score'"
+    "message": "invalid_comparator_types at offset 11: comparator requires number operands or date operands"
   },
   "result_state": "invalid"
 }

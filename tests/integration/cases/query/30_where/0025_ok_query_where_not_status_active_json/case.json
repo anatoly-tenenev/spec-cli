@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"op\":\"not\",\"filter\":{\"field\":\"meta.status\",\"op\":\"eq\",\"value\":\"active\"}}"
+    "--where",
+    "!(meta.status == 'active')"
   ],
   "expect": {
     "exit_code": 0,

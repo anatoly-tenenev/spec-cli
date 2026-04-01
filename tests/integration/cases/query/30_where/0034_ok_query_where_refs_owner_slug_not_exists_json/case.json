@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"refs.owner.slug\",\"op\":\"not_exists\"}",
+    "--where",
+    "refs.owner.slug == `null`",
     "--sort",
     "id:asc"
   ],

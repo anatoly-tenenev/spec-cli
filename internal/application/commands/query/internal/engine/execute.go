@@ -1,12 +1,25 @@
 package engine
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+import (
+	"reflect"
 
-func Execute(plan model.QueryPlan, entities []model.EntityView) model.QueryResponse {
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
+)
+
+func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResponse, *domainerrors.AppError) {
 	matchedEntities := make([]model.EntityView, 0, len(entities))
 	for _, entity := range entities {
-		if plan.TypedFilter != nil {
-			if !EvaluateFilter(*plan.TypedFilter, entity.View) {
+		if plan.Where != nil {
+			whereValue, whereErr := plan.Where.Query.Search(entity.WhereContext)
+			if whereErr != nil {
+				return model.QueryResponse{}, domainerrors.New(
+					domainerrors.CodeReadFailed,
+					"failed to evaluate --where expression",
+					map[string]any{"reason": whereErr.Error()},
+				)
+			}
+			if !isTruthy(whereValue) {
 				continue
 			}
 		}
@@ -42,7 +55,7 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) model.QueryRespo
 			NextOffset:    nextOffset,
 			EffectiveSort: sortTermsToStrings(plan.EffectiveSort),
 		},
-	}
+	}, nil
 }
 
 func paginateEntities(entities []model.EntityView, offset int, limit int) ([]model.EntityView, int) {
@@ -66,4 +79,38 @@ func sortTermsToStrings(terms []model.SortTerm) []string {
 		serialized = append(serialized, term.Path+":"+string(term.Direction))
 	}
 	return serialized
+}
+
+func isTruthy(value any) bool {
+	return !isFalse(value)
+}
+
+func isFalse(value any) bool {
+	switch typed := value.(type) {
+	case bool:
+		return !typed
+	case []any:
+		return len(typed) == 0
+	case map[string]any:
+		return len(typed) == 0
+	case string:
+		return len(typed) == 0
+	case nil:
+		return true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Struct:
+		return false
+	case reflect.Slice, reflect.Map:
+		return rv.Len() == 0
+	case reflect.Ptr:
+		if rv.IsNil() {
+			return true
+		}
+		return isFalse(rv.Elem().Interface())
+	}
+
+	return false
 }

@@ -34,7 +34,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, schemaErr
 	}
 
-	selectorPlan, selectorErr := engine.BuildSelectorPlan(opts.Selectors, readModel.AllowedSelectors)
+	selectorPlan, selectorErr := engine.BuildSelectorPlan(opts.Selectors, readModel)
 	if selectorErr != nil {
 		return responses.CommandOutput{}, selectorErr
 	}

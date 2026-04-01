@@ -1,0 +1,21 @@
+{
+  "id": "query_60_0008_err_query_schema_type_object_unsupported_json",
+  "description": "query_60_0008_err_query_schema_type_object_unsupported_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -22,6 +22,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 		Limit:       defaultLimit,
 		Offset:      defaultOffset,
 	}
+	whereProvided := false
 
 	for idx := 0; idx < len(args); idx++ {
 		token := args[idx]
@@ -51,7 +52,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			}
 			opts.TypeFilters = append(opts.TypeFilters, value)
 			idx = nextIdx
-		case "--where-json":
+		case "--where":
 			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
@@ -59,11 +60,19 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			if strings.TrimSpace(value) == "" {
 				return model.Options{}, domainerrors.New(
 					domainerrors.CodeInvalidQuery,
-					"--where-json cannot be empty",
+					"--where cannot be empty",
 					nil,
 				)
 			}
-			opts.WhereJSON = value
+			if whereProvided {
+				return model.Options{}, domainerrors.New(
+					domainerrors.CodeInvalidArgs,
+					"--where can be specified only once",
+					nil,
+				)
+			}
+			whereProvided = true
+			opts.WhereExpr = value
 			idx = nextIdx
 		case "--select":
 			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)

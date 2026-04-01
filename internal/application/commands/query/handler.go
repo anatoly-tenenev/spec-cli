@@ -49,7 +49,10 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, workspaceErr
 	}
 
-	queryResult := engine.Execute(plan, entities)
+	queryResult, executeErr := engine.Execute(plan, entities)
+	if executeErr != nil {
+		return responses.CommandOutput{}, executeErr
+	}
 
 	return responses.CommandOutput{
 		JSON: map[string]any{

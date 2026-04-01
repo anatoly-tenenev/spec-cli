@@ -2,7 +2,15 @@
   "id": "query_30_0006_err_query_where_invalid_json_json",
   "description": "query_30_0006_err_query_where_invalid_json_json",
   "command": "query",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--where-json","oops"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.status =="
+  ],
   "expect": {
     "exit_code": 2,
     "response_file": "response.json"

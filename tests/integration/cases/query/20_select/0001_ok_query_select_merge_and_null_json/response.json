@@ -37,7 +37,7 @@
       },
       "content": {
         "sections": {
-          "summary": null
+          "summary": "Login flow for user authentication."
         }
       }
     },
@@ -48,7 +48,13 @@
         "status": "deprecated"
       },
       "refs": {
-        "owner": null
+        "owner": {
+          "type": "service",
+          "id": "SVC-404",
+          "slug": null,
+          "resolved": false,
+          "reason": "missing"
+        }
       },
       "content": {
         "sections": {

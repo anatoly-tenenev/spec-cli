@@ -2,7 +2,7 @@
   "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "unknown filter-namespace field 'meta.unknown'",
+    "message": "unknown_property at offset 5: unknown property \"unknown\"",
     "exit_code": 2
   }
 }

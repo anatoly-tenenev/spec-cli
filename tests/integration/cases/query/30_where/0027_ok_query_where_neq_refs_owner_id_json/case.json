@@ -10,8 +10,8 @@
     "query",
     "--type",
     "feature",
-    "--where-json",
-    "{\"field\":\"refs.owner.id\",\"op\":\"neq\",\"value\":\"SVC-1\"}"
+    "--where",
+    "refs.owner.id != 'SVC-1'"
   ],
   "expect": {
     "exit_code": 0,

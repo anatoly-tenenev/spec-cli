@@ -1,0 +1,20 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema.entity.feature.meta.fields.priority.required has invalid expression in required context: unterminated interpolation, missing closing '}'",
+    "exit_code": 4,
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "SchemaError",
+            "level": "error",
+            "message": "schema.entity.feature.meta.fields.priority.required has invalid expression in required context: unterminated interpolation, missing closing '}'",
+            "standard_ref": "7"
+          }
+        ]
+      }
+    }
+  }
+}
