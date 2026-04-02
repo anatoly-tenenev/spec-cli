@@ -36,9 +36,7 @@ Schema
         refs:
           owner:
             description: Parent service
-            required:
-              when:
-                eq?: [meta.status, active]
+            required: ${meta.status == 'active'}
             schema:
               type: entityRef
               refTypes:
@@ -47,9 +45,7 @@ Schema
           sections:
             summary:
               description: Short summary
-              required:
-                when:
-                  eq?: [meta.status, active]
+              required: ${meta.status == 'active'}
               title:
                 - Summary
       service:

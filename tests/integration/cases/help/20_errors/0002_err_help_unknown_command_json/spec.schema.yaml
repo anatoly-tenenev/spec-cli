@@ -26,8 +26,7 @@ entity:
                 - service
         owner:
           description: Parent service
-          required_when:
-            eq?: [meta.status, active]
+          required: ${meta.status == 'active'}
           schema:
             type: entityRef
             refTypes:
@@ -36,8 +35,7 @@ entity:
       sections:
         summary:
           description: Short summary
-          required_when:
-            eq?: [meta.status, active]
+          required: ${meta.status == 'active'}
           title: Summary
   service:
     idPrefix: SVC

@@ -198,6 +198,10 @@ func TestHelpSelectedCases(t *testing.T) {
 		assertContains(t, result.Stdout, "help\n  Syntax")
 		assertContains(t, result.Stdout, "query\n  Syntax")
 		assertContains(t, result.Stdout, "version\n  Syntax")
+		assertContains(t, result.Stdout, "watchers:\n            description: Related services\n            required: false")
+		assertContains(t, result.Stdout, "owner:\n            description: Parent service\n            required: ${meta.status == 'active'}")
+		assertContains(t, result.Stdout, "summary:\n              description: Short summary\n              required: ${meta.status == 'active'}")
+		assertContains(t, result.Stdout, "tier:\n            required: true")
 	})
 
 	t.Run("help_text_default_format", func(t *testing.T) {
@@ -289,6 +293,7 @@ func TestHelpSelectedCases(t *testing.T) {
 		assertContains(t, result.Stdout, "schema_derived: true")
 		assertContains(t, result.Stdout, "options marked schema_derived (--type, --where, --select, --sort) keep derivation rules, but concrete schema-derived values are intentionally not listed.")
 	})
+
 }
 
 func prepareHelpFixture(t *testing.T) (string, string) {
@@ -402,8 +407,7 @@ entity:
                 - service
         owner:
           description: Parent service
-          required_when:
-            eq?: [meta.status, active]
+          required: ${meta.status == 'active'}
           schema:
             type: entityRef
             refTypes:
@@ -412,8 +416,7 @@ entity:
       sections:
         summary:
           description: Short summary
-          required_when:
-            eq?: [meta.status, active]
+          required: ${meta.status == 'active'}
           title: Summary
   service:
     idPrefix: SVC

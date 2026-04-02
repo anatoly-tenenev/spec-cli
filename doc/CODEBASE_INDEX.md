@@ -313,9 +313,9 @@ Compact project map for fast entry into the code.
     - Classify schema unavailability into `loaded|missing|invalid|error` plus reason codes (`SCHEMA_NOT_FOUND`, `SCHEMA_NOT_READABLE`, `SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`, `SCHEMA_PROJECTION_ERROR`).
     - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without partial heuristic schema-derived data.
     - Pass absolute `ResolvedPath` into the report.
-    - Normalize `meta.fields -> meta|refs`, `required|required_when -> required` (implicit default is `required: true` when both keys are absent), `title -> string[]`.
+    - Normalize `meta.fields -> meta|refs`, `required` as `boolean | "${expr}"` with implicit default `required: true`, and `title -> string[]`; reject legacy `required_when`.
     - Exclude storage-facing nodes (`pathTemplate`, raw `meta.fields`) and hide empty blocks.
-    - Emit canonical `required.when` expressions and canonical key order in schema subtree.
+    - Emit conditional requiredness as scalar `${expr}` (not nested `required.when`) and keep deterministic key order in the projected schema subtree.
   - Subpackages:
     - `helpschema/internal/projector` - thin projection entrypoint and pipeline -> use-case mapping.
     - `helpschema/internal/projector/internal/pipeline` - full parse/project/render pipeline with ordered projection and deterministic YAML emission.

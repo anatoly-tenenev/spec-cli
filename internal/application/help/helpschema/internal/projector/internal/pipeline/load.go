@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 
+	jmespath "github.com/anatoly-tenenev/go-jmespath"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/help/helpschema/internal/projector/internal/pipeline/internal/yamlnodes"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"gopkg.in/yaml.v3"
@@ -176,7 +176,7 @@ func projectEntityType(entityTypeNode *yaml.Node, path string) (*yaml.Node, erro
 	}
 	if err := ensureAllowedKeys(entries, map[string]struct{}{
 		"description":  {},
-		"idPrefix":    {},
+		"idPrefix":     {},
 		"pathTemplate": {},
 		"meta":         {},
 		"content":      {},
@@ -284,10 +284,9 @@ func projectMetadataField(fieldNode *yaml.Node, path string) (*yaml.Node, string
 		return nil, "", err
 	}
 	if err := ensureAllowedKeys(entries, map[string]struct{}{
-		"description":   {},
-		"required":      {},
-		"required_when": {},
-		"schema":        {},
+		"description": {},
+		"required":    {},
+		"schema":      {},
 	}, path); err != nil {
 		return nil, "", err
 	}
@@ -297,7 +296,7 @@ func projectMetadataField(fieldNode *yaml.Node, path string) (*yaml.Node, string
 		return nil, "", fmt.Errorf("%s.schema is required", path)
 	}
 
-	requiredNode, err := normalizeRequired(byKey["required"], byKey["required_when"], path)
+	requiredNode, err := normalizeRequired(byKey["required"], path)
 	if err != nil {
 		return nil, "", err
 	}
@@ -368,15 +367,14 @@ func projectSection(sectionNode *yaml.Node, path string) (*yaml.Node, error) {
 		return nil, err
 	}
 	if err := ensureAllowedKeys(entries, map[string]struct{}{
-		"description":   {},
-		"required":      {},
-		"required_when": {},
-		"title":         {},
+		"description": {},
+		"required":    {},
+		"title":       {},
 	}, path); err != nil {
 		return nil, err
 	}
 
-	requiredNode, err := normalizeRequired(byKey["required"], byKey["required_when"], path)
+	requiredNode, err := normalizeRequired(byKey["required"], path)
 	if err != nil {
 		return nil, err
 	}
@@ -473,25 +471,35 @@ func projectSchemaValue(key string, valueNode *yaml.Node, path string) (*yaml.No
 	}
 }
 
-func normalizeRequired(requiredNode *yaml.Node, requiredWhenNode *yaml.Node, path string) (*yaml.Node, error) {
-	if requiredWhenNode != nil {
-		whenNode, err := canonicalExpression(requiredWhenNode, path+".required_when")
-		if err != nil {
-			return nil, err
-		}
-		whenWrapper := mappingNode()
-		appendMapping(whenWrapper, "when", whenNode)
-		return whenWrapper, nil
-	}
-
+func normalizeRequired(requiredNode *yaml.Node, path string) (*yaml.Node, error) {
 	if requiredNode == nil {
 		return boolScalar(true), nil
 	}
-	parsed, err := parseBoolScalar(requiredNode, path+".required")
-	if err != nil {
-		return nil, err
+
+	requiredPath := path + ".required"
+	parsed, err := parseBoolScalar(requiredNode, requiredPath)
+	if err == nil {
+		return boolScalar(parsed), nil
 	}
-	return boolScalar(parsed), nil
+
+	requiredValueNode, scalarErr := requiredScalar(requiredNode, requiredPath)
+	if scalarErr != nil {
+		return nil, fmt.Errorf("%s must be boolean or string interpolation ${expr}", requiredPath)
+	}
+
+	trimmed := strings.TrimSpace(requiredValueNode.Value)
+	if !strings.HasPrefix(trimmed, "${") || !strings.HasSuffix(trimmed, "}") {
+		return nil, fmt.Errorf("%s must be boolean or string interpolation ${expr}", requiredPath)
+	}
+
+	expressionSource := strings.TrimSpace(trimmed[2 : len(trimmed)-1])
+	if expressionSource == "" {
+		return nil, fmt.Errorf("%s interpolation ${...} must contain a non-empty expression", requiredPath)
+	}
+	if _, compileErr := jmespath.Compile(expressionSource); compileErr != nil {
+		return nil, fmt.Errorf("%s has invalid expression: %v", requiredPath, compileErr)
+	}
+	return cloneScalar(requiredValueNode), nil
 }
 
 func normalizeTitle(titleNode *yaml.Node, path string) (*yaml.Node, error) {
@@ -508,67 +516,6 @@ func normalizeTitle(titleNode *yaml.Node, path string) (*yaml.Node, error) {
 		return scalarSequence(titleNode, path, false)
 	default:
 		return nil, fmt.Errorf("%s must be string or string[]", path)
-	}
-}
-
-func canonicalExpression(node *yaml.Node, path string) (*yaml.Node, error) {
-	switch node.Kind {
-	case yaml.ScalarNode:
-		return cloneScalar(node), nil
-	case yaml.SequenceNode:
-		projected := sequenceNode(true)
-		for idx, child := range node.Content {
-			projectedChild, err := canonicalExpression(child, fmt.Sprintf("%s[%d]", path, idx))
-			if err != nil {
-				return nil, err
-			}
-			projected.Content = append(projected.Content, projectedChild)
-		}
-		return projected, nil
-	case yaml.MappingNode:
-		entries, _, err := readMapping(node, path)
-		if err != nil {
-			return nil, err
-		}
-		sort.SliceStable(entries, func(i, j int) bool {
-			leftKey := entries[i].Key
-			rightKey := entries[j].Key
-			leftRank := expressionKeyRank(leftKey)
-			rightRank := expressionKeyRank(rightKey)
-			if leftRank != rightRank {
-				return leftRank < rightRank
-			}
-			return leftKey < rightKey
-		})
-
-		projected := mappingNode()
-		for _, entry := range entries {
-			projectedValue, projectErr := canonicalExpression(entry.Value, path+"."+entry.Key)
-			if projectErr != nil {
-				return nil, projectErr
-			}
-			appendMapping(projected, entry.Key, projectedValue)
-		}
-		return projected, nil
-	default:
-		return nil, fmt.Errorf("%s uses unsupported yaml node kind", path)
-	}
-}
-
-func expressionKeyRank(key string) int {
-	switch key {
-	case "op":
-		return 1
-	case "filters":
-		return 2
-	case "filter":
-		return 3
-	case "field":
-		return 4
-	case "value":
-		return 5
-	default:
-		return 10
 	}
 }
 
