@@ -38,9 +38,9 @@ func Execute(
 	candidateID := fmt.Sprintf("%s-%d", typeSpec.IDPrefix, nextSuffix)
 
 	frontmatter := map[string]any{
-		"type":         opts.EntityType,
-		"id":           candidateID,
-		"slug":         opts.Slug,
+		"type":        opts.EntityType,
+		"id":          candidateID,
+		"slug":        opts.Slug,
 		"createdDate": today,
 		"updatedDate": today,
 	}
@@ -69,7 +69,9 @@ func Execute(
 	candidate.Refs = resolvedRefs
 	candidate.RefArrays = resolvedRefArrays
 
-	pathRelPOSIX, pathIssues := pathcalc.Evaluate(typeSpec, candidate)
+	evaluationContext := buildEvaluationContext(candidate)
+
+	pathRelPOSIX, pathIssues := pathcalc.Evaluate(typeSpec, candidate, evaluationContext)
 	if pathRelPOSIX != "" {
 		candidate.PathRelPOSIX = pathRelPOSIX
 		candidate.PathAbs = filepath.Join(snapshot.WorkspacePath, filepath.FromSlash(pathRelPOSIX))
@@ -82,7 +84,7 @@ func Execute(
 		}
 	}
 
-	validationIssues := validation.Validate(typeSpec, candidate, snapshot, pathIssues, refIssues)
+	validationIssues := validation.Validate(typeSpec, candidate, snapshot, pathIssues, refIssues, evaluationContext)
 	if len(validationIssues) > 0 {
 		return nil, validation.AsAppError(validationIssues)
 	}
@@ -128,4 +130,50 @@ func Execute(
 			"issues": []any{},
 		},
 	}, nil
+}
+
+func buildEvaluationContext(candidate *model.Candidate) map[string]any {
+	if candidate == nil {
+		return map[string]any{}
+	}
+
+	meta := map[string]any{}
+	for key, value := range candidate.Meta {
+		meta[key] = value
+	}
+
+	refs := map[string]any{}
+	for fieldName := range candidate.RefIDs {
+		refs[fieldName] = nil
+	}
+	for fieldName, resolvedRef := range candidate.Refs {
+		refs[fieldName] = map[string]any{
+			"id":      resolvedRef.ID,
+			"type":    resolvedRef.Type,
+			"slug":    resolvedRef.Slug,
+			"dirPath": resolvedRef.DirPath,
+		}
+	}
+	for fieldName, resolvedRefs := range candidate.RefArrays {
+		refItems := make([]any, 0, len(resolvedRefs))
+		for _, resolvedRef := range resolvedRefs {
+			refItems = append(refItems, map[string]any{
+				"id":      resolvedRef.ID,
+				"type":    resolvedRef.Type,
+				"slug":    resolvedRef.Slug,
+				"dirPath": resolvedRef.DirPath,
+			})
+		}
+		refs[fieldName] = refItems
+	}
+
+	return map[string]any{
+		"type":        candidate.Type,
+		"id":          candidate.ID,
+		"slug":        candidate.Slug,
+		"createdDate": candidate.CreatedDate,
+		"updatedDate": candidate.UpdatedDate,
+		"meta":        meta,
+		"refs":        refs,
+	}
 }

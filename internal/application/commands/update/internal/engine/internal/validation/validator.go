@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/expr"
+	commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/lookup"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
 	updateworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
@@ -26,6 +25,7 @@ func Validate(
 	sourcePath string,
 	pathIssues []domainvalidation.Issue,
 	refIssues []domainvalidation.Issue,
+	evaluationContext map[string]any,
 ) []domainvalidation.Issue {
 	validationIssues := make([]domainvalidation.Issue, 0, len(pathIssues)+len(refIssues)+16)
 	validationIssues = append(validationIssues, pathIssues...)
@@ -110,25 +110,20 @@ func Validate(
 		))
 	}
 
-	lookupValues := lookup.Candidate{Candidate: candidate}
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		fieldSpec := typeSpec.MetaFields[fieldName]
 		value, exists := candidate.Frontmatter[fieldName]
 
-		required := fieldSpec.Required
-		if fieldSpec.HasRequiredWhen {
-			matches, evalErr := expr.Evaluate(fieldSpec.RequiredWhen, lookupValues)
-			if evalErr != nil {
-				validationIssues = append(validationIssues, issues.New(
-					"meta.required_when_evaluation_failed",
-					fmt.Sprintf("failed to evaluate required_when for field '%s'", fieldName),
-					"11.5",
-					"schema.meta.fields."+fieldName+".required_when",
-					candidate,
-				))
-			} else if matches {
-				required = true
-			}
+		required, requiredErr := evaluateRequiredConstraint(fieldSpec.Required, fieldSpec.RequiredExpr, evaluationContext)
+		if requiredErr != nil {
+			validationIssues = append(validationIssues, issues.New(
+				"meta.required_expression_evaluation_failed",
+				fmt.Sprintf("failed to evaluate required for field '%s'", fieldName),
+				"11.6",
+				"schema.meta.fields."+fieldName+".required",
+				candidate,
+			))
+			required = false
 		}
 
 		if required && !exists {
@@ -168,20 +163,16 @@ func Validate(
 		sectionSpec := typeSpec.Sections[sectionName]
 		sectionContent, exists := sections[sectionName]
 
-		required := sectionSpec.Required
-		if sectionSpec.HasRequiredWhen {
-			matches, evalErr := expr.Evaluate(sectionSpec.RequiredWhen, lookupValues)
-			if evalErr != nil {
-				validationIssues = append(validationIssues, issues.New(
-					"content.required_when_evaluation_failed",
-					fmt.Sprintf("failed to evaluate required_when for section '%s'", sectionName),
-					"12.2",
-					"schema.content.sections."+sectionName+".required_when",
-					candidate,
-				))
-			} else if matches {
-				required = true
-			}
+		required, requiredErr := evaluateRequiredConstraint(sectionSpec.Required, sectionSpec.RequiredExpr, evaluationContext)
+		if requiredErr != nil {
+			validationIssues = append(validationIssues, issues.New(
+				"content.required_expression_evaluation_failed",
+				fmt.Sprintf("failed to evaluate required for section '%s'", sectionName),
+				"11.6",
+				"schema.content.sections."+sectionName+".required",
+				candidate,
+			))
+			required = false
 		}
 
 		if required && !exists {
@@ -233,6 +224,22 @@ func AsAppError(issuesList []domainvalidation.Issue) *domainerrors.AppError {
 			},
 		},
 	)
+}
+
+func evaluateRequiredConstraint(
+	literal bool,
+	expression *commandexpressions.CompiledExpression,
+	context map[string]any,
+) (bool, *commandexpressions.EvalError) {
+	if expression == nil {
+		return literal, nil
+	}
+
+	value, evalErr := commandexpressions.Evaluate(expression, context)
+	if evalErr != nil {
+		return false, evalErr
+	}
+	return commandexpressions.IsTruthy(value), nil
 }
 
 func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *model.Candidate) []domainvalidation.Issue {

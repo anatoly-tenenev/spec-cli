@@ -1,0 +1,32 @@
+{
+  "result_state": "valid",
+  "dry_run": false,
+  "updated": true,
+  "noop": false,
+  "changes": [
+    {
+      "op": "unset",
+      "field": "content.sections.summary",
+      "before_present": true,
+      "after_present": false,
+      "before_hash": "sha256:<opaque>",
+      "after_hash": null
+    }
+  ],
+  "entity": {
+    "id": "NOTE-1",
+    "type": "note",
+    "slug": "ops-runbook",
+    "createdDate": "2026-01-10",
+    "updatedDate": "2026-04-02",
+    "revision": "sha256:<opaque>",
+    "meta": {
+      "owner": "team-ops"
+    },
+    "refs": {}
+  },
+  "validation": {
+    "ok": true,
+    "issues": []
+  }
+}

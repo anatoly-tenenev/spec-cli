@@ -1,0 +1,28 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nRunbook summary",
+      "sections": {
+        "summary": "Runbook summary"
+      }
+    },
+    "createdDate": "2026-04-01",
+    "id": "NOTE-0",
+    "meta": {
+      "owner": "team-ops",
+      "trigger": "active"
+    },
+    "refs": {},
+    "revision": "sha256:<opaque>",
+    "slug": "ops-runbook",
+    "type": "note",
+    "updatedDate": "2026-04-01"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

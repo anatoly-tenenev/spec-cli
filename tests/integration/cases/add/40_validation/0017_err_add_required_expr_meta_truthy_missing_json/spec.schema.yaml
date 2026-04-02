@@ -1,0 +1,20 @@
+version: "0.0.4"
+entity:
+  note:
+    idPrefix: NOTE
+    pathTemplate: "notes/${slug}.md"
+    meta:
+      fields:
+        trigger:
+          required: false
+          schema:
+            type: string
+        owner:
+          required: "${meta.trigger}"
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: "${meta.trigger}"
+          title: ["Summary"]

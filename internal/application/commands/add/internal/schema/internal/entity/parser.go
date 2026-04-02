@@ -6,6 +6,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/support"
+	commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -18,22 +19,24 @@ func ParseType(
 	typeNode *yaml.Node,
 	usedPrefixes map[string]string,
 ) (model.EntityTypeSpec, *domainerrors.AppError) {
+	expressionEngine := commandexpressions.NewEngine()
+
 	idPrefix, idPrefixErr := parseIDPrefix(typeName, rawType["idPrefix"], usedPrefixes)
 	if idPrefixErr != nil {
 		return model.EntityTypeSpec{}, idPrefixErr
 	}
 
-	pathPattern, pathPatternErr := parsePathPattern(typeName, rawType["pathTemplate"])
+	pathPattern, pathPatternErr := parsePathPattern(typeName, rawType["pathTemplate"], expressionEngine)
 	if pathPatternErr != nil {
 		return model.EntityTypeSpec{}, pathPatternErr
 	}
 
-	metaFields, metaOrder, metaErr := parseMetaFields(typeName, rawType["meta"], mappingValueNode(typeNode, "meta"))
+	metaFields, metaOrder, metaErr := parseMetaFields(typeName, rawType["meta"], mappingValueNode(typeNode, "meta"), expressionEngine)
 	if metaErr != nil {
 		return model.EntityTypeSpec{}, metaErr
 	}
 
-	sections, sectionOrder, hasContent, sectionErr := parseSections(typeName, rawType["content"], mappingValueNode(typeNode, "content"))
+	sections, sectionOrder, hasContent, sectionErr := parseSections(typeName, rawType["content"], mappingValueNode(typeNode, "content"), expressionEngine)
 	if sectionErr != nil {
 		return model.EntityTypeSpec{}, sectionErr
 	}
@@ -89,7 +92,11 @@ func parseIDPrefix(typeName string, rawIDPrefix any, usedPrefixes map[string]str
 	return idPrefix, nil
 }
 
-func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *domainerrors.AppError) {
+func parsePathPattern(
+	typeName string,
+	rawPathPattern any,
+	expressionEngine *commandexpressions.Engine,
+) (model.PathPattern, *domainerrors.AppError) {
 	if rawPathPattern == nil {
 		return model.PathPattern{}, newSchemaError(
 			domainerrors.CodeSchemaInvalid,
@@ -100,14 +107,22 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 
 	switch typed := rawPathPattern.(type) {
 	case string:
-		if strings.TrimSpace(typed) == "" {
+		useValue, useTemplate, useErr := parsePathUseValue(
+			fmt.Sprintf("schema.entity.%s.pathTemplate", typeName),
+			typed,
+			expressionEngine,
+		)
+		if useErr != nil {
+			return model.PathPattern{}, useErr
+		}
+		if useValue == "" {
 			return model.PathPattern{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
 				fmt.Sprintf("schema.entity.%s.pathTemplate must be non-empty", typeName),
 				nil,
 			)
 		}
-		return model.PathPattern{Cases: []model.PathPatternCase{{Use: typed}}}, nil
+		return model.PathPattern{Cases: []model.PathPatternCase{{Use: useValue, UseTemplate: useTemplate}}}, nil
 	case []any:
 		if len(typed) == 0 {
 			return model.PathPattern{}, newSchemaError(
@@ -119,14 +134,29 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 		cases := make([]model.PathPatternCase, 0, len(typed))
 		for idx, rawCase := range typed {
 			useValue, ok := rawCase.(string)
-			if !ok || strings.TrimSpace(useValue) == "" {
+			if !ok {
 				return model.PathPattern{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
 					fmt.Sprintf("schema.entity.%s.pathTemplate[%d] must be a non-empty string", typeName, idx),
 					nil,
 				)
 			}
-			cases = append(cases, model.PathPatternCase{Use: useValue})
+			parsedUse, useTemplate, useErr := parsePathUseValue(
+				fmt.Sprintf("schema.entity.%s.pathTemplate[%d]", typeName, idx),
+				useValue,
+				expressionEngine,
+			)
+			if useErr != nil {
+				return model.PathPattern{}, useErr
+			}
+			if parsedUse == "" {
+				return model.PathPattern{}, newSchemaError(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.pathTemplate[%d] must be a non-empty string", typeName, idx),
+					nil,
+				)
+			}
+			cases = append(cases, model.PathPatternCase{Use: parsedUse, UseTemplate: useTemplate})
 		}
 		return model.PathPattern{Cases: cases}, nil
 	case map[string]any:
@@ -151,7 +181,7 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 				)
 			}
 			useValue, ok := caseMap["use"].(string)
-			if !ok || strings.TrimSpace(useValue) == "" {
+			if !ok {
 				return model.PathPattern{}, newSchemaError(
 					domainerrors.CodeSchemaInvalid,
 					fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use must be non-empty string", typeName, idx),
@@ -159,10 +189,48 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 				)
 			}
 
-			pathCase := model.PathPatternCase{Use: useValue}
+			parsedUse, useTemplate, useErr := parsePathUseValue(
+				fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use", typeName, idx),
+				useValue,
+				expressionEngine,
+			)
+			if useErr != nil {
+				return model.PathPattern{}, useErr
+			}
+			if parsedUse == "" {
+				return model.PathPattern{}, newSchemaError(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].use must be non-empty string", typeName, idx),
+					nil,
+				)
+			}
+
+			pathCase := model.PathPatternCase{
+				Use:         parsedUse,
+				UseTemplate: useTemplate,
+			}
 			if whenValue, exists := caseMap["when"]; exists {
 				pathCase.HasWhen = true
-				pathCase.When = whenValue
+				switch typedWhen := whenValue.(type) {
+				case bool:
+					pathCase.When = typedWhen
+				case string:
+					whenExpr, compileErr := commandexpressions.CompileScalarInterpolation(typedWhen, expressionEngine)
+					if compileErr != nil {
+						return model.PathPattern{}, newSchemaError(
+							domainerrors.CodeSchemaInvalid,
+							fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].when has invalid expression: %s", typeName, idx, compileErr.Message),
+							nil,
+						)
+					}
+					pathCase.WhenExpr = whenExpr
+				default:
+					return model.PathPattern{}, newSchemaError(
+						domainerrors.CodeSchemaInvalid,
+						fmt.Sprintf("schema.entity.%s.pathTemplate.cases[%d].when must be boolean or string interpolation ${expr}", typeName, idx),
+						nil,
+					)
+				}
 			} else {
 				hasFallback = true
 			}
@@ -187,7 +255,49 @@ func parsePathPattern(typeName string, rawPathPattern any) (model.PathPattern, *
 	}
 }
 
-func parseMetaFields(typeName string, rawMeta any, metaNode *yaml.Node) (map[string]model.MetaField, []string, *domainerrors.AppError) {
+func parsePathUseValue(
+	fieldPath string,
+	rawValue string,
+	expressionEngine *commandexpressions.Engine,
+) (string, *commandexpressions.CompiledTemplate, *domainerrors.AppError) {
+	trimmed := strings.TrimSpace(rawValue)
+	if trimmed == "" {
+		return "", nil, nil
+	}
+
+	containsLegacyPlaceholder, legacyErr := commandexpressions.ContainsLegacyPlaceholder(trimmed)
+	if legacyErr != nil {
+		return "", nil, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s has invalid interpolation syntax: %s", fieldPath, legacyErr.Message),
+			nil,
+		)
+	}
+	if containsLegacyPlaceholder {
+		return "", nil, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s must use ${expr} interpolation, legacy {path} placeholders are not supported", fieldPath),
+			nil,
+		)
+	}
+
+	template, compileErr := commandexpressions.CompileTemplate(trimmed, expressionEngine)
+	if compileErr != nil {
+		return "", nil, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("%s has invalid interpolation: %s", fieldPath, compileErr.Message),
+			nil,
+		)
+	}
+	return trimmed, template, nil
+}
+
+func parseMetaFields(
+	typeName string,
+	rawMeta any,
+	metaNode *yaml.Node,
+	expressionEngine *commandexpressions.Engine,
+) (map[string]model.MetaField, []string, *domainerrors.AppError) {
 	fields := map[string]model.MetaField{}
 	order := []string{}
 
@@ -230,7 +340,7 @@ func parseMetaFields(typeName string, rawMeta any, metaNode *yaml.Node) (map[str
 			)
 		}
 
-		parsed, parseErr := parseMetaField(typeName, fieldName, rawField)
+		parsed, parseErr := parseMetaField(typeName, fieldName, rawField, expressionEngine)
 		if parseErr != nil {
 			return nil, nil, parseErr
 		}
@@ -241,18 +351,44 @@ func parseMetaFields(typeName string, rawMeta any, metaNode *yaml.Node) (map[str
 	return fields, order, nil
 }
 
-func parseMetaField(typeName string, fieldName string, rawField map[string]any) (model.MetaField, *domainerrors.AppError) {
+func parseMetaField(
+	typeName string,
+	fieldName string,
+	rawField map[string]any,
+	expressionEngine *commandexpressions.Engine,
+) (model.MetaField, *domainerrors.AppError) {
 	required := true
+	var requiredExpr *commandexpressions.CompiledExpression
 	if rawRequired, exists := rawField["required"]; exists {
-		typed, ok := rawRequired.(bool)
-		if !ok {
+		switch typed := rawRequired.(type) {
+		case bool:
+			required = typed
+		case string:
+			compiledExpr, compileErr := commandexpressions.CompileScalarInterpolation(typed, expressionEngine)
+			if compileErr != nil {
+				return model.MetaField{}, newSchemaError(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.meta.fields.%s.required has invalid expression: %s", typeName, fieldName, compileErr.Message),
+					nil,
+				)
+			}
+			required = false
+			requiredExpr = compiledExpr
+		default:
 			return model.MetaField{}, newSchemaError(
 				domainerrors.CodeSchemaInvalid,
-				fmt.Sprintf("schema.entity.%s.meta.fields.%s.required must be boolean", typeName, fieldName),
+				fmt.Sprintf("schema.entity.%s.meta.fields.%s.required must be boolean or string interpolation ${expr}", typeName, fieldName),
 				nil,
 			)
 		}
-		required = typed
+	}
+
+	if _, exists := rawField["required_when"]; exists {
+		return model.MetaField{}, newSchemaError(
+			domainerrors.CodeSchemaInvalid,
+			fmt.Sprintf("schema.entity.%s.meta.fields.%s.required_when is not supported; use required: ${expr}", typeName, fieldName),
+			nil,
+		)
 	}
 
 	rawSchema, ok := rawField["schema"]
@@ -284,23 +420,10 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 	typeValue = strings.TrimSpace(typeValue)
 
 	field := model.MetaField{
-		Name:     fieldName,
-		Type:     typeValue,
-		Required: required,
-	}
-
-	if requiredWhen, exists := rawField["required_when"]; exists {
-		field.HasRequiredWhen = true
-		field.RequiredWhen = requiredWhen
-		if _, isBool := requiredWhen.(bool); !isBool {
-			if _, isMap := support.ToStringMap(requiredWhen); !isMap {
-				return model.MetaField{}, newSchemaError(
-					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.meta.fields.%s.required_when must be boolean or expression object", typeName, fieldName),
-					nil,
-				)
-			}
-		}
+		Name:         fieldName,
+		Type:         typeValue,
+		Required:     required,
+		RequiredExpr: requiredExpr,
 	}
 
 	if typeValue == "entityRef" {
@@ -450,7 +573,12 @@ func parseMetaField(typeName string, fieldName string, rawField map[string]any) 
 	return field, nil
 }
 
-func parseSections(typeName string, rawContent any, contentNode *yaml.Node) (map[string]model.SectionSpec, []string, bool, *domainerrors.AppError) {
+func parseSections(
+	typeName string,
+	rawContent any,
+	contentNode *yaml.Node,
+	expressionEngine *commandexpressions.Engine,
+) (map[string]model.SectionSpec, []string, bool, *domainerrors.AppError) {
 	sections := map[string]model.SectionSpec{}
 	order := []string{}
 
@@ -494,32 +622,40 @@ func parseSections(typeName string, rawContent any, contentNode *yaml.Node) (map
 		}
 
 		required := true
+		var requiredExpr *commandexpressions.CompiledExpression
 		if rawRequired, exists := rawSection["required"]; exists {
-			typed, ok := rawRequired.(bool)
-			if !ok {
-				return nil, nil, false, newSchemaError(
-					domainerrors.CodeSchemaInvalid,
-					fmt.Sprintf("schema.entity.%s.content.sections.%s.required must be boolean", typeName, sectionName),
-					nil,
-				)
-			}
-			required = typed
-		}
-
-		section := model.SectionSpec{Name: sectionName, Required: required}
-		if rawRequiredWhen, exists := rawSection["required_when"]; exists {
-			section.HasRequiredWhen = true
-			section.RequiredWhen = rawRequiredWhen
-			if _, isBool := rawRequiredWhen.(bool); !isBool {
-				if _, isMap := support.ToStringMap(rawRequiredWhen); !isMap {
+			switch typed := rawRequired.(type) {
+			case bool:
+				required = typed
+			case string:
+				compiledExpr, compileErr := commandexpressions.CompileScalarInterpolation(typed, expressionEngine)
+				if compileErr != nil {
 					return nil, nil, false, newSchemaError(
 						domainerrors.CodeSchemaInvalid,
-						fmt.Sprintf("schema.entity.%s.content.sections.%s.required_when must be boolean or expression object", typeName, sectionName),
+						fmt.Sprintf("schema.entity.%s.content.sections.%s.required has invalid expression: %s", typeName, sectionName, compileErr.Message),
 						nil,
 					)
 				}
+				required = false
+				requiredExpr = compiledExpr
+			default:
+				return nil, nil, false, newSchemaError(
+					domainerrors.CodeSchemaInvalid,
+					fmt.Sprintf("schema.entity.%s.content.sections.%s.required must be boolean or string interpolation ${expr}", typeName, sectionName),
+					nil,
+				)
 			}
 		}
+
+		if _, exists := rawSection["required_when"]; exists {
+			return nil, nil, false, newSchemaError(
+				domainerrors.CodeSchemaInvalid,
+				fmt.Sprintf("schema.entity.%s.content.sections.%s.required_when is not supported; use required: ${expr}", typeName, sectionName),
+				nil,
+			)
+		}
+
+		section := model.SectionSpec{Name: sectionName, Required: required, RequiredExpr: requiredExpr}
 
 		if rawTitle, exists := rawSection["title"]; exists {
 			titles, titleErr := parseSectionTitles(typeName, sectionName, rawTitle)

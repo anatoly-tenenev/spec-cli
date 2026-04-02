@@ -1,0 +1,27 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "updated entity failed validation",
+    "exit_code": 1,
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.required_missing",
+            "level": "error",
+            "field": "frontmatter.owner",
+            "message": "required field 'owner' is missing",
+            "entity": {
+              "id": "NOTE-1",
+              "type": "note",
+              "slug": "ops-runbook"
+            },
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    }
+  }
+}

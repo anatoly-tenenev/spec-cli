@@ -1,31 +1,32 @@
 package pathcalc
 
 import (
-	"fmt"
 	"path"
-	"regexp"
-	"sort"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/expr"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/lookup"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
-var placeholderPattern = regexp.MustCompile(`\{([^{}]+)\}`)
-
-func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string, []domainvalidation.Issue) {
+func Evaluate(
+	typeSpec model.EntityTypeSpec,
+	candidate *model.Candidate,
+	evaluationContext map[string]any,
+) (string, []domainvalidation.Issue) {
 	pathIssues := make([]domainvalidation.Issue, 0)
-	lookupValues := lookup.Candidate{Candidate: candidate}
 
-	selectedUse := ""
-	for _, pathCase := range typeSpec.PathPattern.Cases {
-		if pathCase.HasWhen {
-			matched, evalErr := expr.Evaluate(pathCase.When, lookupValues)
+	selectedCase := (*model.PathPatternCase)(nil)
+	for idx := range typeSpec.PathPattern.Cases {
+		pathCase := &typeSpec.PathPattern.Cases[idx]
+		shouldUse := false
+
+		switch {
+		case !pathCase.HasWhen:
+			shouldUse = true
+		case pathCase.WhenExpr != nil:
+			whenValue, evalErr := commandexpressions.Evaluate(pathCase.WhenExpr, evaluationContext)
 			if evalErr != nil {
 				pathIssues = append(pathIssues, issues.New(
 					"instance.pathTemplate.when_evaluation_failed",
@@ -36,15 +37,18 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 				))
 				continue
 			}
-			if !matched {
-				continue
-			}
+			shouldUse = commandexpressions.IsTruthy(whenValue)
+		default:
+			shouldUse = pathCase.When
 		}
-		selectedUse = pathCase.Use
-		break
+
+		if shouldUse {
+			selectedCase = pathCase
+			break
+		}
 	}
 
-	if selectedUse == "" {
+	if selectedCase == nil {
 		pathIssues = append(pathIssues, issues.New(
 			"instance.pathTemplate.no_matching_case",
 			"pathTemplate has no matching case for created entity",
@@ -55,17 +59,15 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 		return "", pathIssues
 	}
 
-	rendered, unresolved := renderPathPattern(selectedUse, lookupValues)
-	if len(unresolved) > 0 {
-		for _, placeholder := range unresolved {
-			pathIssues = append(pathIssues, issues.New(
-				"instance.pathTemplate.placeholder_unresolved",
-				"pathTemplate placeholder cannot be resolved: "+placeholder,
-				"12.4",
-				"schema.pathTemplate",
-				candidate,
-			))
-		}
+	rendered, renderErr := commandexpressions.RenderTemplate(selectedCase.UseTemplate, evaluationContext)
+	if renderErr != nil {
+		pathIssues = append(pathIssues, issues.New(
+			"instance.pathTemplate.placeholder_unresolved",
+			"pathTemplate placeholder cannot be resolved: "+renderErrorLabel(renderErr),
+			"12.4",
+			"schema.pathTemplate",
+			candidate,
+		))
 		return "", pathIssues
 	}
 
@@ -83,65 +85,15 @@ func Evaluate(typeSpec model.EntityTypeSpec, candidate *model.Candidate) (string
 	return normalized, pathIssues
 }
 
-func renderPathPattern(pattern string, lookupValues expr.Lookup) (string, []string) {
-	if strings.TrimSpace(pattern) == "" {
-		return "", []string{"<empty>"}
+func renderErrorLabel(evalErr *commandexpressions.EvalError) string {
+	if evalErr == nil {
+		return "<unknown>"
 	}
-
-	matches := placeholderPattern.FindAllStringSubmatchIndex(pattern, -1)
-	if len(matches) == 0 {
-		return pattern, nil
+	if expression := strings.TrimSpace(evalErr.Expression); expression != "" {
+		return expression
 	}
-
-	var builder strings.Builder
-	unresolvedSet := map[string]struct{}{}
-	cursor := 0
-	for _, match := range matches {
-		builder.WriteString(pattern[cursor:match[0]])
-		placeholder := strings.TrimSpace(pattern[match[2]:match[3]])
-		value, exists := lookupValues.Lookup(placeholder)
-		if !exists {
-			unresolvedSet[placeholder] = struct{}{}
-		} else if rendered, ok := stringifyPlaceholderValue(value); ok {
-			builder.WriteString(rendered)
-		} else {
-			unresolvedSet[placeholder] = struct{}{}
-		}
-		cursor = match[1]
+	if message := strings.TrimSpace(evalErr.Message); message != "" {
+		return message
 	}
-	builder.WriteString(pattern[cursor:])
-
-	if len(unresolvedSet) == 0 {
-		return builder.String(), nil
-	}
-
-	unresolved := make([]string, 0, len(unresolvedSet))
-	for placeholder := range unresolvedSet {
-		unresolved = append(unresolved, placeholder)
-	}
-	sort.Strings(unresolved)
-	return "", unresolved
-}
-
-func stringifyPlaceholderValue(value any) (string, bool) {
-	switch typed := value.(type) {
-	case string:
-		if typed == "" {
-			return "", false
-		}
-		return typed, true
-	case bool:
-		if typed {
-			return "true", true
-		}
-		return "false", true
-	case int:
-		return strconv.Itoa(typed), true
-	case int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
-		return fmt.Sprintf("%v", typed), true
-	case time.Time:
-		return typed.Format("2006-01-02"), true
-	default:
-		return "", false
-	}
+	return "<unknown>"
 }

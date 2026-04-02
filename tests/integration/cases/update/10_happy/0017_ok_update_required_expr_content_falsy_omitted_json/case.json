@@ -1,0 +1,29 @@
+{
+  "id": "update_10_0017_ok_update_required_expr_content_falsy_omitted_json",
+  "description": "update_10_0017_ok_update_required_expr_content_falsy_omitted_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "NOTE-1",
+    "--unset",
+    "content.sections.summary"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-02"
+  }
+}

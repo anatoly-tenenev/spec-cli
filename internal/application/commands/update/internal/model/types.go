@@ -1,6 +1,7 @@
 package model
 
 import domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+import commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 
 type Options struct {
 	ID             string
@@ -70,8 +71,7 @@ type MetaField struct {
 	Type             string
 	Format           string
 	Required         bool
-	HasRequiredWhen  bool
-	RequiredWhen     any
+	RequiredExpr     *commandexpressions.CompiledExpression
 	Enum             []any
 	HasConst         bool
 	Const            any
@@ -89,11 +89,10 @@ type MetaField struct {
 }
 
 type SectionSpec struct {
-	Name            string
-	Titles          []string
-	Required        bool
-	HasRequiredWhen bool
-	RequiredWhen    any
+	Name         string
+	Titles       []string
+	Required     bool
+	RequiredExpr *commandexpressions.CompiledExpression
 }
 
 type PathPattern struct {
@@ -101,9 +100,11 @@ type PathPattern struct {
 }
 
 type PathPatternCase struct {
-	Use     string
-	HasWhen bool
-	When    any
+	Use         string
+	UseTemplate *commandexpressions.CompiledTemplate
+	HasWhen     bool
+	When        bool
+	WhenExpr    *commandexpressions.CompiledExpression
 }
 
 type Snapshot struct {

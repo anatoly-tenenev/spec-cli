@@ -1,0 +1,29 @@
+{
+  "id": "add_10_0013_ok_add_required_expr_content_falsy_omitted_json",
+  "description": "add_10_0013_ok_add_required_expr_content_falsy_omitted_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "note",
+    "--slug",
+    "empty-summary"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-01"
+  }
+}

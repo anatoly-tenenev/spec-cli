@@ -1,0 +1,31 @@
+{
+  "id": "update_50_0012_err_update_required_expr_content_truthy_missing_json",
+  "description": "update_50_0012_err_update_required_expr_content_truthy_missing_json",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "NOTE-1",
+    "--set",
+    "meta.trigger=active",
+    "--unset",
+    "content.sections.summary"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-02"
+  }
+}

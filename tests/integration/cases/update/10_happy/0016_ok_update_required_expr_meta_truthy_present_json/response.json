@@ -1,0 +1,31 @@
+{
+  "result_state": "valid",
+  "dry_run": false,
+  "updated": true,
+  "noop": false,
+  "changes": [
+    {
+      "op": "set",
+      "field": "meta.trigger",
+      "before": null,
+      "after": "active"
+    }
+  ],
+  "entity": {
+    "id": "NOTE-1",
+    "type": "note",
+    "slug": "ops-runbook",
+    "createdDate": "2026-01-10",
+    "updatedDate": "2026-04-02",
+    "revision": "sha256:<opaque>",
+    "meta": {
+      "owner": "team-ops",
+      "trigger": "active"
+    },
+    "refs": {}
+  },
+  "validation": {
+    "ok": true,
+    "issues": []
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "add_10_0012_ok_add_required_expr_meta_truthy_provided_json",
+  "description": "add_10_0012_ok_add_required_expr_meta_truthy_provided_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "note",
+    "--slug",
+    "ops-runbook",
+    "--set",
+    "meta.trigger=active",
+    "--set",
+    "meta.owner=team-ops",
+    "--set",
+    "content.sections.summary=Runbook summary"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-01"
+  }
+}

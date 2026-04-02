@@ -1,0 +1,23 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "",
+      "sections": {}
+    },
+    "createdDate": "2026-04-01",
+    "id": "NOTE-0",
+    "meta": {},
+    "refs": {},
+    "revision": "sha256:<opaque>",
+    "slug": "empty-summary",
+    "type": "note",
+    "updatedDate": "2026-04-01"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

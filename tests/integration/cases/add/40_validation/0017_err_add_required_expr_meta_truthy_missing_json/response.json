@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.required_missing",
+            "entity": {
+              "id": "NOTE-0",
+              "slug": "missing-owner",
+              "type": "note"
+            },
+            "field": "frontmatter.owner",
+            "level": "error",
+            "message": "required field 'owner' is missing",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid"
+}

@@ -2,7 +2,7 @@ version: "0.0.4"
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}/index.md"
+    pathTemplate: "services/${slug}/index.md"
     meta:
       fields:
         owner:
@@ -22,10 +22,9 @@ entity:
     idPrefix: FEAT
     pathTemplate:
       cases:
-        - when:
-            exists: refs.container.dirPath
-          use: "{refs.container.dirPath}/features/{slug}.md"
-        - use: "features/{slug}.md"
+        - when: ${refs.container.dirPath}
+          use: "${refs.container.dirPath}/features/${slug}.md"
+        - use: "features/${slug}.md"
     meta:
       fields:
         status:
@@ -65,7 +64,7 @@ entity:
           title: ["Rollout plan", "Rollout"]
   memo:
     idPrefix: MEMO
-    pathTemplate: "memos/{slug}.md"
+    pathTemplate: "memos/${slug}.md"
     meta:
       fields:
         title:
@@ -79,7 +78,7 @@ entity:
           title: ["Summary"]
   note:
     idPrefix: NOTE
-    pathTemplate: "notes/{slug}.md"
+    pathTemplate: "notes/${slug}.md"
     meta:
       fields:
         title:

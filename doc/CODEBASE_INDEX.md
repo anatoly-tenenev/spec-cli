@@ -58,6 +58,16 @@ Compact project map for fast entry into the code.
   - Subpackages:
     - `workspacelock/internal/flock` - platform lock backend (`flock` on Unix, capability fallback on unsupported targets).
 
+- `internal/application/commands/internal/expressions`
+  - Entrypoint: `engine.go` - `NewEngine`, `(*Engine).Compile`, `CompileScalarInterpolation`, `CompileTemplate`, `ContainsLegacyPlaceholder`, `Evaluate`, `RenderTemplate`, `IsTruthy`.
+  - Responsibilities:
+    - Provide one shared JMESPath compile/cache adapter for mutating commands (`add`, `update`) with deterministic compile/eval diagnostics.
+    - Compile scalar interpolation constraints (`"${expr}"`) and mixed string templates with `${...}` parts.
+    - Detect and reject legacy `{...}` placeholders in template literals while preserving `${...}` interpolation syntax.
+    - Evaluate expressions against runtime entity context (`type/id/slug/createdDate/updatedDate/meta/refs`) and apply JMESPath truthiness semantics.
+    - Render templates and stringify interpolation values with deterministic runtime type checks.
+  - Subpackages: none.
+
 - `internal/application/commands/validate`
   - Entrypoints:
     - `internal/application/commands/validate/handler.go` - `NewHandler`, `(*Handler).Handle`
@@ -431,6 +441,8 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Read schema, parse YAML/JSON, check duplicate keys, and validate top level.
     - Orchestrate `entity.<type>` parsing and build `AddSchema`.
+    - Parse required constraints as `required: boolean | "${expr}"` (default `true`), reject legacy `required_when`, and compile required expressions for runtime checks.
+    - Parse `pathTemplate` with `${expr}` interpolation in `use` and `boolean | "${expr}"` conditions in `cases[].when`, rejecting legacy `{...}` placeholders.
     - Parse write-contract projection for `meta/refs`, including `array.items.type=entityRef` and `array.items.refTypes`.
     - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages:
@@ -450,18 +462,17 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/add/internal/engine`
   - Entrypoint: `execute.go` - `Execute`.
   - Responsibilities:
-    - Run create pipeline: apply writes -> build candidate -> resolve refs/path -> validate -> serialize -> write/dry-run response.
+    - Run create pipeline: apply writes -> build candidate -> resolve refs -> build expression context -> evaluate path -> validate -> serialize -> write/dry-run response.
     - Route `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, `WRITE_FAILED`, `INTERNAL_ERROR`.
     - Build contractual `entity` payload and final `result_state=valid`.
   - Subpackages:
     - `.../writes` - apply write ops, typed YAML parsing, write-contract guard rails, Markdown body build.
     - `.../refresolve` - resolve scalar `entityRef` and `array.items.type=entityRef` via workspace snapshot and diagnose deterministic `missing|ambiguous|type_mismatch` (indexed for arrays).
-    - `.../pathcalc` - evaluate `pathTemplate`, interpolate placeholders, normalize, and guard against escaping workspace.
-    - `.../validation` - full instance validation and deterministic issue sorting.
+    - `.../pathcalc` - evaluate `pathTemplate` case conditions (`when`) and `use` templates via shared JMESPath `${expr}` engine, normalize path, and guard workspace boundaries.
+    - `.../validation` - full instance validation, including expression-based `required` checks and deterministic issue sorting.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation (`sha256:*`).
     - `.../storage` - filesystem checks and atomic write.
     - `.../payload` - public `entity` payload (`meta`, `refs`, `content.sections`).
-    - `.../expr` - schema-expression evaluator.
     - `.../lookup` - candidate-value lookup adapter for expressions/path evaluation.
     - `.../issues` - `domainvalidation.Issue` factory with entity context.
 
@@ -599,7 +610,9 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Read schema, parse YAML/JSON, run deep duplicate-key checks, validate top-level shape.
     - Build `Schema.EntityTypes` for `update` (`meta/content/pathTemplate/write contract`).
-    - Parse `entity.<type>` including `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, allow-set/allow-unset/allow-set-file paths, required/enum/ref constraints, and `array.items.type=entityRef` (`items.refTypes`) projection into `refs.<field>`.
+    - Parse `entity.<type>` including `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, allow-set/allow-unset/allow-set-file paths, `array.items.type=entityRef` (`items.refTypes`) projection into `refs.<field>`, and enum/const/ref constraints.
+    - Parse required constraints as `required: boolean | "${expr}"` (default `true`) and reject legacy `required_when` in both `meta.fields` and `content.sections`.
+    - Parse `pathTemplate` with `${expr}` interpolation in `use` and `boolean | "${expr}"` conditions in `cases[].when`, rejecting legacy `{...}` placeholders.
     - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages:
     - `update/internal/schema/internal/entity` - order-aware entity-type parser and write-contract builder.
@@ -620,18 +633,17 @@ Compact project map for fast entry into the code.
   - Entrypoint: `execute.go` - `Execute`.
   - Responsibilities:
     - Resolve target and enforce optimistic concurrency on persisted `revision`.
-    - Apply patch ops / whole-body changes, bump `updatedDate`, resolve scalar/array `entityRef`, evaluate `pathTemplate`.
+    - Apply patch ops / whole-body changes, bump `updatedDate`, resolve scalar/array `entityRef`, build runtime expression context, evaluate `pathTemplate`.
     - Run full post-update validation and map deterministic issues into `VALIDATION_FAILED`.
     - Serialize markdown/frontmatter, recompute `revision`, perform dry-run or commit (atomic write / move), build `changes` / `entity` payload.
   - Subpackages:
     - `.../writes` - preflight write-contract checks, typed YAML parsing, section/body patching, deterministic diff.
     - `.../refresolve` - scalar and array `entityRef` resolution with deterministic `missing|ambiguous|type_mismatch` diagnostics.
-    - `.../pathcalc` - `pathTemplate` case selection, placeholder interpolation, workspace-boundary guard.
-    - `.../validation` - built-in/meta/content/global rules, `required_when`, section-title checks.
+    - `.../pathcalc` - `pathTemplate` case selection (`when`) and `use` template rendering via shared JMESPath `${expr}` engine, plus workspace-boundary guard.
+    - `.../validation` - built-in/meta/content/global rules, expression-based `required` checks, and section-title checks.
     - `.../storage` - atomic write/move, rollback on rename failure, path conflict checks, test-only write-failure injection.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation.
     - `.../payload` - public `entity` payload.
-    - `.../expr` - expression evaluator (`exists`, `eq/eq?`, `in/in?`, `all`, `any`, `not`).
     - `.../lookup` - path lookup adapter for expressions/path evaluation.
     - `.../issues` - `domainvalidation.Issue` factory with entity context.
 
@@ -793,16 +805,16 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>` and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
-    - `tests/integration/cases/add/10_happy/*` - happy-path `add`.
+    - `tests/integration/cases/add/10_happy/*` - happy-path `add`, including expression-based `required` success scenarios.
     - `tests/integration/cases/add/20_args/*` - `add` CLI errors.
     - `tests/integration/cases/add/30_contract/*` - `add` write-contract failures.
-    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints and array `entityRef` diagnostics.
+    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints, array `entityRef` diagnostics, and expression-based `required` failures.
     - `tests/integration/cases/add/50_conflict/*` - `add` path conflicts.
-    - `tests/integration/cases/update/10_happy/*` - happy-path `update`.
+    - `tests/integration/cases/update/10_happy/*` - happy-path `update`, including expression-based `required` success scenarios.
     - `tests/integration/cases/update/20_noop/*` - `update` no-op scenarios, including array `entityRef` idempotent set.
     - `tests/integration/cases/update/30_args/*` - `update` argument/conflict failures.
     - `tests/integration/cases/update/40_contract/*` - `update` write-contract failures.
-    - `tests/integration/cases/update/50_validation/*` - `update` validation failures, including array-ref failure with no partial writes.
+    - `tests/integration/cases/update/50_validation/*` - `update` validation failures, including array-ref failure with no partial writes and expression-based `required` failures.
     - `tests/integration/cases/update/60_lookup/*` - `update` lookup failures.
     - `tests/integration/cases/update/70_concurrency/*` - optimistic concurrency.
     - `tests/integration/cases/update/80_fs/*` - filesystem failures.
@@ -829,7 +841,7 @@ Compact project map for fast entry into the code.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented (active-type-set schema index, schema-aware JMESPath `--where`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
-- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
-- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `version` - baseline version command is implemented (single build-time source `Version` with fallback `dev`, JSON contract, contract error-path cases).
