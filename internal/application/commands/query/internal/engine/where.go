@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	astNodeField          = 5
-	astNodeIndexExpr      = 10
-	astNodeSubexpression  = 20
+	astNodeField           = 5
+	astNodeIndexExpr       = 10
+	astNodeSubexpression   = 20
 	astNodeValueProjection = 22
 )
 
@@ -236,6 +236,7 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 	}
 
 	refsProperties := map[string]any{}
+	refsRequired := make([]any, 0, len(entityType.RefFields))
 	for _, refFieldName := range support.SortedMapKeys(entityType.RefFields) {
 		refField := entityType.RefFields[refFieldName]
 		refTypeEnum := refField.RefTypes
@@ -245,27 +246,12 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 		refObject := buildRefObjectSchema(refTypeEnum)
 		if refField.Cardinality == model.RefCardinalityArray {
 			refsProperties[refFieldName] = map[string]any{
-				"oneOf": []any{
-					map[string]any{
-						"type": "array",
-						"items": map[string]any{
-							"oneOf": []any{
-								refObject,
-								map[string]any{"type": "null"},
-							},
-						},
-					},
-					map[string]any{"type": "null"},
-				},
+				"type":  "array",
+				"items": refObject,
 			}
 			continue
 		}
-		refsProperties[refFieldName] = map[string]any{
-			"oneOf": []any{
-				refObject,
-				map[string]any{"type": "null"},
-			},
-		}
+		refsProperties[refFieldName] = refObject
 	}
 
 	sectionProperties := map[string]any{}
@@ -276,12 +262,7 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 			sectionProperties[sectionName] = map[string]any{"type": "string"}
 			sectionRequired = append(sectionRequired, sectionName)
 		} else {
-			sectionProperties[sectionName] = map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "string"},
-					map[string]any{"type": "null"},
-				},
-			}
+			sectionProperties[sectionName] = map[string]any{"type": "string"}
 		}
 	}
 
@@ -291,8 +272,8 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 			"type": map[string]any{
 				"const": typeName,
 			},
-			"id": map[string]any{"type": "string"},
-			"slug": map[string]any{"type": "string"},
+			"id":       map[string]any{"type": "string"},
+			"slug":     map[string]any{"type": "string"},
 			"revision": map[string]any{"type": "string"},
 			"createdDate": map[string]any{
 				"type":   "string",
@@ -311,6 +292,7 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 			"refs": map[string]any{
 				"type":                 "object",
 				"properties":           refsProperties,
+				"required":             refsRequired,
 				"additionalProperties": false,
 			},
 			"content": map[string]any{
@@ -376,38 +358,12 @@ func buildRefObjectSchema(typeEnum []string) map[string]any {
 	return map[string]any{
 		"type": "object",
 		"properties": map[string]any{
-			"resolved": map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "boolean"},
-					map[string]any{"type": "null"},
-				},
-			},
-			"id": map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "string"},
-					map[string]any{"type": "null"},
-				},
-			},
-			"type": map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "string", "enum": typeEnumValues},
-					map[string]any{"type": "null"},
-				},
-			},
-			"slug": map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "string"},
-					map[string]any{"type": "null"},
-				},
-			},
-			"reason": map[string]any{
-				"oneOf": []any{
-					map[string]any{"type": "string", "enum": unresolvedReasons},
-					map[string]any{"type": "null"},
-				},
-			},
+			"resolved": map[string]any{"type": "boolean"},
+			"id":       map[string]any{"type": "string"},
+			"type":     map[string]any{"type": "string", "enum": typeEnumValues},
+			"slug":     map[string]any{"type": "string"},
+			"reason":   map[string]any{"type": "string", "enum": unresolvedReasons},
 		},
-		"required":             []any{"resolved", "id", "type", "slug", "reason"},
 		"additionalProperties": false,
 	}
 }

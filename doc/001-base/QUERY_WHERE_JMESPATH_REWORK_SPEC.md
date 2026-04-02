@@ -132,6 +132,7 @@ The active type set is determined as follows:
 - The schema is built not for "the command as a whole", but for a single query item.
 - Without `--type`, the root query-item schema is built through `oneOf` over the effective item shapes of the active type set.
 - With `--type`, the schema is built from the narrowed type set.
+- The required schema union for this task is the root `oneOf` over active item shapes; nested nullish behavior inside one item should be modeled primarily through ordinary object optionality and JMESPath missing semantics, not by introducing extra `oneOf(..., null)` at every nested path.
 
 ### 5.3. Responsibility Split Between `spec-cli` and `go-jmespath`
 
@@ -165,7 +166,7 @@ The integrated version of `github.com/anatoly-tenenev/go-jmespath` already suppo
 
 For this task, the library must provide:
 
-- support for `oneOf` in the schema compiler;
+- support for the root `oneOf` used by the query-item schema compiler;
 - schema-aware analysis of alternative branches for query-item schemas;
 - correct handling of nullable leaves and branch-specific properties;
 - compatibility with the date semantics already in use (`format: date`).
@@ -173,6 +174,7 @@ For this task, the library must provide:
 `anyOf` and `allOf` are not required for this task:
 
 - the `query item` is modeled through root `oneOf` over the active type set;
+- nested nullable/missing behavior is not required to be expressed through additional `oneOf(..., null)` unions;
 - no contract requirement is defined for schema composition through `allOf`;
 - no contract requirement is defined for weaker union semantics through `anyOf`.
 
@@ -219,7 +221,7 @@ Typing:
 - `content.sections` is allowed in `--where` as an object root.
 - Root `content` is still forbidden, except for the path `content.sections...`.
 - `content.sections` contains only schema-known sections.
-- A section leaf has type `string` or `string|null` depending on statically known required-ness; for dynamic `required: ${expr}`, a conservative nullable model `string|null` is allowed.
+- A section leaf is modeled as `string`; optionality is represented by whether the property is listed in `required`, not by wrapping the leaf itself into `string|null`.
 - The full set of operations on section leaves is defined by `go-jmespath`; the old `where-json` special restrictions on sections are not preserved.
 
 ### 7.4. `refs`
@@ -234,11 +236,11 @@ The scalar ref object in the schema-aware context contains:
 
 Leaf typing:
 
-- `resolved`: `boolean|null`
-- `id`: `string|null`
-- `type`: `enum|null`
-- `slug`: `string|null`
-- `reason`: `enum|null`
+- `resolved`: `boolean`
+- `id`: `string`
+- `type`: enum over the allowed target types
+- `slug`: `string`
+- `reason`: enum over unresolved reasons
 
 Contract values for `reason`:
 
@@ -251,11 +253,18 @@ Contract values for `reason`:
 - if the ref has `refTypes`, an enum built from them is used;
 - if no narrowing is specified, an enum over all schema entity types is used.
 
+Schema-model clarification:
+
+- the schema-aware model does not need a separate `oneOf(ref-object, null)` branch for a scalar ref field;
+- a scalar ref field is modeled as an optional object property under `refs`;
+- nested ref leaves are also modeled as ordinary object properties rather than `oneOf(..., null)` unions;
+- nullish behavior for explicit-null / absent refs is provided by ordinary JMESPath missing propagation at evaluation time.
+
 Array ref field:
 
 - modeled as an array;
-- array elements are modeled as `ref-object | null`;
-- an optional array-ref field may be `array | null`.
+- optionality of the array field is represented by property presence/absence, not by a field-level `array | null` union in the schema;
+- ordinary JMESPath null propagation remains sufficient for runtime nullish array cases.
 
 ## 8. Runtime Materialization for `--where`
 
@@ -278,6 +287,7 @@ Consequence:
 
 - `keys(refs)` reflects actual ref fields;
 - access to a missing `refs.owner` in JMESPath returns `null` under ordinary missing semantics.
+- the schema-aware compiler does not need to model this scalar-ref case as `refs.owner: ref-object | null`; ordinary missing-property semantics already provide the required `null` behavior for `refs.owner` and its descendants.
 
 ### 8.3. `content.sections`
 
@@ -452,6 +462,11 @@ For an explicit-null scalar ref:
 - in `--where`, access to `refs.<field>` and its descendant paths must naturally resolve to `null` under JMESPath missing semantics;
 - `resolved` in this case is treated as `null`, not `false`.
 
+Clarification:
+
+- this behavior does not require a dedicated schema branch `oneOf(ref-object, null)` for the scalar ref field;
+- an absent property under `refs` is sufficient for both `refs.<field>` and descendant paths to evaluate to `null`.
+
 ### 12.2. Resolved Ref
 
 For `--where`, a resolved ref may contain synthetic `reason: null`, even though the full public output omits the `reason` field.
@@ -459,6 +474,11 @@ For `--where`, a resolved ref may contain synthetic `reason: null`, even though 
 Goal:
 
 - expressions like `refs.owner.reason == 'missing'` must be valid and simply evaluate to `false` on resolved refs.
+
+Schema-model clarification:
+
+- the compiler does not need a dedicated `reason: null` union branch for this case;
+- ordinary missing/null propagation is sufficient as long as the path remains valid in the schema-aware object model.
 
 ### 12.3. Array Ref Navigation
 
