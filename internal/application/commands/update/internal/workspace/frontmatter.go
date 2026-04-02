@@ -49,6 +49,9 @@ func ParseFrontmatter(raw []byte) (map[string]any, string, error) {
 		return nil, "", fmt.Errorf("frontmatter decode failed: %w", err)
 	}
 
+	normalizeBuiltinDate(fields, "createdDate")
+	normalizeBuiltinDate(fields, "updatedDate")
+
 	return fields, body, nil
 }
 
@@ -86,4 +89,10 @@ func BuildMeta(frontmatter map[string]any) map[string]any {
 		}
 	}
 	return meta
+}
+
+func normalizeBuiltinDate(frontmatter map[string]any, key string) {
+	if value, ok := ReadStringField(frontmatter, key); ok {
+		frontmatter[key] = value
+	}
 }

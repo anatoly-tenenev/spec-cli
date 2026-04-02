@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
@@ -86,12 +87,37 @@ func computeSHA256Revision(data []byte) string {
 
 func appendYAMLField(mapping *yaml.Node, key string, value any) error {
 	keyNode := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}
-	valueNode, err := support.EncodeYAMLNode(value)
-	if err != nil {
-		return err
+	var valueNode *yaml.Node
+	if builtinDateNode, ok := buildBuiltinDateNode(key, value); ok {
+		valueNode = builtinDateNode
+	} else {
+		var err error
+		valueNode, err = support.EncodeYAMLNode(value)
+		if err != nil {
+			return err
+		}
 	}
 	mapping.Content = append(mapping.Content, keyNode, valueNode)
 	return nil
+}
+
+func buildBuiltinDateNode(key string, value any) (*yaml.Node, bool) {
+	if key != "createdDate" && key != "updatedDate" {
+		return nil, false
+	}
+
+	switch typed := value.(type) {
+	case time.Time:
+		return &yaml.Node{Kind: yaml.ScalarNode, Value: typed.Format("2006-01-02")}, true
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if _, err := time.Parse("2006-01-02", trimmed); err != nil {
+			return nil, false
+		}
+		return &yaml.Node{Kind: yaml.ScalarNode, Value: trimmed}, true
+	default:
+		return nil, false
+	}
 }
 
 func applyPlatformNewlines(value string) string {

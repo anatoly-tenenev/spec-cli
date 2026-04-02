@@ -625,7 +625,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Deterministically scan `.md` workspace and build snapshot indexes (`EntitiesByID`, `SlugsByType`, `ExistingPaths`, `TargetMatches`).
     - Locate exact-`id` target candidates with tolerant fallback.
-    - Parse frontmatter/body and normalize meta fields for reference/validation context.
+    - Parse frontmatter/body, normalize built-in date scalars (`createdDate`, `updatedDate`) to `YYYY-MM-DD`, and normalize meta fields for reference/validation context.
     - Extract labeled sections and detect duplicate labels.
   - Subpackages: none.
 
@@ -642,7 +642,7 @@ Compact project map for fast entry into the code.
     - `.../pathcalc` - `pathTemplate` case selection (`when`) and `use` template rendering via shared JMESPath `${expr}` engine, plus workspace-boundary guard.
     - `.../validation` - built-in/meta/content/global rules, expression-based `required` checks, and section-title checks.
     - `.../storage` - atomic write/move, rollback on rename failure, path conflict checks, test-only write-failure injection.
-    - `.../markdown` - canonical frontmatter/body serialization and `revision` computation.
+    - `.../markdown` - canonical frontmatter/body serialization and `revision` computation, including date-literal output for `createdDate`/`updatedDate` (`YYYY-MM-DD`) without RFC3339 expansion.
     - `.../payload` - public `entity` payload.
     - `.../lookup` - path lookup adapter for expressions/path evaluation.
     - `.../issues` - `domainvalidation.Issue` factory with entity context.
