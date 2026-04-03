@@ -12,13 +12,14 @@ Compact project map for fast entry into the code.
 2. `internal/application/commandbus/bus.go` - `(*Bus).Dispatch`.
 3. `internal/application/commands/<command>/handler.go` - `(*Handler).Handle`.
 4. For `help`: `options.Parse` -> `options.NormalizePaths` (canonical `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
-5. For `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
-6. For `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
-7. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
-8. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-9. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-10. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-11. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
+5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> build top-level `schema` diagnostics block.
+6. For `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
+7. For `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
+8. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
+9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+12. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
 
 ## Binary Entrypoint Status
 
@@ -31,7 +32,7 @@ Compact project map for fast entry into the code.
 - `internal/cli`
   - Entrypoint: `internal/cli/app.go` - `NewApp`, `(*App).Run`.
   - Responsibilities:
-    - Build the application and register handlers (`help`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`) through `internal/cli/command_catalog.go`.
+    - Build the application and register handlers (`help`, `schema`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`) through `internal/cli/command_catalog.go`.
     - Parse global options (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) both before and after the command name.
     - Load active JSON config before dispatch (`--config <path>` or auto-discovered `cwd/spec-cli.json`), apply only supported keys (`schema`, `workspace`), resolve relative config paths from config directory, and enforce priority `explicit CLI > config > defaults`.
     - Return deterministic `INVALID_CONFIG` for missing/unreadable/unparseable explicit config, invalid auto-discovered config, and unknown config keys.
@@ -67,6 +68,86 @@ Compact project map for fast entry into the code.
     - Evaluate expressions against runtime entity context (`type/id/slug/createdDate/updatedDate/meta/refs`) and apply JMESPath truthiness semantics.
     - Render templates and stringify interpolation values with deterministic runtime type checks.
   - Subpackages: none.
+
+- `internal/application/schema/diagnostics`
+  - Entrypoint: `diagnostics.go` - `NewError`, `NewWarning`, `Summarize`, `HasErrors`.
+  - Responsibilities:
+    - Define shared schema-diagnostic severity model (`error`, `warning`) and payload shape.
+    - Provide canonical diagnostic classes (`SchemaError`, `SchemaWarning`) for compiler output.
+    - Calculate deterministic summary counters (`errors`, `warnings`) used by command responses.
+  - Subpackages: none.
+
+- `internal/application/schema/model`
+  - Entrypoint: `model.go` - canonical schema model types (`CompiledSchema`, `EntityType`, `MetaField`, `Section`, `ValueSpec`, `PathTemplate`, `RefSpec`).
+  - Responsibilities:
+    - Hold command-agnostic canonical schema semantics after compile.
+    - Encode requiredness/expression and path-template structures without response-format concerns.
+    - Represent scalar/array value kinds and reference cardinality in one shared IR.
+  - Subpackages: none.
+
+- `internal/application/schema/source`
+  - Entrypoint: `load.go` - `Load`.
+  - Responsibilities:
+    - Read raw schema source from filesystem and keep display-path context for diagnostics.
+    - Parse YAML/JSON root node and reject empty files.
+    - Validate source-level structure (`root mapping`, duplicate keys) before semantic compile.
+  - Subpackages:
+    - `source/internal/yamlnodes` - YAML-node helpers (`FirstContentNode`, recursive duplicate-key scan with path reconstruction).
+
+- `internal/application/schema/compile`
+  - Entrypoint: `compile.go` - `NewCompiler`, `Compile`, `(*Compiler).Compile`.
+  - Responsibilities:
+    - Coordinate shared compile pipeline: source load -> semantic compile -> summary flags.
+    - Keep in-process compile cache per command run (`path + displayPath`) and return cloned cached results.
+    - Return canonical result bundle (`schema`, diagnostics list, summary, valid flag) for command/capability consumers.
+  - Subpackages:
+    - `compile/internal/compiler` - thin bridge from compile entrypoint to semantic compiler.
+    - `compile/internal/compiler/internal/semantic` - canonical semantic parser of top-level/entity/meta/content/pathTemplate structures.
+    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements/templates, value-schema checks (`type/enum/const/refTypes/items/min/max`), and deterministic diagnostic helpers.
+
+- `internal/application/schema/capabilities/read`
+  - Entrypoint: `builder.go` - `Build`.
+  - Responsibilities:
+    - Build read-side capability projection from compiled schema entity map.
+    - Expose canonical metadata fields, sections, and discovered reference fields per entity type.
+    - Keep read capability independent from YAML parsing and command handlers.
+  - Subpackages: none.
+
+- `internal/application/schema/capabilities/write`
+  - Entrypoint: `builder.go` - `Build`.
+  - Responsibilities:
+    - Derive deterministic write-path allowlists (`SetPaths`, `UnsetPaths`, `SetFilePaths`) from compiled schema.
+    - Project `entityRef` fields into `refs.<field>` write namespace and non-ref metadata into `meta.<field>`.
+    - Keep canonical sorted/deduplicated write capability output for future command migration.
+  - Subpackages: none.
+
+- `internal/application/schema/capabilities/validate`
+  - Entrypoint: `builder.go` - `Build`.
+  - Responsibilities:
+    - Build validation capability projection for required fields/sections and path-template rules by entity type.
+    - Preserve expression-based requiredness in capability model (`Always` or `Expr`).
+    - Keep validation rule assembly decoupled from workspace/entity runtime traversal.
+  - Subpackages: none.
+
+- `internal/application/schema/capabilities/references`
+  - Entrypoint: `builder.go` - `Build`.
+  - Responsibilities:
+    - Build reverse-reference capability (`inbound slots`) keyed by target entity type.
+    - Distinguish scalar vs array cardinality for inbound reference slots.
+    - Normalize allowed target-type expansion (`refTypes` or all entity types) and deterministic slot ordering.
+  - Subpackages: none.
+
+- `internal/application/commands/schema`
+  - Entrypoints:
+    - `handler.go` - `NewHandler`, `(*Handler).Handle`
+    - `help.go` - `HelpSpec`
+  - Responsibilities:
+    - Orchestrate `schema check`: parse subcommand -> normalize schema path -> run shared compiler.
+    - Build JSON response with `validation_scope: "schema"` and top-level `schema` diagnostics block (`valid`, `summary`, `issues`).
+    - Return non-zero exit code when compile diagnostics include at least one error.
+    - Own `schema` command help inside shared `help`.
+  - Subpackages:
+    - `schema/internal/options` - parse `schema` subcommand contract (`check`) and normalize schema path.
 
 - `internal/application/commands/validate`
   - Entrypoints:
@@ -713,7 +794,7 @@ Compact project map for fast entry into the code.
 - `internal/contracts/capabilities`
   - Entrypoint: `default.go` - public variable `Default`.
   - Responsibilities:
-    - Declare supported commands (`help`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`).
+    - Declare supported commands (`help`, `schema`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`).
     - Declare supported output formats (`json`, `text`).
   - Subpackages: none.
 
@@ -757,13 +838,13 @@ Compact project map for fast entry into the code.
 
 - `tests/integration`
   - Entrypoints:
-    - `run_cases_test.go` - `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`
+    - `run_cases_test.go` - `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`, `TestSchemaCases`
     - `help_cases_test.go` - `TestHelpGeneralCases`, `TestHelpSchemaRecoveryCases`, `TestHelpErrorCases`, `TestHelpSelectedCases`
     - `global_options_cases_test.go` - `TestGlobalOptionsCases`
     - `delete_multirun_test.go` - `TestDeleteHappy02DryRunMatchesRealRevision`
     - `workspace_lock_test.go` - `TestMutatingCommandsLockConflict`, `TestMutatingCommandsDryRunRespectsWorkspaceLock`
   - Responsibilities:
-    - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version`, `schema` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`.
     - Run black-box global-config cases (`--config` explicit path, auto-discovery of `cwd/spec-cli.json`, CLI-over-config priority, `INVALID_CONFIG` failures).
     - Run targeted `help` error-path checks (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) through subprocess invocations.
@@ -829,6 +910,8 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/delete/80_help/*` - unsupported command-local `delete --help`.
     - `tests/integration/cases/version/10_happy/*` - happy-path `version`.
     - `tests/integration/cases/version/20_args/*` - `version` argument failures.
+    - `tests/integration/cases/schema/10_happy/*` - happy-path `schema check`.
+    - `tests/integration/cases/schema/20_errors/*` - schema source/semantic diagnostics (`read`, `parse`, `duplicate keys`, invalid semantics).
     - `tests/integration/cases/help/10_general/*` - general `help` and `help <command>`.
     - `tests/integration/cases/help/15_schema_recovery/*` - degraded-schema recovery contract for `help`.
     - `tests/integration/cases/help/20_errors/*` - non-zero `help` errors.
@@ -838,6 +921,7 @@ Compact project map for fast entry into the code.
 ## Current Command Status
 
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
+- `schema` - shared schema compiler command is implemented (`spec-cli schema check`): deterministic compile diagnostics, top-level `schema` block (`valid/summary/issues`), no workspace scan, and in-process compile cache per command run.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented (active-type-set schema index, schema-aware JMESPath `--where`, projection, deterministic sort, offset pagination, JSON contract).
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).

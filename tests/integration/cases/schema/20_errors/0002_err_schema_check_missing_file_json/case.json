@@ -1,0 +1,15 @@
+{
+  "id": "schema_20_0002_err_schema_check_missing_file_json",
+  "description": "schema_20_0002_err_schema_check_missing_file_json",
+  "command": "schema",
+  "args": ["--workspace","${WORKSPACE}","--schema","${WORKSPACE}/missing.schema.yaml","schema","check"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

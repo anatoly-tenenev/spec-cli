@@ -2,6 +2,7 @@ package capabilities
 
 var Default = []string{
 	"help",
+	"schema",
 	"query",
 	"get",
 	"add",

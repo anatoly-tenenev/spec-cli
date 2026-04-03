@@ -1,0 +1,15 @@
+{
+  "id": "schema_20_0006_err_schema_unknown_subcommand_json",
+  "description": "schema_20_0006_err_schema_unknown_subcommand_json",
+  "command": "schema",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","schema","status"],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

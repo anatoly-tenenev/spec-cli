@@ -1,0 +1,9 @@
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: services/${meta.slug}.md
+    meta:
+      fields:
+        status:
+          schema:
+            type: string

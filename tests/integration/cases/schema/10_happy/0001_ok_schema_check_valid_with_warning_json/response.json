@@ -1,0 +1,20 @@
+{
+  "result_state": "valid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 1
+    },
+    "issues": [
+      {
+        "level": "warning",
+        "class": "SchemaWarning",
+        "code": "schema.top_level.version_missing",
+        "message": "schema.version is recommended",
+        "path": "schema.version"
+      }
+    ]
+  }
+}

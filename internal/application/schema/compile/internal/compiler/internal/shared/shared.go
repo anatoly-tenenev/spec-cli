@@ -1,0 +1,537 @@
+package shared
+
+import (
+	"fmt"
+	"math"
+	"sort"
+	"strings"
+
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
+	"gopkg.in/yaml.v3"
+)
+
+func ParseValueSpec(
+	node *yaml.Node,
+	path string,
+	typeSet map[string]struct{},
+	allowArray bool,
+	issues *[]diagnostics.Issue,
+) model.ValueSpec {
+	values, ok := MappingValues(node, path, issues)
+	if !ok {
+		return model.ValueSpec{Kind: model.ValueKindUnknown}
+	}
+	AppendUnsupportedKeys(
+		values,
+		path,
+		SetOf("type", "format", "enum", "const", "refTypes", "items", "uniqueItems", "minItems", "maxItems", "description"),
+		issues,
+	)
+
+	typeNode, hasType := values["type"]
+	if !hasType {
+		AddError(issues, "schema.value.type_required", "schema.type is required", path+".type")
+		return model.ValueSpec{Kind: model.ValueKindUnknown}
+	}
+	typeName, typeValid := ScalarString(typeNode, path+".type", true, issues)
+	if !typeValid {
+		return model.ValueSpec{Kind: model.ValueKindUnknown}
+	}
+
+	kind := kindFromTypeName(typeName)
+	if kind == model.ValueKindUnknown {
+		AddError(
+			issues,
+			"schema.value.type_unsupported",
+			fmt.Sprintf("unsupported schema type '%s'", typeName),
+			path+".type",
+		)
+	}
+
+	spec := model.ValueSpec{Kind: kind}
+	if formatNode, exists := values["format"]; exists {
+		if format, isValid := ScalarString(formatNode, path+".format", true, issues); isValid {
+			spec.Format = format
+		}
+	}
+
+	if constNode, exists := values["const"]; exists {
+		if value, isValid := LiteralValue(constNode, path+".const", issues); isValid {
+			spec.Const = &model.Literal{Value: value}
+		}
+	}
+
+	if enumNode, exists := values["enum"]; exists {
+		spec.Enum = parseEnum(enumNode, path+".enum", issues)
+	}
+
+	if spec.Const != nil && !literalMatchesKind(spec.Const.Value, kind) {
+		AddError(
+			issues,
+			"schema.value.const_type_mismatch",
+			"schema.const value type is incompatible with schema.type",
+			path+".const",
+		)
+	}
+	for index, enumValue := range spec.Enum {
+		if literalMatchesKind(enumValue.Value, kind) {
+			continue
+		}
+		AddError(
+			issues,
+			"schema.value.enum_type_mismatch",
+			"schema.enum value type is incompatible with schema.type",
+			fmt.Sprintf("%s[%d]", path+".enum", index),
+		)
+	}
+
+	if kind == model.ValueKindEntityRef {
+		refTypes := parseRefTypes(values["refTypes"], path+".refTypes", typeSet, issues)
+		spec.Ref = &model.RefSpec{
+			Cardinality:  model.RefCardinalityScalar,
+			AllowedTypes: refTypes,
+		}
+		assertArrayOnlyKeysUnused(values, path, issues)
+		return spec
+	}
+
+	if _, exists := values["refTypes"]; exists {
+		AddError(
+			issues,
+			"schema.value.ref_types_unexpected",
+			"schema.refTypes is allowed only for schema.type=entityRef",
+			path+".refTypes",
+		)
+	}
+
+	if kind != model.ValueKindArray {
+		assertArrayOnlyKeysUnused(values, path, issues)
+		return spec
+	}
+
+	if !allowArray {
+		AddError(issues, "schema.value.array_nested_unsupported", "nested array schema is not supported", path)
+		return spec
+	}
+
+	itemsNode, hasItems := values["items"]
+	if !hasItems {
+		AddError(issues, "schema.value.items_required", "schema.items is required for schema.type=array", path+".items")
+	} else {
+		itemSpec := ParseValueSpec(itemsNode, path+".items", typeSet, false, issues)
+		spec.Items = &itemSpec
+	}
+
+	if uniqueItemsNode, exists := values["uniqueItems"]; exists {
+		if value, isValid := ScalarBool(uniqueItemsNode, path+".uniqueItems", issues); isValid {
+			spec.UniqueItems = value
+		}
+	}
+	if minItemsNode, exists := values["minItems"]; exists {
+		if minItems, isValid := ScalarNonNegativeInt(minItemsNode, path+".minItems", issues); isValid {
+			spec.MinItems = &minItems
+		}
+	}
+	if maxItemsNode, exists := values["maxItems"]; exists {
+		if maxItems, isValid := ScalarNonNegativeInt(maxItemsNode, path+".maxItems", issues); isValid {
+			spec.MaxItems = &maxItems
+		}
+	}
+	if spec.MinItems != nil && spec.MaxItems != nil && *spec.MinItems > *spec.MaxItems {
+		AddError(
+			issues,
+			"schema.value.min_max_items_invalid",
+			"schema.minItems must be less than or equal to schema.maxItems",
+			path,
+		)
+	}
+
+	return spec
+}
+
+func ParseRequirement(node *yaml.Node, path string, defaultValue bool, issues *[]diagnostics.Issue) model.Requirement {
+	if node == nil {
+		return model.Requirement{Always: defaultValue}
+	}
+	if node.Kind != yaml.ScalarNode {
+		AddError(issues, "schema.requirement.invalid", "required must be boolean or ${expr}", path)
+		return model.Requirement{Always: false}
+	}
+
+	var decoded any
+	if err := node.Decode(&decoded); err != nil {
+		AddError(issues, "schema.requirement.invalid", "failed to parse required value", path)
+		return model.Requirement{Always: false}
+	}
+
+	switch typed := decoded.(type) {
+	case bool:
+		return model.Requirement{Always: typed}
+	case string:
+		expr := compileSingleExpression(typed, path, issues)
+		return model.Requirement{Always: false, Expr: expr}
+	default:
+		AddError(issues, "schema.requirement.invalid", "required must be boolean or ${expr}", path)
+		return model.Requirement{Always: false}
+	}
+}
+
+func ParseTitles(node *yaml.Node, path string, issues *[]diagnostics.Issue) ([]string, bool) {
+	if node.Kind == yaml.ScalarNode {
+		title, ok := ScalarString(node, path, true, issues)
+		if !ok {
+			return nil, false
+		}
+		return []string{title}, true
+	}
+	if node.Kind != yaml.SequenceNode {
+		AddError(issues, "schema.section.title_invalid", "title must be string or non-empty array of strings", path)
+		return nil, false
+	}
+	if len(node.Content) == 0 {
+		AddError(issues, "schema.section.title_empty", "title array must be non-empty", path)
+		return nil, false
+	}
+	titles := make([]string, 0, len(node.Content))
+	for idx, itemNode := range node.Content {
+		itemPath := fmt.Sprintf("%s[%d]", path, idx)
+		title, ok := ScalarString(itemNode, itemPath, true, issues)
+		if !ok {
+			continue
+		}
+		titles = append(titles, title)
+	}
+	if len(titles) == 0 {
+		return nil, false
+	}
+	return titles, true
+}
+
+func CompileTemplate(raw string, path string, issues *[]diagnostics.Issue) *model.CompiledTemplate {
+	parts := make([]model.TemplatePart, 0)
+	rest := raw
+	for {
+		idx := strings.Index(rest, "${")
+		if idx < 0 {
+			if rest != "" {
+				parts = append(parts, model.TemplatePart{Literal: rest})
+			}
+			break
+		}
+		if idx > 0 {
+			parts = append(parts, model.TemplatePart{Literal: rest[:idx]})
+		}
+		rest = rest[idx+2:]
+		end := strings.Index(rest, "}")
+		if end < 0 {
+			AddError(issues, "schema.template.invalid", "unterminated interpolation in template", path)
+			return nil
+		}
+		expr := strings.TrimSpace(rest[:end])
+		if expr == "" {
+			AddError(issues, "schema.template.empty_expression", "template interpolation expression must not be empty", path)
+			return nil
+		}
+		parts = append(parts, model.TemplatePart{Expr: &model.CompiledExpression{Source: expr}})
+		rest = rest[end+1:]
+	}
+	if len(parts) == 0 {
+		return nil
+	}
+	for _, part := range parts {
+		if part.Expr != nil {
+			return &model.CompiledTemplate{Parts: parts}
+		}
+	}
+	return nil
+}
+
+func LiteralValue(node *yaml.Node, path string, issues *[]diagnostics.Issue) (any, bool) {
+	var decoded any
+	if err := node.Decode(&decoded); err != nil {
+		AddError(issues, "schema.value.literal_invalid", "failed to decode literal value", path)
+		return nil, false
+	}
+	return decoded, true
+}
+
+func ScalarString(node *yaml.Node, path string, nonEmpty bool, issues *[]diagnostics.Issue) (string, bool) {
+	if node == nil || node.Kind != yaml.ScalarNode {
+		AddError(issues, "schema.value.string_invalid", "value must be a string", path)
+		return "", false
+	}
+	var value string
+	if err := node.Decode(&value); err != nil {
+		AddError(issues, "schema.value.string_invalid", "value must be a string", path)
+		return "", false
+	}
+	if nonEmpty && strings.TrimSpace(value) == "" {
+		AddError(issues, "schema.value.string_empty", "value must be a non-empty string", path)
+		return "", false
+	}
+	return value, true
+}
+
+func ScalarBool(node *yaml.Node, path string, issues *[]diagnostics.Issue) (bool, bool) {
+	if node == nil || node.Kind != yaml.ScalarNode {
+		AddError(issues, "schema.value.bool_invalid", "value must be a boolean", path)
+		return false, false
+	}
+	var value bool
+	if err := node.Decode(&value); err != nil {
+		AddError(issues, "schema.value.bool_invalid", "value must be a boolean", path)
+		return false, false
+	}
+	return value, true
+}
+
+func ScalarNonNegativeInt(node *yaml.Node, path string, issues *[]diagnostics.Issue) (int, bool) {
+	if node == nil || node.Kind != yaml.ScalarNode {
+		AddError(issues, "schema.value.int_invalid", "value must be an integer >= 0", path)
+		return 0, false
+	}
+	var value int
+	if err := node.Decode(&value); err != nil {
+		AddError(issues, "schema.value.int_invalid", "value must be an integer >= 0", path)
+		return 0, false
+	}
+	if value < 0 {
+		AddError(issues, "schema.value.int_negative", "value must be an integer >= 0", path)
+		return 0, false
+	}
+	return value, true
+}
+
+func MappingValues(node *yaml.Node, path string, issues *[]diagnostics.Issue) (map[string]*yaml.Node, bool) {
+	if node == nil || node.Kind != yaml.MappingNode {
+		AddError(issues, "schema.value.mapping_invalid", "value must be a mapping object", path)
+		return nil, false
+	}
+	values := make(map[string]*yaml.Node, len(node.Content)/2)
+	for idx := 0; idx+1 < len(node.Content); idx += 2 {
+		keyNode := node.Content[idx]
+		valueNode := node.Content[idx+1]
+		values[keyNode.Value] = valueNode
+	}
+	return values, true
+}
+
+func AppendUnsupportedKeys(values map[string]*yaml.Node, path string, allowed map[string]struct{}, issues *[]diagnostics.Issue) {
+	unsupported := make([]string, 0)
+	for key := range values {
+		if _, exists := allowed[key]; exists {
+			continue
+		}
+		unsupported = append(unsupported, key)
+	}
+	sort.Strings(unsupported)
+	for _, key := range unsupported {
+		AddError(
+			issues,
+			"schema.keys.unsupported",
+			fmt.Sprintf("unsupported key '%s'", key),
+			path+"."+key,
+		)
+	}
+}
+
+func SortedKeys(values map[string]*yaml.Node) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func SetOf(values ...string) map[string]struct{} {
+	result := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		result[value] = struct{}{}
+	}
+	return result
+}
+
+func HasWhitespace(value string) bool {
+	for _, symbol := range value {
+		if symbol == ' ' || symbol == '\t' || symbol == '\n' || symbol == '\r' {
+			return true
+		}
+	}
+	return false
+}
+
+func AddError(issues *[]diagnostics.Issue, code string, message string, path string) {
+	*issues = append(*issues, diagnostics.NewError(code, message, path))
+}
+
+func AddWarning(issues *[]diagnostics.Issue, code string, message string, path string) {
+	*issues = append(*issues, diagnostics.NewWarning(code, message, path))
+}
+
+func kindFromTypeName(typeName string) model.ValueKind {
+	switch strings.TrimSpace(typeName) {
+	case string(model.ValueKindString):
+		return model.ValueKindString
+	case string(model.ValueKindNumber):
+		return model.ValueKindNumber
+	case string(model.ValueKindInteger):
+		return model.ValueKindInteger
+	case string(model.ValueKindBoolean):
+		return model.ValueKindBoolean
+	case string(model.ValueKindArray):
+		return model.ValueKindArray
+	case string(model.ValueKindEntityRef):
+		return model.ValueKindEntityRef
+	default:
+		return model.ValueKindUnknown
+	}
+}
+
+func parseEnum(node *yaml.Node, path string, issues *[]diagnostics.Issue) []model.Literal {
+	if node.Kind != yaml.SequenceNode {
+		AddError(issues, "schema.value.enum_invalid", "schema.enum must be a non-empty array", path)
+		return nil
+	}
+	if len(node.Content) == 0 {
+		AddError(issues, "schema.value.enum_empty", "schema.enum must be a non-empty array", path)
+		return nil
+	}
+
+	values := make([]model.Literal, 0, len(node.Content))
+	for index, itemNode := range node.Content {
+		itemPath := fmt.Sprintf("%s[%d]", path, index)
+		value, isValid := LiteralValue(itemNode, itemPath, issues)
+		if !isValid {
+			continue
+		}
+		values = append(values, model.Literal{Value: value})
+	}
+	return values
+}
+
+func parseRefTypes(node *yaml.Node, path string, typeSet map[string]struct{}, issues *[]diagnostics.Issue) []string {
+	if node == nil {
+		return nil
+	}
+	if node.Kind != yaml.SequenceNode {
+		AddError(issues, "schema.value.ref_types_invalid", "schema.refTypes must be a non-empty array", path)
+		return nil
+	}
+	if len(node.Content) == 0 {
+		AddError(issues, "schema.value.ref_types_empty", "schema.refTypes must be a non-empty array", path)
+		return nil
+	}
+
+	seen := make(map[string]struct{}, len(node.Content))
+	values := make([]string, 0, len(node.Content))
+	for index, itemNode := range node.Content {
+		itemPath := fmt.Sprintf("%s[%d]", path, index)
+		value, isValid := ScalarString(itemNode, itemPath, true, issues)
+		if !isValid {
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			AddError(
+				issues,
+				"schema.value.ref_types_duplicate",
+				fmt.Sprintf("duplicate ref type '%s'", value),
+				itemPath,
+			)
+			continue
+		}
+		seen[value] = struct{}{}
+		if _, known := typeSet[value]; !known {
+			AddError(
+				issues,
+				"schema.value.ref_type_unknown",
+				fmt.Sprintf("unknown entity type '%s' in refTypes", value),
+				itemPath,
+			)
+		}
+		values = append(values, value)
+	}
+
+	sort.Strings(values)
+	return values
+}
+
+func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issue) *model.CompiledExpression {
+	trimmed := strings.TrimSpace(raw)
+	if !strings.HasPrefix(trimmed, "${") || !strings.HasSuffix(trimmed, "}") {
+		AddError(issues, "schema.expression.invalid", "expression must have form ${expr}", path)
+		return nil
+	}
+	inner := strings.TrimSpace(trimmed[2 : len(trimmed)-1])
+	if inner == "" {
+		AddError(issues, "schema.expression.empty", "expression must not be empty", path)
+		return nil
+	}
+	return &model.CompiledExpression{Source: inner}
+}
+
+func literalMatchesKind(value any, kind model.ValueKind) bool {
+	switch kind {
+	case model.ValueKindUnknown:
+		return true
+	case model.ValueKindString, model.ValueKindEntityRef:
+		_, ok := value.(string)
+		return ok
+	case model.ValueKindBoolean:
+		_, ok := value.(bool)
+		return ok
+	case model.ValueKindNumber:
+		return isNumeric(value)
+	case model.ValueKindInteger:
+		return isInteger(value)
+	case model.ValueKindArray:
+		_, ok := value.([]any)
+		return ok
+	default:
+		return false
+	}
+}
+
+func assertArrayOnlyKeysUnused(values map[string]*yaml.Node, path string, issues *[]diagnostics.Issue) {
+	if _, exists := values["items"]; exists {
+		AddError(issues, "schema.value.items_unexpected", "schema.items is allowed only for schema.type=array", path+".items")
+	}
+	if _, exists := values["uniqueItems"]; exists {
+		AddError(issues, "schema.value.unique_items_unexpected", "schema.uniqueItems is allowed only for schema.type=array", path+".uniqueItems")
+	}
+	if _, exists := values["minItems"]; exists {
+		AddError(issues, "schema.value.min_items_unexpected", "schema.minItems is allowed only for schema.type=array", path+".minItems")
+	}
+	if _, exists := values["maxItems"]; exists {
+		AddError(issues, "schema.value.max_items_unexpected", "schema.maxItems is allowed only for schema.type=array", path+".maxItems")
+	}
+}
+
+func isNumeric(value any) bool {
+	switch value.(type) {
+	case int, int8, int16, int32, int64:
+		return true
+	case uint, uint8, uint16, uint32, uint64:
+		return true
+	case float32, float64:
+		return true
+	default:
+		return false
+	}
+}
+
+func isInteger(value any) bool {
+	switch typed := value.(type) {
+	case int, int8, int16, int32, int64:
+		return true
+	case uint, uint8, uint16, uint32, uint64:
+		return true
+	case float64:
+		return math.Trunc(typed) == typed
+	case float32:
+		return math.Trunc(float64(typed)) == float64(typed)
+	default:
+		return false
+	}
+}

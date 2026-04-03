@@ -1,0 +1,20 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.source.duplicate_key",
+        "message": "schema contains duplicate key 'idPrefix'",
+        "path": "schema.entity.service.idPrefix"
+      }
+    ]
+  }
+}

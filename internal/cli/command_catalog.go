@@ -9,6 +9,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/help"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query"
+	schemacmd "github.com/anatoly-tenenev/spec-cli/internal/application/commands/schema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/version"
@@ -17,6 +18,7 @@ import (
 
 var appCommandCatalog = helpmodel.MustCatalog([]helpmodel.CommandSpec{
 	help.HelpSpec(),
+	schemacmd.HelpSpec(),
 	query.HelpSpec(),
 	get.HelpSpec(),
 	add.HelpSpec(),
@@ -41,6 +43,7 @@ func isSupportedCommand(name string) bool {
 func registerCommandHandlers(bus *commandbus.Bus, now func() time.Time) {
 	catalog := commandCatalog()
 	bus.Register("help", help.NewHandler(catalog))
+	bus.Register("schema", schemacmd.NewHandler())
 	bus.Register("query", query.NewHandler())
 	bus.Register("get", get.NewHandler())
 	bus.Register("add", add.NewHandler(now))

@@ -41,6 +41,10 @@ func TestVersionCases(t *testing.T) {
 	runCommandCases(t, "version")
 }
 
+func TestSchemaCases(t *testing.T) {
+	runCommandCases(t, "schema")
+}
+
 func runCommandCases(t *testing.T, command string) {
 	t.Helper()
 

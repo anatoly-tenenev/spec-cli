@@ -1,0 +1,20 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.source.parse_failed",
+        "message": "failed to parse schema yaml/json: yaml: line 3: found unexpected end of stream",
+        "path": "schema"
+      }
+    ]
+  }
+}

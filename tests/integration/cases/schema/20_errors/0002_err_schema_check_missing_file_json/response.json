@@ -1,0 +1,20 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.source.read_failed",
+        "message": "<workspace>/missing.schema.yaml: no such file or directory",
+        "path": "schema"
+      }
+    ]
+  }
+}

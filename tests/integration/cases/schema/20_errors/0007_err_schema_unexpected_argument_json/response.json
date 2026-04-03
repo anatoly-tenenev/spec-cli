@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "unexpected schema argument: extra"
+  },
+  "result_state": "invalid"
+}

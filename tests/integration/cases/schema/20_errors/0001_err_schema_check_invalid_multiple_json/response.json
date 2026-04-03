@@ -1,0 +1,48 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 5,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.path_template.cases_required",
+        "message": "pathTemplate.cases is required",
+        "path": "schema.entity.feature.pathTemplate.cases"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.keys.unsupported",
+        "message": "unsupported key 'unknown'",
+        "path": "schema.entity.service.unknown"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.entity.id_prefix_duplicate",
+        "message": "idPrefix 'DUP' is already used by entity type 'feature'",
+        "path": "schema.entity.service.idPrefix"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.path_template.use_required",
+        "message": "pathTemplate case requires 'use'",
+        "path": "schema.entity.service.pathTemplate.cases[0].use"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.path_template.empty",
+        "message": "pathTemplate must define at least one case",
+        "path": "schema.entity.service.pathTemplate"
+      }
+    ]
+  }
+}

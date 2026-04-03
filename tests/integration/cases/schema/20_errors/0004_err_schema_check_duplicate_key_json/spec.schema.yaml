@@ -1,0 +1,5 @@
+entity:
+  service:
+    idPrefix: SVC
+    idPrefix: SRV
+    pathTemplate: services/${meta.slug}.md

@@ -1,0 +1,5 @@
+version: v1
+entity:
+  note:
+    idPrefix: NOTE
+    pathTemplate: notes/${meta.slug}.md

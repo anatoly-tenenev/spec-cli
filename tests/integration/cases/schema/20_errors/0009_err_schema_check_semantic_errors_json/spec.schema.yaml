@@ -1,0 +1,19 @@
+version: v1
+entity:
+  service:
+    idPrefix: DUP
+    pathTemplate:
+      cases:
+        - when: "${meta.slug == 'x'}"
+    meta:
+      fields:
+        type:
+          schema:
+            type: string
+        owner:
+          schema:
+            type: entityRef
+            refTypes: [unknown, unknown]
+  feature:
+    idPrefix: DUP
+    pathTemplate: features/${meta.slug}.md

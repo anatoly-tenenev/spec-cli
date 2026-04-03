@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "subcommand": "status"
+    },
+    "exit_code": 2,
+    "message": "unknown schema subcommand: status"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,11 @@
+version: v1
+entity:
+  service:
+    idPrefix: DUP
+    pathTemplate:
+      cases:
+        - when: "${meta.slug == 'x'}"
+    unknown: true
+  feature:
+    idPrefix: DUP
+    pathTemplate: {}

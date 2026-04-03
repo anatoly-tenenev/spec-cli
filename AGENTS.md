@@ -52,6 +52,10 @@ The current prototype must cover the `validate`, `query`, `add`, and `update` co
 - Tests: `make test`
 - Build: `make build`
 
+## Git Command Restrictions
+- It is forbidden to run any `git` command that changes repository state (for example: `git add`, `git commit`, `git reset`, `git restore`, `git checkout` with write effects, `git clean`, `git rebase`, `git merge`, `git cherry-pick`).
+- Only non-mutating `git` commands are allowed (for example: `git status`, `git diff`, `git log`, `git show`, `git branch --show-current`).
+
 ## Expectations for Changes
 - Preserve the machine-stable response contract.
 - When adding/changing a command, update contract tests and snapshot/golden files.

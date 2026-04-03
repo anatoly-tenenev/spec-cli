@@ -10,6 +10,7 @@ Global options
 
 Commands
   help: show deterministic text help for CLI and commands
+  schema: compile and validate schema diagnostics
   query: read many entities with structural filters and deterministic pagination
   get: read one entity by exact id
   add: create a new entity
@@ -44,6 +45,21 @@ help
   Examples
     spec-cli help
     spec-cli help query
+
+schema
+  Syntax
+    spec-cli schema check
+  Options
+    <subcommand>
+      required: true
+      repeatable: false
+      description: Schema subcommand. Supported value: check.
+  Rules
+    - Currently supports only the `check` subcommand.
+    - Runs shared schema compiler without workspace scan.
+    - Returns top-level schema diagnostics in schema.valid/schema.summary/schema.issues.
+  Examples
+    spec-cli schema check
 
 query
   Syntax

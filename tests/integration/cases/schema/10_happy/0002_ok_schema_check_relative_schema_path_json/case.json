@@ -1,0 +1,18 @@
+{
+  "id": "schema_10_0002_ok_schema_check_relative_schema_path_json",
+  "description": "schema_10_0002_ok_schema_check_relative_schema_path_json",
+  "command": "schema",
+  "args": ["--workspace",".","--schema","../spec.schema.yaml","schema","check"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  },
+  "runtime": {
+    "cwd": "${WORKSPACE}"
+  }
+}

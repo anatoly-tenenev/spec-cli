@@ -1,0 +1,15 @@
+{
+  "id": "schema_20_0001_err_schema_check_invalid_multiple_json",
+  "description": "schema_20_0001_err_schema_check_invalid_multiple_json",
+  "command": "schema",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","schema","check"],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "allowed_subcommands": [
+        "check"
+      ]
+    },
+    "exit_code": 2,
+    "message": "schema subcommand is required"
+  },
+  "result_state": "invalid"
+}
