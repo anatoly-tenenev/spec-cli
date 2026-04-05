@@ -1,0 +1,41 @@
+version: "0.0.4"
+entity:
+  person:
+    idPrefix: PER
+    pathTemplate: "people/${slug}.md"
+    meta:
+      fields:
+        name:
+          required: true
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/${slug}.md"
+    meta:
+      fields:
+        owner:
+          required: true
+          schema:
+            type: entityRef
+            refTypes: [person]
+        ownerSlug:
+          required: true
+          schema:
+            type: string
+            const: "${refs.owner.slug}"
+        status:
+          required: false
+          schema:
+            type: string
+            enum: [draft, active]
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]

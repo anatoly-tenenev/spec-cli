@@ -10,7 +10,7 @@
     "id": "NOTE-0",
     "meta": {},
     "refs": {},
-    "revision": "sha256:<opaque>",
+    "revision": "sha256:3d4098de4f94ee575c15f5d718cf494554fd971eaffecf10a1f265acf0d37246",
     "slug": "empty-summary",
     "type": "note",
     "updatedDate": "2026-04-01"
@@ -19,5 +19,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

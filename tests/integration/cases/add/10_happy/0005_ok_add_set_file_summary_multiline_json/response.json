@@ -18,7 +18,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:951203e9a87ceb5991e4f9814acc5e430ff300e29ff1a6867e03430f2190e71d",
+    "revision": "sha256:c35d28f290948ccd1212089a5e62dcd454bedf6df420402417b9cdc0795fff06",
     "slug": "set-file-summary",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -27,5 +27,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

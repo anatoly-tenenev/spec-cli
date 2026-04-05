@@ -26,7 +26,7 @@
         }
       ]
     },
-    "revision": "sha256:46846c40deb48ff87b506b890e7f5208826ab9798291c549e883e21157df2794",
+    "revision": "sha256:595107276e2a76484fbfd346f9fc2eced76b7adc5d8a68b6b02457bc9877fd8f",
     "slug": "array-watchers",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -35,5 +35,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

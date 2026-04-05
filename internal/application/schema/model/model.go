@@ -9,12 +9,15 @@ type CompiledSchema struct {
 }
 
 type EntityType struct {
-	Name         string
-	IDPrefix     string
-	PathTemplate PathTemplate
-	MetaFields   map[string]MetaField
-	Sections     map[string]Section
-	Description  string
+	Name           string
+	IDPrefix       string
+	PathTemplate   PathTemplate
+	MetaFields     map[string]MetaField
+	MetaFieldOrder []string
+	Sections       map[string]Section
+	SectionOrder   []string
+	HasContent     bool
+	Description    string
 }
 
 type MetaField struct {

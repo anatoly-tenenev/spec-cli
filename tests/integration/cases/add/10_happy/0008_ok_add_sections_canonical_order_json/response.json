@@ -19,7 +19,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:6a14b3f520e9aaf76014b0dae3d8833686219a6d177db0d1a02f97c434c00655",
+    "revision": "sha256:9af6f5153151bc204029dc500bb51143a740d37e415903676c331f8d6f178950",
     "slug": "section-order",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -28,5 +28,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

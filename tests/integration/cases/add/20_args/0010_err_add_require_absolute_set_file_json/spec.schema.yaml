@@ -45,10 +45,6 @@ entity:
           required: false
           schema:
             type: boolean
-        optional_note:
-          required: false
-          schema:
-            type: "null"
         literal_code:
           required: false
           schema:

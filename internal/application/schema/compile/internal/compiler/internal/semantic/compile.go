@@ -94,9 +94,11 @@ func parseEntityType(
 	shared.AppendUnsupportedKeys(values, path, shared.SetOf("idPrefix", "pathTemplate", "meta", "content", "description"), issues)
 
 	entity := model.EntityType{
-		Name:       typeName,
-		MetaFields: map[string]model.MetaField{},
-		Sections:   map[string]model.Section{},
+		Name:           typeName,
+		MetaFields:     map[string]model.MetaField{},
+		MetaFieldOrder: []string{},
+		Sections:       map[string]model.Section{},
+		SectionOrder:   []string{},
 	}
 
 	idPrefixNode, hasIDPrefix := values["idPrefix"]
@@ -129,10 +131,11 @@ func parseEntityType(
 	}
 
 	if metaNode, exists := values["meta"]; exists {
-		entity.MetaFields = parseMetaFields(metaNode, path+".meta", typeSet, issues)
+		entity.MetaFields, entity.MetaFieldOrder = parseMetaFields(metaNode, path+".meta", typeSet, issues)
 	}
 	if contentNode, exists := values["content"]; exists {
-		entity.Sections = parseSections(contentNode, path+".content", issues)
+		entity.HasContent = true
+		entity.Sections, entity.SectionOrder = parseSections(contentNode, path+".content", issues)
 	}
 
 	expressionEngine := buildExpressionEngine(entity, path, issues)
@@ -153,23 +156,24 @@ func parseMetaFields(
 	path string,
 	typeSet map[string]struct{},
 	issues *[]diagnostics.Issue,
-) map[string]model.MetaField {
+) (map[string]model.MetaField, []string) {
 	values, ok := shared.MappingValues(node, path, issues)
 	if !ok {
-		return map[string]model.MetaField{}
+		return map[string]model.MetaField{}, []string{}
 	}
 	shared.AppendUnsupportedKeys(values, path, shared.SetOf("fields"), issues)
 
 	fieldsNode, exists := values["fields"]
 	if !exists {
-		return map[string]model.MetaField{}
+		return map[string]model.MetaField{}, []string{}
 	}
 	fieldValues, fieldsOK := shared.MappingValues(fieldsNode, path+".fields", issues)
 	if !fieldsOK {
-		return map[string]model.MetaField{}
+		return map[string]model.MetaField{}, []string{}
 	}
 
 	result := make(map[string]model.MetaField, len(fieldValues))
+	order := shared.OrderedKeys(fieldValues, fieldsNode)
 	for _, fieldName := range shared.SortedKeys(fieldValues) {
 		if !schemaKeyNamePattern.MatchString(fieldName) {
 			shared.AddError(
@@ -196,7 +200,15 @@ func parseMetaFields(
 		}
 	}
 
-	return result
+	filteredOrder := make([]string, 0, len(order))
+	for _, fieldName := range order {
+		if _, exists := result[fieldName]; !exists {
+			continue
+		}
+		filteredOrder = append(filteredOrder, fieldName)
+	}
+
+	return result, filteredOrder
 }
 
 func parseMetaField(
@@ -239,28 +251,29 @@ func parseMetaField(
 	}, true
 }
 
-func parseSections(node *yaml.Node, path string, issues *[]diagnostics.Issue) map[string]model.Section {
+func parseSections(node *yaml.Node, path string, issues *[]diagnostics.Issue) (map[string]model.Section, []string) {
 	values, ok := shared.MappingValues(node, path, issues)
 	if !ok {
-		return map[string]model.Section{}
+		return map[string]model.Section{}, []string{}
 	}
 	shared.AppendUnsupportedKeys(values, path, shared.SetOf("sections"), issues)
 
 	sectionsNode, exists := values["sections"]
 	if !exists {
-		return map[string]model.Section{}
+		return map[string]model.Section{}, []string{}
 	}
 	sectionValues, sectionsOK := shared.MappingValues(sectionsNode, path+".sections", issues)
 	if !sectionsOK {
-		return map[string]model.Section{}
+		return map[string]model.Section{}, []string{}
 	}
 
 	if len(sectionValues) == 0 {
 		shared.AddError(issues, "schema.section.empty", "content.sections must be a non-empty mapping", path+".sections")
-		return map[string]model.Section{}
+		return map[string]model.Section{}, []string{}
 	}
 
 	result := make(map[string]model.Section, len(sectionValues))
+	order := shared.OrderedKeys(sectionValues, sectionsNode)
 	for _, sectionName := range shared.SortedKeys(sectionValues) {
 		if !schemaKeyNamePattern.MatchString(sectionName) {
 			shared.AddError(
@@ -278,7 +291,15 @@ func parseSections(node *yaml.Node, path string, issues *[]diagnostics.Issue) ma
 		}
 	}
 
-	return result
+	filteredOrder := make([]string, 0, len(order))
+	for _, sectionName := range order {
+		if _, exists := result[sectionName]; !exists {
+			continue
+		}
+		filteredOrder = append(filteredOrder, sectionName)
+	}
+
+	return result, filteredOrder
 }
 
 func parseSection(sectionName string, node *yaml.Node, path string, issues *[]diagnostics.Issue) (model.Section, bool) {

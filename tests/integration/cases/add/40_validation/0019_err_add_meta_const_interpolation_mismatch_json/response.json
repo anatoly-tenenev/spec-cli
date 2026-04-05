@@ -1,0 +1,35 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.required_value_mismatch",
+            "entity": {
+              "id": "FEAT-0",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.ownerSlug",
+            "level": "error",
+            "message": "field 'ownerSlug' must match schema const",
+            "standard_ref": "11.5"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

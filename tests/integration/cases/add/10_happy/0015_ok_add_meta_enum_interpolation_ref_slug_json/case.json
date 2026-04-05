@@ -1,0 +1,35 @@
+{
+  "id": "add_10_0015_ok_add_meta_enum_interpolation_ref_slug_json",
+  "description": "add_10_0015_ok_add_meta_enum_interpolation_ref_slug_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "refs.owner=PER-1",
+    "--set",
+    "meta.status=alice",
+    "--set",
+    "content.sections.summary=Retry window summary"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-05"
+  }
+}

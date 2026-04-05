@@ -21,8 +21,6 @@
     "--set",
     "meta.enabled=true",
     "--set",
-    "meta.optional_note=null",
-    "--set",
     "meta.literal_code=\"001\"",
     "--set",
     "meta.literal_word=\"true\"",

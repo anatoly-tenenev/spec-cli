@@ -18,7 +18,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:10cce21b00a8585e128f89db4ec27ce0f8b0d6aa7c9e056f3dc29342cfca2552",
+    "revision": "sha256:6c8874738fcfbf6d48e8a81a3ca15335f2f15d72b341c3815f7df51c2c616629",
     "slug": "gap-new",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -27,5 +27,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

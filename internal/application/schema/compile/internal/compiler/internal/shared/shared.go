@@ -351,6 +351,34 @@ func SortedKeys(values map[string]*yaml.Node) []string {
 	return keys
 }
 
+func OrderedKeys(values map[string]*yaml.Node, mappingNode *yaml.Node) []string {
+	if mappingNode == nil || mappingNode.Kind != yaml.MappingNode {
+		return SortedKeys(values)
+	}
+
+	keys := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for idx := 0; idx+1 < len(mappingNode.Content); idx += 2 {
+		key := mappingNode.Content[idx].Value
+		if _, exists := values[key]; !exists {
+			continue
+		}
+		keys = append(keys, key)
+		seen[key] = struct{}{}
+	}
+	if len(seen) == len(values) {
+		return keys
+	}
+
+	for _, key := range SortedKeys(values) {
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	return keys
+}
+
 func SetOf(values ...string) map[string]struct{} {
 	result := make(map[string]struct{}, len(values))
 	for _, value := range values {

@@ -1,0 +1,48 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "meta.entityRef_target_missing",
+            "entity": {
+              "id": "FEAT-0",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.owner",
+            "level": "error",
+            "message": "entityRef 'owner' points to missing id 'PER-999'",
+            "standard_ref": "11.5"
+          },
+          {
+            "class": "InstanceError",
+            "code": "meta.required_enum_interpolation_failed",
+            "entity": {
+              "id": "FEAT-0",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "frontmatter.status",
+            "level": "error",
+            "message": "field 'status' enum interpolation failed: interpolation result must be string, number, or boolean",
+            "standard_ref": "9.4"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

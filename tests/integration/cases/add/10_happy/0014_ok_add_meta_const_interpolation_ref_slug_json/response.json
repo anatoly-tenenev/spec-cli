@@ -1,0 +1,39 @@
+{
+  "created": true,
+  "dry_run": false,
+  "entity": {
+    "content": {
+      "raw": "## Summary {#summary}\nRetry window summary",
+      "sections": {
+        "summary": "Retry window summary"
+      }
+    },
+    "createdDate": "2026-04-05",
+    "id": "FEAT-0",
+    "meta": {
+      "ownerSlug": "alice"
+    },
+    "refs": {
+      "owner": {
+        "id": "PER-1"
+      }
+    },
+    "revision": "sha256:<opaque>",
+    "slug": "retry-window",
+    "type": "feature",
+    "updatedDate": "2026-04-05"
+  },
+  "result_state": "valid",
+  "validation": {
+    "issues": [],
+    "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

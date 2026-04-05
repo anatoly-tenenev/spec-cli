@@ -18,7 +18,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:05644af2e6589033fd3ea2b3b1c03a9c7cf74c5e331dcbf20320b73de223fc4d",
+    "revision": "sha256:aa2f53bc809277fa28e369b14248c6a071221cc7b1b5ca17e2c680bae01a9904",
     "slug": "dry-run-summary",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -27,5 +27,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

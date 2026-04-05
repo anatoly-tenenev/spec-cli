@@ -1,0 +1,35 @@
+{
+  "id": "add_40_0021_err_add_meta_enum_interpolation_failed_json",
+  "description": "add_40_0021_err_add_meta_enum_interpolation_failed_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "refs.owner=PER-999",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "content.sections.summary=Retry window summary"
+  ],
+  "expect": {
+    "exit_code": 1,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-05"
+  }
+}

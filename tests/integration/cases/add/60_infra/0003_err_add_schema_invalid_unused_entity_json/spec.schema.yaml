@@ -1,0 +1,32 @@
+version: "0.0.4"
+entity:
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/${slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string
+            enum: [draft, active]
+    content:
+      sections:
+        summary:
+          required: true
+          title: ["Summary"]
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/${slug}.md"
+    meta:
+      fields:
+        count:
+          required: false
+          schema:
+            type: integer
+            const: 1.0
+    content:
+      sections:
+        summary:
+          required: false
+          title: ["Summary"]

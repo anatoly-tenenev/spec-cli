@@ -1,0 +1,33 @@
+{
+  "id": "add_60_0003_err_add_schema_invalid_unused_entity_json",
+  "description": "add_60_0003_err_add_schema_invalid_unused_entity_json",
+  "command": "add",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "add",
+    "--type",
+    "feature",
+    "--slug",
+    "retry-window",
+    "--set",
+    "meta.status=draft",
+    "--set",
+    "content.sections.summary=Retry window summary"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-05"
+  }
+}

@@ -12,7 +12,7 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-func BuildSnapshot(workspacePath string, schema model.AddSchema) (model.Snapshot, *domainerrors.AppError) {
+func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityTypeSpec) (model.Snapshot, *domainerrors.AppError) {
 	files, scanErr := scanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return model.Snapshot{}, scanErr
@@ -84,7 +84,7 @@ func BuildSnapshot(workspacePath string, schema model.AddSchema) (model.Snapshot
 		}
 		snapshot.SlugsByType[typeName][slug] = append(snapshot.SlugsByType[typeName][slug], entity)
 
-		typeSpec, knownType := schema.EntityTypes[typeName]
+		typeSpec, knownType := entityTypes[typeName]
 		if !knownType {
 			continue
 		}
@@ -97,7 +97,7 @@ func BuildSnapshot(workspacePath string, schema model.AddSchema) (model.Snapshot
 		}
 	}
 
-	for typeName := range schema.EntityTypes {
+	for typeName := range entityTypes {
 		if _, exists := snapshot.MaxSuffixByType[typeName]; !exists {
 			snapshot.MaxSuffixByType[typeName] = -1
 		}

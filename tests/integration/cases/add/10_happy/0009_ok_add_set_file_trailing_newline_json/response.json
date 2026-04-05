@@ -18,7 +18,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:5c934e458dc2642fa67347aa9ffde86862ec6d7be34cfba926e608e333722ded",
+    "revision": "sha256:8a95df4d277d1ef78e6c5c366c6807474d9389ece99dd7e254ef94e2ee6e29ac",
     "slug": "set-file-newline",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -27,5 +27,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

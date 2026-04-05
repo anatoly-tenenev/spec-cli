@@ -292,8 +292,6 @@ func isTypeCompatible(field model.MetaField, rawValue any) bool {
 	case "boolean":
 		_, ok := value.(bool)
 		return ok
-	case "null":
-		return value == nil
 	case "array":
 		_, ok := value.([]any)
 		return ok

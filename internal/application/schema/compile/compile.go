@@ -242,12 +242,15 @@ func cloneEntity(entity model.EntityType) model.EntityType {
 	}
 
 	return model.EntityType{
-		Name:         entity.Name,
-		IDPrefix:     entity.IDPrefix,
-		PathTemplate: model.PathTemplate{Cases: cases},
-		MetaFields:   metaFields,
-		Sections:     sections,
-		Description:  entity.Description,
+		Name:           entity.Name,
+		IDPrefix:       entity.IDPrefix,
+		PathTemplate:   model.PathTemplate{Cases: cases},
+		MetaFields:     metaFields,
+		MetaFieldOrder: append([]string(nil), entity.MetaFieldOrder...),
+		Sections:       sections,
+		SectionOrder:   append([]string(nil), entity.SectionOrder...),
+		HasContent:     entity.HasContent,
+		Description:    entity.Description,
 	}
 }
 

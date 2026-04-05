@@ -16,7 +16,7 @@ Compact project map for fast entry into the code.
 6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile failures stop before plan/workspace and return top-level `error + schema`).
 8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile failures stop before selector/workspace pipeline and return top-level `error + schema`).
-9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
 10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 12. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
@@ -62,7 +62,7 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/internal/expressions`
   - Entrypoint: `engine.go` - `NewEngine`, `(*Engine).Compile`, `CompileScalarInterpolation`, `CompileTemplate`, `ContainsLegacyPlaceholder`, `Evaluate`, `RenderTemplate`, `IsTruthy`.
   - Responsibilities:
-    - Provide one shared JMESPath compile/cache adapter for mutating commands (`add`, `update`) with deterministic compile/eval diagnostics.
+    - Provide one shared JMESPath compile/cache adapter for legacy mutating command flows (`update`) with deterministic compile/eval diagnostics.
     - Compile scalar interpolation constraints (`"${expr}"`) and mixed string templates with `${...}` parts.
     - Detect and reject legacy `{...}` placeholders in template literals while preserving `${...}` interpolation syntax.
     - Evaluate expressions against runtime entity context (`type/id/slug/createdDate/updatedDate/meta/refs`) and apply JMESPath truthiness semantics.
@@ -115,6 +115,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Hold command-agnostic canonical schema semantics after compile.
     - Keep compiled expression/template objects in canonical required/enum/const/pathTemplate rules.
+    - Preserve deterministic source-derived projection order (`MetaFieldOrder`, `SectionOrder`) and `HasContent` for write-side capability builders.
     - Preserve schema provenance paths (`required/title/pathTemplate use`) for runtime diagnostics.
     - Represent scalar/array value kinds and reference cardinality in one shared IR.
   - Subpackages: none.
@@ -155,9 +156,11 @@ Compact project map for fast entry into the code.
 - `internal/application/schema/capabilities/write`
   - Entrypoint: `builder.go` - `Build`.
   - Responsibilities:
-    - Derive deterministic write-path allowlists (`SetPaths`, `UnsetPaths`, `SetFilePaths`) from compiled schema.
-    - Project `entityRef` fields into `refs.<field>` write namespace and non-ref metadata into `meta.<field>`.
-    - Keep canonical sorted/deduplicated write capability output for future command migration.
+    - Derive write-side capability from compiled schema for mutating commands: `idPrefix`, `pathTemplate`, `meta/section` rules, `hasContent`, and write-path allowlists.
+    - Project write namespace split (`meta.<field>`, `refs.<field>`, `content.sections.<name>`) including scalar/array `entityRef` support for `refs`.
+    - Expose deterministic field/section order plus value constraints (`type/refTypes/items/min/max/unique/enum/const`) for write parsing and validation runtime, preserving template-aware `const/enum` as `{literal, template}`.
+    - Preserve compiler-owned provenance paths for runtime diagnostics (`meta.required`, `section.required`, `pathTemplate.cases[].when`, `pathTemplate.cases[].use`) in capability projection.
+    - Keep canonical sorted/deduplicated `SetPaths/UnsetPaths/SetFilePaths` output while preserving source-derived serialization order in dedicated fields.
   - Subpackages: none.
 
 - `internal/application/schema/capabilities/validate`
@@ -422,16 +425,17 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `add`: parse options -> normalize paths -> acquire workspace lock -> load raw schema -> build workspace snapshot -> execute candidate build/validation/write.
-    - Map `INVALID_ARGS`, `CONCURRENCY_CONFLICT`, `WRITE_CONTRACT_VIOLATION`, `VALIDATION_FAILED`, `PATH_CONFLICT`, schema errors, and read/write errors into one JSON envelope.
+    - Orchestrate `add`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared write capability -> build workspace snapshot -> execute candidate build/validation/write.
+    - Stop immediately on compile failure and return top-level `error + schema` before unknown-type checks, snapshot, or execution.
+    - Return top-level `schema` in every post-compile JSON response (`success`, unknown type, write-contract/validation/conflict/read/write errors).
+    - Keep schema diagnostics only in top-level `schema.issues`; runtime validation diagnostics stay under `error.details.validation.issues` for `VALIDATION_FAILED`.
     - Inject `Clock` for deterministic `createdDate`/`updatedDate`.
     - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
   - Subpackages:
     - `add/internal/options` - parse/norm of `--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`.
-    - `add/internal/schema` - raw schema loading and local write-contract building.
-    - `add/internal/workspace` - deterministic workspace snapshot (`id`/`slug`/suffix indexes, existing paths, parseable identities, `dirPath` context).
+    - `add/internal/workspace` - deterministic workspace snapshot (`id`/`slug`/suffix indexes, existing paths, parseable identities, `dirPath` context) keyed by shared capability entity map.
     - `add/internal/engine` - apply writes, typed YAML parsing, canonical serialization, `pathTemplate` / expression evaluation, full validation, `revision`, dry-run, atomic write.
-    - `add/internal/model` - internal use-case types.
+    - `add/internal/model` - internal use-case types plus aliases for shared write capability models.
     - `add/internal/support` - YAML/deep-copy/literal-compare/stable-collection/error-detail helpers.
 
 - `internal/application/commands/add/internal/options`
@@ -442,18 +446,6 @@ Compact project map for fast entry into the code.
     - Parse and validate `add` arguments, including whole-body vs section conflicts, duplicate paths, and mutually exclusive flags.
     - Normalize `workspace/schema` and file-path arguments with `--require-absolute-paths`.
   - Subpackages: none.
-
-- `internal/application/commands/add/internal/schema`
-  - Entrypoint: `loader.go` - `Load`.
-  - Responsibilities:
-    - Read schema, parse YAML/JSON, check duplicate keys, and validate top level.
-    - Orchestrate `entity.<type>` parsing and build `AddSchema`.
-    - Parse required constraints as `required: boolean | "${expr}"` (default `true`), reject legacy `required_when`, and compile required expressions for runtime checks.
-    - Parse `pathTemplate` with `${expr}` interpolation in `use` and `boolean | "${expr}"` conditions in `cases[].when`, rejecting legacy `{...}` placeholders.
-    - Parse write-contract projection for `meta/refs`, including `array.items.type=entityRef` and `array.items.refTypes`.
-    - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
-  - Subpackages:
-    - `add/internal/schema/internal/entity` - parse `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, and build local write contract.
 
 - `internal/application/commands/add/internal/workspace`
   - Entrypoints:
@@ -475,8 +467,8 @@ Compact project map for fast entry into the code.
   - Subpackages:
     - `.../writes` - apply write ops, typed YAML parsing, write-contract guard rails, Markdown body build.
     - `.../refresolve` - resolve scalar `entityRef` and `array.items.type=entityRef` via workspace snapshot and diagnose deterministic `missing|ambiguous|type_mismatch` (indexed for arrays).
-    - `.../pathcalc` - evaluate `pathTemplate` case conditions (`when`) and `use` templates via shared JMESPath `${expr}` engine, normalize path, and guard workspace boundaries.
-    - `.../validation` - full instance validation, including expression-based `required` checks and deterministic issue sorting.
+    - `.../pathcalc` - evaluate `pathTemplate` case conditions (`when`) and `use` templates via shared JMESPath `${expr}` engine, normalize path, guard workspace boundaries, and emit runtime diagnostics on compiler-owned `when/use` paths.
+    - `.../validation` - full instance validation, including expression-based `required` checks on compiler-owned required paths, template-aware `schema.const/schema.enum` resolution, dedicated interpolation-failure diagnostics, and deterministic issue sorting.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation (`sha256:*`).
     - `.../storage` - filesystem checks and atomic write.
     - `.../payload` - public `entity` payload (`meta`, `refs`, `content.sections`).
@@ -487,8 +479,9 @@ Compact project map for fast entry into the code.
   - Entrypoint: `types.go` - package-visible command-state structs.
   - Responsibilities:
     - Option and write-operation types.
-    - Schema/snapshot/candidate model types.
-    - Shared structures passed between `options -> schema -> workspace -> engine`.
+    - Shared write-capability aliases (`EntityTypeSpec`, `MetaField`, `RuleValue`, `PathPattern`, write-path kinds/specs) consumed by add runtime.
+    - Snapshot/candidate entity model types.
+    - Shared structures passed between `options -> capability -> workspace -> engine`.
   - Subpackages: none.
 
 - `internal/application/commands/add/internal/support`
@@ -759,7 +752,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Build shared top-level `schema` payload from shared compile result (`valid`, `summary`, `issues`).
     - Build shared top-level `error` payload (`code`, `message`, `exit_code`, optional `details`) from domain `AppError`.
-    - Keep schema/error response fragments centralized for migrated handlers (`schema check`, `validate`).
+    - Keep schema/error response fragments centralized for migrated handlers (`schema check`, `validate`, `query`, `get`, `add`).
   - Subpackages: none.
 
 - `internal/output/errormap`
@@ -823,11 +816,12 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>` and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
-    - `tests/integration/cases/add/10_happy/*` - happy-path `add`, including expression-based `required` success scenarios.
+    - `tests/integration/cases/add/10_happy/*` - happy-path `add`, including expression-based `required` success scenarios and interpolated `schema.enum` acceptance via resolved refs.
     - `tests/integration/cases/add/20_args/*` - `add` CLI errors.
     - `tests/integration/cases/add/30_contract/*` - `add` write-contract failures.
-    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints, array `entityRef` diagnostics, and expression-based `required` failures.
+    - `tests/integration/cases/add/40_validation/*` - `add` validation failures, including array constraints, array `entityRef` diagnostics, expression-based `required` failures, and interpolated `schema.const`/`schema.enum` mismatch/interpolation-failure coverage.
     - `tests/integration/cases/add/50_conflict/*` - `add` path conflicts.
+    - `tests/integration/cases/add/60_infra/*` - `add` infrastructure and strict shared-compiler blocking failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_INVALID`), including semantic compile errors in unused entity branches before mutation.
     - `tests/integration/cases/update/10_happy/*` - happy-path `update`, including expression-based `required` success scenarios.
     - `tests/integration/cases/update/20_noop/*` - `update` no-op scenarios, including array `entityRef` idempotent set.
     - `tests/integration/cases/update/30_args/*` - `update` argument/conflict failures.
@@ -862,7 +856,7 @@ Compact project map for fast entry into the code.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.
 - `get` - read-one pipeline is implemented on shared schema compile/read capability (`compile -> capability -> selector plan -> target read -> projection`) with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, tolerant target lookup/read semantics, refs/content projection, and stable JSON contract.
-- `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
+- `add` - shared-compiler create pipeline is implemented (`lock -> compile -> write capability -> snapshot -> execute`) with global schema-validity blocking, top-level `schema` in every post-compile JSON response, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, template-aware `schema.const/schema.enum` runtime resolution, compiler-owned provenance paths in runtime diagnostics, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
 - `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `version` - baseline version command is implemented (single build-time source `Version` with fallback `dev`, JSON contract, contract error-path cases).

@@ -15,7 +15,7 @@
       "trigger": "active"
     },
     "refs": {},
-    "revision": "sha256:<opaque>",
+    "revision": "sha256:cde330e6859c606067d33418b9091ec107e177db16e207be8762deae7cacdfed",
     "slug": "ops-runbook",
     "type": "note",
     "updatedDate": "2026-04-01"
@@ -24,5 +24,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

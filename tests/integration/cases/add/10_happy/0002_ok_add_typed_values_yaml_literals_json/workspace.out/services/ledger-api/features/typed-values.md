@@ -8,7 +8,6 @@ status: draft
 container: SVC-1
 priority: 1
 enabled: true
-optional_note: null
 literal_code: "001"
 literal_word: "true"
 ---

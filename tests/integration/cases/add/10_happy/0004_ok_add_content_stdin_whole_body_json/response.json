@@ -19,7 +19,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:bb340148045c6d04218f714b8a78941e74f06abbb4331d21fd6717eb957875f1",
+    "revision": "sha256:d97724f84cd3c75553384ccf4685789d0c966c55cc8578644a51b16c44382ed7",
     "slug": "content-stdin",
     "type": "feature",
     "updatedDate": "2026-03-10"
@@ -28,5 +28,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }
