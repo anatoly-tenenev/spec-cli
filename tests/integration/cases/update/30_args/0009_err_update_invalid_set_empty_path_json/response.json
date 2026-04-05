@@ -5,7 +5,7 @@
       "value": "=active"
     },
     "exit_code": 2,
-    "message": "write operation must match \u003cpath=value\u003e"
+    "message": "write operation must match <path=value>"
   },
   "result_state": "invalid"
 }

@@ -17,7 +17,7 @@
     "slug": "ops-runbook",
     "createdDate": "2026-01-10",
     "updatedDate": "2026-04-02",
-    "revision": "sha256:<opaque>",
+    "revision": "sha256:def6131328f8a31bf0286cde9c6f93c147bfce3a4a8b6a3b3bddc2ab43ad46c4",
     "meta": {
       "owner": "team-ops",
       "trigger": "active"
@@ -27,5 +27,13 @@
   "validation": {
     "ok": true,
     "issues": []
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

@@ -20,7 +20,7 @@
         }
       ]
     },
-    "revision": "sha256:16e7a41f6cbf28c6b9239c2dfda2e7d056387f31634bc736a390622d874dcea4",
+    "revision": "sha256:cbfb7845b54514cc676b18c4241457b685a408a6bdb99fc41650198ee3a2912e",
     "slug": "idempotency-keys",
     "type": "feature",
     "updatedDate": "2026-03-01"
@@ -31,5 +31,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

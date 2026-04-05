@@ -23,7 +23,7 @@ import (
 
 func Execute(
 	opts model.Options,
-	schema model.Schema,
+	writeCapability model.WriteCapability,
 	snapshot model.Snapshot,
 	now func() time.Time,
 ) (map[string]any, *domainerrors.AppError) {
@@ -65,7 +65,7 @@ func Execute(
 		)
 	}
 
-	typeSpec, knownType := schema.EntityTypes[entityType]
+	typeSpec, knownType := writeCapability.EntityTypes[entityType]
 	if !knownType {
 		return nil, domainerrors.New(
 			domainerrors.CodeEntityTypeUnknown,

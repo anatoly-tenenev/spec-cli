@@ -1,7 +1,7 @@
 package model
 
+import schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
 import domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
-import commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 
 type Options struct {
 	ID             string
@@ -35,77 +35,23 @@ const (
 	BodyOperationClear        BodyOperationKind = "clear"
 )
 
-type Schema struct {
-	EntityTypes map[string]EntityTypeSpec
-}
+type WriteCapability = schemacapwrite.Capability
+type EntityTypeSpec = schemacapwrite.EntityWriteModel
 
-type EntityTypeSpec struct {
-	Name              string
-	IDPrefix          string
-	PathPattern       PathPattern
-	MetaFields        map[string]MetaField
-	MetaFieldOrder    []string
-	Sections          map[string]SectionSpec
-	SectionOrder      []string
-	HasContent        bool
-	AllowSetPaths     map[string]WritePathSpec
-	AllowUnsetPaths   map[string]WritePathSpec
-	AllowSetFilePaths map[string]struct{}
-}
-
-type WritePathKind string
+type WritePathKind = schemacapwrite.WritePathKind
 
 const (
-	WritePathMeta    WritePathKind = "meta"
-	WritePathRef     WritePathKind = "ref"
-	WritePathSection WritePathKind = "section"
+	WritePathMeta    WritePathKind = schemacapwrite.WritePathMeta
+	WritePathRef     WritePathKind = schemacapwrite.WritePathRef
+	WritePathSection WritePathKind = schemacapwrite.WritePathSection
 )
 
-type WritePathSpec struct {
-	Kind      WritePathKind
-	FieldName string
-}
-
-type MetaField struct {
-	Name             string
-	Type             string
-	Format           string
-	Required         bool
-	RequiredExpr     *commandexpressions.CompiledExpression
-	Enum             []any
-	HasConst         bool
-	Const            any
-	IsEntityRef      bool
-	IsEntityRefArray bool
-	RefTypes         []string
-	HasItems         bool
-	ItemType         string
-	ItemRefTypes     []string
-	UniqueItems      bool
-	HasMinItems      bool
-	MinItems         int
-	HasMaxItems      bool
-	MaxItems         int
-}
-
-type SectionSpec struct {
-	Name         string
-	Titles       []string
-	Required     bool
-	RequiredExpr *commandexpressions.CompiledExpression
-}
-
-type PathPattern struct {
-	Cases []PathPatternCase
-}
-
-type PathPatternCase struct {
-	Use         string
-	UseTemplate *commandexpressions.CompiledTemplate
-	HasWhen     bool
-	When        bool
-	WhenExpr    *commandexpressions.CompiledExpression
-}
+type WritePathSpec = schemacapwrite.WritePathSpec
+type MetaField = schemacapwrite.MetaField
+type SectionSpec = schemacapwrite.SectionSpec
+type RuleValue = schemacapwrite.RuleValue
+type PathPattern = schemacapwrite.PathPattern
+type PathPatternCase = schemacapwrite.PathPatternCase
 
 type Snapshot struct {
 	WorkspacePath string

@@ -25,7 +25,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:ff245d9c6308d164bafcaa5703e5a7a02e3fa56ad2f4b0f0aa9874ef4e0ff414",
+    "revision": "sha256:4b02fb87974f89ec6be1faff3f4276f44899fcde6a20bc8e1082cfd1d13fcebd",
     "slug": "idempotency-keys",
     "type": "feature",
     "updatedDate": "2026-03-14"
@@ -36,5 +36,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

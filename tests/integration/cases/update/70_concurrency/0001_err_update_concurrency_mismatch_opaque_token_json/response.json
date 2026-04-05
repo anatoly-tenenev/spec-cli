@@ -2,11 +2,19 @@
   "error": {
     "code": "CONCURRENCY_CONFLICT",
     "details": {
-      "current_revision": "sha256:d6382f3e3d2e60d89dc17e124d284dc0d3e1cca624f3063c9cd9e514a274fa6f",
+      "current_revision": "sha256:5b4202f00a53746538e0d43c07839ac4b5b028fea057826095dbc91966f984e5",
       "expected_revision": "sha256:wrong"
     },
     "exit_code": 1,
     "message": "--expect-revision does not match current revision"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

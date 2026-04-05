@@ -15,7 +15,7 @@
       "title": "Weekly sync"
     },
     "refs": {},
-    "revision": "sha256:bbed15b85a39e988a80c29e86249f619dbf9697367803d518f14441d43659bc3",
+    "revision": "sha256:9a89edd04dd69e8e7b879d14411e6b3d4581ea9d8ca3c0f4c4eea9bcf1e2ad50",
     "slug": "weekly-sync",
     "type": "memo",
     "updatedDate": "2026-03-14"
@@ -26,5 +26,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

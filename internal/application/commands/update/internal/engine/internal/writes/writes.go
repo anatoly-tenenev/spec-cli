@@ -184,12 +184,7 @@ func preflight(
 	operations := make([]preparedOperation, 0, len(opts.Operations))
 
 	for _, op := range opts.Operations {
-		allowedPaths := typeSpec.AllowSetPaths
-		if op.Kind == model.WriteOperationUnset {
-			allowedPaths = typeSpec.AllowUnsetPaths
-		}
-
-		writeSpec, exists := allowedPaths[op.Path]
+		writeSpec, exists := typeSpec.AllowWritePaths[op.Path]
 		if !exists {
 			if isForbiddenWritePath(op.Path) {
 				return nil, "", domainerrors.New(
@@ -198,6 +193,15 @@ func preflight(
 					map[string]any{"path": op.Path},
 				)
 			}
+		}
+		if op.Kind == model.WriteOperationUnset && !containsPath(typeSpec.UnsetPaths, op.Path) {
+			return nil, "", domainerrors.New(
+				domainerrors.CodeWriteContractViolation,
+				fmt.Sprintf("write path '%s' is not allowed", op.Path),
+				map[string]any{"path": op.Path},
+			)
+		}
+		if op.Kind != model.WriteOperationUnset && !containsPath(typeSpec.SetPaths, op.Path) {
 			return nil, "", domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
 				fmt.Sprintf("write path '%s' is not allowed", op.Path),
@@ -371,8 +375,6 @@ func isTypeCompatible(field model.MetaField, rawValue any) bool {
 	case "boolean":
 		_, ok := value.(bool)
 		return ok
-	case "null":
-		return value == nil
 	case "array":
 		_, ok := value.([]any)
 		return ok
@@ -415,6 +417,15 @@ func isForbiddenWritePath(path string) bool {
 			case "id", "type", "slug":
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func containsPath(paths []string, target string) bool {
+	for _, path := range paths {
+		if path == target {
+			return true
 		}
 	}
 	return false

@@ -4,9 +4,9 @@ import (
 	"path"
 	"strings"
 
-	commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
+	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -26,18 +26,18 @@ func Evaluate(
 		case !pathCase.HasWhen:
 			shouldUse = true
 		case pathCase.WhenExpr != nil:
-			whenValue, evalErr := commandexpressions.Evaluate(pathCase.WhenExpr, evaluationContext)
+			whenValue, evalErr := schemaexpressions.Evaluate(pathCase.WhenExpr, evaluationContext)
 			if evalErr != nil {
 				pathIssues = append(pathIssues, issues.New(
 					"instance.pathTemplate.when_evaluation_failed",
 					"failed to evaluate pathTemplate.when expression",
 					"12.4",
-					"schema.pathTemplate.when",
+					schemaPathOrDefault(pathCase.WhenPath, "schema.pathTemplate.when"),
 					candidate,
 				))
 				continue
 			}
-			shouldUse = commandexpressions.IsTruthy(whenValue)
+			shouldUse = schemaexpressions.IsTruthy(whenValue)
 		default:
 			shouldUse = pathCase.When
 		}
@@ -59,13 +59,13 @@ func Evaluate(
 		return "", pathIssues
 	}
 
-	rendered, renderErr := commandexpressions.RenderTemplate(selectedCase.UseTemplate, evaluationContext)
+	rendered, renderErr := schemaexpressions.RenderTemplate(selectedCase.UseTemplate, evaluationContext)
 	if renderErr != nil {
 		pathIssues = append(pathIssues, issues.New(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate placeholder cannot be resolved: "+renderErrorLabel(renderErr),
 			"12.4",
-			"schema.pathTemplate",
+			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))
 		return "", pathIssues
@@ -77,7 +77,7 @@ func Evaluate(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate resolved outside workspace",
 			"12.4",
-			"schema.pathTemplate",
+			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))
 		return "", pathIssues
@@ -85,7 +85,7 @@ func Evaluate(
 	return normalized, pathIssues
 }
 
-func renderErrorLabel(evalErr *commandexpressions.EvalError) string {
+func renderErrorLabel(evalErr *schemaexpressions.EvalError) string {
 	if evalErr == nil {
 		return "<unknown>"
 	}
@@ -96,4 +96,11 @@ func renderErrorLabel(evalErr *commandexpressions.EvalError) string {
 		return message
 	}
 	return "<unknown>"
+}
+
+func schemaPathOrDefault(path string, fallback string) string {
+	if strings.TrimSpace(path) != "" {
+		return path
+	}
+	return fallback
 }

@@ -25,7 +25,7 @@
         "id": "SVC-2"
       }
     },
-    "revision": "sha256:52a0f37d4d5cb2b42804070eea1e75050dfb67309be6f3abb666f22ce5381bce",
+    "revision": "sha256:f8d49a3279f361078cb5d378fc83d3ae97c5ab6bf4eb42613e161411f746ab1c",
     "slug": "batch-replay",
     "type": "feature",
     "updatedDate": "2026-03-14"
@@ -36,5 +36,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

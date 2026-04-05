@@ -9,7 +9,7 @@
       "field": "content.sections.summary",
       "before_present": true,
       "after_present": false,
-      "before_hash": "sha256:<opaque>",
+      "before_hash": "sha256:21a7731537fcb200c84930b8c6b124db0b76a1706cbd114dccbc42ae78f5e037",
       "after_hash": null
     }
   ],
@@ -19,7 +19,7 @@
     "slug": "ops-runbook",
     "createdDate": "2026-01-10",
     "updatedDate": "2026-04-02",
-    "revision": "sha256:<opaque>",
+    "revision": "sha256:4312ce20cc44ef6e106fa552b1f7aa7e90be6e7266eb6e4b0224d0aebc60bf6b",
     "meta": {
       "owner": "team-ops"
     },
@@ -28,5 +28,13 @@
   "validation": {
     "ok": true,
     "issues": []
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

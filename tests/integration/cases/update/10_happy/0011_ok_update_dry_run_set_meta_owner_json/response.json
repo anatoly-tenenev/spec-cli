@@ -25,7 +25,7 @@
         "id": "SVC-1"
       }
     },
-    "revision": "sha256:c4af12ff22628eb9796cac0c34de4414d4f0c46f73be9170692d5e464febd9ca",
+    "revision": "sha256:9e44530425085ceac4743e7cbec75b52416ce5599f6f265cc74f37c02a176eb9",
     "slug": "retry-window",
     "type": "feature",
     "updatedDate": "2026-03-14"
@@ -36,5 +36,13 @@
   "validation": {
     "issues": [],
     "ok": true
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

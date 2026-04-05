@@ -581,16 +581,15 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> load schema -> build workspace snapshot -> execute.
+    - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared write capability -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
-    - Return contractual JSON response (`updated/noop/changes/entity/validation`) with one domain-error mapping layer.
+    - Return contractual JSON response (`updated/noop/changes/entity/validation`) and include top-level `schema` for every post-compile success/error path.
     - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
   - Subpackages:
     - `update/internal/options` - parse/norm of `update` options and conflict checks.
-    - `update/internal/schema` - raw schema loading and read/write contract building.
     - `update/internal/workspace` - workspace snapshot, frontmatter parsing, section layout.
     - `update/internal/engine` - apply writes, resolve refs/path, full validation, serialize/revision, dry-run/commit.
-    - `update/internal/model` - internal use-case types.
+    - `update/internal/model` - command request/snapshot types + aliases to shared write capability types.
     - `update/internal/support` - YAML/value/collection helpers.
 
 - `internal/application/commands/update/internal/options`
@@ -602,20 +601,6 @@ Compact project map for fast entry into the code.
     - Validate conflicts, duplicate paths, required `--id`, and non-empty patch.
     - Normalize `workspace/schema`, `--content-file`, and `--set-file` with `--require-absolute-paths`.
   - Subpackages: none.
-
-- `internal/application/commands/update/internal/schema`
-  - Entrypoints:
-    - `loader.go` - `Load`
-    - `internal/entity/parser.go` - `ParseType`
-  - Responsibilities:
-    - Read schema, parse YAML/JSON, run deep duplicate-key checks, validate top-level shape.
-    - Build `Schema.EntityTypes` for `update` (`meta/content/pathTemplate/write contract`).
-    - Parse `entity.<type>` including `idPrefix`, `pathTemplate`, `meta.fields`, `content.sections`, allow-set/allow-unset/allow-set-file paths, `array.items.type=entityRef` (`items.refTypes`) projection into `refs.<field>`, and enum/const/ref constraints.
-    - Parse required constraints as `required: boolean | "${expr}"` (default `true`) and reject legacy `required_when` in both `meta.fields` and `content.sections`.
-    - Parse `pathTemplate` with `${expr}` interpolation in `use` and `boolean | "${expr}"` conditions in `cases[].when`, rejecting legacy `{...}` placeholders.
-    - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
-  - Subpackages:
-    - `update/internal/schema/internal/entity` - order-aware entity-type parser and write-contract builder.
 
 - `internal/application/commands/update/internal/workspace`
   - Entrypoints:
@@ -639,8 +624,8 @@ Compact project map for fast entry into the code.
   - Subpackages:
     - `.../writes` - preflight write-contract checks, typed YAML parsing, section/body patching, deterministic diff.
     - `.../refresolve` - scalar and array `entityRef` resolution with deterministic `missing|ambiguous|type_mismatch` diagnostics.
-    - `.../pathcalc` - `pathTemplate` case selection (`when`) and `use` template rendering via shared JMESPath `${expr}` engine, plus workspace-boundary guard.
-    - `.../validation` - built-in/meta/content/global rules, expression-based `required` checks, and section-title checks.
+    - `.../pathcalc` - `pathTemplate` case selection (`when`) and `use` template rendering via shared JMESPath `${expr}` engine, plus workspace-boundary guard; unit coverage asserts compiler-owned `WhenPath`/`UsePath` propagation into runtime issues.
+    - `.../validation` - built-in/meta/content/global rules, expression-based `required` checks, and section-title checks; unit coverage locks template-aware `schema.const`/`schema.enum` interpolation (`happy/mismatch/interpolation failure`) and compiler-owned `RequiredPath` propagation for meta/content required-evaluation failures.
     - `.../storage` - atomic write/move, rollback on rename failure, path conflict checks, test-only write-failure injection.
     - `.../markdown` - canonical frontmatter/body serialization and `revision` computation, including date-literal output for `createdDate`/`updatedDate` (`YYYY-MM-DD`) without RFC3339 expansion.
     - `.../payload` - public `entity` payload.
@@ -651,7 +636,7 @@ Compact project map for fast entry into the code.
   - Entrypoint: `types.go` - package-visible command-state structs.
   - Responsibilities:
     - Patch-option types (`WriteOperation`, `BodyOperation`) and normalized request state.
-    - Schema read/write model types (`EntityTypeSpec`, `MetaField`, `SectionSpec`, `PathPattern`, write-path specs).
+    - Aliases from shared write capability (`EntityTypeSpec`, `MetaField`, `SectionSpec`, `PathPattern`, write-path specs, `RuleValue`) used by update runtime.
     - Workspace snapshot and candidate-entity types (`WorkspaceEntity`, `TargetMatch`, `Candidate`, `ResolvedRef`).
   - Subpackages: none.
 
@@ -663,7 +648,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - YAML AST helpers, including deep duplicate-key traversal, and typed YAML value parsing.
     - Value normalization/comparison for patch and validation flows.
-    - Shared assembly of `validation.issues` payload for schema and runtime errors.
+    - Shared map/value helpers reused by workspace parsing, patch application, and validation logic.
   - Subpackages: none.
 
 - `internal/application/commands/version`
@@ -830,7 +815,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/update/60_lookup/*` - `update` lookup failures.
     - `tests/integration/cases/update/70_concurrency/*` - optimistic concurrency.
     - `tests/integration/cases/update/80_fs/*` - filesystem failures.
-    - `tests/integration/cases/update/90_infra/*` - infrastructure failures.
+    - `tests/integration/cases/update/90_infra/*` - infrastructure failures, including strict global `SCHEMA_INVALID` blocking on unused-entity schema errors before update snapshot/write execution.
     - `tests/integration/cases/delete/10_happy/*` - happy-path `delete`.
     - `tests/integration/cases/delete/20_args/*` - `delete` argument failures.
     - `tests/integration/cases/delete/30_lookup/*` - `delete` lookup diagnostics.

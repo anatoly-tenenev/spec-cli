@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	commandexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
 	updateworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
+	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -120,7 +120,7 @@ func Validate(
 				"meta.required_expression_evaluation_failed",
 				fmt.Sprintf("failed to evaluate required for field '%s'", fieldName),
 				"11.6",
-				"schema.meta.fields."+fieldName+".required",
+				schemaPathOrDefault(fieldSpec.RequiredPath, "schema.meta.fields."+fieldName+".required"),
 				candidate,
 			))
 			required = false
@@ -141,7 +141,7 @@ func Validate(
 			continue
 		}
 
-		validationIssues = append(validationIssues, validateMetaFieldValue(fieldSpec, value, candidate)...)
+		validationIssues = append(validationIssues, validateMetaFieldValue(fieldSpec, value, candidate, evaluationContext)...)
 	}
 
 	sections, duplicateLabels := updateworkspace.ExtractSections(candidate.Body)
@@ -169,7 +169,7 @@ func Validate(
 				"content.required_expression_evaluation_failed",
 				fmt.Sprintf("failed to evaluate required for section '%s'", sectionName),
 				"11.6",
-				"schema.content.sections."+sectionName+".required",
+				schemaPathOrDefault(sectionSpec.RequiredPath, "schema.content.sections."+sectionName+".required"),
 				candidate,
 			))
 			required = false
@@ -228,21 +228,56 @@ func AsAppError(issuesList []domainvalidation.Issue) *domainerrors.AppError {
 
 func evaluateRequiredConstraint(
 	literal bool,
-	expression *commandexpressions.CompiledExpression,
+	expression *schemaexpressions.CompiledExpression,
 	context map[string]any,
-) (bool, *commandexpressions.EvalError) {
+) (bool, *schemaexpressions.EvalError) {
 	if expression == nil {
 		return literal, nil
 	}
 
-	value, evalErr := commandexpressions.Evaluate(expression, context)
+	value, evalErr := schemaexpressions.Evaluate(expression, context)
 	if evalErr != nil {
 		return false, evalErr
 	}
-	return commandexpressions.IsTruthy(value), nil
+	return schemaexpressions.IsTruthy(value), nil
 }
 
-func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *model.Candidate) []domainvalidation.Issue {
+func resolveRuleValues(values []model.RuleValue, context map[string]any) ([]any, *schemaexpressions.EvalError) {
+	if len(values) == 0 {
+		return nil, nil
+	}
+
+	resolved := make([]any, 0, len(values))
+	for _, value := range values {
+		resolvedValue, resolveErr := resolveRuleValue(value, context)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		resolved = append(resolved, resolvedValue)
+	}
+
+	return resolved, nil
+}
+
+func resolveRuleValue(value model.RuleValue, context map[string]any) (any, *schemaexpressions.EvalError) {
+	if value.Template == nil {
+		return value.Literal, nil
+	}
+
+	rendered, renderErr := schemaexpressions.RenderTemplate(value.Template, context)
+	if renderErr != nil {
+		return nil, renderErr
+	}
+
+	return rendered, nil
+}
+
+func validateMetaFieldValue(
+	fieldSpec model.MetaField,
+	rawValue any,
+	candidate *model.Candidate,
+	evaluationContext map[string]any,
+) []domainvalidation.Issue {
 	issuesList := make([]domainvalidation.Issue, 0)
 	value := support.NormalizeValue(rawValue)
 
@@ -273,10 +308,6 @@ func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *
 	case "boolean":
 		if _, ok := value.(bool); !ok {
 			typeMismatch("boolean")
-		}
-	case "null":
-		if value != nil {
-			typeMismatch("null")
 		}
 	case "entityRef":
 		text, ok := value.(string)
@@ -340,14 +371,25 @@ func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *
 	}
 
 	if len(fieldSpec.Enum) > 0 {
+		resolvedEnum, enumResolveErr := resolveRuleValues(fieldSpec.Enum, evaluationContext)
+		if enumResolveErr != nil {
+			issuesList = append(issuesList, issues.New(
+				"meta.required_enum_interpolation_failed",
+				fmt.Sprintf("field '%s' enum interpolation failed: %s", fieldSpec.Name, enumResolveErr.Message),
+				"9.4",
+				"frontmatter."+fieldSpec.Name,
+				candidate,
+			))
+		}
+
 		matched := false
-		for _, enumValue := range fieldSpec.Enum {
+		for _, enumValue := range resolvedEnum {
 			if support.LiteralEqual(enumValue, value) {
 				matched = true
 				break
 			}
 		}
-		if !matched {
+		if enumResolveErr == nil && !matched {
 			issuesList = append(issuesList, issues.New(
 				"meta.required_enum_mismatch",
 				fmt.Sprintf("field '%s' value is outside enum", fieldSpec.Name),
@@ -358,14 +400,25 @@ func validateMetaFieldValue(fieldSpec model.MetaField, rawValue any, candidate *
 		}
 	}
 
-	if fieldSpec.HasConst && !support.LiteralEqual(fieldSpec.Const, value) {
-		issuesList = append(issuesList, issues.New(
-			"meta.required_value_mismatch",
-			fmt.Sprintf("field '%s' must match schema const", fieldSpec.Name),
-			"11.5",
-			"frontmatter."+fieldSpec.Name,
-			candidate,
-		))
+	if fieldSpec.HasConst {
+		resolvedConst, constResolveErr := resolveRuleValue(fieldSpec.Const, evaluationContext)
+		if constResolveErr != nil {
+			issuesList = append(issuesList, issues.New(
+				"meta.required_const_interpolation_failed",
+				fmt.Sprintf("field '%s' const interpolation failed: %s", fieldSpec.Name, constResolveErr.Message),
+				"9.4",
+				"frontmatter."+fieldSpec.Name,
+				candidate,
+			))
+		} else if !support.LiteralEqual(resolvedConst, value) {
+			issuesList = append(issuesList, issues.New(
+				"meta.required_value_mismatch",
+				fmt.Sprintf("field '%s' must match schema const", fieldSpec.Name),
+				"11.5",
+				"frontmatter."+fieldSpec.Name,
+				candidate,
+			))
+		}
 	}
 
 	return issuesList
@@ -388,8 +441,6 @@ func isValueOfType(value any, typeName string) bool {
 	case "boolean":
 		_, ok := value.(bool)
 		return ok
-	case "null":
-		return value == nil
 	case "entityRef":
 		text, ok := value.(string)
 		return ok && strings.TrimSpace(text) != ""
@@ -428,6 +479,13 @@ func contains(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func schemaPathOrDefault(path string, fallback string) string {
+	if strings.TrimSpace(path) != "" {
+		return path
+	}
+	return fallback
 }
 
 func hasIDConflict(existing []model.WorkspaceEntity, sourcePath string) bool {
