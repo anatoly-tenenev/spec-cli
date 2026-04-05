@@ -1,0 +1,15 @@
+version: "0.0.4"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}/index.md"
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        container:
+          required: true
+          schema:
+            type: entityRef
+            refTypes: [feature]

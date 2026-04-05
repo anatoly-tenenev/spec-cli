@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "reason": "permission denied"
+    },
+    "exit_code": 3,
+    "message": "failed to read workspace document"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

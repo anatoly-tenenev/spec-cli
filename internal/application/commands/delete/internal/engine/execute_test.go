@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/model"
+	schemacapreferences "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/references"
+	schemamodel "github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -37,7 +39,7 @@ func TestExecuteReverseRefChecksDeclaredSlotsOnly(t *testing.T) {
 	t.Run("no declared slots means no blocking", func(t *testing.T) {
 		payload, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{ReferenceSlotsByType: map[string][]model.ReferenceSlot{}},
+			emptyReferencesCapability(),
 			snapshot,
 		)
 		if appErr != nil {
@@ -51,11 +53,11 @@ func TestExecuteReverseRefChecksDeclaredSlotsOnly(t *testing.T) {
 	t.Run("declared scalar slot blocks delete", func(t *testing.T) {
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{
-				ReferenceSlotsByType: map[string][]model.ReferenceSlot{
-					"note": {{FieldName: "container", Kind: model.ReferenceSlotScalar}},
+			capabilityWithSourceSlots(map[string][]schemacapreferences.SourceSlot{
+				"note": {
+					{FieldName: "container", Cardinality: schemamodel.RefCardinalityScalar},
 				},
-			},
+			}),
 			snapshot,
 		)
 		if appErr == nil {
@@ -83,9 +85,9 @@ func TestExecuteDryRunAndRealRunSharePipelineUntilCommit(t *testing.T) {
 		}},
 		TargetMatches: []model.TargetMatch{{PathAbs: targetPath}},
 	}
-	schema := model.Schema{ReferenceSlotsByType: map[string][]model.ReferenceSlot{}}
+	referencesCapability := emptyReferencesCapability()
 
-	dryPayload, dryErr := Execute(model.Options{ID: "SVC-2", DryRun: true}, schema, snapshot)
+	dryPayload, dryErr := Execute(model.Options{ID: "SVC-2", DryRun: true}, referencesCapability, snapshot)
 	if dryErr != nil {
 		t.Fatalf("dry-run failed: %v", dryErr)
 	}
@@ -93,7 +95,7 @@ func TestExecuteDryRunAndRealRunSharePipelineUntilCommit(t *testing.T) {
 		t.Fatalf("dry-run must not delete target, stat err=%v", statErr)
 	}
 
-	realPayload, realErr := Execute(model.Options{ID: "SVC-2", DryRun: false}, schema, snapshot)
+	realPayload, realErr := Execute(model.Options{ID: "SVC-2", DryRun: false}, referencesCapability, snapshot)
 	if realErr != nil {
 		t.Fatalf("real run failed: %v", realErr)
 	}
@@ -110,11 +112,59 @@ func TestExecuteDryRunAndRealRunSharePipelineUntilCommit(t *testing.T) {
 	}
 }
 
+func TestExecuteReverseRefsDoNotFilterByTargetType(t *testing.T) {
+	targetPath := "/tmp/target-filter.md"
+	capability := schemacapreferences.Build(schemamodel.CompiledSchema{
+		Entities: map[string]schemamodel.EntityType{
+			"feature": {
+				MetaFields: map[string]schemamodel.MetaField{
+					"container": {
+						Value: schemamodel.ValueSpec{
+							Kind: schemamodel.ValueKindEntityRef,
+							Ref: &schemamodel.RefSpec{
+								Cardinality:  schemamodel.RefCardinalityScalar,
+								AllowedTypes: []string{"feature"},
+							},
+						},
+					},
+				},
+			},
+			"service": {},
+		},
+	})
+
+	_, appErr := Execute(
+		model.Options{ID: "SVC-1", DryRun: true},
+		capability,
+		model.Snapshot{
+			Documents: []model.ParsedDocument{
+				{
+					PathAbs:  targetPath,
+					Type:     "service",
+					ID:       "SVC-1",
+					Revision: "sha256:target",
+				},
+				{
+					PathAbs:  "/tmp/source-filter.md",
+					Type:     "feature",
+					ID:       "FEAT-1",
+					Revision: "sha256:source",
+					Frontmatter: map[string]any{
+						"container": "SVC-1",
+					},
+				},
+			},
+			TargetMatches: []model.TargetMatch{{PathAbs: targetPath}},
+		},
+	)
+	assertErrorCode(t, appErr, domainerrors.CodeDeleteBlockedByRefs)
+}
+
 func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 	t.Run("ENTITY_NOT_FOUND", func(t *testing.T) {
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{},
+			emptyReferencesCapability(),
 			model.Snapshot{},
 		)
 		assertErrorCode(t, appErr, domainerrors.CodeEntityNotFound)
@@ -123,7 +173,7 @@ func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 	t.Run("AMBIGUOUS_ENTITY_ID", func(t *testing.T) {
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{},
+			emptyReferencesCapability(),
 			model.Snapshot{
 				TargetMatches: []model.TargetMatch{
 					{PathAbs: "/tmp/a.md"},
@@ -138,7 +188,7 @@ func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 		targetPath := "/tmp/target-revision-unavailable.md"
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{},
+			emptyReferencesCapability(),
 			model.Snapshot{
 				Documents: []model.ParsedDocument{{
 					PathAbs:  targetPath,
@@ -156,7 +206,7 @@ func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 		targetPath := "/tmp/target-concurrency.md"
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", ExpectRevision: "sha256:expected", DryRun: true},
-			model.Schema{},
+			emptyReferencesCapability(),
 			model.Snapshot{
 				Documents: []model.ParsedDocument{{
 					PathAbs:  targetPath,
@@ -174,11 +224,11 @@ func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 		targetPath := "/tmp/target-blocked.md"
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: true},
-			model.Schema{
-				ReferenceSlotsByType: map[string][]model.ReferenceSlot{
-					"feature": {{FieldName: "container", Kind: model.ReferenceSlotScalar}},
+			capabilityWithSourceSlots(map[string][]schemacapreferences.SourceSlot{
+				"feature": {
+					{FieldName: "container", Cardinality: schemamodel.RefCardinalityScalar},
 				},
-			},
+			}),
 			model.Snapshot{
 				Documents: []model.ParsedDocument{
 					{
@@ -208,7 +258,7 @@ func TestExecuteReturnsStableDomainCodes(t *testing.T) {
 		missingPath := filepath.Join(tempDir, "missing-target.md")
 		_, appErr := Execute(
 			model.Options{ID: "SVC-1", DryRun: false},
-			model.Schema{},
+			emptyReferencesCapability(),
 			model.Snapshot{
 				Documents: []model.ParsedDocument{{
 					PathAbs:  missingPath,
@@ -240,4 +290,20 @@ func clonePayload(source map[string]any) map[string]any {
 		cloned[key] = value
 	}
 	return cloned
+}
+
+func emptyReferencesCapability() schemacapreferences.Capability {
+	return schemacapreferences.Capability{
+		InboundByTargetType: map[string][]schemacapreferences.InboundSlot{},
+		SlotsBySourceType:   map[string][]schemacapreferences.SourceSlot{},
+	}
+}
+
+func capabilityWithSourceSlots(
+	slotsBySource map[string][]schemacapreferences.SourceSlot,
+) schemacapreferences.Capability {
+	return schemacapreferences.Capability{
+		InboundByTargetType: map[string][]schemacapreferences.InboundSlot{},
+		SlotsBySourceType:   slotsBySource,
+	}
 }

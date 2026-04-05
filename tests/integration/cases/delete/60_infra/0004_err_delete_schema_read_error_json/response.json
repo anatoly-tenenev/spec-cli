@@ -1,0 +1,24 @@
+{
+  "error": {
+    "code": "SCHEMA_READ_ERROR",
+    "exit_code": 4,
+    "message": "schema file is not readable"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "class": "SchemaError",
+        "code": "schema.source.read_failed",
+        "level": "error",
+        "message": "<workspace>/infra/unreadable.schema.yaml: permission denied",
+        "path": "schema"
+      }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
+  }
+}

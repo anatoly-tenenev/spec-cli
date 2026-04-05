@@ -30,11 +30,3 @@ func FindDuplicateMappingKey(node *yaml.Node) (string, bool) {
 	}
 	return "", false
 }
-
-func ToStringMap(value any) (map[string]any, bool) {
-	mapped, ok := value.(map[string]any)
-	if ok {
-		return mapped, true
-	}
-	return nil, false
-}

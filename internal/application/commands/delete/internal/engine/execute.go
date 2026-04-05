@@ -7,11 +7,17 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/storage"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/workspace"
+	schemacapreferences "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/references"
+	schemamodel "github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-func Execute(opts model.Options, schema model.Schema, snapshot model.Snapshot) (map[string]any, *domainerrors.AppError) {
+func Execute(
+	opts model.Options,
+	referencesCapability schemacapreferences.Capability,
+	snapshot model.Snapshot,
+) (map[string]any, *domainerrors.AppError) {
 	target, locateErr := locateTarget(opts.ID, snapshot)
 	if locateErr != nil {
 		return nil, locateErr
@@ -28,7 +34,7 @@ func Execute(opts model.Options, schema model.Schema, snapshot model.Snapshot) (
 		)
 	}
 
-	blockingRefs := findBlockingReferences(schema, snapshot, target)
+	blockingRefs := findBlockingReferences(referencesCapability, snapshot, target)
 	if len(blockingRefs) > 0 {
 		return nil, domainerrors.New(
 			domainerrors.CodeDeleteBlockedByRefs,
@@ -83,7 +89,7 @@ func locateTarget(requestedID string, snapshot model.Snapshot) (model.ParsedDocu
 }
 
 func findBlockingReferences(
-	schema model.Schema,
+	referencesCapability schemacapreferences.Capability,
 	snapshot model.Snapshot,
 	target model.ParsedDocument,
 ) []model.BlockingReference {
@@ -95,7 +101,7 @@ func findBlockingReferences(
 			continue
 		}
 
-		slots := schema.ReferenceSlotsByType[source.Type]
+		slots := referencesCapability.SlotsBySourceType[source.Type]
 		if len(slots) == 0 {
 			continue
 		}
@@ -106,7 +112,7 @@ func findBlockingReferences(
 				continue
 			}
 
-			if !slotMatchesTarget(rawValue, slot.Kind, target.ID) {
+			if !slotMatchesTarget(rawValue, slot.Cardinality, target.ID) {
 				continue
 			}
 
@@ -136,20 +142,20 @@ func findBlockingReferences(
 	return blocking
 }
 
-func slotMatchesTarget(value any, kind model.ReferenceSlotKind, targetID string) bool {
+func slotMatchesTarget(value any, kind schemamodel.RefCardinality, targetID string) bool {
 	targetID = strings.TrimSpace(targetID)
 	if targetID == "" {
 		return false
 	}
 
 	switch kind {
-	case model.ReferenceSlotScalar:
+	case schemamodel.RefCardinalityScalar:
 		text, ok := value.(string)
 		if !ok {
 			return false
 		}
 		return strings.TrimSpace(text) == targetID
-	case model.ReferenceSlotArray:
+	case schemamodel.RefCardinalityArray:
 		if values, ok := value.([]any); ok {
 			for _, item := range values {
 				text, ok := item.(string)

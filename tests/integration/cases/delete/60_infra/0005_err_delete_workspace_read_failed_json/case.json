@@ -1,0 +1,33 @@
+{
+  "id": "delete_60_0005_err_delete_workspace_read_failed_json",
+  "description": "delete_60_0005_err_delete_workspace_read_failed_json",
+  "command": "delete",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "delete",
+    "--id",
+    "SVC-2"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false,
+    "permissions": [
+      {
+        "path": "docs/broken.md",
+        "mode": "0000"
+      }
+    ]
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-04-05"
+  }
+}

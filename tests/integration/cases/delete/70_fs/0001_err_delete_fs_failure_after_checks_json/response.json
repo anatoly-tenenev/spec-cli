@@ -7,5 +7,13 @@
     "exit_code": 3,
     "message": "injected delete failure before remove commit"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
+  }
 }

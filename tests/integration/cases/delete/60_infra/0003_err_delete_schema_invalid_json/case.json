@@ -1,0 +1,16 @@
+{
+  "id": "delete_60_0003_err_delete_schema_invalid_json",
+  "description": "delete_60_0003_err_delete_schema_invalid_json",
+  "command": "delete",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","delete","--id","SVC-1"],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

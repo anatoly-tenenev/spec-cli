@@ -6,22 +6,6 @@ type Options struct {
 	DryRun         bool
 }
 
-type Schema struct {
-	ReferenceSlotsByType map[string][]ReferenceSlot
-}
-
-type ReferenceSlotKind string
-
-const (
-	ReferenceSlotScalar ReferenceSlotKind = "scalar"
-	ReferenceSlotArray  ReferenceSlotKind = "array"
-)
-
-type ReferenceSlot struct {
-	FieldName string
-	Kind      ReferenceSlotKind
-}
-
 type Snapshot struct {
 	WorkspacePath string
 	Documents     []ParsedDocument

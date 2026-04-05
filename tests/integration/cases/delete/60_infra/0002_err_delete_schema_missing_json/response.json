@@ -1,0 +1,24 @@
+{
+  "error": {
+    "code": "SCHEMA_NOT_FOUND",
+    "exit_code": 4,
+    "message": "schema file does not exist"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "class": "SchemaError",
+        "code": "schema.source.read_failed",
+        "level": "error",
+        "message": "<workspace>/missing.schema.yaml: no such file or directory",
+        "path": "schema"
+      }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
+  }
+}

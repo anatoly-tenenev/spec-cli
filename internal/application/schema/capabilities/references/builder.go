@@ -8,6 +8,7 @@ import (
 
 type Capability struct {
 	InboundByTargetType map[string][]InboundSlot
+	SlotsBySourceType   map[string][]SourceSlot
 }
 
 type InboundSlot struct {
@@ -16,8 +17,16 @@ type InboundSlot struct {
 	Cardinality model.RefCardinality
 }
 
+type SourceSlot struct {
+	FieldName   string
+	Cardinality model.RefCardinality
+}
+
 func Build(compiled model.CompiledSchema) Capability {
-	result := Capability{InboundByTargetType: map[string][]InboundSlot{}}
+	result := Capability{
+		InboundByTargetType: map[string][]InboundSlot{},
+		SlotsBySourceType:   map[string][]SourceSlot{},
+	}
 	allTypes := sortedTypeNames(compiled)
 
 	for _, sourceType := range allTypes {
@@ -27,6 +36,12 @@ func Build(compiled model.CompiledSchema) Capability {
 			if !isRef {
 				continue
 			}
+
+			result.SlotsBySourceType[sourceType] = append(result.SlotsBySourceType[sourceType], SourceSlot{
+				FieldName:   fieldName,
+				Cardinality: cardinality,
+			})
+
 			for _, targetType := range allowedTypes {
 				result.InboundByTargetType[targetType] = append(result.InboundByTargetType[targetType], InboundSlot{
 					SourceType:  sourceType,
@@ -45,6 +60,13 @@ func Build(compiled model.CompiledSchema) Capability {
 			return slots[i].SourceType < slots[j].SourceType
 		})
 		result.InboundByTargetType[targetType] = slots
+	}
+
+	for sourceType, slots := range result.SlotsBySourceType {
+		sort.SliceStable(slots, func(i int, j int) bool {
+			return slots[i].FieldName < slots[j].FieldName
+		})
+		result.SlotsBySourceType[sourceType] = slots
 	}
 
 	return result

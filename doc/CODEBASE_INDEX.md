@@ -17,8 +17,8 @@ Compact project map for fast entry into the code.
 7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile failures stop before plan/workspace and return top-level `error + schema`).
 8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile failures stop before selector/workspace pipeline and return top-level `error + schema`).
 9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
-10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
-11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
+10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
+11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/references.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
 12. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
 
 ## Binary Entrypoint Status
@@ -176,8 +176,9 @@ Compact project map for fast entry into the code.
   - Entrypoint: `builder.go` - `Build`.
   - Responsibilities:
     - Build reverse-reference capability (`inbound slots`) keyed by target entity type.
-    - Distinguish scalar vs array cardinality for inbound reference slots.
-    - Normalize allowed target-type expansion (`refTypes` or all entity types) and deterministic slot ordering.
+    - Build source-oriented slot capability (`slots by source type`) consumed by `delete` reverse-ref scanning.
+    - Distinguish scalar vs array cardinality for both inbound and source slot views.
+    - Normalize allowed target-type expansion (`refTypes` or all entity types) and deterministic slot ordering in both views.
   - Subpackages: none.
 
 - `internal/application/commands/schema`
@@ -500,17 +501,17 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> load schema -> build workspace snapshot -> execute delete/checks.
+    - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build top-level `schema` payload -> build shared references capability -> build workspace snapshot -> execute delete/checks.
+    - Return top-level `schema` in every post-compile response (`success`, compile failure, and post-compile non-schema errors).
     - Map `INVALID_ARGS`, `SCHEMA_*`, `CONCURRENCY_CONFLICT`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
     - Own `delete` help inside shared `help`.
   - Subpackages:
     - `delete/internal/options` - parse/norm of `--id`, `--expect-revision`, `--dry-run`.
-    - `delete/internal/schema` - raw schema loading and reference-slot extraction for reverse-ref checks.
     - `delete/internal/workspace` - deterministic scan, target lookup by `id`, tolerant frontmatter parse, `revision`.
-    - `delete/internal/engine` - target lookup, optimistic concurrency, reverse-ref blocking, dry-run/commit payload.
+    - `delete/internal/engine` - target lookup, optimistic concurrency, reverse-ref blocking from shared source-slot capability, dry-run/commit payload.
     - `delete/internal/storage` - file deletion and filesystem error mapping.
     - `delete/internal/model` - internal use-case types.
-    - `delete/internal/support` - YAML/map parsing helpers.
+    - `delete/internal/support` - YAML AST helpers used by tolerant workspace parsing.
 
 - `internal/application/commands/delete/internal/options`
   - Entrypoints:
@@ -520,15 +521,6 @@ Compact project map for fast entry into the code.
     - Parse and validate `delete` arguments, including `--flag=value`.
     - Enforce required `--id` and normalize boolean `--dry-run`.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
-  - Subpackages: none.
-
-- `internal/application/commands/delete/internal/schema`
-  - Entrypoint: `loader.go` - `Load`.
-  - Responsibilities:
-    - Read schema, parse YAML/JSON AST, and check duplicate keys.
-    - Validate top-level shape (`version/entity/description`) and `schema.entity`.
-    - Extract reference slots for `entityRef` and `array.items.type=entityRef`.
-    - Classify schema failures as `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID`.
   - Subpackages: none.
 
 - `internal/application/commands/delete/internal/workspace`
@@ -561,19 +553,16 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/delete/internal/model`
   - Entrypoint: `types.go` - package-visible command-state structs.
   - Responsibilities:
-    - Command options and schema reference-slot model types.
+    - Command options.
     - Workspace snapshot types.
-    - Blocking-reference diagnostics and related enums.
+    - Blocking-reference diagnostics.
   - Subpackages: none.
 
 - `internal/application/commands/delete/internal/support`
-  - Entrypoints:
-    - `yaml.go` - `FirstContentNode`, `FindDuplicateMappingKey`, `ToStringMap`
-    - `collections.go` - `SortedMapKeys`
+  - Entrypoint: `yaml.go` - `FirstContentNode`, `FindDuplicateMappingKey`
   - Responsibilities:
-    - YAML AST helpers and duplicate-key checks.
-    - Safe conversion of raw YAML values to `map[string]any`.
-    - Stable map-key sorting for deterministic schema traversal.
+    - YAML AST helpers for tolerant frontmatter parsing.
+    - Duplicate-key checks for parsed frontmatter mappings.
   - Subpackages: none.
 
 - `internal/application/commands/update`
@@ -820,8 +809,8 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/delete/20_args/*` - `delete` argument failures.
     - `tests/integration/cases/delete/30_lookup/*` - `delete` lookup diagnostics.
     - `tests/integration/cases/delete/40_concurrency/*` - `delete` concurrency scenarios.
-    - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking.
-    - `tests/integration/cases/delete/60_infra/*` - schema/load failures.
+    - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking, including conservative raw `target.id` blocking from source-declared slots even when `refTypes` does not include the target type.
+    - `tests/integration/cases/delete/60_infra/*` - strict shared-compiler failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_NOT_FOUND`, `SCHEMA_INVALID`, `SCHEMA_READ_ERROR`) with diagnostics carried via top-level `schema.issues`, plus post-compile workspace read failure (`READ_FAILED`) that keeps top-level successful `schema` (`valid=true`, `issues=[]`).
     - `tests/integration/cases/delete/70_fs/*` - delete-time filesystem failures.
     - `tests/integration/cases/delete/80_help/*` - unsupported command-local `delete --help`.
     - `tests/integration/cases/version/10_happy/*` - happy-path `version`.
