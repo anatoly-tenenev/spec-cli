@@ -65,6 +65,7 @@ The command must:
 - if `content.sections.<name>` is selected and the section is missing, the field must be returned as `null`;
 - `get` requires a valid and readable schema;
 - schema errors must terminate the command with a top-level schema error;
+- after schema compile is attempted, every JSON response (success or error) includes top-level `schema` (`valid`, `summary`, `issues`);
 - data-level violations in the target entity do not block `get` by themselves if the requested read fields are still computable;
 - a missing value, including a missing required `meta.<name>`, is treated as an absent value;
 - `get` must not return `ENTITY_NOT_FOUND` for an existing but invalid entity;
@@ -74,16 +75,15 @@ The command must:
 
 The `get` implementation must include the following capabilities.
 
-### 3.1. Schema Loading and Interpretation
+### 3.1. Shared Schema Compile and Read Capability
 
-- read the YAML schema by the effective path;
-- validate that the schema can be used to build the read namespace;
-- extract from the schema:
-  - allowed `entity` types;
-  - `meta.fields` definitions;
-  - `content.sections` definitions;
-  - `entityRef` field types;
-  - read selectors available in the baseline model.
+- run shared `schema.Compile` by the effective schema path;
+- stop `get` on compile errors before selector validation and workspace read;
+- build shared read capability from compiled schema;
+- derive from capability:
+  - active `entity` types;
+  - `meta`/`refs`/`content.sections` read-side semantics;
+  - selector allowlist and scalar/array ref-cardinality constraints.
 
 ### 3.2. Canonical Read Namespace
 
@@ -160,18 +160,18 @@ Result:
   - `workspace_path`
   - `schema_path`
 
-### Layer 2. Schema Read Model
+### Layer 2. Shared Compiler + Read Capability
 
 Responsibilities:
 
-- load the schema;
-- build read capabilities;
-- determine allowed selectors;
-- prepare the rules for computing `meta`, `refs`, and `content.sections`.
+- compile the schema through shared compiler;
+- return top-level `schema` payload (`valid`, `summary`, `issues`);
+- build shared read capability;
+- determine allowed selectors and read rules for `meta`, `refs`, and `content.sections`.
 
 Result:
 
-- a normalized read model suitable for both `get` and `query`.
+- compiled schema diagnostics and read capability suitable for both `get` and `query`.
 
 ### Layer 3. Entity Locator
 

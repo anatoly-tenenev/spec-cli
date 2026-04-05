@@ -1,0 +1,15 @@
+{
+  "id": "get_10_0009_ok_get_default_schema_warning_json",
+  "description": "get_10_0009_ok_get_default_schema_warning_json",
+  "command": "get",
+  "args": ["--workspace", "${WORKSPACE}", "--schema", "${SCHEMA}", "get", "--format", "json", "--id", "FEAT-8"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,21 +1,24 @@
 {
   "error": {
     "code": "SCHEMA_NOT_FOUND",
-    "details": {
-      "reason": "open missing.schema.yaml: no such file or directory",
-      "validation": {
-        "issues": [
-          {
-            "class": "SchemaError",
-            "level": "error",
-            "message": "schema file is not readable",
-            "standard_ref": "7"
-          }
-        ]
-      }
-    },
     "exit_code": 4,
-    "message": "schema file is not readable"
+    "message": "schema file does not exist"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "class": "SchemaError",
+        "code": "schema.source.read_failed",
+        "level": "error",
+        "message": "schema file is not readable: open missing.schema.yaml: no such file or directory",
+        "path": "schema"
+      }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
+  }
 }

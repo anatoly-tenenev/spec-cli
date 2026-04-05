@@ -16,5 +16,13 @@
   "target": {
     "id": "FEAT-8",
     "match_by": "id"
+  },
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -18,6 +19,19 @@ var defaultSelectors = []string{
 	"refs",
 }
 
+var builtinSelectors = []string{
+	"type",
+	"id",
+	"slug",
+	"createdDate",
+	"updatedDate",
+	"revision",
+	"meta",
+	"refs",
+	"content.raw",
+	"content.sections",
+}
+
 var refLeafSelectors = map[string]struct{}{
 	"id":       {},
 	"resolved": {},
@@ -26,16 +40,19 @@ var refLeafSelectors = map[string]struct{}{
 	"reason":   {},
 }
 
-func BuildSelectorPlan(rawSelectors []string, readModel model.ReadModel) (model.SelectorPlan, *domainerrors.AppError) {
+func BuildSelectorPlan(rawSelectors []string, readCapability schemacapread.Capability) (model.SelectorPlan, *domainerrors.AppError) {
 	selectors := rawSelectors
 	if len(selectors) == 0 {
 		selectors = append([]string(nil), defaultSelectors...)
 	}
 
+	activeTypeSet := support.SortedMapKeys(readCapability.EntityTypes)
+	allowedSelectors := buildAllowedSelectors(readCapability, activeTypeSet)
+
 	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
 	for _, selector := range selectors {
 		normalized := strings.TrimSpace(selector)
-		if err := validateSelector(normalized, readModel); err != nil {
+		if err := validateSelector(normalized, allowedSelectors, readCapability, activeTypeSet); err != nil {
 			return model.SelectorPlan{}, err
 		}
 		insertSelector(root, strings.Split(normalized, "."))
@@ -107,8 +124,13 @@ func BuildSelectorPlan(rawSelectors []string, readModel model.ReadModel) (model.
 	}, nil
 }
 
-func validateSelector(selector string, readModel model.ReadModel) *domainerrors.AppError {
-	if _, exists := readModel.AllowedSelectors[selector]; !exists {
+func validateSelector(
+	selector string,
+	allowedSelectors map[string]struct{},
+	readCapability schemacapread.Capability,
+	activeTypeSet []string,
+) *domainerrors.AppError {
+	if _, exists := allowedSelectors[selector]; !exists {
 		return domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			fmt.Sprintf("unknown selector '%s'", selector),
@@ -125,7 +147,7 @@ func validateSelector(selector string, readModel model.ReadModel) *domainerrors.
 		return nil
 	}
 
-	compatible, exists := refLeafCompatibility(parts[1], readModel)
+	compatible, exists := refLeafCompatibility(parts[1], readCapability, activeTypeSet)
 	if !exists {
 		return domainerrors.New(
 			domainerrors.CodeInvalidArgs,
@@ -144,16 +166,51 @@ func validateSelector(selector string, readModel model.ReadModel) *domainerrors.
 	)
 }
 
-func refLeafCompatibility(refField string, readModel model.ReadModel) (compatible bool, exists bool) {
+func buildAllowedSelectors(
+	readCapability schemacapread.Capability,
+	activeTypeSet []string,
+) map[string]struct{} {
+	allowedSelectors := map[string]struct{}{}
+	for _, selector := range builtinSelectors {
+		allowedSelectors[selector] = struct{}{}
+	}
+
+	for _, typeName := range activeTypeSet {
+		entityType := readCapability.EntityTypes[typeName]
+		for field := range entityType.MetaFields {
+			allowedSelectors["meta."+field] = struct{}{}
+		}
+		for field, refSpec := range entityType.RefFields {
+			allowedSelectors["refs."+field] = struct{}{}
+			if refSpec.Cardinality == schemacapread.RefCardinalityArray {
+				continue
+			}
+			for leaf := range refLeafSelectors {
+				allowedSelectors["refs."+field+"."+leaf] = struct{}{}
+			}
+		}
+		for section := range entityType.Sections {
+			allowedSelectors["content.sections."+section] = struct{}{}
+		}
+	}
+
+	return allowedSelectors
+}
+
+func refLeafCompatibility(
+	refField string,
+	readCapability schemacapread.Capability,
+	activeTypeSet []string,
+) (compatible bool, exists bool) {
 	hasScalar := false
-	for _, typeName := range support.SortedMapKeys(readModel.EntityTypes) {
-		entityType := readModel.EntityTypes[typeName]
+	for _, typeName := range activeTypeSet {
+		entityType := readCapability.EntityTypes[typeName]
 		refSpec, present := entityType.RefFields[refField]
 		if !present {
 			continue
 		}
 		exists = true
-		if refSpec.Cardinality == model.RefCardinalityArray {
+		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 			return false, true
 		}
 		hasScalar = true

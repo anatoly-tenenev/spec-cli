@@ -6,6 +6,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -25,11 +26,11 @@ type resolvedRef struct {
 
 func BuildEntityView(
 	target model.ParsedTarget,
-	readModel model.ReadModel,
+	readCapability schemacapread.Capability,
 	identityIndex map[string][]model.EntityIdentity,
 	plan model.SelectorPlan,
 ) (map[string]any, *domainerrors.AppError) {
-	entityType, exists := readModel.EntityTypes[target.Type]
+	entityType, exists := readCapability.EntityTypes[target.Type]
 	if !exists {
 		return nil, newReadError(
 			"failed to determine entity type",
@@ -93,7 +94,7 @@ func BuildEntityView(
 	return view, nil
 }
 
-func buildMeta(frontmatter map[string]any, allowedFields map[string]struct{}) map[string]any {
+func buildMeta(frontmatter map[string]any, allowedFields map[string]schemacapread.MetaField) map[string]any {
 	meta := map[string]any{}
 	for _, field := range support.SortedMapKeys(allowedFields) {
 		value, exists := frontmatter[field]
@@ -108,7 +109,7 @@ func buildMeta(frontmatter map[string]any, allowedFields map[string]struct{}) ma
 func resolveRefs(
 	frontmatter map[string]any,
 	identityIndex map[string][]model.EntityIdentity,
-	requestedFields map[string]model.RefFieldSpec,
+	requestedFields map[string]schemacapread.RefField,
 ) (map[string]any, *domainerrors.AppError) {
 	refs := map[string]any{}
 	for _, refField := range support.SortedMapKeys(requestedFields) {
@@ -119,7 +120,7 @@ func resolveRefs(
 			continue
 		}
 
-		if refSpec.Cardinality == model.RefCardinalityArray {
+		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 			refValue, refErr := resolveArrayRefValue(rawTarget, refSpec, identityIndex, refField)
 			if refErr != nil {
 				return nil, refErr
@@ -139,7 +140,7 @@ func resolveRefs(
 
 func resolveScalarRefValue(
 	rawTarget any,
-	refSpec model.RefFieldSpec,
+	refSpec schemacapread.RefField,
 	identityIndex map[string][]model.EntityIdentity,
 	refField string,
 ) (any, *domainerrors.AppError) {
@@ -157,7 +158,7 @@ func resolveScalarRefValue(
 
 func resolveArrayRefValue(
 	rawTarget any,
-	refSpec model.RefFieldSpec,
+	refSpec schemacapread.RefField,
 	identityIndex map[string][]model.EntityIdentity,
 	refField string,
 ) (any, *domainerrors.AppError) {
@@ -186,9 +187,9 @@ func resolveArrayRefValue(
 	return resolvedItems, nil
 }
 
-func classifyResolvedRef(targetID string, refSpec model.RefFieldSpec, identityIndex map[string][]model.EntityIdentity) resolvedRef {
+func classifyResolvedRef(targetID string, refSpec schemacapread.RefField, identityIndex map[string][]model.EntityIdentity) resolvedRef {
 	targets := identityIndex[targetID]
-	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.RefTypes)
+	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.AllowedTypes)
 
 	if len(compatibleTargets) == 1 {
 		target := compatibleTargets[0]
@@ -212,7 +213,7 @@ func classifyResolvedRef(targetID string, refSpec model.RefFieldSpec, identityIn
 	return resolvedRef{
 		ID:       targetID,
 		Resolved: false,
-		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.RefTypes),
+		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.AllowedTypes),
 		Slug:     nil,
 		Reason:   reason,
 	}
@@ -231,8 +232,8 @@ func toPublicRefObject(ref resolvedRef) map[string]any {
 	return value
 }
 
-func buildRequestedRefFields(refFields map[string]model.RefFieldSpec, plan model.SelectorPlan) map[string]model.RefFieldSpec {
-	requested := map[string]model.RefFieldSpec{}
+func buildRequestedRefFields(refFields map[string]schemacapread.RefField, plan model.SelectorPlan) map[string]schemacapread.RefField {
+	requested := map[string]schemacapread.RefField{}
 	if plan.RequiresAllRefFields {
 		for field, spec := range refFields {
 			requested[field] = spec

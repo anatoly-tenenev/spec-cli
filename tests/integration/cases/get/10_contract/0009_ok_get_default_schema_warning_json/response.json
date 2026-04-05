@@ -22,10 +22,18 @@
     "match_by": "id"
   },
   "schema": {
-    "issues": [],
+    "issues": [
+      {
+        "level": "warning",
+        "class": "SchemaWarning",
+        "code": "schema.top_level.version_missing",
+        "message": "schema.version is recommended",
+        "path": "schema.version"
+      }
+    ],
     "summary": {
       "errors": 0,
-      "warnings": 0
+      "warnings": 1
     },
     "valid": true
   }

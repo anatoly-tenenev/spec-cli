@@ -24,31 +24,6 @@ type SelectorPlan struct {
 	RequiresContentRaw   bool
 }
 
-type RefCardinality string
-
-const (
-	RefCardinalityScalar RefCardinality = "scalar"
-	RefCardinalityArray  RefCardinality = "array"
-)
-
-type RefFieldSpec struct {
-	Name        string
-	Cardinality RefCardinality
-	RefTypes    []string
-}
-
-type EntityTypeSpec struct {
-	Name          string
-	MetaFields    map[string]struct{}
-	RefFields     map[string]RefFieldSpec
-	SectionFields map[string]struct{}
-}
-
-type ReadModel struct {
-	EntityTypes      map[string]EntityTypeSpec
-	AllowedSelectors map[string]struct{}
-}
-
 type EntityIdentity struct {
 	Type string
 	ID   string

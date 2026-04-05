@@ -15,7 +15,7 @@ Compact project map for fast entry into the code.
 5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema`, otherwise return success `schema` block.
 6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile failures stop before plan/workspace and return top-level `error + schema`).
-8. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
+8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile failures stop before selector/workspace pipeline and return top-level `error + schema`).
 9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
@@ -352,17 +352,17 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `get`: parse options -> normalize paths -> load schema read-model -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
-    - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read.
+    - Orchestrate `get`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
+    - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema lookup/read failures).
+    - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read over shared compile/read capability.
     - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>`; path-based ref leaf selectors `refs.<name>.id|resolved|type|slug|reason` are scalar-only and are rejected for array refs or scalar/array conflicts across schema types.
     - Own `get` help inside shared `help`.
-    - Handle `INVALID_ARGS`, `SCHEMA_*`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`.
+    - Preserve error-class mapping after compile (`INVALID_ARGS`, `ENTITY_NOT_FOUND`, `TARGET_AMBIGUOUS`, `READ_FAILED`) and shared compile-class mapping (`SCHEMA_*`).
   - Subpackages:
     - `get/internal/options` - parse `--id` and repeatable `--select`, normalize paths.
-    - `get/internal/schema` - schema loading and read-model building (`entity types`, `meta/ref/sections`, allowed selectors).
     - `get/internal/workspace` - deterministic scan, fast `id` locator, strict target parsing, section extraction, `revision`.
-    - `get/internal/engine` - selector plan/tree, absent-value projection, special-case `content.sections.<name> = null`, read-view build, blocking policy.
-    - `get/internal/model` - internal options, read-model, selector-plan, and parsed-target types.
+    - `get/internal/engine` - selector plan/tree over shared read capability, absent-value projection, special-case `content.sections.<name> = null`, read-view build, blocking policy.
+    - `get/internal/model` - internal options, selector-plan, and parsed-target types.
     - `get/internal/support` - pure helpers for YAML/maps/deep-copy/validation issues.
 
 - `internal/application/commands/get/internal/options`
@@ -373,15 +373,6 @@ Compact project map for fast entry into the code.
     - Parse `get` options (`--id`, `--select`) and enforce required `--id`.
     - Validate unknown/incomplete arguments with `INVALID_ARGS`.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
-  - Subpackages: none.
-
-- `internal/application/commands/get/internal/schema`
-  - Entrypoint: `loader.go` - `LoadReadModel`.
-  - Responsibilities:
-    - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Build read-model from `schema.entity`: non-ref meta fields, scalar `entityRef` fields, and `array.items.type=entityRef` fields (with single-`refTypes` deterministic type hint), plus `content.sections` per type.
-    - Build canonical selector allowlist (`built-in`, `meta.<non_ref>`, `refs`, `refs.<name>`, scalar-only `refs.<name>.id|resolved|type|slug|reason`, `content.raw`, `content.sections`, `content.sections.<name>`) together with ref cardinality metadata for selector validation.
-    - Return `SCHEMA_NOT_FOUND|SCHEMA_PARSE_ERROR|SCHEMA_INVALID` with `validation.issues`.
   - Subpackages: none.
 
 - `internal/application/commands/get/internal/workspace`
@@ -398,11 +389,11 @@ Compact project map for fast entry into the code.
     - `plan.go` - `BuildSelectorPlan`
     - `entity.go` - `BuildEntityView`
   - Responsibilities:
-    - Validate selectors against schema read-model and build terminal select tree, including rejection of path-based ref leaf selectors for array refs and scalar/array conflicts across schema types.
+    - Validate selectors against shared read capability and build terminal select tree, including rejection of path-based ref leaf selectors for array refs and scalar/array conflicts across schema types.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
     - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for `refs.<name>`/`refs.<name>.<leaf>` and `content.sections.<name>`.
-    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with scalar/array refs and unresolved classification `missing|ambiguous|type_mismatch` (`reason` in unresolved public refs).
-    - Mark `resolved=true` only for unique ref target compatible with `refTypes` hint; unique incompatible target stays unresolved with deterministic fallback and `reason`.
+    - Build read-view of target entity (`meta`, expanded `refs`, `content`) with scalar/array refs and unresolved classification `missing|ambiguous|type_mismatch` (`reason` in unresolved public refs) driven by shared ref `AllowedTypes`.
+    - Mark `resolved=true` only for unique ref target compatible with `AllowedTypes`; unique incompatible target stays unresolved with deterministic fallback and `reason`.
     - Apply blocking policy only when a requested ref slot is structurally unreadable and deterministic `id` cannot be obtained.
     - Project only the selected response subtree.
   - Subpackages: none.
@@ -412,12 +403,12 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Command options (`Options`).
     - Selector-plan types (`SelectNode`, `SelectorPlan`).
-    - Schema read-model (`ReadModel`, `EntityTypeSpec`) and workspace read types (`LocateResult`, `ParsedTarget`, `EntityIdentity`).
+    - Workspace read and lookup types (`LocateResult`, `ParsedTarget`, `EntityIdentity`).
   - Subpackages: none.
 
 - `internal/application/commands/get/internal/support`
   - Entrypoints:
-    - `yaml.go` - `FirstContentNode`, `FindDuplicateMappingKey`, `ToStringMap`
+    - `yaml.go` - `FirstContentNode`, `FindDuplicateMappingKey`
     - `collections.go` - `SortedMapKeys`
     - `values.go` - `DeepCopy`, `ValidationIssue`, `WithValidationIssues`
   - Responsibilities:
@@ -870,7 +861,7 @@ Compact project map for fast entry into the code.
 - `schema` - shared schema compiler command is implemented (`spec-cli schema check`): deterministic compile diagnostics, top-level `schema` block (`valid/summary/issues`), no workspace scan, and in-process compile cache per command run.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.
-- `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
+- `get` - read-one pipeline is implemented on shared schema compile/read capability (`compile -> capability -> selector plan -> target read -> projection`) with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, tolerant target lookup/read semantics, refs/content projection, and stable JSON contract.
 - `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
 - `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
