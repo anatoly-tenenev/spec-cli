@@ -35,5 +35,13 @@
     "offset": 0,
     "returned": 1
   },
-  "result_state": "valid"
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

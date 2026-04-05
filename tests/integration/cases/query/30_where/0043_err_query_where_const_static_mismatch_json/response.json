@@ -1,0 +1,16 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "exit_code": 2,
+    "message": "invalid_enum_value at offset 16: literal \"alpha\" is not allowed by const of field meta.status"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

@@ -8,7 +8,7 @@ import (
 )
 
 func TestCompileWhereExpression_Valid(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	compiled, err := compileWhereExpression("meta.status == 'active'", index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected compile error: %v", err)
@@ -19,7 +19,7 @@ func TestCompileWhereExpression_Valid(t *testing.T) {
 }
 
 func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	_, err := compileWhereExpression("keys(content)", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
@@ -30,7 +30,7 @@ func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
 }
 
 func TestCompileWhereExpression_RejectsContentRaw(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	_, err := compileWhereExpression("contains(content.raw, 'x')", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
@@ -41,7 +41,7 @@ func TestCompileWhereExpression_RejectsContentRaw(t *testing.T) {
 }
 
 func TestCompileWhereExpression_RejectsMetaEntityRef(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	_, err := compileWhereExpression("meta.owner == 'SVC-1'", index, []string{"feature"})
 	if err == nil {
 		t.Fatal("expected compile error")
@@ -52,7 +52,7 @@ func TestCompileWhereExpression_RejectsMetaEntityRef(t *testing.T) {
 }
 
 func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
@@ -99,7 +99,7 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 }
 
 func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("select build error: %v", err)

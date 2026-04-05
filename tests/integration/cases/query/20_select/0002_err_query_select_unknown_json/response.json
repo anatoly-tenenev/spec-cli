@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "unknown projection-namespace selector 'meta.unknown'",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "unknown projection-namespace selector 'meta.unknown'"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

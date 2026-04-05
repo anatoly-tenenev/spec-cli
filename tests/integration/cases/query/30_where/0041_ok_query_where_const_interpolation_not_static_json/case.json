@@ -1,0 +1,23 @@
+{
+  "id": "query_30_0041_ok_query_where_const_interpolation_not_static_json",
+  "description": "query_30_0041_ok_query_where_const_interpolation_not_static_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.status == 'alpha'"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

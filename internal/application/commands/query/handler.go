@@ -5,17 +5,22 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/engine"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/options"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/schema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/workspace"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
+	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
+	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
-type Handler struct{}
+type Handler struct {
+	newCompiler func() *schemacompile.Compiler
+}
 
 func NewHandler() *Handler {
-	return &Handler{}
+	return &Handler{newCompiler: schemacompile.NewCompiler}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -29,34 +34,35 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, pathErr
 	}
 
-	loadedSchema, schemaErr := schema.Load(schemaPath)
-	if schemaErr != nil {
-		return responses.CommandOutput{}, schemaErr
+	compiler := h.newCompiler()
+	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
+	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
+
+	if compileErr != nil {
+		return buildErrorWithSchema(compileErr, schemaPayload), nil
 	}
 
-	schemaIndex, schemaIndexErr := schema.BuildIndex(loadedSchema)
-	if schemaIndexErr != nil {
-		return responses.CommandOutput{}, schemaIndexErr
-	}
+	readCapability := schemacapread.Build(compileResult.Schema)
 
-	plan, planErr := engine.BuildPlan(opts, schemaIndex)
+	plan, planErr := engine.BuildPlan(opts, readCapability)
 	if planErr != nil {
-		return responses.CommandOutput{}, planErr
+		return buildErrorWithSchema(planErr, schemaPayload), nil
 	}
 
-	entities, workspaceErr := workspace.LoadEntities(workspacePath, schemaIndex, opts.TypeFilters)
+	entities, workspaceErr := workspace.LoadEntities(workspacePath, readCapability, opts.TypeFilters)
 	if workspaceErr != nil {
-		return responses.CommandOutput{}, workspaceErr
+		return buildErrorWithSchema(workspaceErr, schemaPayload), nil
 	}
 
 	queryResult, executeErr := engine.Execute(plan, entities)
 	if executeErr != nil {
-		return responses.CommandOutput{}, executeErr
+		return buildErrorWithSchema(executeErr, schemaPayload), nil
 	}
 
 	return responses.CommandOutput{
 		JSON: map[string]any{
 			"result_state": queryResult.ResultState,
+			"schema":       schemaPayload,
 			"items":        queryResult.Items,
 			"matched":      queryResult.Matched,
 			"page": map[string]any{
@@ -70,4 +76,15 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 			},
 		},
 	}, nil
+}
+
+func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	return responses.CommandOutput{
+		JSON: map[string]any{
+			"result_state": errormap.ResultStateForCode(appErr.Code),
+			"schema":       schemaPayload,
+			"error":        outputpayload.BuildErrorPayload(appErr),
+		},
+		ExitCode: appErr.ExitCode,
+	}
 }

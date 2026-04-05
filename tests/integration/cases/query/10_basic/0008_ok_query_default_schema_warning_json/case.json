@@ -1,0 +1,15 @@
+{
+  "id": "query_10_0008_ok_query_default_schema_warning_json",
+  "description": "query_10_0008_ok_query_default_schema_warning_json",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--format","json"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

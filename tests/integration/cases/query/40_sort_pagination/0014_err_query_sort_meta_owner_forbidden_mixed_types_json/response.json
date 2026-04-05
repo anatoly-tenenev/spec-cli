@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_ARGS",
-    "message": "sort field 'meta.owner' is forbidden for entityRef field; use refs.owner",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "sort field 'meta.owner' is forbidden for entityRef field; use refs.owner"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

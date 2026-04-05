@@ -1,21 +1,24 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "SCHEMA_INVALID",
-    "message": "schema.entity.doc.meta.fields.payload.schema.type uses unsupported type",
     "exit_code": 4,
-    "details": {
-      "type": "any",
-      "validation": {
-        "issues": [
-          {
-            "class": "SchemaError",
-            "level": "error",
-            "message": "schema.entity.doc.meta.fields.payload.schema.type uses unsupported type",
-            "standard_ref": "7"
-          }
-        ]
+    "message": "schema contains validation errors"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.value.type_unsupported",
+        "message": "unsupported schema type 'any'",
+        "path": "schema.entity.doc.meta.fields.payload.schema.type"
       }
-    }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
   }
 }

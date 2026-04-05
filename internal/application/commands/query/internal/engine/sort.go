@@ -7,6 +7,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -15,24 +16,28 @@ var defaultSort = []model.SortTerm{
 	{Path: "id", Direction: model.SortDirectionAsc},
 }
 
-var builtinSortKinds = map[string]model.SchemaFieldKind{
-	"type":        model.FieldKindString,
-	"id":          model.FieldKindString,
-	"slug":        model.FieldKindString,
-	"revision":    model.FieldKindString,
-	"createdDate": model.FieldKindDate,
-	"updatedDate": model.FieldKindDate,
-	"content.raw": model.FieldKindString,
+var builtinSortKinds = map[string]schemacapread.FieldKind{
+	"type":        schemacapread.FieldKindString,
+	"id":          schemacapread.FieldKindString,
+	"slug":        schemacapread.FieldKindString,
+	"revision":    schemacapread.FieldKindString,
+	"createdDate": schemacapread.FieldKindDate,
+	"updatedDate": schemacapread.FieldKindDate,
+	"content.raw": schemacapread.FieldKindString,
 }
 
-func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex, activeTypeSet []string) ([]model.SortTerm, *domainerrors.AppError) {
+func buildEffectiveSort(
+	requested []model.SortTerm,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) ([]model.SortTerm, *domainerrors.AppError) {
 	terms := requested
 	if len(terms) == 0 {
 		terms = append([]model.SortTerm(nil), defaultSort...)
 	}
 
 	for _, term := range terms {
-		if err := validateSortPath(term.Path, index, activeTypeSet); err != nil {
+		if err := validateSortPath(term.Path, capability, activeTypeSet); err != nil {
 			return nil, err
 		}
 	}
@@ -51,7 +56,7 @@ func buildEffectiveSort(requested []model.SortTerm, index model.QuerySchemaIndex
 	return effective, nil
 }
 
-func validateSortPath(path string, index model.QuerySchemaIndex, activeTypeSet []string) *domainerrors.AppError {
+func validateSortPath(path string, capability schemacapread.Capability, activeTypeSet []string) *domainerrors.AppError {
 	if kind, builtin := builtinSortKinds[path]; builtin {
 		if !isOrderableKind(kind) {
 			return domainerrors.New(
@@ -65,18 +70,18 @@ func validateSortPath(path string, index model.QuerySchemaIndex, activeTypeSet [
 
 	parts := strings.Split(path, ".")
 	if len(parts) == 2 && parts[0] == "meta" {
-		if hasRefFieldAcrossActiveSet(parts[1], index, activeTypeSet) {
+		if hasRefFieldAcrossActiveSet(parts[1], capability, activeTypeSet) {
 			return domainerrors.New(
 				domainerrors.CodeInvalidArgs,
 				fmt.Sprintf("sort field '%s' is forbidden for entityRef field; use refs.%s", path, parts[1]),
 				nil,
 			)
 		}
-		kinds := gatherMetaSortKinds(parts[1], index, activeTypeSet)
+		kinds := gatherMetaSortKinds(parts[1], capability, activeTypeSet)
 		return validateSortKinds(path, kinds)
 	}
 	if len(parts) == 3 && parts[0] == "content" && parts[1] == "sections" {
-		kinds := gatherSectionSortKinds(parts[2], index, activeTypeSet)
+		kinds := gatherSectionSortKinds(parts[2], capability, activeTypeSet)
 		return validateSortKinds(path, kinds)
 	}
 	if len(parts) == 3 && parts[0] == "refs" {
@@ -88,7 +93,7 @@ func validateSortPath(path string, index model.QuerySchemaIndex, activeTypeSet [
 				nil,
 			)
 		}
-		kinds, compatErr := gatherRefSortKinds(parts[1], leaf, index, activeTypeSet)
+		kinds, compatErr := gatherRefSortKinds(parts[1], leaf, capability, activeTypeSet)
 		if compatErr != nil {
 			return compatErr
 		}
@@ -102,10 +107,14 @@ func validateSortPath(path string, index model.QuerySchemaIndex, activeTypeSet [
 	)
 }
 
-func gatherMetaSortKinds(field string, index model.QuerySchemaIndex, activeTypeSet []string) map[model.SchemaFieldKind]struct{} {
-	kinds := map[model.SchemaFieldKind]struct{}{}
+func gatherMetaSortKinds(
+	field string,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) map[schemacapread.FieldKind]struct{} {
+	kinds := map[schemacapread.FieldKind]struct{}{}
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
+		entityType := capability.EntityTypes[typeName]
 		if _, isRef := entityType.RefFields[field]; isRef {
 			continue
 		}
@@ -118,14 +127,18 @@ func gatherMetaSortKinds(field string, index model.QuerySchemaIndex, activeTypeS
 	return kinds
 }
 
-func gatherSectionSortKinds(section string, index model.QuerySchemaIndex, activeTypeSet []string) map[model.SchemaFieldKind]struct{} {
-	kinds := map[model.SchemaFieldKind]struct{}{}
+func gatherSectionSortKinds(
+	section string,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) map[schemacapread.FieldKind]struct{} {
+	kinds := map[schemacapread.FieldKind]struct{}{}
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
-		if _, exists := entityType.SectionFields[section]; !exists {
+		entityType := capability.EntityTypes[typeName]
+		if _, exists := entityType.Sections[section]; !exists {
 			continue
 		}
-		kinds[model.FieldKindString] = struct{}{}
+		kinds[schemacapread.FieldKindString] = struct{}{}
 	}
 	return kinds
 }
@@ -133,19 +146,19 @@ func gatherSectionSortKinds(section string, index model.QuerySchemaIndex, active
 func gatherRefSortKinds(
 	refField string,
 	leaf string,
-	index model.QuerySchemaIndex,
+	capability schemacapread.Capability,
 	activeTypeSet []string,
-) (map[model.SchemaFieldKind]struct{}, *domainerrors.AppError) {
-	kinds := map[model.SchemaFieldKind]struct{}{}
+) (map[schemacapread.FieldKind]struct{}, *domainerrors.AppError) {
+	kinds := map[schemacapread.FieldKind]struct{}{}
 	found := false
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
+		entityType := capability.EntityTypes[typeName]
 		refSpec, exists := entityType.RefFields[refField]
 		if !exists {
 			continue
 		}
 		found = true
-		if refSpec.Cardinality == model.RefCardinalityArray {
+		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 			return nil, domainerrors.New(
 				domainerrors.CodeInvalidQuery,
 				fmt.Sprintf("invalid sort field '%s': path-based ref leaf is forbidden for array refs in active type set", "refs."+refField+"."+leaf),
@@ -154,18 +167,18 @@ func gatherRefSortKinds(
 		}
 
 		if leaf == "resolved" {
-			kinds[model.FieldKindBoolean] = struct{}{}
+			kinds[schemacapread.FieldKindBoolean] = struct{}{}
 		} else {
-			kinds[model.FieldKindString] = struct{}{}
+			kinds[schemacapread.FieldKindString] = struct{}{}
 		}
 	}
 	if !found {
-		return map[model.SchemaFieldKind]struct{}{}, nil
+		return map[schemacapread.FieldKind]struct{}{}, nil
 	}
 	return kinds, nil
 }
 
-func validateSortKinds(path string, kinds map[model.SchemaFieldKind]struct{}) *domainerrors.AppError {
+func validateSortKinds(path string, kinds map[schemacapread.FieldKind]struct{}) *domainerrors.AppError {
 	if len(kinds) == 0 {
 		return domainerrors.New(
 			domainerrors.CodeInvalidArgs,
@@ -192,9 +205,9 @@ func validateSortKinds(path string, kinds map[model.SchemaFieldKind]struct{}) *d
 	return nil
 }
 
-func isOrderableKind(kind model.SchemaFieldKind) bool {
+func isOrderableKind(kind schemacapread.FieldKind) bool {
 	switch kind {
-	case model.FieldKindString, model.FieldKindDate, model.FieldKindNumber, model.FieldKindBoolean:
+	case schemacapread.FieldKindString, schemacapread.FieldKindDate, schemacapread.FieldKindNumber, schemacapread.FieldKindBoolean:
 		return true
 	default:
 		return false

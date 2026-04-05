@@ -8,7 +8,7 @@ import (
 )
 
 func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)
@@ -46,7 +46,7 @@ func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 }
 
 func TestExecute_PaginationBoundaries(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)

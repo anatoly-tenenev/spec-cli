@@ -1,21 +1,24 @@
 {
   "error": {
     "code": "SCHEMA_PARSE_ERROR",
-    "details": {
-      "reason": "yaml: line 3: did not find expected node content",
-      "validation": {
-        "issues": [
-          {
-            "class": "SchemaError",
-            "level": "error",
-            "message": "failed to parse schema yaml/json",
-            "standard_ref": "7"
-          }
-        ]
-      }
-    },
     "exit_code": 4,
     "message": "failed to parse schema yaml/json"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.source.parse_failed",
+        "message": "failed to parse schema yaml/json: yaml: line 3: did not find expected node content",
+        "path": "schema"
+      }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
+  }
 }

@@ -8,6 +8,7 @@ import (
 	jmespath "github.com/anatoly-tenenev/go-jmespath"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -20,17 +21,21 @@ const (
 
 var unresolvedReasons = []any{"missing", "ambiguous", "type_mismatch"}
 
-func compileWhereExpression(raw string, index model.QuerySchemaIndex, activeTypeSet []string) (*model.WherePlan, *domainerrors.AppError) {
+func compileWhereExpression(
+	raw string,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) (*model.WherePlan, *domainerrors.AppError) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
 		return nil, nil
 	}
 
-	if err := validateWherePolicy(trimmed, index, activeTypeSet); err != nil {
+	if err := validateWherePolicy(trimmed, capability, activeTypeSet); err != nil {
 		return nil, err
 	}
 
-	schema := buildWhereItemSchema(index, activeTypeSet)
+	schema := buildWhereItemSchema(capability, activeTypeSet)
 	compiledSchema, schemaErr := jmespath.CompileSchema(schema)
 	if schemaErr != nil {
 		return nil, domainerrors.New(
@@ -52,10 +57,10 @@ func compileWhereExpression(raw string, index model.QuerySchemaIndex, activeType
 	return &model.WherePlan{Source: trimmed, Query: query}, nil
 }
 
-func validateWherePolicy(expression string, index model.QuerySchemaIndex, activeTypeSet []string) *domainerrors.AppError {
+func validateWherePolicy(expression string, capability schemacapread.Capability, activeTypeSet []string) *domainerrors.AppError {
 	refFields := map[string]struct{}{}
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
+		entityType := capability.EntityTypes[typeName]
 		for refField := range entityType.RefFields {
 			refFields[refField] = struct{}{}
 		}
@@ -207,23 +212,26 @@ func dedupeFieldChains(chains [][]string) [][]string {
 	return result
 }
 
-func buildWhereItemSchema(index model.QuerySchemaIndex, activeTypeSet []string) jmespath.JSONSchema {
+func buildWhereItemSchema(capability schemacapread.Capability, activeTypeSet []string) jmespath.JSONSchema {
 	if len(activeTypeSet) == 1 {
-		return buildWhereItemShape(index, activeTypeSet, activeTypeSet[0])
+		return buildWhereItemShape(capability, activeTypeSet, activeTypeSet[0])
 	}
 
 	alternatives := make([]any, 0, len(activeTypeSet))
 	for _, typeName := range activeTypeSet {
-		alternatives = append(alternatives, buildWhereItemShape(index, activeTypeSet, typeName))
+		alternatives = append(alternatives, buildWhereItemShape(capability, activeTypeSet, typeName))
 	}
 	return jmespath.JSONSchema{
 		"oneOf": alternatives,
 	}
 }
 
-func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, typeName string) jmespath.JSONSchema {
-	entityType := index.EntityTypes[typeName]
-	allEntityTypes := support.SortedMapKeys(index.EntityTypes)
+func buildWhereItemShape(
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+	typeName string,
+) jmespath.JSONSchema {
+	entityType := capability.EntityTypes[typeName]
 
 	metaProperties := map[string]any{}
 	metaRequired := make([]any, 0, len(entityType.MetaFields))
@@ -239,12 +247,8 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 	refsRequired := make([]any, 0, len(entityType.RefFields))
 	for _, refFieldName := range support.SortedMapKeys(entityType.RefFields) {
 		refField := entityType.RefFields[refFieldName]
-		refTypeEnum := refField.RefTypes
-		if len(refTypeEnum) == 0 {
-			refTypeEnum = allEntityTypes
-		}
-		refObject := buildRefObjectSchema(refTypeEnum)
-		if refField.Cardinality == model.RefCardinalityArray {
+		refObject := buildRefObjectSchema(refField.AllowedTypes)
+		if refField.Cardinality == schemacapread.RefCardinalityArray {
 			refsProperties[refFieldName] = map[string]any{
 				"type":  "array",
 				"items": refObject,
@@ -255,9 +259,9 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 	}
 
 	sectionProperties := map[string]any{}
-	sectionRequired := make([]any, 0, len(entityType.SectionFields))
-	for _, sectionName := range support.SortedMapKeys(entityType.SectionFields) {
-		section := entityType.SectionFields[sectionName]
+	sectionRequired := make([]any, 0, len(entityType.Sections))
+	for _, sectionName := range support.SortedMapKeys(entityType.Sections) {
+		section := entityType.Sections[sectionName]
 		if section.Required {
 			sectionProperties[sectionName] = map[string]any{"type": "string"}
 			sectionRequired = append(sectionRequired, sectionName)
@@ -314,28 +318,23 @@ func buildWhereItemShape(index model.QuerySchemaIndex, activeTypeSet []string, t
 	}
 }
 
-func buildMetaFieldSchema(field model.MetadataFieldSpec) map[string]any {
+func buildMetaFieldSchema(field schemacapread.MetaField) map[string]any {
 	schema := map[string]any{}
 	switch field.Kind {
-	case model.FieldKindString:
+	case schemacapread.FieldKindString:
 		schema["type"] = "string"
-	case model.FieldKindDate:
+	case schemacapread.FieldKindDate:
 		schema["type"] = "string"
 		schema["format"] = "date"
-	case model.FieldKindNumber:
+	case schemacapread.FieldKindNumber:
 		schema["type"] = "number"
-	case model.FieldKindBoolean:
+	case schemacapread.FieldKindBoolean:
 		schema["type"] = "boolean"
-	case model.FieldKindArray:
+	case schemacapread.FieldKindArray:
 		schema["type"] = "array"
 		if field.ItemKind != "" {
 			schema["items"] = map[string]any{"type": schemaTypeName(field.ItemKind)}
 		}
-	case model.FieldKindObject:
-		schema["type"] = "object"
-		schema["additionalProperties"] = false
-	case model.FieldKindNull:
-		schema["type"] = "null"
 	default:
 		schema["type"] = "string"
 	}
@@ -368,20 +367,16 @@ func buildRefObjectSchema(typeEnum []string) map[string]any {
 	}
 }
 
-func schemaTypeName(kind model.SchemaFieldKind) string {
+func schemaTypeName(kind schemacapread.FieldKind) string {
 	switch kind {
-	case model.FieldKindString, model.FieldKindDate:
+	case schemacapread.FieldKindString, schemacapread.FieldKindDate:
 		return "string"
-	case model.FieldKindNumber:
+	case schemacapread.FieldKindNumber:
 		return "number"
-	case model.FieldKindBoolean:
+	case schemacapread.FieldKindBoolean:
 		return "boolean"
-	case model.FieldKindArray:
+	case schemacapread.FieldKindArray:
 		return "array"
-	case model.FieldKindObject:
-		return "object"
-	case model.FieldKindNull:
-		return "null"
 	default:
 		return "string"
 	}

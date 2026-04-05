@@ -1,0 +1,14 @@
+version: "0.0.4"
+entity:
+  team:
+    idPrefix: TEAM
+    pathTemplate: "teams/{slug}.md"
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        owner:
+          schema:
+            type: entityRef

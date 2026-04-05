@@ -37,6 +37,8 @@ entity:
         tags:
           schema:
             type: array
+            items:
+              type: string
     content:
       sections:
         summary: {}

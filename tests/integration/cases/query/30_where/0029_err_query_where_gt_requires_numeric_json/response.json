@@ -4,5 +4,13 @@
     "exit_code": 2,
     "message": "invalid_comparator_types at offset 11: comparator requires number operands or date operands"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

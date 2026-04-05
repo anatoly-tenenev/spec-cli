@@ -5,10 +5,10 @@
       "refs": {
         "owner": {
           "id": "OWNER-1",
+          "reason": "type_mismatch",
           "resolved": false,
           "slug": null,
-          "type": "service",
-          "reason": "type_mismatch"
+          "type": "service"
         }
       }
     }
@@ -26,5 +26,13 @@
     "offset": 0,
     "returned": 1
   },
-  "result_state": "valid"
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

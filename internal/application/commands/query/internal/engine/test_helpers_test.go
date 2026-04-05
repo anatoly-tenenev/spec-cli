@@ -1,33 +1,31 @@
 package engine
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+import schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 
-func newEngineTestIndex() model.QuerySchemaIndex {
-	return model.QuerySchemaIndex{
-		EntityTypes: map[string]model.EntityTypeSpec{
+func newEngineTestCapability() schemacapread.Capability {
+	return schemacapread.Capability{
+		EntityTypes: map[string]schemacapread.EntityReadModel{
 			"feature": {
-				Name: "feature",
-				MetaFields: map[string]model.MetadataFieldSpec{
-					"status": {Name: "status", Kind: model.FieldKindString, EnumValues: []any{"draft", "active", "deprecated"}, Required: true},
-					"score":  {Name: "score", Kind: model.FieldKindNumber, Required: true},
-					"tags":   {Name: "tags", Kind: model.FieldKindArray, ItemKind: model.FieldKindString, Required: true},
+				MetaFields: map[string]schemacapread.MetaField{
+					"status": {Kind: schemacapread.FieldKindString, EnumValues: []any{"draft", "active", "deprecated"}, Required: true},
+					"score":  {Kind: schemacapread.FieldKindNumber, Required: true},
+					"tags":   {Kind: schemacapread.FieldKindArray, ItemKind: schemacapread.FieldKindString, Required: true},
 				},
-				RefFields: map[string]model.RefFieldSpec{
-					"owner": {Name: "owner", Cardinality: model.RefCardinalityScalar, RefTypes: []string{"service"}},
+				RefFields: map[string]schemacapread.RefField{
+					"owner": {Cardinality: schemacapread.RefCardinalityScalar, AllowedTypes: []string{"service"}},
 				},
-				SectionFields: map[string]model.SectionFieldSpec{
-					"summary": {Name: "summary", Required: true},
+				Sections: map[string]schemacapread.Section{
+					"summary": {Required: true},
 				},
 			},
 			"service": {
-				Name: "service",
-				MetaFields: map[string]model.MetadataFieldSpec{
-					"status": {Name: "status", Kind: model.FieldKindString, Required: true},
-					"score":  {Name: "score", Kind: model.FieldKindNumber, Required: true},
+				MetaFields: map[string]schemacapread.MetaField{
+					"status": {Kind: schemacapread.FieldKindString, Required: true},
+					"score":  {Kind: schemacapread.FieldKindNumber, Required: true},
 				},
-				RefFields: map[string]model.RefFieldSpec{},
-				SectionFields: map[string]model.SectionFieldSpec{
-					"summary": {Name: "summary", Required: true},
+				RefFields: map[string]schemacapread.RefField{},
+				Sections: map[string]schemacapread.Section{
+					"summary": {Required: true},
 				},
 			},
 		},

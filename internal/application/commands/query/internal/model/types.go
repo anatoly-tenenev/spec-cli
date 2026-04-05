@@ -27,57 +27,6 @@ type Options struct {
 	Offset      int
 }
 
-type SchemaFieldKind string
-
-const (
-	FieldKindString  SchemaFieldKind = "string"
-	FieldKindDate    SchemaFieldKind = "date"
-	FieldKindNumber  SchemaFieldKind = "number"
-	FieldKindArray   SchemaFieldKind = "array"
-	FieldKindBoolean SchemaFieldKind = "boolean"
-	FieldKindObject  SchemaFieldKind = "object"
-	FieldKindNull    SchemaFieldKind = "null"
-)
-
-type MetadataFieldSpec struct {
-	Name      string
-	Kind      SchemaFieldKind
-	ItemKind  SchemaFieldKind
-	EnumValues []any
-	HasConst  bool
-	ConstValue any
-	Required  bool
-}
-
-type SectionFieldSpec struct {
-	Name     string
-	Required bool
-}
-
-type RefCardinality string
-
-const (
-	RefCardinalityScalar RefCardinality = "scalar"
-	RefCardinalityArray  RefCardinality = "array"
-)
-
-type RefFieldSpec struct {
-	Name        string
-	Cardinality RefCardinality
-	RefTypes    []string
-}
-
-type EntityTypeSpec struct {
-	Name          string
-	MetaFields    map[string]MetadataFieldSpec
-	RefFields     map[string]RefFieldSpec
-	SectionFields map[string]SectionFieldSpec
-}
-
-type QuerySchemaIndex struct {
-	EntityTypes map[string]EntityTypeSpec
-}
-
 type EntityView struct {
 	Type         string
 	ID           string

@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "invalid_function_arg_type at offset 9: invalid argument 1 for function \"sort\"",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "invalid_function_arg_type at offset 9: invalid argument 1 for function \"sort\""
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

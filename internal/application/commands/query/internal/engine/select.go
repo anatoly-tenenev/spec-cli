@@ -7,19 +7,20 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
 var builtinSelectors = map[string]struct{}{
-	"type":         {},
-	"id":           {},
-	"slug":         {},
-	"revision":     {},
-	"createdDate": {},
-	"updatedDate": {},
-	"meta":         {},
-	"refs":         {},
-	"content.raw":  {},
+	"type":             {},
+	"id":               {},
+	"slug":             {},
+	"revision":         {},
+	"createdDate":      {},
+	"updatedDate":      {},
+	"meta":             {},
+	"refs":             {},
+	"content.raw":      {},
 	"content.sections": {},
 }
 
@@ -31,7 +32,7 @@ var refLeafSelectors = map[string]struct{}{
 	"reason":   {},
 }
 
-func buildSelectTree(selects []string, index model.QuerySchemaIndex, activeTypeSet []string) (*model.SelectNode, *domainerrors.AppError) {
+func buildSelectTree(selects []string, capability schemacapread.Capability, activeTypeSet []string) (*model.SelectNode, *domainerrors.AppError) {
 	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
 	for _, selector := range selects {
 		normalized := strings.TrimSpace(selector)
@@ -42,7 +43,7 @@ func buildSelectTree(selects []string, index model.QuerySchemaIndex, activeTypeS
 				nil,
 			)
 		}
-		if err := validateSelector(normalized, index, activeTypeSet); err != nil {
+		if err := validateSelector(normalized, capability, activeTypeSet); err != nil {
 			return nil, err
 		}
 		insertSelector(root, strings.Split(normalized, "."))
@@ -50,7 +51,7 @@ func buildSelectTree(selects []string, index model.QuerySchemaIndex, activeTypeS
 	return root, nil
 }
 
-func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeSet []string) *domainerrors.AppError {
+func validateSelector(selector string, capability schemacapread.Capability, activeTypeSet []string) *domainerrors.AppError {
 	if _, builtin := builtinSelectors[selector]; builtin {
 		return nil
 	}
@@ -60,7 +61,7 @@ func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeS
 		field := parts[1]
 		hasMeta := false
 		for _, typeName := range activeTypeSet {
-			entityType := index.EntityTypes[typeName]
+			entityType := capability.EntityTypes[typeName]
 			if _, isRef := entityType.RefFields[field]; isRef {
 				return domainerrors.New(
 					domainerrors.CodeInvalidArgs,
@@ -83,7 +84,7 @@ func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeS
 	}
 
 	if len(parts) == 2 && parts[0] == "refs" {
-		if hasRefFieldAcrossActiveSet(parts[1], index, activeTypeSet) {
+		if hasRefFieldAcrossActiveSet(parts[1], capability, activeTypeSet) {
 			return nil
 		}
 		return domainerrors.New(
@@ -103,7 +104,7 @@ func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeS
 				nil,
 			)
 		}
-		compat, exists := refLeafCompatibility(refField, index, activeTypeSet)
+		compat, exists := refLeafCompatibility(refField, capability, activeTypeSet)
 		if !exists {
 			return domainerrors.New(
 				domainerrors.CodeInvalidArgs,
@@ -124,8 +125,8 @@ func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeS
 	if len(parts) == 3 && parts[0] == "content" && parts[1] == "sections" {
 		sectionName := parts[2]
 		for _, typeName := range activeTypeSet {
-			entityType := index.EntityTypes[typeName]
-			if _, exists := entityType.SectionFields[sectionName]; exists {
+			entityType := capability.EntityTypes[typeName]
+			if _, exists := entityType.Sections[sectionName]; exists {
 				return nil
 			}
 		}
@@ -143,9 +144,9 @@ func validateSelector(selector string, index model.QuerySchemaIndex, activeTypeS
 	)
 }
 
-func hasRefFieldAcrossActiveSet(refField string, index model.QuerySchemaIndex, activeTypeSet []string) bool {
+func hasRefFieldAcrossActiveSet(refField string, capability schemacapread.Capability, activeTypeSet []string) bool {
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
+		entityType := capability.EntityTypes[typeName]
 		if _, exists := entityType.RefFields[refField]; exists {
 			return true
 		}
@@ -153,16 +154,16 @@ func hasRefFieldAcrossActiveSet(refField string, index model.QuerySchemaIndex, a
 	return false
 }
 
-func refLeafCompatibility(refField string, index model.QuerySchemaIndex, activeTypeSet []string) (compatible bool, exists bool) {
+func refLeafCompatibility(refField string, capability schemacapread.Capability, activeTypeSet []string) (compatible bool, exists bool) {
 	hasScalar := false
 	for _, typeName := range activeTypeSet {
-		entityType := index.EntityTypes[typeName]
+		entityType := capability.EntityTypes[typeName]
 		refSpec, present := entityType.RefFields[refField]
 		if !present {
 			continue
 		}
 		exists = true
-		if refSpec.Cardinality == model.RefCardinalityArray {
+		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 			return false, true
 		}
 		hasScalar = true

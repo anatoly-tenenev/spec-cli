@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "unsafe_optional_argument at offset 25: function \"contains\" argument 1 may be missing or null and can trigger invalid-type",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "unsafe_optional_argument at offset 25: function \"contains\" argument 1 may be missing or null and can trigger invalid-type"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

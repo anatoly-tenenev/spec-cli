@@ -1,0 +1,23 @@
+{
+  "id": "query_60_0009_err_query_schema_const_type_mismatch_json",
+  "description": "query_60_0009_err_query_schema_const_type_mismatch_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--where",
+    "meta.status == 'active'"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

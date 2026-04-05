@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/derivedschema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
@@ -66,7 +67,7 @@ func ParseValueSpec(
 		spec.Enum = parseEnum(enumNode, path+".enum", issues)
 	}
 
-	if spec.Const != nil && !literalMatchesKind(spec.Const.Value, kind) {
+	if spec.Const != nil && !derivedschema.LiteralMatchesKind(spec.Const.Value, kind) {
 		AddError(
 			issues,
 			"schema.value.const_type_mismatch",
@@ -75,7 +76,7 @@ func ParseValueSpec(
 		)
 	}
 	for index, enumValue := range spec.Enum {
-		if literalMatchesKind(enumValue.Value, kind) {
+		if derivedschema.LiteralMatchesKind(enumValue.Value, kind) {
 			continue
 		}
 		AddError(
@@ -479,28 +480,6 @@ func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issu
 	}
 }
 
-func literalMatchesKind(value any, kind model.ValueKind) bool {
-	switch kind {
-	case model.ValueKindUnknown:
-		return true
-	case model.ValueKindString, model.ValueKindEntityRef:
-		_, ok := value.(string)
-		return ok
-	case model.ValueKindBoolean:
-		_, ok := value.(bool)
-		return ok
-	case model.ValueKindNumber:
-		return isNumeric(value)
-	case model.ValueKindInteger:
-		return isInteger(value)
-	case model.ValueKindArray:
-		_, ok := value.([]any)
-		return ok
-	default:
-		return false
-	}
-}
-
 func assertArrayOnlyKeysUnused(values map[string]*yaml.Node, path string, issues *[]diagnostics.Issue) {
 	if _, exists := values["items"]; exists {
 		AddError(issues, "schema.value.items_unexpected", "schema.items is allowed only for schema.type=array", path+".items")
@@ -513,29 +492,5 @@ func assertArrayOnlyKeysUnused(values map[string]*yaml.Node, path string, issues
 	}
 	if _, exists := values["maxItems"]; exists {
 		AddError(issues, "schema.value.max_items_unexpected", "schema.maxItems is allowed only for schema.type=array", path+".maxItems")
-	}
-}
-
-func isNumeric(value any) bool {
-	switch value.(type) {
-	case int, int8, int16, int32, int64:
-		return true
-	case uint, uint8, uint16, uint32, uint64:
-		return true
-	case float32, float64:
-		return true
-	default:
-		return false
-	}
-}
-
-func isInteger(value any) bool {
-	switch value.(type) {
-	case int, int8, int16, int32, int64:
-		return true
-	case uint, uint8, uint16, uint32, uint64:
-		return true
-	default:
-		return false
 	}
 }

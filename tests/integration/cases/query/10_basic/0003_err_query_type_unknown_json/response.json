@@ -1,11 +1,19 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "ENTITY_TYPE_UNKNOWN",
-    "message": "unknown entity type: ghost",
-    "exit_code": 2,
     "details": {
       "entity_type": "ghost"
-    }
+    },
+    "exit_code": 2,
+    "message": "unknown entity type: ghost"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

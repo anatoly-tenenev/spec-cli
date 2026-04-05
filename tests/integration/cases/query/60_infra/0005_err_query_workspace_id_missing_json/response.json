@@ -16,5 +16,13 @@
     "exit_code": 3,
     "message": "failed to determine entity id"
   },
-  "result_state": "invalid"
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

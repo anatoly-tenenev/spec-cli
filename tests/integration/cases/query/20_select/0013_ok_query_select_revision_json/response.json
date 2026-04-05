@@ -2,15 +2,15 @@
   "items": [
     {
       "id": "FEAT-1",
-      "revision": "sha256:eba8d91a588efda6b9d44954783aeba010e3160477dce63d11704a885bc589da"
+      "revision": "sha256:a4aea4d976d81191b585ff1cee8603028fe808ef955a3f93013f44b9642f41f1"
     },
     {
       "id": "FEAT-2",
-      "revision": "sha256:2a9c3862e54cf96c997d324029cac3a959bc4dc2e58cffa89eb9796a6f0da8e3"
+      "revision": "sha256:0a0cccc8b0206e6b841c951c57c09381d8e7769a153f2380c16a7ed567d6a137"
     },
     {
       "id": "FEAT-3",
-      "revision": "sha256:75708a20cc0fdade021abf6379647d7a30e5db09135b9e32b963105e278f35cb"
+      "revision": "sha256:57077e4ac45f98e6d54f83382c9be93a5658ab4b34eb81638ee2dd2afb3e63c1"
     }
   ],
   "matched": 3,
@@ -26,5 +26,13 @@
     "offset": 0,
     "returned": 3
   },
-  "result_state": "valid"
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
 }

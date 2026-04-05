@@ -1,6 +1,8 @@
 version: "1"
 entity:
   feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
     meta:
       fields:
         owner:
@@ -14,5 +16,7 @@ entity:
         summary:
           required: false
   service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
     meta:
       fields: {}

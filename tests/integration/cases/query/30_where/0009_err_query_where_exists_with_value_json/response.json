@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "invalid_function_arity at offset 0: invalid arity for function \"length\"",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "invalid_function_arity at offset 0: invalid arity for function \"length\""
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

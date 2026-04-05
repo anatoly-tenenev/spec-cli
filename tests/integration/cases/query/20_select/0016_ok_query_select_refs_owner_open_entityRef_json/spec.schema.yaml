@@ -1,0 +1,24 @@
+version: "0.0.4"
+entity:
+  team:
+    idPrefix: TEAM
+    pathTemplate: "teams/{slug}.md"
+    meta:
+      fields:
+        status:
+          schema:
+            type: string
+            enum: [active, archived]
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          schema:
+            type: string
+            enum: [draft, active]
+        owner:
+          schema:
+            type: entityRef

@@ -1,80 +1,88 @@
 {
-  "result_state": "valid",
   "items": [
     {
-      "type": "feature",
+      "content": {
+        "sections": {
+          "summary": "Retry window for outbound requests."
+        }
+      },
       "id": "FEAT-1",
       "meta": {
         "status": "active"
       },
       "refs": {
         "owner": {
-          "type": "service",
           "id": "SVC-2",
+          "resolved": true,
           "slug": "billing",
-          "resolved": true
+          "type": "service"
         }
       },
-      "content": {
-        "sections": {
-          "summary": "Retry window for outbound requests."
-        }
-      }
+      "type": "feature"
     },
     {
-      "type": "feature",
+      "content": {
+        "sections": {
+          "summary": "Login flow for user authentication."
+        }
+      },
       "id": "FEAT-2",
       "meta": {
         "status": "draft"
       },
       "refs": {
         "owner": {
-          "type": "service",
           "id": "SVC-1",
+          "resolved": true,
           "slug": "api",
-          "resolved": true
+          "type": "service"
         }
       },
-      "content": {
-        "sections": {
-          "summary": "Login flow for user authentication."
-        }
-      }
+      "type": "feature"
     },
     {
-      "type": "feature",
+      "content": {
+        "sections": {
+          "summary": "Legacy flow."
+        }
+      },
       "id": "FEAT-3",
       "meta": {
         "status": "deprecated"
       },
       "refs": {
         "owner": {
-          "type": "service",
           "id": "SVC-404",
-          "slug": null,
+          "reason": "missing",
           "resolved": false,
-          "reason": "missing"
+          "slug": null,
+          "type": "service"
         }
       },
-      "content": {
-        "sections": {
-          "summary": "Legacy flow."
-        }
-      }
+      "type": "feature"
     }
   ],
   "matched": 3,
   "page": {
-    "mode": "offset",
-    "limit": 100,
-    "offset": 0,
-    "returned": 3,
-    "has_more": false,
-    "next_offset": null,
     "effective_sort": [
       "id:asc",
       "type:asc",
       "id:asc"
-    ]
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 3
+  },
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

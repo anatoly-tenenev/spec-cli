@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	jmespath "github.com/anatoly-tenenev/go-jmespath"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/derivedschema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
@@ -30,8 +31,9 @@ func BuildEntityExpressionSchema(entity model.EntityType) jmespath.JSONSchema {
 		if IsBuiltinMetaField(fieldName) {
 			continue
 		}
+		projectedField := derivedschema.ProjectMetaField(field)
 
-		if field.Value.Kind == model.ValueKindEntityRef {
+		if projectedField.Value.Kind == model.ValueKindEntityRef {
 			refsProps[fieldName] = map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -46,11 +48,11 @@ func BuildEntityExpressionSchema(entity model.EntityType) jmespath.JSONSchema {
 			continue
 		}
 
-		if schema := buildMetaFieldSchema(field.Value); schema != nil {
+		if schema := buildMetaFieldSchema(projectedField.Value); schema != nil {
 			metaProps[fieldName] = schema
 		}
 
-		if field.Required.Always && field.Required.Expr == nil {
+		if projectedField.Required.Always && projectedField.Required.Expr == nil {
 			metaRequired = append(metaRequired, fieldName)
 		}
 	}
@@ -167,21 +169,11 @@ func buildMetaFieldSchema(value model.ValueSpec) map[string]any {
 	}
 
 	if isScalarType(jsonType) {
-		if value.Const != nil && value.Const.Template == nil {
-			schema["const"] = value.Const.Value
+		if constValue, hasConst := derivedschema.StaticConstValue(value.Const); hasConst {
+			schema["const"] = constValue
 		}
-		if len(value.Enum) > 0 {
-			enumValues := make([]any, 0, len(value.Enum))
-			for _, enumValue := range value.Enum {
-				if enumValue.Template != nil {
-					enumValues = nil
-					break
-				}
-				enumValues = append(enumValues, enumValue.Value)
-			}
-			if len(enumValues) > 0 {
-				schema["enum"] = enumValues
-			}
+		if enumValues, hasEnum := derivedschema.StaticEnumValues(value.Enum); hasEnum {
+			schema["enum"] = enumValues
 		}
 	}
 

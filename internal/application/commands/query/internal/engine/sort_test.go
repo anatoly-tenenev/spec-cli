@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
 func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 
 	terms, err := buildEffectiveSort(nil, index, []string{"feature", "service"})
 	if err != nil {
@@ -29,7 +30,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 }
 
 func TestBuildEffectiveSort_InvalidField(t *testing.T) {
-	index := newEngineTestIndex()
+	index := newEngineTestCapability()
 	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
@@ -40,21 +41,19 @@ func TestBuildEffectiveSort_InvalidField(t *testing.T) {
 }
 
 func TestBuildEffectiveSort_RejectsMetaEntityRefAcrossActiveSet(t *testing.T) {
-	index := model.QuerySchemaIndex{
-		EntityTypes: map[string]model.EntityTypeSpec{
+	index := schemacapread.Capability{
+		EntityTypes: map[string]schemacapread.EntityReadModel{
 			"feature": {
-				Name:       "feature",
-				MetaFields: map[string]model.MetadataFieldSpec{},
-				RefFields: map[string]model.RefFieldSpec{
-					"owner": {Name: "owner", Cardinality: model.RefCardinalityScalar, RefTypes: []string{"service"}},
+				MetaFields: map[string]schemacapread.MetaField{},
+				RefFields: map[string]schemacapread.RefField{
+					"owner": {Cardinality: schemacapread.RefCardinalityScalar, AllowedTypes: []string{"service"}},
 				},
 			},
 			"service": {
-				Name: "service",
-				MetaFields: map[string]model.MetadataFieldSpec{
-					"owner": {Name: "owner", Kind: model.FieldKindString, Required: true},
+				MetaFields: map[string]schemacapread.MetaField{
+					"owner": {Kind: schemacapread.FieldKindString, Required: true},
 				},
-				RefFields: map[string]model.RefFieldSpec{},
+				RefFields: map[string]schemacapread.RefField{},
 			},
 		},
 	}

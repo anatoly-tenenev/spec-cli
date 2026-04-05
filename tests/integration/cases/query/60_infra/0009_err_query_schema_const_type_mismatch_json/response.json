@@ -1,0 +1,24 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "exit_code": 4,
+    "message": "schema contains validation errors"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.value.const_type_mismatch",
+        "message": "schema.const value type is incompatible with schema.type",
+        "path": "schema.entity.feature.meta.fields.status.schema.const"
+      }
+    ],
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "valid": false
+  }
+}

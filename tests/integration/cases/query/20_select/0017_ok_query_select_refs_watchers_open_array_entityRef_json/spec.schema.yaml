@@ -1,0 +1,20 @@
+version: "0.0.4"
+entity:
+  team:
+    idPrefix: TEAM
+    pathTemplate: "teams/{slug}.md"
+
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        watchers:
+          schema:
+            type: array
+            items:
+              type: entityRef

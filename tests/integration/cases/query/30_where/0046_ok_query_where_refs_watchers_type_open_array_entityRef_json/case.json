@@ -1,0 +1,29 @@
+{
+  "id": "query_30_0046_ok_query_where_refs_watchers_type_open_array_entityRef_json",
+  "description": "query_30_0046_ok_query_where_refs_watchers_type_open_array_entityRef_json",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--where",
+    "(refs.watchers != `null`) && contains(refs.watchers[].type, 'team')",
+    "--select",
+    "id",
+    "--select",
+    "refs.watchers"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

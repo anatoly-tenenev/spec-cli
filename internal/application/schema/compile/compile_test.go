@@ -231,6 +231,84 @@ func TestCompilerAllowsIntegerConstIntegerLiteral(t *testing.T) {
 	}
 }
 
+func TestCompilerRejectsStringConstIntegerLiteralWithoutContextNoise(t *testing.T) {
+	schemaPath := writeSchema(t, ""+
+		"version: v1\n"+
+		"entity:\n"+
+		"  service:\n"+
+		"    idPrefix: SVC\n"+
+		"    pathTemplate: services/index.md\n"+
+		"    meta:\n"+
+		"      fields:\n"+
+		"        status:\n"+
+		"          schema:\n"+
+		"            type: string\n"+
+		"            const: 1\n",
+	)
+
+	result, compileErr := NewCompiler().Compile(schemaPath, "spec.schema.yaml")
+	assertCompileErrorCode(t, compileErr, domainerrors.CodeSchemaInvalid)
+	if result.Valid {
+		t.Fatalf("expected invalid result for string const integer literal")
+	}
+	assertSchemaIssue(t, result, "schema.value.const_type_mismatch", "schema.entity.service.meta.fields.status.schema.const")
+	assertSchemaIssueCodeAbsent(t, result, "schema.expression.context_invalid")
+}
+
+func TestCompilerRejectsStringEnumIntegerLiteralWithoutContextNoise(t *testing.T) {
+	schemaPath := writeSchema(t, ""+
+		"version: v1\n"+
+		"entity:\n"+
+		"  service:\n"+
+		"    idPrefix: SVC\n"+
+		"    pathTemplate: services/index.md\n"+
+		"    meta:\n"+
+		"      fields:\n"+
+		"        status:\n"+
+		"          schema:\n"+
+		"            type: string\n"+
+		"            enum: [1]\n",
+	)
+
+	result, compileErr := NewCompiler().Compile(schemaPath, "spec.schema.yaml")
+	assertCompileErrorCode(t, compileErr, domainerrors.CodeSchemaInvalid)
+	if result.Valid {
+		t.Fatalf("expected invalid result for string enum integer literal")
+	}
+	assertSchemaIssue(t, result, "schema.value.enum_type_mismatch", "schema.entity.service.meta.fields.status.schema.enum[0]")
+	assertSchemaIssueCodeAbsent(t, result, "schema.expression.context_invalid")
+}
+
+func TestCompilerKeepsIndependentExpressionErrorsWhenConstMismatchProjected(t *testing.T) {
+	schemaPath := writeSchema(t, ""+
+		"version: v1\n"+
+		"entity:\n"+
+		"  service:\n"+
+		"    idPrefix: SVC\n"+
+		"    pathTemplate: services/index.md\n"+
+		"    meta:\n"+
+		"      fields:\n"+
+		"        status:\n"+
+		"          schema:\n"+
+		"            type: string\n"+
+		"            const: 1\n"+
+		"        owner:\n"+
+		"          schema:\n"+
+		"            type: string\n"+
+		"          required: \"${meta.status ==}\"\n",
+	)
+
+	result, compileErr := NewCompiler().Compile(schemaPath, "spec.schema.yaml")
+	assertCompileErrorCode(t, compileErr, domainerrors.CodeSchemaInvalid)
+	if result.Valid {
+		t.Fatalf("expected invalid result for mixed const mismatch and expression failure")
+	}
+
+	assertSchemaIssue(t, result, "schema.value.const_type_mismatch", "schema.entity.service.meta.fields.status.schema.const")
+	assertSchemaIssuePathPresent(t, result, "schema.entity.service.meta.fields.owner.required")
+	assertSchemaIssueCodeAbsent(t, result, "schema.expression.context_invalid")
+}
+
 func assertCompileErrorCode(t *testing.T, compileErr *domainerrors.AppError, expectedCode domainerrors.Code) {
 	t.Helper()
 	if compileErr == nil {
@@ -249,6 +327,25 @@ func assertSchemaIssue(t *testing.T, result Result, code string, path string) {
 		}
 	}
 	t.Fatalf("expected issue %s at path %s, got %#v", code, path, result.Issues)
+}
+
+func assertSchemaIssueCodeAbsent(t *testing.T, result Result, code string) {
+	t.Helper()
+	for _, issue := range result.Issues {
+		if issue.Code == code {
+			t.Fatalf("did not expect issue with code %s, got %#v", code, issue)
+		}
+	}
+}
+
+func assertSchemaIssuePathPresent(t *testing.T, result Result, path string) {
+	t.Helper()
+	for _, issue := range result.Issues {
+		if issue.Path == path {
+			return
+		}
+	}
+	t.Fatalf("expected issue at path %s, got %#v", path, result.Issues)
 }
 
 func writeSchema(t *testing.T, content string) string {

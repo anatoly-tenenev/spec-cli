@@ -14,7 +14,7 @@ Compact project map for fast entry into the code.
 4. For `help`: `options.Parse` -> `options.NormalizePaths` (canonical `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
 5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema`, otherwise return success `schema` block.
 6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
-7. For `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
+7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile failures stop before plan/workspace and return top-level `error + schema`).
 8. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
 9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
 10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
@@ -77,11 +77,22 @@ Compact project map for fast entry into the code.
     - Calculate deterministic summary counters (`errors`, `warnings`) used by command responses.
   - Subpackages: none.
 
+- `internal/application/schema/derivedschema`
+  - Entrypoint: `builder.go` - `LiteralMatchesKind`, `ProjectValueSpec`, `ProjectMetaField`, `StaticConstValue`, `StaticEnumValues`.
+  - Responsibilities:
+    - Provide one shared literal-to-kind compatibility predicate reused by primary value diagnostics and derived-schema projection.
+    - Build downstream-safe projections for derived consumers by dropping incompatible `const` and filtering incompatible `enum` literals.
+    - Provide one shared conservative projection for static literal constraints: interpolated literals (`Template != nil`) are excluded from `const/enum` static constraints.
+    - Preserve schema shape (`kind/format/ref/array fields`) while recursively projecting nested `items` value specs.
+    - Provide meta-field projection that keeps `required/description/schemaPath` untouched and projects only value constraints.
+  - Subpackages: none.
+
 - `internal/application/schema/expressioncontext`
   - Entrypoint: `context.go` - `IsBuiltinMetaField`, `BuildEntityExpressionSchema`, `IsPathGuaranteedBySchema`, `GuardRootForPath`.
   - Responsibilities:
     - Keep canonical built-in frontmatter keys for schema-level reserved-name checks.
     - Build schema-aware JMESPath context (`type/id/slug/createdDate/updatedDate/meta/refs`) from canonical entity model.
+    - Apply derived-schema projection for meta-field value constraints before serializing JMESPath `const/enum` fragments.
     - Project scalar `entityRef` fields into `refs.<field>={id,type,slug,dirPath}` for static expression checks.
     - Provide path/guard helpers used by compiler pathTemplate safety validation.
   - Subpackages: none.
@@ -128,13 +139,16 @@ Compact project map for fast entry into the code.
   - Subpackages:
     - `compile/internal/compiler` - thin bridge from compile entrypoint to semantic compiler.
     - `compile/internal/compiler/internal/semantic` - canonical semantic compiler for `idPrefix`, `required`, section-title rules, const/enum interpolation, pathTemplate cases/guards, and expression-aware checks.
-    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refTypes/items/min/max`), and deterministic diagnostics.
+    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refTypes/items/min/max`), deterministic diagnostics, and primary literal mismatch checks via `derivedschema.LiteralMatchesKind`.
 
 - `internal/application/schema/capabilities/read`
   - Entrypoint: `builder.go` - `Build`.
   - Responsibilities:
-    - Build read-side capability projection from compiled schema entity map.
-    - Expose canonical metadata fields, sections, and discovered reference fields per entity type.
+    - Build read-side capability projection from compiled schema entity map with explicit `EntityTypes -> {MetaFields, RefFields, Sections}`.
+    - Split non-ref `meta` fields from `entityRef` fields at shared boundary (`MetaFields` excludes refs; `RefFields` contains scalar and array entityRef only).
+    - Project read semantics for `query/get`: field kinds (`kind/itemKind`), static-only `enum/const`, `required` (`Always` only), ref cardinality, and normalized ref `AllowedTypes`.
+    - Apply conservative static-literal projection for read planning: interpolated string `const` and any `enum` containing an interpolated literal are excluded from static constraints.
+    - Normalize open ref targets once in shared layer (`refTypes` omitted => all entity types) so consumers do not implement special-case expansion.
     - Keep read capability independent from YAML parsing and command handlers.
   - Subpackages: none.
 
@@ -232,18 +246,18 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `query`: parse options -> normalize paths -> load schema -> build schema index -> build query plan -> load workspace views -> execute.
-    - Build contractual JSON response (`items`, `matched`, `page`).
+    - Orchestrate `query`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> plan -> workspace load -> execute.
+    - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
+    - Build contractual JSON response (`items`, `matched`, `page`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
     - Own `query` help inside shared `help`.
-    - Provide one place for mapping `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, schema errors, and read errors.
+    - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
     - `query/internal/options` - `--type`, `--where`, `--select`, `--sort`, `--limit`, `--offset`.
-    - `query/internal/schema` - standard-schema loading and `QuerySchemaIndex`.
     - `query/internal/workspace` - full read-view building and `refs.<field>` resolution.
     - `query/internal/engine` - planner, schema-aware JMESPath `--where` compile/evaluate, sorting, pagination, projection.
-    - `query/internal/model` - internal request/plan/index/AST/response types.
-    - `query/internal/support` - pure helpers for YAML, collections, literal/value operations, and interpolation syntax checks reused by schema loading.
+    - `query/internal/model` - internal request/plan/AST/response types.
+    - `query/internal/support` - pure helpers for YAML/collections/value operations reused by workspace/frontmatter and deterministic map handling.
 
 - `internal/application/commands/query/internal/options`
   - Entrypoints:
@@ -255,24 +269,12 @@ Compact project map for fast entry into the code.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
   - Subpackages: none.
 
-- `internal/application/commands/query/internal/schema`
-  - Entrypoints:
-    - `loader.go` - `Load`
-    - `index.go` - `BuildIndex`
-  - Responsibilities:
-    - Read schema, parse YAML/JSON, check duplicate keys, and validate minimal `entity` shape.
-    - Parse metadata/read/content info for every entity type, including scalar/array `entityRef`, `required`, `refTypes`, and syntax validation for string `required` interpolations.
-    - Build `QuerySchemaIndex` with type-local field specs used by active-type-set validation for `--select`, `--sort`, and `--where`.
-    - Keep namespace split: public selectors (`refs`, `refs.<name>`) and ref leaf paths (`resolved|type|id|slug|reason`) for hidden projection/sort compatibility.
-    - Exclude scalar and array `entityRef` from `meta.<name>` selector/filter/sort namespaces and reject unsupported metadata `schema.type: object`.
-  - Subpackages: none.
-
 - `internal/application/commands/query/internal/workspace`
   - Entrypoint: `loader.go` - `LoadEntities`.
   - Responsibilities:
     - Deterministically scan `.md` files and parse entity frontmatter/body.
     - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.raw/content.sections`).
-    - Exclude scalar and array `entityRef` slots from projected `meta`.
+    - Use shared read capability directly for schema-known `meta`/`refs`/`sections` sets (no command-local schema re-mapping).
     - Build global `id` index and resolve `refs.<field>` into scalar/array refs with unresolved classification `missing|ambiguous|type_mismatch`; unresolved public refs include `reason`.
     - Distinguish explicit scalar `null` ref (public `null`) from unresolved ref object; where-context skips explicit-null scalar refs and keeps `reason` leaf for unresolved/resolved paths.
     - Materialize where-context as schema-known `meta` (non-ref fields only), `refs`, and `content.sections` (schema-known sections only; empty object when absent).
@@ -806,6 +808,7 @@ Compact project map for fast entry into the code.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
     - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
+    - Cover open-ref behavior in `query` when schema omits `refTypes` / `items.refTypes`: scalar and array refs resolve against all schema entity types, and `--where` on `refs.<field>.type` / `refs.<field>[].type` compiles and filters by resolved target entity types.
     - Cover schema-aware `--where` literal validation for built-in entity `type`: unknown literals such as `type == 'unknown'` fail as `INVALID_QUERY` before workspace scan, so their fixtures stay on `workspace.in/.keep`.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entityRef`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
@@ -820,9 +823,11 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/60_entityRef_context/*` - scalar/array `entityRef`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dirPath`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
-    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`.
-    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, and schema-aware rejection of unknown built-in `type` literals.
+    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`, scalar open-ref resolution when `refTypes` is omitted, and array open-ref resolution when `items.refTypes` is omitted.
+    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, schema-aware rejection of unknown built-in `type` literals, scalar/array open-ref filtering by `refs.<field>.type` and `refs.<field>[].type` when schema omits `refTypes` / `items.refTypes`, conservative handling of interpolated `schema.const/schema.enum` (no false static reject), and preserved static `const/enum` rejection.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
+    - `tests/integration/cases/query/50_errors/*` - argument/global-option validation failures before compile.
+    - `tests/integration/cases/query/60_infra/*` - schema/workspace infra failures plus strict shared-compiler blocking cases (`SCHEMA_*`), including malformed schema-type and const/enum mismatch classification.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
     - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>` and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
@@ -864,7 +869,7 @@ Compact project map for fast entry into the code.
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
 - `schema` - shared schema compiler command is implemented (`spec-cli schema check`): deterministic compile diagnostics, top-level `schema` block (`valid/summary/issues`), no workspace scan, and in-process compile cache per command run.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
-- `query` - read-only pipeline is implemented (active-type-set schema index, schema-aware JMESPath `--where`, projection, deterministic sort, offset pagination, JSON contract).
+- `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.
 - `get` - baseline read-one pipeline is implemented (`id` lookup, schema-driven selectors, tolerant read, refs/content projection, JSON contract).
 - `add` - baseline create pipeline is implemented (raw-schema write contract, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, explicit support for array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.

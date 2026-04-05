@@ -1,8 +1,16 @@
 {
-  "result_state": "invalid",
   "error": {
     "code": "INVALID_QUERY",
-    "message": "forbidden where path: 'content.raw' is not allowed; only content.sections... is supported",
-    "exit_code": 2
+    "exit_code": 2,
+    "message": "forbidden where path: 'content.raw' is not allowed; only content.sections... is supported"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
   }
 }

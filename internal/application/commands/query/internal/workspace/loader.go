@@ -13,6 +13,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
+	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -50,7 +51,11 @@ const (
 	queryWorkspaceRefsStandardRef        = "6"
 )
 
-func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilters []string) ([]model.EntityView, *domainerrors.AppError) {
+func LoadEntities(
+	workspacePath string,
+	capability schemacapread.Capability,
+	typeFilters []string,
+) ([]model.EntityView, *domainerrors.AppError) {
 	markdownFiles, scanErr := scanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return nil, scanErr
@@ -66,7 +71,7 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 	}
 
 	for _, entity := range allEntities {
-		if _, known := index.EntityTypes[entity.Type]; known {
+		if _, known := capability.EntityTypes[entity.Type]; known {
 			continue
 		}
 		return nil, newWorkspaceReadError(
@@ -91,7 +96,7 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 			}
 		}
 
-		entityType := index.EntityTypes[entity.Type]
+		entityType := capability.EntityTypes[entity.Type]
 		metaPublic := buildMetadata(entity.Frontmatter, entityType.MetaFields)
 		metaWhere := buildMetadata(entity.Frontmatter, entityType.MetaFields)
 		refsPublic, refsWhere, refsErr := resolveRefs(entity.Frontmatter, entityType.RefFields, idIndex)
@@ -100,14 +105,14 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 		}
 
 		publicView := map[string]any{
-			"type":         entity.Type,
-			"id":           entity.ID,
-			"slug":         entity.Slug,
-			"revision":     entity.Revision,
-			"createdDate":  entity.CreatedDate,
-			"updatedDate":  entity.UpdatedDate,
-			"meta":         metaPublic,
-			"refs":         refsPublic,
+			"type":        entity.Type,
+			"id":          entity.ID,
+			"slug":        entity.Slug,
+			"revision":    entity.Revision,
+			"createdDate": entity.CreatedDate,
+			"updatedDate": entity.UpdatedDate,
+			"meta":        metaPublic,
+			"refs":        refsPublic,
 			"content": map[string]any{
 				"raw":      entity.RawContent,
 				"sections": sectionsToAnyMap(entity.Sections),
@@ -115,16 +120,16 @@ func LoadEntities(workspacePath string, index model.QuerySchemaIndex, typeFilter
 		}
 
 		whereView := map[string]any{
-			"type":         entity.Type,
-			"id":           entity.ID,
-			"slug":         entity.Slug,
-			"revision":     entity.Revision,
-			"createdDate":  entity.CreatedDate,
-			"updatedDate":  entity.UpdatedDate,
-			"meta":         metaWhere,
-			"refs":         refsWhere,
+			"type":        entity.Type,
+			"id":          entity.ID,
+			"slug":        entity.Slug,
+			"revision":    entity.Revision,
+			"createdDate": entity.CreatedDate,
+			"updatedDate": entity.UpdatedDate,
+			"meta":        metaWhere,
+			"refs":        refsWhere,
 			"content": map[string]any{
-				"sections": buildWhereSections(entity.Sections, entityType.SectionFields),
+				"sections": buildWhereSections(entity.Sections, entityType.Sections),
 			},
 		}
 
@@ -233,7 +238,7 @@ func parseEntityFile(path string) (*parsedEntity, *domainerrors.AppError) {
 	}, nil
 }
 
-func buildMetadata(frontmatter map[string]any, knownMeta map[string]model.MetadataFieldSpec) map[string]any {
+func buildMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {
 	meta := map[string]any{}
 	for _, field := range support.SortedMapKeys(knownMeta) {
 		value, exists := frontmatter[field]
@@ -245,7 +250,7 @@ func buildMetadata(frontmatter map[string]any, knownMeta map[string]model.Metada
 	return meta
 }
 
-func buildWhereSections(parsedSections map[string]string, knownSections map[string]model.SectionFieldSpec) map[string]any {
+func buildWhereSections(parsedSections map[string]string, knownSections map[string]schemacapread.Section) map[string]any {
 	sections := map[string]any{}
 	for _, sectionName := range support.SortedMapKeys(knownSections) {
 		sectionValue, exists := parsedSections[sectionName]
@@ -304,7 +309,7 @@ func buildIDIndex(entities []parsedEntity) map[string][]entityIdentity {
 
 func resolveRefs(
 	frontmatter map[string]any,
-	refFields map[string]model.RefFieldSpec,
+	refFields map[string]schemacapread.RefField,
 	idIndex map[string][]entityIdentity,
 ) (map[string]any, map[string]any, *domainerrors.AppError) {
 	publicRefs := map[string]any{}
@@ -318,7 +323,7 @@ func resolveRefs(
 			continue
 		}
 
-		if refSpec.Cardinality == model.RefCardinalityArray {
+		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 			publicValue, whereValue, err := resolveArrayRef(rawTarget, refSpec, idIndex, refField)
 			if err != nil {
 				return nil, nil, err
@@ -343,7 +348,7 @@ func resolveRefs(
 
 func resolveScalarRef(
 	rawTarget any,
-	refSpec model.RefFieldSpec,
+	refSpec schemacapread.RefField,
 	idIndex map[string][]entityIdentity,
 	refField string,
 ) (public any, where any, includeInWhere bool, err *domainerrors.AppError) {
@@ -362,7 +367,7 @@ func resolveScalarRef(
 
 func resolveArrayRef(
 	rawTarget any,
-	refSpec model.RefFieldSpec,
+	refSpec schemacapread.RefField,
 	idIndex map[string][]entityIdentity,
 	refField string,
 ) (any, any, *domainerrors.AppError) {
@@ -395,9 +400,9 @@ func resolveArrayRef(
 	return publicItems, whereItems, nil
 }
 
-func classifyResolvedRef(targetID string, refSpec model.RefFieldSpec, idIndex map[string][]entityIdentity) resolvedRef {
+func classifyResolvedRef(targetID string, refSpec schemacapread.RefField, idIndex map[string][]entityIdentity) resolvedRef {
 	targets := idIndex[targetID]
-	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.RefTypes)
+	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.AllowedTypes)
 
 	if len(compatibleTargets) == 1 {
 		target := compatibleTargets[0]
@@ -421,7 +426,7 @@ func classifyResolvedRef(targetID string, refSpec model.RefFieldSpec, idIndex ma
 	return resolvedRef{
 		ID:       targetID,
 		Resolved: false,
-		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.RefTypes),
+		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.AllowedTypes),
 		Slug:     nil,
 		Reason:   reason,
 	}
@@ -451,9 +456,6 @@ func toWhereRefObject(ref resolvedRef) map[string]any {
 }
 
 func filterTargetsByRefTypes(targets []entityIdentity, refTypes []string) []entityIdentity {
-	if len(refTypes) == 0 {
-		return targets
-	}
 	allowed := map[string]struct{}{}
 	for _, refType := range refTypes {
 		allowed[refType] = struct{}{}

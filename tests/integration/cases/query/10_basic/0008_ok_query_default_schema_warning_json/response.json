@@ -1,0 +1,117 @@
+{
+  "items": [
+    {
+      "id": "FEAT-1",
+      "meta": {
+        "score": 9.5,
+        "status": "active",
+        "tags": [
+          "reliability",
+          "billing"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-2",
+          "resolved": true,
+          "slug": "billing",
+          "type": "service"
+        }
+      },
+      "slug": "retry-window",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-2",
+      "meta": {
+        "score": 5,
+        "status": "draft",
+        "tags": [
+          "auth"
+        ]
+      },
+      "refs": {
+        "owner": {
+          "id": "SVC-1",
+          "resolved": true,
+          "slug": "api",
+          "type": "service"
+        }
+      },
+      "slug": "login",
+      "type": "feature"
+    },
+    {
+      "id": "FEAT-3",
+      "meta": {
+        "score": 1,
+        "status": "deprecated",
+        "tags": [
+          "legacy"
+        ]
+      },
+      "refs": {
+        "owner": null
+      },
+      "slug": "orphan",
+      "type": "feature"
+    },
+    {
+      "id": "SVC-1",
+      "meta": {
+        "status": "active",
+        "tags": [
+          "core",
+          "public"
+        ],
+        "tier": 1
+      },
+      "refs": {},
+      "slug": "api",
+      "type": "service"
+    },
+    {
+      "id": "SVC-2",
+      "meta": {
+        "status": "deprecated",
+        "tags": [
+          "billing"
+        ],
+        "tier": 2
+      },
+      "refs": {},
+      "slug": "billing",
+      "type": "service"
+    }
+  ],
+  "matched": 5,
+  "page": {
+    "effective_sort": [
+      "type:asc",
+      "id:asc"
+    ],
+    "has_more": false,
+    "limit": 100,
+    "mode": "offset",
+    "next_offset": null,
+    "offset": 0,
+    "returned": 5
+  },
+  "result_state": "valid",
+  "schema": {
+    "issues": [
+      {
+        "level": "warning",
+        "class": "SchemaWarning",
+        "code": "schema.top_level.version_missing",
+        "message": "schema.version is recommended",
+        "path": "schema.version"
+      }
+    ],
+    "summary": {
+      "errors": 0,
+      "warnings": 1
+    },
+    "valid": true
+  }
+}
