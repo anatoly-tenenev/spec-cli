@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -12,7 +13,7 @@ func resolveEntityReferences(
 	issues *[]domainvalidation.Issue,
 	entity *model.CheckedEntity,
 	frontmatter map[string]any,
-	typeSpec model.SchemaEntityType,
+	typeSpec schemacapvalidate.EntityValidationModel,
 	idIndex map[string][]resolvedEntityRef,
 ) map[string]resolvedEntityRef {
 	resolved := make(map[string]resolvedEntityRef)

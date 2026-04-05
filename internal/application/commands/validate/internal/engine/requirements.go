@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
+	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -14,7 +15,7 @@ func validateRequiredFields(
 	issues *[]domainvalidation.Issue,
 	entity *model.CheckedEntity,
 	frontmatter map[string]any,
-	typeSpec model.SchemaEntityType,
+	typeSpec schemacapvalidate.EntityValidationModel,
 	idIndex map[string][]resolvedEntityRef,
 	context map[string]any,
 ) {
@@ -131,7 +132,7 @@ func validateRequiredFields(
 func validateArrayField(
 	issues *[]domainvalidation.Issue,
 	entity *model.CheckedEntity,
-	rule model.RequiredFieldRule,
+	rule schemacapvalidate.RequiredFieldRule,
 	arrayValue []any,
 	idIndex map[string][]resolvedEntityRef,
 ) {
@@ -227,7 +228,7 @@ func validateRequiredSections(
 	entity *model.CheckedEntity,
 	sections map[string]string,
 	duplicateLabels []string,
-	typeSpec model.SchemaEntityType,
+	typeSpec schemacapvalidate.EntityValidationModel,
 	context map[string]any,
 ) {
 	for _, label := range duplicateLabels {
@@ -259,12 +260,12 @@ func validateRequiredSections(
 		}
 
 		if title, exists := sections[sectionRule.Name]; exists {
-			if sectionRule.HasTitle && title != sectionRule.Title {
+			if len(sectionRule.Titles) > 0 && !containsSectionTitle(sectionRule.Titles, title) {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "content.section_title_mismatch",
 					Level:       domainvalidation.LevelError,
 					Class:       "InstanceError",
-					Message:     fmt.Sprintf("section '%s' title must be '%s'", sectionRule.Name, sectionRule.Title),
+					Message:     fmt.Sprintf("section '%s' title must be one of %v", sectionRule.Name, sectionRule.Titles),
 					StandardRef: "13.2",
 					Field:       fmt.Sprintf("content.sections.%s.title", sectionRule.Name),
 				})
@@ -285,22 +286,22 @@ func validateRequiredSections(
 
 func evaluateRequiredConstraint(
 	literal bool,
-	expression *expressions.CompiledExpression,
+	expression *schemaexpressions.CompiledExpression,
 	context map[string]any,
-) (bool, *expressions.EvalError) {
+) (bool, *schemaexpressions.EvalError) {
 	if expression == nil {
 		return literal, nil
 	}
 
-	value, evalErr := expressions.Evaluate(expression, context)
+	value, evalErr := schemaexpressions.Evaluate(expression, context)
 	if evalErr != nil {
 		return false, evalErr
 	}
 
-	return expressions.IsTruthy(value), nil
+	return schemaexpressions.IsTruthy(value), nil
 }
 
-func resolveRuleValues(values []model.RuleValue, context map[string]any) ([]any, *expressions.EvalError) {
+func resolveRuleValues(values []schemacapvalidate.RuleValue, context map[string]any) ([]any, *schemaexpressions.EvalError) {
 	if len(values) == 0 {
 		return nil, nil
 	}
@@ -317,15 +318,24 @@ func resolveRuleValues(values []model.RuleValue, context map[string]any) ([]any,
 	return resolved, nil
 }
 
-func resolveRuleValue(value model.RuleValue, context map[string]any) (any, *expressions.EvalError) {
+func resolveRuleValue(value schemacapvalidate.RuleValue, context map[string]any) (any, *schemaexpressions.EvalError) {
 	if value.Template == nil {
 		return value.Literal, nil
 	}
 
-	rendered, renderErr := expressions.RenderTemplate(value.Template, context)
+	rendered, renderErr := schemaexpressions.RenderTemplate(value.Template, context)
 	if renderErr != nil {
 		return nil, renderErr
 	}
 
 	return rendered, nil
+}
+
+func containsSectionTitle(allowed []string, title string) bool {
+	for _, candidate := range allowed {
+		if candidate == title {
+			return true
+		}
+	}
+	return false
 }

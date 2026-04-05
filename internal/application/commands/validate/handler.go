@@ -4,23 +4,26 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/engine"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/options"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/schema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
+	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
+	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
-type Handler struct{}
+type Handler struct {
+	newCompiler func() *schemacompile.Compiler
+}
 
 func NewHandler() *Handler {
-	return &Handler{}
+	return &Handler{newCompiler: schemacompile.NewCompiler}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -34,74 +37,67 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, pathErr
 	}
 
-	loadedSchema, schemaIssues, schemaErr := schema.Load(schemaPath, request.Global.SchemaPath)
-	if schemaErr != nil {
-		if schemaErr.Code != domainerrors.CodeSchemaInvalid {
-			return responses.CommandOutput{}, schemaErr
-		}
-		schemaIssues = append(schemaIssues, schemaIssueFromAppError(schemaErr))
+	compiler := h.newCompiler()
+	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
+	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
+
+	if compileErr != nil {
+		return buildCompileErrorWithSchema(compileErr, schemaPayload), nil
 	}
 
-	run := model.ValidationRun{ValidatorConformant: true}
-	if countSchemaErrors(schemaIssues) == 0 {
-		if typeFilterErr := validateTypeFilters(opts.TypeFilters, loadedSchema); typeFilterErr != nil {
-			return responses.CommandOutput{}, typeFilterErr
-		}
-
-		candidates, candidateErr := workspace.BuildCandidateSet(workspacePath, opts.TypeFilters)
-		if candidateErr != nil {
-			return responses.CommandOutput{}, candidateErr
-		}
-
-		validationRun, runErr := engine.RunValidation(candidates, loadedSchema, opts, workspacePath)
-		if runErr != nil {
-			return responses.CommandOutput{}, runErr
-		}
-		run = validationRun
+	validationCapability := schemacapvalidate.Build(compileResult.Schema)
+	if typeFilterErr := validateTypeFilters(opts.TypeFilters, validationCapability); typeFilterErr != nil {
+		return buildErrorWithSchema(typeFilterErr, schemaPayload), nil
 	}
 
-	issues := make([]domainvalidation.Issue, 0, len(schemaIssues)+len(run.Issues))
-	issues = append(issues, schemaIssues...)
-	issues = append(issues, run.Issues...)
+	candidates, candidateErr := workspace.BuildCandidateSet(workspacePath, opts.TypeFilters)
+	if candidateErr != nil {
+		return buildErrorWithSchema(candidateErr, schemaPayload), nil
+	}
 
-	errorCount, warningCount := engine.CountIssuesByLevel(issues)
-	schemaValid := countSchemaErrors(issues) == 0
-	validatorConformant := run.ValidatorConformant && !hasProfileIssues(issues)
+	validationRun, runErr := engine.RunValidation(candidates, validationCapability, opts, workspacePath)
+	if runErr != nil {
+		return buildErrorWithSchema(runErr, schemaPayload), nil
+	}
+
+	runtimeIssues := validationRun.Issues
+	errorCount, warningCount := engine.CountIssuesByLevel(runtimeIssues)
+	validatorConformant := validationRun.ValidatorConformant && !hasProfileIssues(runtimeIssues)
 
 	resultState := responses.ResultStateValid
 	if errorCount > 0 {
 		resultState = responses.ResultStateInvalid
 	}
 
-	skippedEntities := run.CandidateEntities - run.CheckedEntities
+	skippedEntities := validationRun.CandidateEntities - validationRun.CheckedEntities
 	coverageComplete := skippedEntities == 0
 
 	summary := map[string]any{
-		"schema_valid":         schemaValid,
 		"validator_conformant": validatorConformant,
-		"entities_scanned":     run.CheckedEntities,
-		"entities_valid":       run.EntitiesValid,
+		"entities_scanned":     validationRun.CheckedEntities,
+		"entities_valid":       validationRun.EntitiesValid,
 		"errors":               errorCount,
 		"warnings":             warningCount,
 		"coverage": map[string]any{
 			"mode":               "strict",
 			"complete":           coverageComplete,
-			"candidate_entities": run.CandidateEntities,
-			"checked_entities":   run.CheckedEntities,
+			"candidate_entities": validationRun.CandidateEntities,
+			"checked_entities":   validationRun.CheckedEntities,
 			"skipped_entities":   skippedEntities,
 		},
+	}
+
+	exitCode := 0
+	if errorCount > 0 || (opts.WarningsAsErrors && (warningCount+compileResult.Summary.Warnings) > 0) {
+		exitCode = 1
 	}
 
 	jsonResponse := map[string]any{
 		"result_state":     resultState,
 		"validation_scope": "full",
+		"schema":           schemaPayload,
 		"summary":          summary,
-		"issues":           issues,
-	}
-
-	exitCode := 0
-	if errorCount > 0 || (opts.WarningsAsErrors && warningCount > 0) {
-		exitCode = 1
+		"issues":           runtimeIssues,
 	}
 
 	return responses.CommandOutput{
@@ -110,7 +106,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	}, nil
 }
 
-func validateTypeFilters(typeFilters map[string]struct{}, schema model.ValidationSchema) *domainerrors.AppError {
+func validateTypeFilters(typeFilters map[string]struct{}, capability schemacapvalidate.Capability) *domainerrors.AppError {
 	if len(typeFilters) == 0 {
 		return nil
 	}
@@ -122,7 +118,7 @@ func validateTypeFilters(typeFilters map[string]struct{}, schema model.Validatio
 	sort.Strings(filteredTypes)
 
 	for _, typeName := range filteredTypes {
-		if _, exists := schema.Entity[typeName]; exists {
+		if _, exists := capability.EntityTypes[typeName]; exists {
 			continue
 		}
 		return domainerrors.New(
@@ -135,16 +131,6 @@ func validateTypeFilters(typeFilters map[string]struct{}, schema model.Validatio
 	return nil
 }
 
-func countSchemaErrors(issues []domainvalidation.Issue) int {
-	count := 0
-	for _, issue := range issues {
-		if issue.Class == "SchemaError" && issue.Level == domainvalidation.LevelError {
-			count++
-		}
-	}
-	return count
-}
-
 func hasProfileIssues(issues []domainvalidation.Issue) bool {
 	for _, issue := range issues {
 		if issue.Class == "ProfileError" {
@@ -154,83 +140,45 @@ func hasProfileIssues(issues []domainvalidation.Issue) bool {
 	return false
 }
 
-func schemaIssueFromAppError(schemaErr *domainerrors.AppError) domainvalidation.Issue {
-	issue := domainvalidation.Issue{
-		Code:        "schema.invalid",
-		Level:       domainvalidation.LevelError,
-		Class:       "SchemaError",
-		Message:     schemaErr.Message,
-		StandardRef: "7",
+func buildZeroRuntimeSummary() map[string]any {
+	return map[string]any{
+		"validator_conformant": true,
+		"entities_scanned":     0,
+		"entities_valid":       0,
+		"errors":               0,
+		"warnings":             0,
+		"coverage": map[string]any{
+			"mode":               "strict",
+			"complete":           true,
+			"candidate_entities": 0,
+			"checked_entities":   0,
+			"skipped_entities":   0,
+		},
 	}
-
-	if code, ok := detailString(schemaErr.Details, "code"); ok && code != "" {
-		issue.Code = code
-	}
-	if field, ok := detailString(schemaErr.Details, "field"); ok {
-		issue.Field = field
-	}
-	if standardRef, ok := detailString(schemaErr.Details, "standard_ref"); ok && strings.TrimSpace(standardRef) != "" {
-		issue.StandardRef = strings.TrimSpace(standardRef)
-	}
-	if offset, ok := detailInt(schemaErr.Details, "offset"); ok {
-		issue.Message = fmt.Sprintf("%s (offset: %d)", issue.Message, offset)
-	}
-
-	return issue
 }
 
-func detailString(details map[string]any, key string) (string, bool) {
-	if len(details) == 0 {
-		return "", false
+func buildCompileErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	return responses.CommandOutput{
+		JSON: map[string]any{
+			"result_state":     errormap.ResultStateForCode(appErr.Code),
+			"validation_scope": "full",
+			"schema":           schemaPayload,
+			"summary":          buildZeroRuntimeSummary(),
+			"issues":           []domainvalidation.Issue{},
+			"error":            outputpayload.BuildErrorPayload(appErr),
+		},
+		ExitCode: appErr.ExitCode,
 	}
-
-	raw, exists := details[key]
-	if !exists {
-		return "", false
-	}
-
-	value, ok := raw.(string)
-	if !ok {
-		return "", false
-	}
-
-	return value, true
 }
 
-func detailInt(details map[string]any, key string) (int, bool) {
-	if len(details) == 0 {
-		return 0, false
-	}
-
-	raw, exists := details[key]
-	if !exists {
-		return 0, false
-	}
-
-	switch typed := raw.(type) {
-	case int:
-		return typed, true
-	case int8:
-		return int(typed), true
-	case int16:
-		return int(typed), true
-	case int32:
-		return int(typed), true
-	case int64:
-		return int(typed), true
-	case uint:
-		return int(typed), true
-	case uint8:
-		return int(typed), true
-	case uint16:
-		return int(typed), true
-	case uint32:
-		return int(typed), true
-	case uint64:
-		return int(typed), true
-	case float64:
-		return int(typed), true
-	default:
-		return 0, false
+func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	return responses.CommandOutput{
+		JSON: map[string]any{
+			"result_state":     errormap.ResultStateForCode(appErr.Code),
+			"validation_scope": "full",
+			"schema":           schemaPayload,
+			"error":            outputpayload.BuildErrorPayload(appErr),
+		},
+		ExitCode: appErr.ExitCode,
 	}
 }

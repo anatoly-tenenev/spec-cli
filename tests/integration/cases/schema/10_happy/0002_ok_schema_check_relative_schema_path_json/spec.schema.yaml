@@ -1,7 +1,7 @@
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: services/${meta.slug}.md
+    pathTemplate: services/${slug}.md
     meta:
       fields:
         status:

@@ -2,11 +2,11 @@ package shared
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
+	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 	"gopkg.in/yaml.v3"
 )
@@ -152,28 +152,28 @@ func ParseValueSpec(
 
 func ParseRequirement(node *yaml.Node, path string, defaultValue bool, issues *[]diagnostics.Issue) model.Requirement {
 	if node == nil {
-		return model.Requirement{Always: defaultValue}
+		return model.Requirement{Always: defaultValue, Path: path}
 	}
 	if node.Kind != yaml.ScalarNode {
 		AddError(issues, "schema.requirement.invalid", "required must be boolean or ${expr}", path)
-		return model.Requirement{Always: false}
+		return model.Requirement{Always: false, Path: path}
 	}
 
 	var decoded any
 	if err := node.Decode(&decoded); err != nil {
 		AddError(issues, "schema.requirement.invalid", "failed to parse required value", path)
-		return model.Requirement{Always: false}
+		return model.Requirement{Always: false, Path: path}
 	}
 
 	switch typed := decoded.(type) {
 	case bool:
-		return model.Requirement{Always: typed}
+		return model.Requirement{Always: typed, Path: path}
 	case string:
 		expr := compileSingleExpression(typed, path, issues)
-		return model.Requirement{Always: false, Expr: expr}
+		return model.Requirement{Always: false, Expr: expr, Path: path}
 	default:
 		AddError(issues, "schema.requirement.invalid", "required must be boolean or ${expr}", path)
-		return model.Requirement{Always: false}
+		return model.Requirement{Always: false, Path: path}
 	}
 }
 
@@ -208,19 +208,19 @@ func ParseTitles(node *yaml.Node, path string, issues *[]diagnostics.Issue) ([]s
 	return titles, true
 }
 
-func CompileTemplate(raw string, path string, issues *[]diagnostics.Issue) *model.CompiledTemplate {
-	parts := make([]model.TemplatePart, 0)
+func CompileTemplate(raw string, path string, issues *[]diagnostics.Issue) *schemaexpressions.CompiledTemplate {
+	parts := make([]schemaexpressions.TemplatePart, 0)
 	rest := raw
 	for {
 		idx := strings.Index(rest, "${")
 		if idx < 0 {
 			if rest != "" {
-				parts = append(parts, model.TemplatePart{Literal: rest})
+				parts = append(parts, schemaexpressions.TemplatePart{Literal: rest})
 			}
 			break
 		}
 		if idx > 0 {
-			parts = append(parts, model.TemplatePart{Literal: rest[:idx]})
+			parts = append(parts, schemaexpressions.TemplatePart{Literal: rest[:idx]})
 		}
 		rest = rest[idx+2:]
 		end := strings.Index(rest, "}")
@@ -233,15 +233,20 @@ func CompileTemplate(raw string, path string, issues *[]diagnostics.Issue) *mode
 			AddError(issues, "schema.template.empty_expression", "template interpolation expression must not be empty", path)
 			return nil
 		}
-		parts = append(parts, model.TemplatePart{Expr: &model.CompiledExpression{Source: expr}})
+		parts = append(parts, schemaexpressions.TemplatePart{
+			Expression: &schemaexpressions.CompiledExpression{
+				Source: expr,
+				Mode:   schemaexpressions.CompileModeTemplatePart,
+			},
+		})
 		rest = rest[end+1:]
 	}
 	if len(parts) == 0 {
 		return nil
 	}
 	for _, part := range parts {
-		if part.Expr != nil {
-			return &model.CompiledTemplate{Parts: parts}
+		if part.Expression != nil {
+			return &schemaexpressions.CompiledTemplate{Raw: raw, Parts: parts}
 		}
 	}
 	return nil
@@ -457,7 +462,7 @@ func parseRefTypes(node *yaml.Node, path string, typeSet map[string]struct{}, is
 	return values
 }
 
-func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issue) *model.CompiledExpression {
+func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issue) *schemaexpressions.CompiledExpression {
 	trimmed := strings.TrimSpace(raw)
 	if !strings.HasPrefix(trimmed, "${") || !strings.HasSuffix(trimmed, "}") {
 		AddError(issues, "schema.expression.invalid", "expression must have form ${expr}", path)
@@ -468,7 +473,10 @@ func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issu
 		AddError(issues, "schema.expression.empty", "expression must not be empty", path)
 		return nil
 	}
-	return &model.CompiledExpression{Source: inner}
+	return &schemaexpressions.CompiledExpression{
+		Source: inner,
+		Mode:   schemaexpressions.CompileModeScalar,
+	}
 }
 
 func literalMatchesKind(value any, kind model.ValueKind) bool {
@@ -522,15 +530,11 @@ func isNumeric(value any) bool {
 }
 
 func isInteger(value any) bool {
-	switch typed := value.(type) {
+	switch value.(type) {
 	case int, int8, int16, int32, int64:
 		return true
 	case uint, uint8, uint16, uint32, uint64:
 		return true
-	case float64:
-		return math.Trunc(typed) == typed
-	case float32:
-		return math.Trunc(float64(typed)) == float64(typed)
 	default:
 		return false
 	}

@@ -2,9 +2,16 @@
   "id": "schema_20_0004_err_schema_check_duplicate_key_json",
   "description": "schema_20_0004_err_schema_check_duplicate_key_json",
   "command": "schema",
-  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","schema","check"],
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "schema",
+    "check"
+  ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 4,
     "response_file": "response.json"
   },
   "workspace": {

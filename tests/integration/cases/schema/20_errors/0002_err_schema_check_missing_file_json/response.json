@@ -16,5 +16,10 @@
         "path": "schema"
       }
     ]
+  },
+  "error": {
+    "code": "SCHEMA_NOT_FOUND",
+    "message": "schema file does not exist",
+    "exit_code": 4
   }
 }

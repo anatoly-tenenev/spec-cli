@@ -8,6 +8,8 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
+	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
+	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
 type Handler struct {
@@ -38,27 +40,29 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	}
 
 	compiler := h.newCompiler()
-	compileResult := compiler.Compile(schemaPath, request.Global.SchemaPath)
+	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
+	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
-	resultState := responses.ResultStateValid
-	exitCode := 0
-	if !compileResult.Valid {
-		resultState = responses.ResultStateInvalid
-		exitCode = 1
+	if compileErr != nil {
+		return responses.CommandOutput{
+			JSON: map[string]any{
+				"result_state":     errormap.ResultStateForCode(compileErr.Code),
+				"validation_scope": "schema",
+				"schema":           schemaPayload,
+				"error":            outputpayload.BuildErrorPayload(compileErr),
+			},
+			ExitCode: compileErr.ExitCode,
+		}, nil
 	}
 
 	payload := map[string]any{
-		"result_state":     resultState,
+		"result_state":     responses.ResultStateValid,
 		"validation_scope": "schema",
-		"schema": map[string]any{
-			"valid":   compileResult.Valid,
-			"summary": compileResult.Summary,
-			"issues":  compileResult.Issues,
-		},
+		"schema":           schemaPayload,
 	}
 
 	return responses.CommandOutput{
 		JSON:     payload,
-		ExitCode: exitCode,
+		ExitCode: 0,
 	}, nil
 }

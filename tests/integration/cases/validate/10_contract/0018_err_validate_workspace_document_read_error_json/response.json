@@ -4,5 +4,14 @@
     "code": "WRITE_FAILED",
     "message": "failed to read workspace document",
     "exit_code": 3
+  },
+  "validation_scope": "full",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
   }
 }

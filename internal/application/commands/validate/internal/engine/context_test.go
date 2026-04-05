@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
@@ -27,8 +27,8 @@ func TestBuildRuntimeEvaluationContextNormalizesMetaAndRefs(t *testing.T) {
 				DirPath: "services/catalog",
 			},
 		},
-		model.SchemaEntityType{
-			RequiredFields: []model.RequiredFieldRule{
+		schemacapvalidate.EntityValidationModel{
+			RequiredFields: []schemacapvalidate.RequiredFieldRule{
 				{Name: "title", Type: "string"},
 				{Name: "owner", Type: reservedkeys.SchemaTypeEntityRef},
 			},
@@ -65,8 +65,8 @@ func TestBuildRuntimeEvaluationContextKeepsUnresolvedRefsAsNull(t *testing.T) {
 			reservedkeys.BuiltinType: "doc",
 		},
 		nil,
-		model.SchemaEntityType{
-			RequiredFields: []model.RequiredFieldRule{
+		schemacapvalidate.EntityValidationModel{
+			RequiredFields: []schemacapvalidate.RequiredFieldRule{
 				{Name: "owner", Type: reservedkeys.SchemaTypeEntityRef},
 			},
 		},

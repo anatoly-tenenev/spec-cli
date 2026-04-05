@@ -3,7 +3,7 @@ package engine
 import (
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
@@ -17,7 +17,7 @@ type resolvedEntityRef struct {
 func buildRuntimeEvaluationContext(
 	frontmatter map[string]any,
 	resolvedRefs map[string]resolvedEntityRef,
-	typeSpec model.SchemaEntityType,
+	typeSpec schemacapvalidate.EntityValidationModel,
 ) map[string]any {
 	meta := make(map[string]any, len(typeSpec.RequiredFields))
 	refs := make(map[string]any)

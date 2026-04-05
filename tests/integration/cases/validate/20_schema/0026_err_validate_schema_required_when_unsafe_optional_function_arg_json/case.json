@@ -12,7 +12,7 @@
     "validate"
   ],
   "expect": {
-    "exit_code": 1,
+    "exit_code": 4,
     "response_file": "response.json",
     "stderr_file": ""
   },

@@ -17,7 +17,7 @@ type Document struct {
 	Root        *yaml.Node
 }
 
-func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
+func Load(path string, displayPath string) (Document, []diagnostics.Issue, error) {
 	display := strings.TrimSpace(displayPath)
 	if display == "" {
 		display = strings.TrimSpace(path)
@@ -31,7 +31,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 				fmt.Sprintf("schema file is not readable: %v", replacePathInReason(readErr.Error(), path, display)),
 				"schema",
 			),
-		}
+		}, readErr
 	}
 
 	if len(strings.TrimSpace(string(raw))) == 0 {
@@ -41,7 +41,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 				"schema file is empty",
 				"schema",
 			),
-		}
+		}, nil
 	}
 
 	var root yaml.Node
@@ -52,7 +52,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 				fmt.Sprintf("failed to parse schema yaml/json: %v", err),
 				"schema",
 			),
-		}
+		}, nil
 	}
 
 	doc := yamlnodes.FirstContentNode(&root)
@@ -63,7 +63,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 				"schema root must be a mapping object",
 				"schema",
 			),
-		}
+		}, nil
 	}
 
 	if duplicate, ok := yamlnodes.FindDuplicateMappingKey(doc); ok {
@@ -73,7 +73,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 				fmt.Sprintf("schema contains duplicate key '%s'", duplicate.Key),
 				duplicate.Path,
 			),
-		}
+		}, nil
 	}
 
 	return Document{
@@ -81,7 +81,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue) {
 		DisplayPath: display,
 		Raw:         raw,
 		Root:        doc,
-	}, nil
+	}, nil, nil
 }
 
 func replacePathInReason(reason string, absolutePath string, displayPath string) string {

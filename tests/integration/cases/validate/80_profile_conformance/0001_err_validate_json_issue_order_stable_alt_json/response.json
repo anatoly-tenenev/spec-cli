@@ -59,9 +59,16 @@
     "entities_scanned": 2,
     "entities_valid": 0,
     "errors": 4,
-    "schema_valid": true,
     "validator_conformant": true,
     "warnings": 0
   },
-  "validation_scope": "full"
+  "validation_scope": "full",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
+  }
 }

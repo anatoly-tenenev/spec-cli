@@ -5,8 +5,9 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
+	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -14,14 +15,14 @@ func validatePathPattern(
 	issues *[]domainvalidation.Issue,
 	entity *model.CheckedEntity,
 	relativePath string,
-	typeSpec model.SchemaEntityType,
+	typeSpec schemacapvalidate.EntityValidationModel,
 	context map[string]any,
 ) {
 	if len(typeSpec.PathPattern.Cases) == 0 {
 		return
 	}
 
-	var selected *model.PathPatternCase
+	var selected *schemacapvalidate.PathPatternCase
 	for idx := range typeSpec.PathPattern.Cases {
 		caseRule := &typeSpec.PathPattern.Cases[idx]
 		shouldUse := false
@@ -30,7 +31,7 @@ func validatePathPattern(
 		case !caseRule.HasWhen:
 			shouldUse = true
 		case caseRule.WhenExpr != nil:
-			value, evalErr := expressions.Evaluate(caseRule.WhenExpr, context)
+			value, evalErr := schemaexpressions.Evaluate(caseRule.WhenExpr, context)
 			if evalErr != nil {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "instance.pathTemplate.when_evaluation_failed",
@@ -42,7 +43,7 @@ func validatePathPattern(
 				})
 				return
 			}
-			shouldUse = expressions.IsTruthy(value)
+			shouldUse = schemaexpressions.IsTruthy(value)
 		default:
 			shouldUse = caseRule.When
 		}
@@ -64,7 +65,7 @@ func validatePathPattern(
 		return
 	}
 
-	expectedPath, renderErr := expressions.RenderTemplate(selected.UseTemplate, context)
+	expectedPath, renderErr := schemaexpressions.RenderTemplate(selected.UseTemplate, context)
 	if renderErr != nil {
 		addIssue(issues, entity, domainvalidation.Issue{
 			Code:        "instance.pathTemplate.use_interpolation_failed",

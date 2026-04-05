@@ -7,5 +7,14 @@
     "details": {
       "entity_type": "unknown"
     }
+  },
+  "validation_scope": "full",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
   }
 }

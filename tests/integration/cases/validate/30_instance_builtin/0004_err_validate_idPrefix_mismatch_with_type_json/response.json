@@ -10,7 +10,7 @@
       },
       "field": "frontmatter.id",
       "level": "error",
-      "message": "id must match 'DOC-\u003cnumber\u003e'",
+      "message": "id must match 'DOC-<number>'",
       "standard_ref": "7.3"
     }
   ],
@@ -26,9 +26,16 @@
     "entities_scanned": 1,
     "entities_valid": 0,
     "errors": 1,
-    "schema_valid": true,
     "validator_conformant": true,
     "warnings": 0
   },
-  "validation_scope": "full"
+  "validation_scope": "full",
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
+  }
 }

@@ -2,11 +2,10 @@
   "result_state": "invalid",
   "validation_scope": "full",
   "summary": {
-    "schema_valid": false,
     "validator_conformant": true,
     "entities_scanned": 0,
     "entities_valid": 0,
-    "errors": 1,
+    "errors": 0,
     "warnings": 0,
     "coverage": {
       "mode": "strict",
@@ -16,14 +15,26 @@
       "skipped_entities": 0
     }
   },
-  "issues": [
-    {
-      "code": "schema.expression.unknown_function",
-      "level": "error",
-      "class": "SchemaError",
-      "message": "schema.entity.doc.meta.fields.owner.required has invalid expression in required context: unknown function \"xor\" (offset: 0)",
-      "standard_ref": "11.5",
-      "field": "schema.entity.doc.meta.fields.owner.required"
-    }
-  ]
+  "issues": [],
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "code": "schema.expression.unknown_function",
+        "level": "error",
+        "class": "SchemaError",
+        "message": "invalid required expression: unknown function \"xor\"",
+        "path": "schema.entity.doc.meta.fields.owner.required"
+      }
+    ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
+  }
 }

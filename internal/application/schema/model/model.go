@@ -1,5 +1,7 @@
 package model
 
+import schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+
 type CompiledSchema struct {
 	Version     string
 	Description string
@@ -20,6 +22,7 @@ type MetaField struct {
 	Value       ValueSpec
 	Required    Requirement
 	Description string
+	SchemaPath  string
 }
 
 type Section struct {
@@ -27,15 +30,14 @@ type Section struct {
 	Titles      []string
 	Required    Requirement
 	Description string
+	SchemaPath  string
+	TitlePath   string
 }
 
 type Requirement struct {
 	Always bool
-	Expr   *CompiledExpression
-}
-
-type CompiledExpression struct {
-	Source string
+	Expr   *schemaexpressions.CompiledExpression
+	Path   string
 }
 
 type PathTemplate struct {
@@ -44,17 +46,9 @@ type PathTemplate struct {
 
 type PathTemplateCase struct {
 	Use         string
-	UseTemplate *CompiledTemplate
+	UseTemplate *schemaexpressions.CompiledTemplate
 	When        Requirement
-}
-
-type CompiledTemplate struct {
-	Parts []TemplatePart
-}
-
-type TemplatePart struct {
-	Literal string
-	Expr    *CompiledExpression
+	UsePath     string
 }
 
 type ValueKind string
@@ -82,7 +76,8 @@ type ValueSpec struct {
 }
 
 type Literal struct {
-	Value any
+	Value    any
+	Template *schemaexpressions.CompiledTemplate
 }
 
 type RefCardinality string

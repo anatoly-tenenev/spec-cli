@@ -44,5 +44,10 @@
         "path": "schema.entity.service.pathTemplate"
       }
     ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
   }
 }

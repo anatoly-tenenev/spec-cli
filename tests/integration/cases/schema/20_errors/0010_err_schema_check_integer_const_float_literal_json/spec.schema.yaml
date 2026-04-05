@@ -1,0 +1,11 @@
+version: v1
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: services/index.md
+    meta:
+      fields:
+        count:
+          schema:
+            type: integer
+            const: 1.0

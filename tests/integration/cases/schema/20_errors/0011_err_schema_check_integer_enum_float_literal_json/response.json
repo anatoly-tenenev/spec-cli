@@ -1,0 +1,25 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "schema",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.value.enum_type_mismatch",
+        "message": "schema.enum value type is incompatible with schema.type",
+        "path": "schema.entity.service.meta.fields.count.schema.enum[0]"
+      }
+    ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
+  }
+}

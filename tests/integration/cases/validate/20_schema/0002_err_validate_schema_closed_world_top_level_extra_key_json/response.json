@@ -2,11 +2,10 @@
   "result_state": "invalid",
   "validation_scope": "full",
   "summary": {
-    "schema_valid": false,
     "validator_conformant": true,
     "entities_scanned": 0,
     "entities_valid": 0,
-    "errors": 1,
+    "errors": 0,
     "warnings": 0,
     "coverage": {
       "mode": "strict",
@@ -16,13 +15,26 @@
       "skipped_entities": 0
     }
   },
-  "issues": [
-    {
-      "code": "schema.invalid",
-      "level": "error",
-      "class": "SchemaError",
-      "message": "schema has unsupported top-level key 'x-extra'",
-      "standard_ref": "7"
-    }
-  ]
+  "issues": [],
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "code": "schema.keys.unsupported",
+        "level": "error",
+        "class": "SchemaError",
+        "message": "unsupported key 'x-extra'",
+        "path": "schema.x-extra"
+      }
+    ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
+  }
 }

@@ -21,6 +21,8 @@ This migration plan assumes the following decisions are already fixed:
 9. All strict command responses gain one common top-level `schema` block.
 10. Mutating commands keep the order `acquire workspace lock -> compile schema -> build capability -> execute`.
 11. `ndjson` changes are out of scope in this migration.
+12. `schema.type = null` is not carried forward into the shared compiler model; if it surfaces during migration, remove it from the migrated strict-command path instead of preserving legacy support.
+13. For `schema.type = array`, `schema.items` is mandatory in the shared compiler model; legacy `validate` tolerance for arrays without `items` must not be preserved.
 
 ## 3. Migration Principles
 
@@ -189,6 +191,7 @@ What is not acceptable:
 
 - a second schema parser hidden inside the new validation path;
 - duplicated schema diagnostics between `schema` and `issues`.
+- reintroducing legacy-only schema forms that are intentionally dropped by the migration, including `schema.type = null` and `schema.type = array` without mandatory `schema.items`.
 
 ### 9.4. Acceptance Criteria
 

@@ -2,7 +2,6 @@
   "result_state": "invalid",
   "validation_scope": "full",
   "summary": {
-    "schema_valid": true,
     "validator_conformant": true,
     "entities_scanned": 1,
     "entities_valid": 0,
@@ -43,5 +42,13 @@
       },
       "field": "content.sections.scope"
     }
-  ]
+  ],
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
+  }
 }

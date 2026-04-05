@@ -12,8 +12,8 @@ Compact project map for fast entry into the code.
 2. `internal/application/commandbus/bus.go` - `(*Bus).Dispatch`.
 3. `internal/application/commands/<command>/handler.go` - `(*Handler).Handle`.
 4. For `help`: `options.Parse` -> `options.NormalizePaths` (canonical `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
-5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> build top-level `schema` diagnostics block.
-6. For `validate`: `options.Parse` -> `schema.Load` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
+5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema`, otherwise return success `schema` block.
+6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
 7. For `query`: `options.Parse` -> `schema.Load` -> `schema.BuildIndex` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute`.
 8. For `get`: `options.Parse` -> `schema.LoadReadModel` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity`.
 9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema.Load` -> `workspace.BuildSnapshot` -> `engine.Execute`.
@@ -77,11 +77,34 @@ Compact project map for fast entry into the code.
     - Calculate deterministic summary counters (`errors`, `warnings`) used by command responses.
   - Subpackages: none.
 
+- `internal/application/schema/expressioncontext`
+  - Entrypoint: `context.go` - `IsBuiltinMetaField`, `BuildEntityExpressionSchema`, `IsPathGuaranteedBySchema`, `GuardRootForPath`.
+  - Responsibilities:
+    - Keep canonical built-in frontmatter keys for schema-level reserved-name checks.
+    - Build schema-aware JMESPath context (`type/id/slug/createdDate/updatedDate/meta/refs`) from canonical entity model.
+    - Project scalar `entityRef` fields into `refs.<field>={id,type,slug,dirPath}` for static expression checks.
+    - Provide path/guard helpers used by compiler pathTemplate safety validation.
+  - Subpackages: none.
+
+- `internal/application/schema/expressions`
+  - Entrypoints:
+    - `compiler.go` - `NewEngine`, `NewSchemaAwareEngine`, `(*Engine).Compile`
+    - `interpolation.go` - `ContainsInterpolation`, `CompileScalarInterpolation`, `CompileTemplate`, `RenderTemplate`
+    - `evaluator.go` - `Evaluate`, `IsTruthy`, `StringifyInterpolationValue`
+  - Responsibilities:
+    - Provide shared JMESPath compile/cache adapter for schema compile-time checks and runtime evaluation.
+    - Compile expressions in scalar/template modes with inferred-type validation and stable diagnostic-code mapping.
+    - Compile and render `${...}` templates with deterministic parsing and interpolation boundary handling.
+    - Expose guard analysis (`ProtectsWhenTrue`, guarded paths) for schema-level pathTemplate safety checks.
+    - Evaluate compiled expressions/templates at runtime and normalize interpolation output types.
+  - Subpackages: none.
+
 - `internal/application/schema/model`
   - Entrypoint: `model.go` - canonical schema model types (`CompiledSchema`, `EntityType`, `MetaField`, `Section`, `ValueSpec`, `PathTemplate`, `RefSpec`).
   - Responsibilities:
     - Hold command-agnostic canonical schema semantics after compile.
-    - Encode requiredness/expression and path-template structures without response-format concerns.
+    - Keep compiled expression/template objects in canonical required/enum/const/pathTemplate rules.
+    - Preserve schema provenance paths (`required/title/pathTemplate use`) for runtime diagnostics.
     - Represent scalar/array value kinds and reference cardinality in one shared IR.
   - Subpackages: none.
 
@@ -99,11 +122,13 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Coordinate shared compile pipeline: source load -> semantic compile -> summary flags.
     - Keep in-process compile cache per command run (`path + displayPath`) and return cloned cached results.
-    - Return canonical result bundle (`schema`, diagnostics list, summary, valid flag) for command/capability consumers.
+    - Guarantee `Result.Issues` is always a non-nil slice (JSON `[]` for zero diagnostics).
+    - Return canonical result bundle (`schema`, diagnostics list, summary, valid flag) plus shared compile failure classification into domain `AppError` (`SCHEMA_NOT_FOUND | SCHEMA_READ_ERROR | SCHEMA_PARSE_ERROR | SCHEMA_INVALID`).
+    - Keep warnings-only diagnostics non-blocking (`compileErr=nil`, `result.Valid=true`) and classify failures once in shared layer for all migrated commands.
   - Subpackages:
     - `compile/internal/compiler` - thin bridge from compile entrypoint to semantic compiler.
-    - `compile/internal/compiler/internal/semantic` - canonical semantic parser of top-level/entity/meta/content/pathTemplate structures.
-    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements/templates, value-schema checks (`type/enum/const/refTypes/items/min/max`), and deterministic diagnostic helpers.
+    - `compile/internal/compiler/internal/semantic` - canonical semantic compiler for `idPrefix`, `required`, section-title rules, const/enum interpolation, pathTemplate cases/guards, and expression-aware checks.
+    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refTypes/items/min/max`), and deterministic diagnostics.
 
 - `internal/application/schema/capabilities/read`
   - Entrypoint: `builder.go` - `Build`.
@@ -124,9 +149,10 @@ Compact project map for fast entry into the code.
 - `internal/application/schema/capabilities/validate`
   - Entrypoint: `builder.go` - `Build`.
   - Responsibilities:
-    - Build validation capability projection for required fields/sections and path-template rules by entity type.
-    - Preserve expression-based requiredness in capability model (`Always` or `Expr`).
-    - Keep validation rule assembly decoupled from workspace/entity runtime traversal.
+    - Build deterministic runtime validation plan from canonical schema (`EntityOrder` + per-type rules).
+    - Project required field/section rules with expression paths, type/ref/array constraints, and const/enum values.
+    - Project allowed frontmatter set, pathTemplate cases (`use/when` + compiled templates/expressions), and stable type ordering.
+    - Keep runtime engine independent from YAML parsing and command-local schema IR.
   - Subpackages: none.
 
 - `internal/application/schema/capabilities/references`
@@ -143,8 +169,8 @@ Compact project map for fast entry into the code.
     - `help.go` - `HelpSpec`
   - Responsibilities:
     - Orchestrate `schema check`: parse subcommand -> normalize schema path -> run shared compiler.
-    - Build JSON response with `validation_scope: "schema"` and top-level `schema` diagnostics block (`valid`, `summary`, `issues`).
-    - Return non-zero exit code when compile diagnostics include at least one error.
+    - On compile success, build JSON response with `validation_scope: "schema"` and top-level `schema` diagnostics block (`valid`, `summary`, `issues`).
+    - On compile failure, return top-level `error` together with top-level `schema` and use process exit code from compile `AppError`.
     - Own `schema` command help inside shared `help`.
   - Subpackages:
     - `schema/internal/options` - parse `schema` subcommand contract (`check`) and normalize schema path.
@@ -154,15 +180,16 @@ Compact project map for fast entry into the code.
     - `internal/application/commands/validate/handler.go` - `NewHandler`, `(*Handler).Handle`
     - `internal/application/commands/validate/help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate the `validate` pipeline: parse options -> normalize paths -> load schema -> scan workspace -> run engine.
-    - Merge schema issues and instance issues into one result.
-    - Build the contractual JSON response and `ExitCode`, including `--warnings-as-errors`.
+    - Orchestrate `validate`: parse options -> normalize paths -> compile schema -> build top-level `schema` block.
+    - Stop before workspace scan when compile returns `AppError` and return top-level `error + schema`, `issues: []`, and runtime summary with zero scanned entities.
+    - Build validation capability and validate `--type` filters against capability entity map.
+    - Run workspace scan + runtime engine only after successful compile and build response with top-level `schema`.
+    - Keep runtime issues only in top-level `issues` and schema diagnostics only in top-level `schema.issues`.
+    - Compute process exit code from compile `AppError` for schema compile failures; for runtime success path keep unified `--warnings-as-errors` over schema + runtime warning planes.
     - Own command help for `validate` inside shared `help`.
   - Subpackages:
     - `validate/internal/options` - option parsing and path normalization.
-    - `validate/internal/schema` - schema loading and compile-time validation.
     - `validate/internal/workspace` - markdown workspace scan and frontmatter/content parsing.
-    - `validate/internal/expressions` - JMESPath adapter (compile/cache/evaluate/interpolate).
     - `validate/internal/engine` - runtime validation pipeline.
     - `validate/internal/model` - internal command-state types.
     - `validate/internal/support` - pure helpers for YAML, collections, and values.
@@ -177,86 +204,6 @@ Compact project map for fast entry into the code.
     - Enforce `--require-absolute-paths` with `INVALID_ARGS` on violations.
   - Subpackages: none.
 
-- `internal/application/commands/validate/internal/schema`
-  - Entrypoint: `loader.go` - `Load`.
-  - Responsibilities:
-    - Read the schema file and parse YAML/JSON into AST.
-    - Validate root mapping, duplicate keys, and top-level closed-world keys (`version/entity/description`).
-    - Fail early on `SchemaError` with level `error` and return `SCHEMA_INVALID` before runtime validation.
-    - Delegate `entity.<type>` parsing to the entity subpackage.
-  - Subpackages:
-    - `validate/internal/schema/internal/entity` - type-level schema parsing.
-
-- `internal/application/commands/validate/internal/schema/internal/entity`
-  - Entrypoint: `parser.go` - `ParseType`.
-  - Responsibilities:
-    - Validate closed-world keys at `entity.<type>` level (`idPrefix`, `pathTemplate`, `meta`, `content`, `description`).
-    - Parse `idPrefix`, reject interpolation in `idPrefix`, and enforce uniqueness across types.
-    - Create one expression engine instance per `entity.<type>` and pass it to all schema subparsers.
-    - Orchestrate parsing of `meta.fields`, `content.sections`, and `pathTemplate`, then aggregate schema issues.
-  - Subpackages:
-    - `.../metafields` - parse and compile-time checks for `meta.fields` and `meta.fields[].schema`.
-    - `.../sections` - parse and compile-time checks for `content.sections`.
-    - `.../requiredconstraint` - shared parsing for `required: boolean | "${expr}"`.
-    - `.../expressioncontext` - built-in meta field-name guard (`type`, `id`, `slug`, `createdDate`, `updatedDate`).
-    - `.../names` - schema-key validation for `meta.fields` and `content.sections`.
-    - `.../pathpattern` - parsing and validation of `pathTemplate`.
-    - `.../schemachecks` - reusable schema check helpers.
-    - `.../tests` - unit tests for schema parsing behavior of `meta.fields[].schema` (`items.type`, `items.refTypes`).
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/metafields`
-  - Entrypoint: `parser.go` - `Parse`.
-  - Responsibilities:
-    - Validate `meta`, `meta.fields[]`, and `meta.fields[].schema` structure and closed-world keys.
-    - Parse field schema attributes (`type`, `enum`, `const`, `refTypes`, `items`, `uniqueItems`, `minItems`, `maxItems`) and validate links to entity types.
-    - Validate `schema.items.refTypes` only for `schema.items.type=entityRef` (non-empty, no duplicates, known entity types) and keep deterministic sorted `refTypes`.
-    - Build one schema-aware expression context per `entity.<type>` and construct one shared expression engine for all expression-bearing keys in the type.
-    - Parse `required` through `requiredconstraint.Parse` (default `required=true`, expression form `${expr}`) and compile `schema.const`/`schema.enum` interpolations with schema-aware checks and inferred-type constraints.
-  - Subpackages: none.
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/sections`
-  - Entrypoint: `parser.go` - `Parse`.
-  - Responsibilities:
-    - Validate `content.sections` structure and section-rule closed-world keys.
-    - Parse section rules (`title`, `description`, `required`) with strict type checks.
-    - Parse section `required` through `requiredconstraint.Parse` (boolean or `${expr}`).
-    - Reject interpolation in section `title`/`description`.
-  - Subpackages: none.
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/requiredconstraint`
-  - Entrypoint: `parser.go` - `Parse`.
-  - Responsibilities:
-    - Parse shared requiredness rules for fields and sections.
-    - Apply default `required=true` when key is absent.
-    - Accept only `required: boolean` or `required: "${expr}"`, compile expression form via the shared JMESPath engine, and map compile errors to schema diagnostics.
-  - Subpackages: none.
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/expressioncontext`
-  - Entrypoint: `context.go` - `IsBuiltinMetaField`, `BuildEntityExpressionSchema`.
-  - Responsibilities:
-    - Keep the canonical built-in frontmatter keys set for schema name checks and shared validations.
-    - Build JSON Schema context for expression compilation (`type/id/slug/createdDate/updatedDate/meta/refs`) with deterministic `additionalProperties=false` constraints where required.
-    - Project scalar `entityRef` fields into `refs.<field> = {id,type,slug,dirPath}` schema shape for static validation.
-    - Provide guard helpers for schema-level path checks (`IsPathGuaranteedBySchema`, `GuardRootForPath`).
-  - Subpackages: none.
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/names`
-  - Entrypoint: `validate.go` - `ValidateMetaFieldName`, `ValidateSectionName`.
-  - Responsibilities:
-    - Validate name formats for `meta.fields` and `content.sections`.
-    - Forbid overriding built-in meta fields in `meta.fields`.
-  - Subpackages: none.
-
-- `internal/application/commands/validate/internal/schema/internal/entity/internal/pathpattern`
-  - Entrypoint: `parser.go` - `Parse`.
-  - Responsibilities:
-    - Normalize `pathTemplate` from `string | list(cases) | object{cases}` to one canonical cases list.
-    - Validate closed-world keys of the `pathTemplate` object and each case (`use`, `when`).
-    - Compile `cases[].use` as string templates and `cases[].when` as `boolean | "${expr}"` with schema-aware expression checks.
-    - Apply guard-analysis-based schema validation for `cases[].use` against optional/missing paths and `cases[].when` protections.
-    - Emit schema issues for empty/no-unconditional/misplaced-unconditional case configurations.
-  - Subpackages: none.
-
 - `internal/application/commands/validate/internal/workspace`
   - Entrypoints:
     - `candidates.go` - `BuildCandidateSet`
@@ -267,31 +214,17 @@ Compact project map for fast entry into the code.
     - Extract section labels and detect duplicate headings.
   - Subpackages: none.
 
-- `internal/application/commands/validate/internal/expressions`
-  - Entrypoints:
-    - `compiler.go` - `NewEngine`, `NewSchemaAwareEngine`, `(*Engine).Compile`
-    - `interpolation.go` - `ContainsInterpolation`, `CompileScalarInterpolation`, `CompileTemplate`, `RenderTemplate`
-    - `evaluator.go` - `Evaluate`, `IsTruthy`, `StringifyInterpolationValue`
-  - Responsibilities:
-    - Wrap `github.com/anatoly-tenenev/go-jmespath` as the only expression backend, with schema-aware and non-schema compile modes.
-    - Compile expressions with cache key `<entityType, mode, source>`, including inferred-type analysis for boolean and interpolation contexts.
-    - Map JMESPath static errors to stable schema diagnostic codes, including `unsafe_optional_argument`, and expose offset for diagnostics.
-    - Parse `${expr}` templates and locate interpolation boundaries with JMESPath-aware brace/quote tracking.
-    - Expose guard analysis (`ProtectsWhenTrue`, guarded paths) for schema-level checks and execute runtime evaluation with JMESPath truthiness.
-    - Convert interpolation values to deterministic strings and reject unsupported runtime types (`null`, `array`, `object`) for string interpolation.
-  - Subpackages: none.
-
 - `internal/application/commands/validate/internal/engine`
   - Entrypoints:
     - `runner.go` - `RunValidation`
     - `issues.go` - `CountIssuesByLevel`
   - Responsibilities:
-    - Run the full validation pipeline: parse candidates, built-in checks, schema-driven checks.
-    - Build runtime evaluation context for each entity (`type/id/slug/createdDate/updatedDate`, `meta`, `refs`) with `refs.<field>=null` default for unresolved/missing scalar refs.
-    - Evaluate `required` expressions for `meta.fields` and `content.sections` via JMESPath truthiness, and resolve interpolated `schema.const` / `schema.enum` values before comparison.
-    - Select first truth-like `pathTemplate` case left-to-right, evaluate only selected `use`, and map runtime failures to instance diagnostics.
-    - Resolve scalar `entityRef` and `array.items.type=entityRef` targets (including `refTypes`, `missing|ambiguous|type_mismatch`) and reject blank array `entityRef` items as item-type mismatches.
-    - Aggregate entity/global issues and compute coverage, validity, and conformance metrics.
+    - Run runtime validation over workspace candidates using shared validation capability (no local schema parsing).
+    - Build runtime evaluation context (`type/id/slug/createdDate/updatedDate/meta/refs`) for required/pathTemplate expression evaluation.
+    - Evaluate required field/section rules, const/enum interpolations, and array/ref constraints from capability plan.
+    - Select first matching pathTemplate case left-to-right, render `use` template, and emit runtime mismatch/evaluation diagnostics.
+    - Resolve scalar and array `entityRef` targets (`missing|ambiguous|type_mismatch`) using deterministic global id index.
+    - Aggregate runtime/global uniqueness issues and compute coverage/validity/conformance metrics.
   - Subpackages: none.
 
 - `internal/application/commands/query`
@@ -826,6 +759,14 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Write one JSON payload into `io.Writer`.
     - Disable HTML escaping for machine-stable output.
+  - Subpackages: none.
+
+- `internal/output/payload`
+  - Entrypoint: `payload.go` - `BuildSchemaPayload`, `BuildErrorPayload`.
+  - Responsibilities:
+    - Build shared top-level `schema` payload from shared compile result (`valid`, `summary`, `issues`).
+    - Build shared top-level `error` payload (`code`, `message`, `exit_code`, optional `details`) from domain `AppError`.
+    - Keep schema/error response fragments centralized for migrated handlers (`schema check`, `validate`).
   - Subpackages: none.
 
 - `internal/output/errormap`

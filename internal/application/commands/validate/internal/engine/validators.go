@@ -10,21 +10,16 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
 var slugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
-func validateAllowedFrontmatterKeys(issues *[]domainvalidation.Issue, entity *model.CheckedEntity, frontmatter map[string]any, typeSpec model.SchemaEntityType) {
-	allowed := map[string]struct{}{
-		"type":        {},
-		"id":          {},
-		"slug":        {},
-		"createdDate": {},
-		"updatedDate": {},
-	}
-	for _, rule := range typeSpec.RequiredFields {
-		allowed[rule.Name] = struct{}{}
+func validateAllowedFrontmatterKeys(issues *[]domainvalidation.Issue, entity *model.CheckedEntity, frontmatter map[string]any, typeSpec schemacapvalidate.EntityValidationModel) {
+	allowed := make(map[string]struct{}, len(typeSpec.AllowedFrontmatterFields))
+	for _, fieldName := range typeSpec.AllowedFrontmatterFields {
+		allowed[fieldName] = struct{}{}
 	}
 
 	keys := support.SortedMapKeys(frontmatter)

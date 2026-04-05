@@ -9,6 +9,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
+	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -22,7 +23,7 @@ type parsedCandidate struct {
 	TypeName        string
 	HasType         bool
 	TypeKnown       bool
-	TypeSpec        model.SchemaEntityType
+	TypeSpec        schemacapvalidate.EntityValidationModel
 	ID              string
 	HasID           bool
 	Slug            string
@@ -32,7 +33,7 @@ type parsedCandidate struct {
 
 func RunValidation(
 	candidates []model.WorkspaceCandidate,
-	schema model.ValidationSchema,
+	schema schemacapvalidate.Capability,
 	opts model.Options,
 	workspaceRoot string,
 ) (model.ValidationRun, *domainerrors.AppError) {
@@ -250,7 +251,7 @@ func RunValidation(
 
 func parseCandidates(
 	candidates []model.WorkspaceCandidate,
-	schema model.ValidationSchema,
+	schema schemacapvalidate.Capability,
 	workspaceRoot string,
 ) ([]parsedCandidate, *domainerrors.AppError) {
 	parsed := make([]parsedCandidate, 0, len(candidates))
@@ -292,7 +293,7 @@ func parseCandidates(
 
 		entry.TypeName, entry.HasType = workspace.ReadStringField(frontmatter, "type")
 		if entry.HasType {
-			typeSpec, exists := schema.Entity[entry.TypeName]
+			typeSpec, exists := schema.EntityTypes[entry.TypeName]
 			entry.TypeKnown = exists
 			if exists {
 				entry.TypeSpec = typeSpec

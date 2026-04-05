@@ -16,5 +16,10 @@
         "path": "schema"
       }
     ]
+  },
+  "error": {
+    "code": "SCHEMA_PARSE_ERROR",
+    "message": "failed to parse schema yaml/json",
+    "exit_code": 4
   }
 }

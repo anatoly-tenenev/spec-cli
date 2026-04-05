@@ -1,13 +1,5 @@
 {
-  "issues": [
-    {
-      "class": "SchemaError",
-      "code": "schema.invalid",
-      "level": "error",
-      "message": "schema.entity.doc.meta.fields.owners.schema.items.refTypes must be a non-empty list",
-      "standard_ref": "7"
-    }
-  ],
+  "issues": [],
   "result_state": "invalid",
   "summary": {
     "coverage": {
@@ -19,10 +11,30 @@
     },
     "entities_scanned": 0,
     "entities_valid": 0,
-    "errors": 1,
-    "schema_valid": false,
+    "errors": 0,
     "validator_conformant": true,
     "warnings": 0
   },
-  "validation_scope": "full"
+  "validation_scope": "full",
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "code": "schema.value.ref_types_empty",
+        "level": "error",
+        "class": "SchemaError",
+        "message": "schema.refTypes must be a non-empty array",
+        "path": "schema.entity.doc.meta.fields.owners.schema.items.refTypes"
+      }
+    ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
+  }
 }
