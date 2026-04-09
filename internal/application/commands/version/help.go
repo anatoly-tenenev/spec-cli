@@ -9,6 +9,9 @@ func HelpSpec() helpmodel.CommandSpec {
 		Syntaxes: []string{
 			"spec-cli version",
 		},
+		OperationModel: []string{
+			"Returns the CLI version only.",
+		},
 		Rules: []string{
 			"Returns semantic version string for current binary build.",
 		},

@@ -1,60 +1,16 @@
 Command
   version: show CLI version
 
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
+
 Syntax
   spec-cli version
 
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: loaded
-  CLI-oriented projection:
-    version: "0.0.4"
-    description: Workspace specification schema
-    entity:
-      feature:
-        description: Feature specifications
-        idPrefix: FEAT
-        meta:
-          status:
-            description: Lifecycle status
-            required: false
-            schema:
-              type: string
-              enum:
-                - draft
-                - active
-                - deprecated
-          watchers:
-            description: Related services
-            required: false
-            schema:
-              type: array
-              items:
-                type: entityRef
-                refTypes:
-                  - service
-        refs:
-          owner:
-            description: Parent service
-            required: ${meta.status == 'active'}
-            schema:
-              type: entityRef
-              refTypes:
-                - service
-        content:
-          sections:
-            summary:
-              description: Short summary
-              required: ${meta.status == 'active'}
-              title:
-                - Summary
-      service:
-        idPrefix: SVC
-        meta:
-          tier:
-            required: true
-            schema:
-              type: string
+Operation model
+  Returns the CLI version only.
 
 Options
   none
@@ -62,5 +18,5 @@ Options
 Rules
   - Returns semantic version string for current binary build.
 
-Examples
+Examples (syntax-only)
   spec-cli version

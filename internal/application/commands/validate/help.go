@@ -5,9 +5,21 @@ import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"
 func HelpSpec() helpmodel.CommandSpec {
 	return helpmodel.CommandSpec{
 		Name:    "validate",
-		Summary: "validate schema and workspace documents",
+		Summary: "validate schema and workspace entities in one deterministic run",
 		Syntaxes: []string{
 			"spec-cli validate [options]",
+		},
+		OperationModel: []string{
+			"validate runs deterministic checks over the effective schema and entity documents.",
+			"--type restricts the active entity-type set for validation.",
+		},
+		DetailSections: []helpmodel.DetailSectionSpec{
+			{
+				Title: "Validation model",
+				Lines: []string{
+					"built-ins, meta fields, refs, content sections, and schema constraints are validated against the effective schema.",
+				},
+			},
 		},
 		Options: []helpmodel.OptionSpec{
 			{
@@ -17,7 +29,7 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "entity type keys from Schema.entity",
+				SchemaDerivation: "entity type keys from the specification projection",
 				Description:      "Restrict validation to selected entity types.",
 			},
 			{
@@ -45,7 +57,7 @@ func HelpSpec() helpmodel.CommandSpec {
 		},
 		Examples: []string{
 			"spec-cli validate",
-			"spec-cli validate --type feature --type service",
+			"spec-cli validate --type <entity_type_1> --type <entity_type_2>",
 			"spec-cli validate --fail-fast",
 			"spec-cli validate --warnings-as-errors",
 		},

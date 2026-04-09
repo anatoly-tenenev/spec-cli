@@ -204,7 +204,7 @@ Compact project map for fast entry into the code.
     - Run workspace scan + runtime engine only after successful compile and build response with top-level `schema`.
     - Keep runtime issues only in top-level `issues` and schema diagnostics only in top-level `schema.issues`.
     - Compute process exit code from compile `AppError` for schema compile failures; for runtime success path keep unified `--warnings-as-errors` over schema + runtime warning planes.
-    - Own command help for `validate` inside shared `help`.
+    - Own command help for `validate` inside shared `help`, including syntax-only repeated type placeholders in examples.
   - Subpackages:
     - `validate/internal/options` - option parsing and path normalization.
     - `validate/internal/workspace` - markdown workspace scan and frontmatter/content parsing.
@@ -254,6 +254,7 @@ Compact project map for fast entry into the code.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
     - Build contractual JSON response (`items`, `matched`, `page`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
+    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, and the runtime-mandatory hidden sort tail contract (`type:asc`, `id:asc`).
     - Own `query` help inside shared `help`.
     - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
@@ -302,19 +303,22 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `spec-cli help` and `spec-cli help <command>` through one ordered command catalog.
+    - Orchestrate `spec-cli help`, `spec-cli help <command>`, and `spec-cli help <command> --show-schema-projection` through one ordered command catalog.
     - Reject explicit `--format json` for `help` with `CAPABILITY_UNSUPPORTED`.
-    - Guarantee that `help` and `help <command>` still succeed on schema problems (`missing|invalid|error`) through degraded `Schema` contract instead of hard failure.
-    - Render text-first help with exactly one `Schema` section where `ResolvedPath` and `Status` are always present.
-    - Emit stable recovery block (`ReasonCode/Impact/RecoveryClass/RetryCommand`) whenever `Status != loaded`.
+    - Build schema status/model once (`helpschema.LoadReport`) and render one stable `Schema` block contract in every branch: `Workspace`, deterministic absolute `ResolvedPath`, `Status`, and recovery diagnostics (`ReasonCode`, `Impact`, `RecoveryClass`, `RetryCommand`) only for degraded statuses.
+    - Keep stable placement rules: general help places `Schema` right after `CLI`; command help places `Schema` right after `Command` and before `Syntax`.
+    - Render loaded general help as structured sections (`CLI`, `Schema`, `Execution model`, `Specification model`, `Projection conventions`, `Specification projection`, `Reference value model`, `Global options`, `Commands`, `Command details`) and keep `Specification projection` as a separate block.
+    - Render loaded command help from one structured command contract (`Operation model` + `DetailSections`) with syntax-only examples that use role-specific schema-neutral placeholders; include the same schema-derived `Specification projection` block only when `--show-schema-projection` is explicitly set.
+    - Keep `spec-cli help --show-schema-projection` non-duplicating for the general help projection block.
+    - Keep tolerant behavior: on schema problems (`missing|invalid|error`) render degraded help with explicit recovery contract (`ReasonCode/Impact/RecoveryClass/RetryCommand`) instead of hard failure.
     - Return `INVALID_ARGS` for unknown `help <command>`.
   - Subpackages:
-    - `help/internal/options` - positional parsing for `help`, canonical schema path, deterministic `ResolvedPath` through fixed-root injection.
+    - `help/internal/options` - parse `help` positionals plus `--show-schema-projection`, canonical absolute workspace/schema paths, deterministic `WorkspaceDisplay`, and fixed-root normalized absolute `ResolvedPath`.
 
 - `internal/application/help/helpmodel`
   - Entrypoint: `model.go` - `NewCatalog`, `MustCatalog`, `(*Catalog).Ordered`, `(*Catalog).Find`, `(*Catalog).Names`, `(*Catalog).Has`.
   - Responsibilities:
-    - Typed model for command help contract (`CommandSpec`, `PositionalSpec`, `OptionSpec`, `GlobalOptionSpec`).
+    - Typed model for command help contract (`CommandSpec`, `PositionalSpec`, `OptionSpec`, `DetailSectionSpec`, `GlobalOptionSpec`).
     - One ordered command catalog for `Commands` and `Command details`.
     - Validate command uniqueness.
   - Subpackages: none.
@@ -329,26 +333,37 @@ Compact project map for fast entry into the code.
 - `internal/application/help/helpschema`
   - Entrypoint: `projector.go` - `LoadReport`.
   - Responsibilities:
-    - Read the effective schema, parse YAML AST, and deterministically project raw schema into CLI-oriented schema view.
+    - Compile the effective schema through shared compiler (`schema/compile`) and keep help schema semantics aligned with runtime command semantics.
     - Classify schema unavailability into `loaded|missing|invalid|error` plus reason codes (`SCHEMA_NOT_FOUND`, `SCHEMA_NOT_READABLE`, `SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`, `SCHEMA_PROJECTION_ERROR`).
-    - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without partial heuristic schema-derived data.
+    - Build loaded help payload from shared capabilities (`read`, `write`, `validate`, `references`): specification projection JSON, schema-derived catalog for examples, validate entity order, inbound reference slots.
+    - Delegate specification projection rendering to a data-driven shared-model projector so all compiled value facets (`items`, `minItems`, `maxItems`, `uniqueItems`, `const`, `enum`, `format`, refs metadata) flow automatically from `model.ValueSpec`.
+    - Publish ref cardinality only through projection shape (`x-kind=entityRef` on scalar refs; `type=array` + `items.x-kind=entityRef` on array refs); `x-cardinality` is intentionally not emitted.
+    - Preserve dynamic literal constraints in projection without heuristics: static `const/enum` stay native JSON Schema keywords, dynamic `const` is published as `x-const`, and dynamic/mixed `enum` is published as ordered `x-enum` entries (`literal|interpolation` objects).
+    - Normalize projection-level `x-refTypes` for open refs (`refTypes` omitted) to the full deterministic entity-type list from the effective schema (never `null`).
+    - Publish `content.raw` together with `content.sections` in the specification projection whenever the entity type has content sections.
+    - Publish section heading metadata as canonical scalar `title` only (first schema title), intentionally hiding additional schema aliases in help projection.
+    - Keep deterministic ordering for entity types, fields, sections, and projection output.
+    - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without heuristic schema-derived values.
+    - Use `spec-cli schema check --schema <path>` as degraded `RetryCommand` for schema syntax/semantic failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`) while preserving existing retry semantics for missing/read/projection scenarios.
+    - Treat any schema validation failure (`SCHEMA_INVALID`) as degraded help status (`invalid` + `SCHEMA_VALIDATION_ERROR`) and never mask it as loaded.
     - Pass absolute `ResolvedPath` into the report.
-    - Normalize `meta.fields -> meta|refs`, `required` as `boolean | "${expr}"` with implicit default `required: true`, and `title -> string[]`; reject legacy `required_when`.
-    - Exclude storage-facing nodes (`pathTemplate`, raw `meta.fields`) and hide empty blocks.
-    - Emit conditional requiredness as scalar `${expr}` (not nested `required.when`) and keep deterministic key order in the projected schema subtree.
   - Subpackages:
-    - `helpschema/internal/projector` - thin projection entrypoint and pipeline -> use-case mapping.
-    - `helpschema/internal/projector/internal/pipeline` - full parse/project/render pipeline with ordered projection and deterministic YAML emission.
-    - `helpschema/internal/projector/internal/pipeline/internal/yamlnodes` - isolated YAML-node primitives, key validation, and projection error mapping.
+    - `helpschema/internal/projection` - deterministic specification projection renderer over `model.CompiledSchema` (`built-ins/meta/refs/content.raw/content.sections`) with recursive value-facet serialization and preserved help `x-*` extensions.
 
 - `internal/application/help/helptext`
   - Entrypoint: `renderer.go` - `RenderGeneral`, `RenderCommand`.
   - Responsibilities:
-    - Render text-first help sections in fixed order.
-    - Render normalized options block (positionals before flags, sentinel `none`).
-    - Render shared `Schema` section: always print `ResolvedPath`; if `Status=loaded`, print full projection; if degraded, print fixed recovery block.
-    - Add an explicit rule in degraded `help <command>` saying concrete schema-derived values for `schema_derived` options are intentionally omitted.
-    - Render command blocks without ANSI or table layout.
+    - Render one unified `Schema` section shape for loaded and degraded help branches (`Workspace`, `ResolvedPath`, `Status`; degraded mode adds recovery diagnostics).
+    - Enforce stable section placement: `CLI -> Schema` for general help and `Command -> Schema -> Syntax` for command help.
+    - Keep the same schema-neutral section layout in loaded and degraded modes (`Execution model`, `Specification model`, `Projection conventions`, `Reference value model`, command `Operation model` and `DetailSections`), while hiding only schema-dependent projection/catalog payloads when schema is unavailable.
+    - Document projection-specific extensions in text contract: `x-const`/`x-enum` for dynamic interpolation constraints and canonical scalar section `title` semantics for whole-body heading defaults.
+    - Document ref cardinality contract as shape-derived (`x-kind` for scalar refs, `type=array` + `items.x-kind` for array refs) without `x-cardinality`.
+    - Render command help via `Operation model` + `DetailSections` in both loaded and degraded branches; append the schema-unavailable rule in degraded mode without replacing the structural command contract.
+    - Reuse the shared specification-projection renderer for both general help and `help <command> --show-schema-projection` so projection source/format stays identical.
+    - Render normalized options block (positionals before flags, sentinel `none`) and stable command sections without ANSI/table layout.
+    - Generate deterministic command examples as syntax-only templates with role-specific placeholders (`<entity_type>`, `<entity_id>`, `meta.<meta_field>`, `meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<ref_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.sections.<section_name>`) instead of concrete schema literals.
+    - Preserve the same syntax-only example families in loaded and degraded modes (no heuristic substitution of enum values, ids, slugs, field names, section names, or free-text literals).
+    - Use one command-order source from the shared help catalog for both loaded/degraded `Commands` and `Command details` sections.
   - Subpackages: none.
 
 - `internal/application/commands/get`
@@ -358,6 +373,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `get`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema lookup/read failures).
+    - Own `get` help as a structured single-entity read-model contract (`Target type`, `Read-model path forms`, `Defaults`, `Rules`) with selected-leaf `null` materialization semantics, sparse aggregate selectors, explicit `content.raw` support in the read/select contract, and syntax-only examples using `<entity_id>` plus role-specific read-path placeholders.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read over shared compile/read capability.
     - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>`; path-based ref leaf selectors `refs.<name>.id|resolved|type|slug|reason` are scalar-only and are rejected for array refs or scalar/array conflicts across schema types.
     - Own `get` help inside shared `help`.
@@ -431,7 +447,7 @@ Compact project map for fast entry into the code.
     - Return top-level `schema` in every post-compile JSON response (`success`, unknown type, write-contract/validation/conflict/read/write errors).
     - Keep schema diagnostics only in top-level `schema.issues`; runtime validation diagnostics stay under `error.details.validation.issues` for `VALIDATION_FAILED`.
     - Inject `Clock` for deterministic `createdDate`/`updatedDate`.
-    - Own `add` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
+    - Own `add` help inside shared `help`, including schema-derived write-model path catalog plus role-specific syntax-only value forms (`meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`), explicit whole-body heading contract (`## <title> {#<section_name>}`), and canonical-title linkage to `Specification projection` (`content.sections.<section_name>.title`).
   - Subpackages:
     - `add/internal/options` - parse/norm of `--type`, `--slug`, `--set`, `--set-file`, `--content-file`, `--content-stdin`, `--dry-run`.
     - `add/internal/workspace` - deterministic workspace snapshot (`id`/`slug`/suffix indexes, existing paths, parseable identities, `dirPath` context) keyed by shared capability entity map.
@@ -504,7 +520,7 @@ Compact project map for fast entry into the code.
     - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build top-level `schema` payload -> build shared references capability -> build workspace snapshot -> execute delete/checks.
     - Return top-level `schema` in every post-compile response (`success`, compile failure, and post-compile non-schema errors).
     - Map `INVALID_ARGS`, `SCHEMA_*`, `CONCURRENCY_CONFLICT`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
-    - Own `delete` help inside shared `help`.
+    - Own `delete` help inside shared `help` with syntax-only `<entity_id>` examples and schema-neutral revision token placeholder (`<token>`).
   - Subpackages:
     - `delete/internal/options` - parse/norm of `--id`, `--expect-revision`, `--dry-run`.
     - `delete/internal/workspace` - deterministic scan, target lookup by `id`, tolerant frontmatter parse, `revision`.
@@ -573,7 +589,7 @@ Compact project map for fast entry into the code.
     - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared write capability -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
     - Return contractual JSON response (`updated/noop/changes/entity/validation`) and include top-level `schema` for every post-compile success/error path.
-    - Own `update` help inside shared `help`, including the whole-body `--content-file`/`--content-stdin` heading example `## <title> {#<sectionName>}`.
+    - Own `update` help inside shared `help`, including schema-derived write-model path catalog plus role-specific syntax-only value forms (`meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`), explicit whole-body heading contract (`## <title> {#<section_name>}`), and canonical-title linkage to `Specification projection` (`content.sections.<section_name>.title`).
   - Subpackages:
     - `update/internal/options` - parse/norm of `update` options and conflict checks.
     - `update/internal/workspace` - workspace snapshot, frontmatter parsing, section layout.
@@ -746,7 +762,7 @@ Compact project map for fast entry into the code.
     - `workspace_lock_test.go` - `TestMutatingCommandsLockConflict`, `TestMutatingCommandsDryRunRespectsWorkspaceLock`
   - Responsibilities:
     - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version`, `schema` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
-    - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`.
+    - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`, including explicit coverage for `help <command> --show-schema-projection` and non-duplication in `help --show-schema-projection`.
     - Run black-box global-config cases (`--config` explicit path, auto-discovery of `cwd/spec-cli.json`, CLI-over-config priority, `INVALID_CONFIG` failures).
     - Run targeted `help` error-path checks (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) through subprocess invocations.
     - Traverse groups/cases deterministically (lexicographic sort on every level).
@@ -757,7 +773,7 @@ Compact project map for fast entry into the code.
     - Keep entrypoint/data-first case traversal and naming validation in `run_cases_test.go`; keep runtime/assert details in `tests/integration/internal/harness`.
     - Compare `exit_code`, `stderr`, and response (`json|text`) with golden expectations.
     - Treat `workspace.in` as optional for `help` cases; create empty workspace when absent.
-    - Compare text-help stdout directly and stabilize `ResolvedPath` through runtime fixed-root injection.
+    - Compare text-help stdout directly, stabilize `ResolvedPath` through runtime fixed-root injection, and assert the unified `Schema` contract (`Schema` section only; no `Environment`, `SchemaPath`, or `SchemaStatus`).
     - Compare `workspace.out` for mutating scenarios against actual post-command workspace state (ignoring internal `.spec-cli/workspace.lock` service file).
     - Use marker `workspace.in/.keep` for empty input workspaces so they stay in Git and CI.
     - Keep early-fail argument/planner/schema fixtures minimal: cases that fail before workspace scan (for example `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `SCHEMA_PARSE_ERROR`) should use `workspace.in/.keep` only unless the scenario explicitly validates filesystem/schema/read behavior.
@@ -817,15 +833,15 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/version/20_args/*` - `version` argument failures.
     - `tests/integration/cases/schema/10_happy/*` - happy-path `schema check`.
     - `tests/integration/cases/schema/20_errors/*` - schema source/semantic diagnostics (`read`, `parse`, `duplicate keys`, invalid semantics).
-    - `tests/integration/cases/help/10_general/*` - general `help` and `help <command>`.
-    - `tests/integration/cases/help/15_schema_recovery/*` - degraded-schema recovery contract for `help`.
+    - `tests/integration/cases/help/10_general/*` - general `help`, `help <command>`, and `help <command> --show-schema-projection`.
+    - `tests/integration/cases/help/15_schema_recovery/*` - degraded-schema recovery contract for `help`, including command-help recovery with explicit projection flag.
     - `tests/integration/cases/help/20_errors/*` - non-zero `help` errors.
     - `tests/integration/cases/global_options/10_config/*` - data-first global `--config` contract scenarios (explicit config, auto-discovery, CLI precedence, INVALID_CONFIG failures).
     - `tests/integration/cases/workspace_lock/10_conflict/*` - dedicated lock-contention fixtures for `add/update/delete` (regular and `--dry-run`) used by dynamic helper-process checks.
 
 ## Current Command Status
 
-- `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`), with schema projection and `--format json` capability gate.
+- `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`, `spec-cli help <command> --show-schema-projection`), with schema projection and `--format json` capability gate.
 - `schema` - shared schema compiler command is implemented (`spec-cli schema check`): deterministic compile diagnostics, top-level `schema` block (`valid/summary/issues`), no workspace scan, and in-process compile cache per command run.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
 - `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.

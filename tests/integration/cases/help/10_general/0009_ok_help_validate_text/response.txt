@@ -1,60 +1,20 @@
 Command
-  validate: validate schema and workspace documents
+  validate: validate schema and workspace entities in one deterministic run
+
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
 
 Syntax
   spec-cli validate [options]
 
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: loaded
-  CLI-oriented projection:
-    version: "0.0.4"
-    description: Workspace specification schema
-    entity:
-      feature:
-        description: Feature specifications
-        idPrefix: FEAT
-        meta:
-          status:
-            description: Lifecycle status
-            required: false
-            schema:
-              type: string
-              enum:
-                - draft
-                - active
-                - deprecated
-          watchers:
-            description: Related services
-            required: false
-            schema:
-              type: array
-              items:
-                type: entityRef
-                refTypes:
-                  - service
-        refs:
-          owner:
-            description: Parent service
-            required: ${meta.status == 'active'}
-            schema:
-              type: entityRef
-              refTypes:
-                - service
-        content:
-          sections:
-            summary:
-              description: Short summary
-              required: ${meta.status == 'active'}
-              title:
-                - Summary
-      service:
-        idPrefix: SVC
-        meta:
-          tier:
-            required: true
-            schema:
-              type: string
+Operation model
+  validate runs deterministic checks over the effective schema and entity documents.
+  --type restricts the active entity-type set for validation.
+
+Validation model
+  built-ins, meta fields, refs, content sections, and schema constraints are validated against the effective schema.
 
 Options
   --type <entity_type>
@@ -63,7 +23,7 @@ Options
     repeatable: true
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: entity type keys from Schema.entity
+    schema_derivation: entity type keys from the specification projection
     description: Restrict validation to selected entity types.
   --fail-fast
     takes_value: false
@@ -86,8 +46,8 @@ Rules
   - Validation always includes effective schema and workspace documents in one deterministic run.
   - Type filters are validated against schema-derived entity type keys.
 
-Examples
+Examples (syntax-only)
   spec-cli validate
-  spec-cli validate --type feature --type service
+  spec-cli validate --type <entity_type_1> --type <entity_type_2>
   spec-cli validate --fail-fast
   spec-cli validate --warnings-as-errors

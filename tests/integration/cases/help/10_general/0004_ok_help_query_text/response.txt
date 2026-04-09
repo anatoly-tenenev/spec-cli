@@ -1,60 +1,115 @@
 Command
-  query: read many entities with structural filters and deterministic pagination
+  query: read many entities through a schema-derived read model
+
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
 
 Syntax
   spec-cli query [options]
 
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: loaded
-  CLI-oriented projection:
-    version: "0.0.4"
-    description: Workspace specification schema
-    entity:
-      feature:
-        description: Feature specifications
-        idPrefix: FEAT
-        meta:
-          status:
-            description: Lifecycle status
-            required: false
-            schema:
-              type: string
-              enum:
-                - draft
-                - active
-                - deprecated
-          watchers:
-            description: Related services
-            required: false
-            schema:
-              type: array
-              items:
-                type: entityRef
-                refTypes:
-                  - service
-        refs:
-          owner:
-            description: Parent service
-            required: ${meta.status == 'active'}
-            schema:
-              type: entityRef
-              refTypes:
-                - service
-        content:
-          sections:
-            summary:
-              description: Short summary
-              required: ${meta.status == 'active'}
-              title:
-                - Summary
-      service:
-        idPrefix: SVC
-        meta:
-          tier:
-            required: true
-            schema:
-              type: string
+Operation model
+  query reads many entities through one schema-derived query-item read model.
+  --type restricts the active entity-type set before planning and filtering.
+  --select projects fields from that read model.
+  --sort orders results by sortable read-model paths.
+  --where evaluates JMESPath truthiness over the same read model.
+
+Active type set
+  If `--type` is omitted, all entity types from the specification projection are active.
+  If `--type` is repeated, only the selected entity types are active.
+  The query-item read model is the union over the active type set.
+  Path-based select, sort, and scalar ref detail paths must be compatible across the active type set.
+
+Read model
+  built-ins:
+    - type
+    - id
+    - slug
+    - revision
+    - createdDate
+    - updatedDate
+  type-local fields:
+    - meta.<meta_field> from the active type set
+    - refs.<ref_field> from the active type set
+    - content.raw from the active type set
+    - content.sections.<section_name> from the active type set
+  The exact type-local field catalog is defined by the Specification projection.
+
+Read-model path forms
+  built-in paths:
+    - type
+    - id
+    - slug
+    - revision
+    - createdDate
+    - updatedDate
+  meta paths:
+    - meta.<meta_field>
+  scalar ref paths:
+    - refs.<scalar_ref_field>
+    - refs.<scalar_ref_field>.id|type|slug|resolved|reason
+  array ref paths:
+    - refs.<array_ref_field>
+    - query expressions may inspect array items as ref objects with id|type|slug|resolved|reason
+  content paths:
+    - content.raw
+    - content.sections
+    - content.sections.<section_name>
+
+Where language
+  `--where` accepts a JMESPath expression.
+  spec-cli does not add project-specific operators or helper functions on top of JMESPath.
+  Filtering uses JMESPath truthiness; the expression result does not need to be boolean.
+  `createdDate` and `updatedDate` use date comparison semantics in the where model.
+  literal forms (syntax only):
+    - string: '<string_value>'
+    - number: `42`
+    - null: `null`
+
+Operation constraints
+  select:
+    - built-in paths
+    - meta paths
+    - refs
+    - refs.<ref_field>
+    - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+    - content.raw
+    - content.sections
+    - content.sections.<section_name>
+  sort:
+    - built-in scalar paths
+    - meta.<meta_field>
+    - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+    - content.raw
+    - content.sections.<section_name>
+  where:
+    allowed paths:
+      - built-in paths
+      - meta.<meta_field>
+      - refs.<ref_field>
+      - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+      - content.sections.<section_name>
+    forbidden:
+      - content root except content.sections...
+      - content.raw
+      - meta.<ref_field> access for entityRef values
+    runtime notes:
+      - evaluates against the same query-item read model
+      - optional and conditional fields may be absent at runtime
+      - use guards or fallbacks when needed
+
+Defaults
+  default projection:
+    - type
+    - id
+    - slug
+    - meta
+    - refs
+  default order:
+    - type:asc
+    - id:asc
 
 Options
   --type <entity_type>
@@ -63,32 +118,32 @@ Options
     repeatable: true
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: entity type keys from Schema.entity
-    description: Early entity type filter.
+    schema_derivation: entity type keys from the specification projection
+    description: Restrict the active entity-type set.
   --where <expr>
     takes_value: true
     required: false
     repeatable: false
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: JMESPath expression over query item schema
-    description: Schema-aware JMESPath filter expression.
-  --select <field>
+    schema_derivation: JMESPath expression over the query-item read model
+    description: Evaluate a JMESPath filter over the query-item read model.
+  --select <path>
     takes_value: true
     required: false
     repeatable: true
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: selectors from CLI projection-namespace
-    description: Projection-namespace selector.
-  --sort <field[:asc|desc]>
+    schema_derivation: selectable paths from the query-item read model
+    description: Select a path from the query-item read model.
+  --sort <path[:asc|desc]>
     takes_value: true
     required: false
     repeatable: true
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: sort fields from CLI filter-namespace
-    description: Deterministic sort term.
+    schema_derivation: sortable paths from the query-item read model
+    description: Sort by a sortable query-item read-model path.
   --limit <n>
     takes_value: true
     required: false
@@ -107,23 +162,20 @@ Options
     description: Page offset; integer >= 0; default 0.
 
 Rules
-  - projection-namespace argument is --select.
-  - filter-namespace arguments are --sort and --where.
-  - projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
-  - filter-namespace sort paths: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, refs.<field>.reason, content.raw, content.sections.<name>.
-  - --type uses schema-derived entity type keys and is not part of projection-namespace or filter-namespace.
-  - If --select is omitted, default projection is type, id, slug, meta and refs.
-  - Query guarantees deterministic ordering.
+  - If --type is omitted, all entity types from the specification projection participate.
+  - Only paths compatible with the active type set may be selected, sorted, or used in --where.
   - If --sort is omitted, effective sort is type:asc, then id:asc.
-  - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that tail is already present at the end.
-  - --where uses JMESPath truthiness over schema-aware query-item context.
-  - --where forbids content root access except content.sections... and forbids content.raw.
-  - --where forbids meta.<field> access for entityRef fields; use refs.<field>.
+  - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that exact tail is already present at the end.
+  - entityRef values are addressed through refs.<ref_field>, not meta.<ref_field>.
+  - Selected leaf paths under meta.<meta_field>, refs.<ref_field>, and content.sections.<section_name> materialize as null when absent.
+  - Aggregate selectors meta, refs, and content.sections keep sparse objects and do not synthesize unknown children.
 
-Examples
-  spec-cli query --type feature --select id --select meta.status
-  spec-cli query --where "meta.status == 'active'"
-  spec-cli query --where "refs.owner.id == 'SVC-2'"
-  spec-cli query --where "contains(content.sections.summary, 'retry')"
-  spec-cli query --where "length(refs.watchers[?reason == 'missing']) > `0`"
+Examples (syntax-only)
+  spec-cli query --type <entity_type> --select id --select meta.<meta_field>
+  spec-cli query --select refs.<ref_field> --select content.sections.<section_name>
+  spec-cli query --where "meta.<meta_scalar_field> == '<string_value>'"
+  spec-cli query --where "refs.<scalar_ref_field>.id == '<entity_id>'"
+  spec-cli query --where "contains(content.sections.<section_name> || '', '<substring>')"
+  spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
   spec-cli query --sort updatedDate:desc --limit 50 --offset 0
+  Available paths, value kinds, and ref cardinality depend on the effective schema.

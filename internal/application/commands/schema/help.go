@@ -5,9 +5,13 @@ import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"
 func HelpSpec() helpmodel.CommandSpec {
 	return helpmodel.CommandSpec{
 		Name:    "schema",
-		Summary: "compile and validate schema diagnostics",
+		Summary: "inspect schema compile diagnostics",
 		Syntaxes: []string{
 			"spec-cli schema check",
+		},
+		OperationModel: []string{
+			"Validates the schema language and returns compile diagnostics only.",
+			"Does not inspect workspace entities.",
 		},
 		Positionals: []helpmodel.PositionalSpec{
 			{

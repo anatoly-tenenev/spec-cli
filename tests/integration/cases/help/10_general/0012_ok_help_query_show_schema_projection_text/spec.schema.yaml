@@ -1,0 +1,71 @@
+version: "0.0.4"
+description: Workspace specification schema
+entity:
+  feature:
+    description: Feature specifications
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          description: Lifecycle status
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - active
+              - deprecated
+        slugAlias:
+          description: Slug mirror
+          required: false
+          schema:
+            type: string
+            const: "${slug}"
+        route:
+          description: Route selector
+          required: false
+          schema:
+            type: string
+            enum:
+              - "${slug}"
+              - fixed
+        labels:
+          description: Classification labels
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            minItems: 1
+            maxItems: 3
+            uniqueItems: true
+        watchers:
+          description: Related services
+          required: false
+          schema:
+            type: array
+            items:
+              type: entityRef
+        owner:
+          description: Parent service
+          required: ${meta.status == 'active'}
+          schema:
+            type: entityRef
+    content:
+      sections:
+        summary:
+          description: Short summary
+          required: ${meta.status == 'active'}
+          title:
+            - Summary
+            - Overview
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+    meta:
+      fields:
+        tier:
+          required: true
+          schema:
+            type: string

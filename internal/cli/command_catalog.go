@@ -19,12 +19,12 @@ import (
 var appCommandCatalog = helpmodel.MustCatalog([]helpmodel.CommandSpec{
 	help.HelpSpec(),
 	schemacmd.HelpSpec(),
+	validate.HelpSpec(),
 	query.HelpSpec(),
 	get.HelpSpec(),
 	add.HelpSpec(),
 	update.HelpSpec(),
 	delete.HelpSpec(),
-	validate.HelpSpec(),
 	version.HelpSpec(),
 })
 

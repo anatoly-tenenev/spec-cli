@@ -1,60 +1,75 @@
 Command
-  get: read one entity by exact id
+  get: read one entity through a schema-derived read model
+
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
 
 Syntax
   spec-cli get [options] --id <entity_id>
 
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: loaded
-  CLI-oriented projection:
-    version: "0.0.4"
-    description: Workspace specification schema
-    entity:
-      feature:
-        description: Feature specifications
-        idPrefix: FEAT
-        meta:
-          status:
-            description: Lifecycle status
-            required: false
-            schema:
-              type: string
-              enum:
-                - draft
-                - active
-                - deprecated
-          watchers:
-            description: Related services
-            required: false
-            schema:
-              type: array
-              items:
-                type: entityRef
-                refTypes:
-                  - service
-        refs:
-          owner:
-            description: Parent service
-            required: ${meta.status == 'active'}
-            schema:
-              type: entityRef
-              refTypes:
-                - service
-        content:
-          sections:
-            summary:
-              description: Short summary
-              required: ${meta.status == 'active'}
-              title:
-                - Summary
-      service:
-        idPrefix: SVC
-        meta:
-          tier:
-            required: true
-            schema:
-              type: string
+Operation model
+  get reads one entity through a schema-derived single-entity read model.
+  --id selects the target entity.
+  --select projects fields from the single-entity read model.
+
+Target type
+  The single-entity read model is determined by the resolved target entity type.
+  Built-ins are always present.
+  Type-local meta, refs, content.raw, and content.sections fields come from the target type in the Specification projection.
+
+Read model
+  built-ins:
+    - type
+    - id
+    - slug
+    - revision
+    - createdDate
+    - updatedDate
+  type-local fields:
+    - meta.<meta_field> from the target entity type
+    - refs.<ref_field> from the target entity type
+    - content.raw from the target entity type
+    - content.sections.<section_name> from the target entity type
+  entityRef values are exposed through refs.<ref_field> and are not projected under meta.<ref_field>.
+
+Read-model path forms
+  built-in paths:
+    - type
+    - id
+    - slug
+    - revision
+    - createdDate
+    - updatedDate
+  meta paths:
+    - meta.<meta_field>
+  scalar ref paths:
+    - refs.<scalar_ref_field>
+    - refs.<scalar_ref_field>.id|type|slug|resolved|reason
+  content paths:
+    - content.raw
+    - content.sections
+    - content.sections.<section_name>
+
+Operation constraints
+  select:
+    - built-in paths
+    - meta paths
+    - refs
+    - refs.<ref_field>
+    - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+    - content.raw
+    - content.sections
+    - content.sections.<section_name>
+
+Defaults
+  if --select is omitted, default projection:
+    - type
+    - id
+    - slug
+    - meta
+    - refs
 
 Options
   --id <entity_id>
@@ -65,25 +80,20 @@ Options
     schema_derived: false
     schema_derivation: none
     description: Exact target id.
-  --select <field>
+  --select <path>
     takes_value: true
     required: false
     repeatable: true
     mutually_exclusive_groups: none
     schema_derived: true
-    schema_derivation: selectors from CLI projection-namespace
-    description: Projection-namespace selector.
+    schema_derivation: selectable paths from the single-entity read model
+    description: Select a path from the single-entity read model.
 
 Rules
-  - Projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
-  - Path-based ref leaf selectors refs.<field>.id|resolved|type|slug|reason are allowed only for scalar entityRef fields.
-  - --select uses projection-namespace selectors.
-  - --id addresses one entity by exact id and returns a single-entity read result.
-  - If --select is omitted, default projection is type, id, slug, meta and refs.
-  - entityRef scalar fields are exposed through refs.<field> and are not projected under meta.<name>.
-  - If selected content.sections.<name> is absent, the field must be present with null value.
+  - Selected leaf paths under meta.<meta_field>, refs.<ref_field>, and content.sections.<section_name> materialize as null when absent.
+  - Aggregate selectors meta, refs, and content.sections keep sparse objects and do not synthesize unknown children.
   - Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.
 
-Examples
-  spec-cli get --id FEAT-8
-  spec-cli get --id FEAT-8 --select id --select meta.status
+Examples (syntax-only)
+  spec-cli get --id <entity_id>
+  spec-cli get --id <entity_id> --select id --select meta.<meta_field>

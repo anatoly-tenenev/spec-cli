@@ -1,0 +1,5 @@
+version: "0.0.4"
+description: Workspace specification schema
+entity:
+  feature:
+    - not-a-mapping

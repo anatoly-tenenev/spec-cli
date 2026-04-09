@@ -1,74 +1,43 @@
 Command
-  help: show deterministic text help for CLI and commands
+  help: show deterministic text help for the CLI and its document model
+
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: loaded
 
 Syntax
   spec-cli help
   spec-cli help <command>
+  spec-cli help <command> --show-schema-projection
 
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: loaded
-  CLI-oriented projection:
-    version: "0.0.4"
-    description: Workspace specification schema
-    entity:
-      feature:
-        description: Feature specifications
-        idPrefix: FEAT
-        meta:
-          status:
-            description: Lifecycle status
-            required: false
-            schema:
-              type: string
-              enum:
-                - draft
-                - active
-                - deprecated
-          watchers:
-            description: Related services
-            required: false
-            schema:
-              type: array
-              items:
-                type: entityRef
-                refTypes:
-                  - service
-        refs:
-          owner:
-            description: Parent service
-            required: ${meta.status == 'active'}
-            schema:
-              type: entityRef
-              refTypes:
-                - service
-        content:
-          sections:
-            summary:
-              description: Short summary
-              required: ${meta.status == 'active'}
-              title:
-                - Summary
-      service:
-        idPrefix: SVC
-        meta:
-          tier:
-            required: true
-            schema:
-              type: string
+Operation model
+  Shows deterministic text help for the CLI, the specification model, and command behavior.
+  Renders one schema-derived overview for the whole invocation.
+  For command help, --show-schema-projection adds the same Specification projection block used by general help.
 
 Options
   <command>
     required: false
     repeatable: false
     description: Optional command name for detailed help.
+  --show-schema-projection
+    takes_value: false
+    required: false
+    repeatable: false
+    mutually_exclusive_groups: none
+    schema_derived: false
+    schema_derivation: none
+    description: Optional; for help <command>, include the schema-derived Specification projection block.
 
 Rules
   - Returns stable text-first output.
-  - Renders exactly one Schema section per invocation.
-  - Schema always includes ResolvedPath and Status; when schema is unavailable it includes ReasonCode, Impact, RecoveryClass and RetryCommand.
+  - Renders exactly one schema-derived overview per invocation.
+  - Help is tolerant; when schema-derived values are unavailable, it reports that fact and does not infer them heuristically.
+  - help --show-schema-projection does not duplicate the projection block in general help.
   - help --format json returns CAPABILITY_UNSUPPORTED.
 
-Examples
+Examples (syntax-only)
   spec-cli help
   spec-cli help query
+  spec-cli help query --show-schema-projection

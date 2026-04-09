@@ -5,9 +5,54 @@ import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"
 func HelpSpec() helpmodel.CommandSpec {
 	return helpmodel.CommandSpec{
 		Name:    "update",
-		Summary: "patch one entity by exact id",
+		Summary: "patch one entity through a schema-derived write model",
 		Syntaxes: []string{
 			"spec-cli update [options] --id <entity_id>",
+		},
+		OperationModel: []string{
+			"update patches one logical entity document through a schema-derived write model.",
+			"--set, --unset, and --set-file operate on writable logical paths.",
+			"Whole-body replacement and clear are a separate operation family.",
+		},
+		DetailSections: []helpmodel.DetailSectionSpec{
+			{
+				Title: "Write model",
+				Lines: []string{
+					"writable paths:",
+					"  - meta.<meta_field>",
+					"  - refs.<ref_field>",
+					"  - content.sections.<section_name>",
+					"whole-body operations:",
+					"  - --content-file",
+					"  - --content-stdin",
+					"  - --clear-content",
+				},
+			},
+			{
+				Title: "Value syntax",
+				Lines: []string{
+					"`--set` uses `<path=value>`.",
+					"Shell quoting applies outside the argument; for non-ref metadata fields the right-hand side is parsed as a YAML value.",
+					"Value forms (syntax only)",
+					"  - string scalar meta: `meta.<meta_scalar_field>=<string_value>`",
+					"  - boolean scalar meta: `meta.<meta_scalar_field>=true`",
+					"  - number scalar meta: `meta.<meta_scalar_field>=42`",
+					"  - array meta: `meta.<meta_array_field>='[<value_1>, <value_2>]'`",
+					"  - scalar entityRef: `refs.<scalar_ref_field>=<entity_id>`",
+					"  - array entityRef: `refs.<array_ref_field>='[<entity_id_1>, <entity_id_2>]'`",
+					"Actual writable paths, value kinds, and ref cardinality depend on the effective schema.",
+					"Empty value after `=` is treated as an empty string and may still fail schema type checks.",
+					"`content.sections.<section_name>` values are treated as raw section text, not YAML-decoded values.",
+				},
+			},
+			{
+				Title: "Whole-body heading contract",
+				Lines: []string{
+					"Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.",
+					"In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.",
+					"If the schema defines multiple titles for one section, help publishes only the first canonical title.",
+				},
+			},
 		},
 		Options: []helpmodel.OptionSpec{
 			{
@@ -27,8 +72,8 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "write paths from CLI write-namespace",
-				Description:      "Set writable slot by write-namespace path.",
+				SchemaDerivation: "writable paths from the entity write model",
+				Description:      "Set a writable logical field by path.",
 			},
 			{
 				Name:             "--set-file",
@@ -37,8 +82,8 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "content.sections.<name> from raw schema sections",
-				Description:      "Set section body from file content.",
+				SchemaDerivation: "section paths from the entity write model",
+				Description:      "Set a content section body from file content.",
 			},
 			{
 				Name:             "--unset",
@@ -47,8 +92,8 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "write paths from CLI write-namespace",
-				Description:      "Unset writable slot by write-namespace path.",
+				SchemaDerivation: "writable paths from the entity write model",
+				Description:      "Unset a writable logical field by path.",
 			},
 			{
 				Name:                    "--content-file",
@@ -102,27 +147,22 @@ func HelpSpec() helpmodel.CommandSpec {
 			},
 		},
 		Rules: []string{
-			"Write-namespace arguments are --set, --set-file and --unset.",
-			"Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.",
-			"Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.",
-			"Allowed write-paths are derived from the effective schema.",
-			"refs.<field> values are target entity ids (scalar id or YAML array of ids).",
-			"--set-file is allowed only for content.sections.<name>.",
-			"Whole-body operations are --content-file, --content-stdin and --clear-content; they are not write-namespace paths.",
-			"For whole-body operations --content-file/--content-stdin, use headings like `## <title> {#<sectionName>}`.",
+			"Allowed write paths are derived from the effective schema.",
+			"Reference writes use target entity ids, not read-side ref objects produced by query/get.",
+			"--set-file is allowed only for content.sections.<section_name>.",
+			"Whole-body operations are not write-model paths.",
+			"Whole-body serializer emits canonical headings as `## <title> {#<section_name>}`.",
+			"Specification projection `title` fields expose canonical heading titles used by default.",
+			"Whole-body operations may be combined with meta.<meta_field> and refs.<ref_field> writes.",
 			"Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.",
 			"At least one patch operation must be provided.",
-			"--unset removes a writable slot by write-namespace path.",
-			"Whole-body operations and content.sections.<name> path-based operations cannot be mixed.",
+			"Whole-body operations and content.sections.<section_name> path-based operations cannot be mixed.",
 			"--content-file, --content-stdin and --clear-content are mutually exclusive.",
 			"--expect-revision is an optimistic concurrency guard; command fails on revision mismatch.",
 		},
 		Examples: []string{
-			"spec-cli update --id FEAT-8 --set meta.status=deprecated",
-			"spec-cli update --id FEAT-8 --unset refs.owner",
-			"spec-cli update --id FEAT-8 --set meta.tags='[ops, batch]' --set refs.watchers='[SVC-1, SVC-2]'",
-			"spec-cli update --id FEAT-8 --set-file content.sections.summary=./input/summary.md",
-			"spec-cli update --id FEAT-8 --content-file ./input/body.md --expect-revision sha256:...",
+			"spec-cli update --id <entity_id> --set meta.<meta_scalar_field>=<string_value>",
+			"spec-cli update --id <entity_id> --content-file ./input/body.md --expect-revision <token>",
 		},
 	}
 }

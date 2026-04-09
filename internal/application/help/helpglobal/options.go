@@ -7,12 +7,12 @@ func Options() []helpmodel.GlobalOptionSpec {
 		{
 			Name:        "--workspace",
 			ValueSyntax: "<path>",
-			Description: `optional; default "."; root workspace filesystem path`,
+			Description: `optional; default "."; root workspace path`,
 		},
 		{
 			Name:        "--schema",
 			ValueSyntax: "<path>",
-			Description: `optional; default "spec.schema.yaml"; effective schema filesystem path`,
+			Description: `optional; default "spec.schema.yaml"; effective schema path`,
 		},
 		{
 			Name:        "--config",

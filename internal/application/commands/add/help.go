@@ -5,9 +5,62 @@ import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"
 func HelpSpec() helpmodel.CommandSpec {
 	return helpmodel.CommandSpec{
 		Name:    "add",
-		Summary: "create a new entity",
+		Summary: "create one entity through a schema-derived write model",
 		Syntaxes: []string{
 			"spec-cli add --type <entity_type> --slug <slug> [options]",
+		},
+		OperationModel: []string{
+			"add creates one logical entity document through a schema-derived write model.",
+			"Path-based writes target writable logical fields.",
+			"Whole-body content input is a separate input mode, not the primary document model.",
+		},
+		DetailSections: []helpmodel.DetailSectionSpec{
+			{
+				Title: "Identity and system fields",
+				Lines: []string{
+					"`type` is chosen by `--type`.",
+					"`slug` is chosen by `--slug`.",
+					"`id` is derived by the command from the new entity type, the provided slug, and the effective schema.",
+					"`createdDate`, `updatedDate`, and `revision` are command-managed built-ins and are not set directly.",
+				},
+			},
+			{
+				Title: "Write model",
+				Lines: []string{
+					"writable paths:",
+					"  - meta.<meta_field>",
+					"  - refs.<ref_field>",
+					"  - content.sections.<section_name>",
+					"whole-body operations:",
+					"  - --content-file",
+					"  - --content-stdin",
+				},
+			},
+			{
+				Title: "Value syntax",
+				Lines: []string{
+					"`--set` uses `<path=value>`.",
+					"Shell quoting applies outside the argument; for non-ref metadata fields the right-hand side is parsed as a YAML value.",
+					"Value forms (syntax only)",
+					"  - string scalar meta: `meta.<meta_scalar_field>=<string_value>`",
+					"  - boolean scalar meta: `meta.<meta_scalar_field>=true`",
+					"  - number scalar meta: `meta.<meta_scalar_field>=42`",
+					"  - array meta: `meta.<meta_array_field>='[<value_1>, <value_2>]'`",
+					"  - scalar entityRef: `refs.<scalar_ref_field>=<entity_id>`",
+					"  - array entityRef: `refs.<array_ref_field>='[<entity_id_1>, <entity_id_2>]'`",
+					"Actual writable paths, value kinds, and ref cardinality depend on the effective schema.",
+					"Empty value after `=` is treated as an empty string and may still fail schema type checks.",
+					"`content.sections.<section_name>` values are treated as raw section text, not YAML-decoded values.",
+				},
+			},
+			{
+				Title: "Whole-body heading contract",
+				Lines: []string{
+					"Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.",
+					"In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.",
+					"If the schema defines multiple titles for one section, help publishes only the first canonical title.",
+				},
+			},
 		},
 		Options: []helpmodel.OptionSpec{
 			{
@@ -17,7 +70,7 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         true,
 				Repeatable:       false,
 				SchemaDerived:    true,
-				SchemaDerivation: "entity type keys from Schema.entity",
+				SchemaDerivation: "entity type keys from the specification projection",
 				Description:      "Target entity type.",
 			},
 			{
@@ -28,7 +81,7 @@ func HelpSpec() helpmodel.CommandSpec {
 				Repeatable:       false,
 				SchemaDerived:    false,
 				SchemaDerivation: "none",
-				Description:      "Entity slug for id/path derivation.",
+				Description:      "Entity slug used to derive the new entity identity in the effective schema.",
 			},
 			{
 				Name:             "--set",
@@ -37,8 +90,8 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "write paths from CLI write-namespace",
-				Description:      "Set writable slot value by write-namespace path.",
+				SchemaDerivation: "writable paths from the entity write model",
+				Description:      "Set a writable logical field by path.",
 			},
 			{
 				Name:             "--set-file",
@@ -47,8 +100,8 @@ func HelpSpec() helpmodel.CommandSpec {
 				Required:         false,
 				Repeatable:       true,
 				SchemaDerived:    true,
-				SchemaDerivation: "content.sections.<name> from raw schema sections",
-				Description:      "Set section body from file content.",
+				SchemaDerivation: "section paths from the entity write model",
+				Description:      "Set a content section body from file content.",
 			},
 			{
 				Name:                    "--content-file",
@@ -82,23 +135,20 @@ func HelpSpec() helpmodel.CommandSpec {
 			},
 		},
 		Rules: []string{
-			"Write-namespace arguments are --set and --set-file.",
-			"Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.",
-			"Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.",
-			"Allowed write-paths are derived from the effective schema.",
-			"refs.<field> values are target entity ids (scalar id or YAML array of ids).",
-			"--set-file is allowed only for content.sections.<name>.",
-			"Whole-body inputs --content-file and --content-stdin are not write-namespace paths.",
-			"For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<sectionName>}`.",
+			"Allowed write paths are derived from the effective schema.",
+			"Reference writes use target entity ids, not read-side ref objects produced by query/get.",
+			"--set-file is allowed only for content.sections.<section_name>.",
+			"Whole-body inputs are not write-model paths.",
+			"Whole-body serializer emits canonical headings as `## <title> {#<section_name>}`.",
+			"Specification projection `title` fields expose canonical heading titles used by default.",
+			"Whole-body inputs may be combined with meta.<meta_field> and refs.<ref_field> writes.",
+			"Whole-body inputs cannot be combined with content.sections.<section_name> path-based operations.",
 			"Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.",
 			"--content-file and --content-stdin are mutually exclusive.",
 		},
 		Examples: []string{
-			"spec-cli add --type feature --slug login-flow --set meta.status=active",
-			"spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'",
-			"spec-cli add --type feature --slug login-flow --set meta.tags='[api, reliability]' --set refs.watchers='[SVC-1, SVC-2]'",
-			"spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md",
-			"spec-cli add --type feature --slug login-flow --content-file ./input/body.md",
+			"spec-cli add --type <entity_type> --slug <slug> --set meta.<meta_scalar_field>=<string_value>",
+			"spec-cli add --type <entity_type> --slug <slug> --content-file ./input/body.md",
 		},
 	}
 }

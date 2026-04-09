@@ -53,9 +53,11 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaReport := helpschema.LoadReport(paths.SchemaPath, paths.SchemaResolvedPath)
 
 	schemaView := helptext.SchemaView{
+		WorkspacePath:  paths.WorkspaceDisplay,
 		ResolvedPath:   schemaReport.ResolvedPath,
 		Status:         string(schemaReport.Status),
-		ProjectionYAML: schemaReport.ProjectionYAML,
+		ShowProjection: opts.ShowSchemaProjection && opts.TargetCommand != "",
+		Loaded:         schemaReport.Loaded,
 		ReasonCode:     string(schemaReport.ReasonCode),
 		Impact:         schemaReport.Impact,
 		RecoveryClass:  string(schemaReport.RecoveryClass),
@@ -64,7 +66,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 
 	if opts.TargetCommand == "" {
 		text := helptext.RenderGeneral(
-			"spec-cli is a machine-first CLI utility for spec documents.",
+			"spec-cli is a schema-aware CLI for working with specification entities as JSON-like documents.",
 			helpglobal.Options(),
 			h.catalog.Ordered(),
 			schemaView,

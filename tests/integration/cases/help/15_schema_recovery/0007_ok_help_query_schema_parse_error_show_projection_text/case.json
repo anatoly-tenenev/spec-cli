@@ -1,0 +1,16 @@
+{
+  "id": "help_15_0007_ok_help_query_schema_parse_error_show_projection_text",
+  "description": "help_15_0007_ok_help_query_schema_parse_error_show_projection_text",
+  "command": "help",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","help","query","--show-schema-projection"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt",
+    "response_format": "text"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "assert_output": false
+  },
+  "runtime": {}
+}

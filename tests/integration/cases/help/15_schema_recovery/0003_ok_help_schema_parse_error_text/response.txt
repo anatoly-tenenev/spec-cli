@@ -1,54 +1,111 @@
 CLI
-  spec-cli is a machine-first CLI utility for spec documents.
+  spec-cli is a schema-aware CLI for working with specification entities as JSON-like documents.
+
+Schema
+  Workspace: /spec-cli-fixed-root/workspace
+  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
+  Status: invalid
+  ReasonCode: SCHEMA_PARSE_ERROR
+  Impact: schema-derived entity types, read/write paths, enum values and specification projection are unavailable; do not infer these values heuristically
+  RecoveryClass: fix_schema_file
+  RetryCommand: spec-cli schema check --schema /spec-cli-fixed-root/spec.schema.yaml
+
+Execution model
+  `schema check` validates the schema language and reports compile diagnostics only.
+  `validate` validates workspace entities against the effective schema in one deterministic run.
+  `query`, `get`, `add`, `update`, and `delete` use schema-derived command models.
+  `help` remains tolerant; when schema-derived values are unavailable, do not infer them heuristically.
+
+Specification model
+  A specification is a collection of typed entities.
+  Each entity is a logical JSON-like document with built-ins, meta, refs, and content.sections.
+  Storage details such as filesystem paths, markdown layout, frontmatter, and headings are internal details and are not part of the primary user model.
+
+Projection conventions
+  The specification projection uses JSON Schema-like structure plus spec-cli extensions.
+  Standard JSON Schema keywords keep their usual meaning.
+  spec-cli extensions:
+    - x-presence: required | optional | conditional
+    - x-requiredWhen: condition for conditional presence, evaluated over the logical entity document model
+    - x-kind: logical value kind not expressed by base JSON Schema
+    - x-refTypes: allowed target entity types for entityRef values
+    - x-const: dynamic const as {"kind":"interpolation","source":"<original-source>"}
+    - x-enum: dynamic or mixed enum as ordered [{"kind":"literal","value":...}|{"kind":"interpolation","source":"<original-source>"}]
+  Native const/enum are emitted only for fully static literal constraints.
+  content.sections.<section_name>.title is canonical scalar heading title; only the first schema title is published.
+  x-kind=entityRef describes the schema-level meaning of a reference field.
+  Read-side ref objects exposed by query/get are described separately in Reference value model.
+
+Reference value model
+  Schema-level meaning:
+    - entityRef is a logical link to another entity
+    - scalar/array ref cardinality is encoded by projection shape (x-kind on scalar refs; type=array + items.x-kind on array refs)
+    - x-refTypes and x-presence define allowed target types and presence
+  Read-side projection:
+    - query/get expose scalar refs as {id, type, slug, resolved, reason}
+    - query/get expose array refs as arrays of the same ref objects
+  Write-side form:
+    - add/update accept target ids for refs.<ref_field>
+    - array ref fields accept arrays of target ids
 
 Global options
-  --workspace <path>: optional; default "."; root workspace filesystem path
-  --schema <path>: optional; default "spec.schema.yaml"; effective schema filesystem path
+  --workspace <path>: optional; default "."; root workspace path
+  --schema <path>: optional; default "spec.schema.yaml"; effective schema path
   --config <path>: optional; JSON config with "schema"/"workspace"; if omitted, auto-loads "./spec-cli.json" when present
   --format <json|text>: optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED
   --require-absolute-paths: optional; reject explicit relative filesystem paths
 
 Commands
-  help: show deterministic text help for CLI and commands
-  schema: compile and validate schema diagnostics
-  query: read many entities with structural filters and deterministic pagination
-  get: read one entity by exact id
-  add: create a new entity
-  update: patch one entity by exact id
-  delete: delete one entity by exact id
-  validate: validate schema and workspace documents
+  help: show deterministic text help for the CLI and its document model
+  schema: inspect schema compile diagnostics
+  validate: validate schema and workspace entities in one deterministic run
+  query: read many entities through a schema-derived read model
+  get: read one entity through a schema-derived read model
+  add: create one entity through a schema-derived write model
+  update: patch one entity through a schema-derived write model
+  delete: delete one entity subject to reference integrity
   version: show CLI version
-
-Schema
-  ResolvedPath: /spec-cli-fixed-root/spec.schema.yaml
-  Status: invalid
-  ReasonCode: SCHEMA_PARSE_ERROR
-  Impact: schema-derived entity types, namespace paths, enum values and CLI projection of schema-derived fields are unavailable; do not infer these values heuristically
-  RecoveryClass: fix_schema_file
-  RetryCommand: spec-cli validate --schema /spec-cli-fixed-root/spec.schema.yaml
 
 Command details
 help
   Syntax
     spec-cli help
     spec-cli help <command>
+    spec-cli help <command> --show-schema-projection
+  Operation model
+    Shows deterministic text help for the CLI, the specification model, and command behavior.
+    Renders one schema-derived overview for the whole invocation.
+    For command help, --show-schema-projection adds the same Specification projection block used by general help.
   Options
     <command>
       required: false
       repeatable: false
       description: Optional command name for detailed help.
+    --show-schema-projection
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Optional; for help <command>, include the schema-derived Specification projection block.
   Rules
     - Returns stable text-first output.
-    - Renders exactly one Schema section per invocation.
-    - Schema always includes ResolvedPath and Status; when schema is unavailable it includes ReasonCode, Impact, RecoveryClass and RetryCommand.
+    - Renders exactly one schema-derived overview per invocation.
+    - Help is tolerant; when schema-derived values are unavailable, it reports that fact and does not infer them heuristically.
+    - help --show-schema-projection does not duplicate the projection block in general help.
     - help --format json returns CAPABILITY_UNSUPPORTED.
-  Examples
+  Examples (syntax-only)
     spec-cli help
     spec-cli help query
+    spec-cli help query --show-schema-projection
 
 schema
   Syntax
     spec-cli schema check
+  Operation model
+    Validates the schema language and returns compile diagnostics only.
+    Does not inspect workspace entities.
   Options
     <subcommand>
       required: true
@@ -58,12 +115,17 @@ schema
     - Currently supports only the `check` subcommand.
     - Runs shared schema compiler without workspace scan.
     - Returns top-level schema diagnostics in schema.valid/schema.summary/schema.issues.
-  Examples
+  Examples (syntax-only)
     spec-cli schema check
 
-query
+validate
   Syntax
-    spec-cli query [options]
+    spec-cli validate [options]
+  Operation model
+    validate runs deterministic checks over the effective schema and entity documents.
+    --type restricts the active entity-type set for validation.
+  Validation model
+    built-ins, meta fields, refs, content sections, and schema constraints are validated against the effective schema.
   Options
     --type <entity_type>
       takes_value: true
@@ -71,32 +133,164 @@ query
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: entity type keys from Schema.entity
-      description: Early entity type filter.
+      schema_derivation: entity type keys from the specification projection
+      description: Restrict validation to selected entity types.
+    --fail-fast
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Stop checks after first blocking validation error when supported by rule.
+    --warnings-as-errors
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Treat warnings as non-zero exit status.
+  Rules
+    - Validation always includes effective schema and workspace documents in one deterministic run.
+    - Type filters are validated against schema-derived entity type keys.
+  Examples (syntax-only)
+    spec-cli validate
+    spec-cli validate --type <entity_type_1> --type <entity_type_2>
+    spec-cli validate --fail-fast
+    spec-cli validate --warnings-as-errors
+
+query
+  Syntax
+    spec-cli query [options]
+  Operation model
+    query reads many entities through one schema-derived query-item read model.
+    --type restricts the active entity-type set before planning and filtering.
+    --select projects fields from that read model.
+    --sort orders results by sortable read-model paths.
+    --where evaluates JMESPath truthiness over the same read model.
+  Active type set
+    If `--type` is omitted, all entity types from the specification projection are active.
+    If `--type` is repeated, only the selected entity types are active.
+    The query-item read model is the union over the active type set.
+    Path-based select, sort, and scalar ref detail paths must be compatible across the active type set.
+  Read model
+    built-ins:
+      - type
+      - id
+      - slug
+      - revision
+      - createdDate
+      - updatedDate
+    type-local fields:
+      - meta.<meta_field> from the active type set
+      - refs.<ref_field> from the active type set
+      - content.raw from the active type set
+      - content.sections.<section_name> from the active type set
+    The exact type-local field catalog is defined by the Specification projection.
+  Read-model path forms
+    built-in paths:
+      - type
+      - id
+      - slug
+      - revision
+      - createdDate
+      - updatedDate
+    meta paths:
+      - meta.<meta_field>
+    scalar ref paths:
+      - refs.<scalar_ref_field>
+      - refs.<scalar_ref_field>.id|type|slug|resolved|reason
+    array ref paths:
+      - refs.<array_ref_field>
+      - query expressions may inspect array items as ref objects with id|type|slug|resolved|reason
+    content paths:
+      - content.raw
+      - content.sections
+      - content.sections.<section_name>
+  Where language
+    `--where` accepts a JMESPath expression.
+    spec-cli does not add project-specific operators or helper functions on top of JMESPath.
+    Filtering uses JMESPath truthiness; the expression result does not need to be boolean.
+    `createdDate` and `updatedDate` use date comparison semantics in the where model.
+    literal forms (syntax only):
+      - string: '<string_value>'
+      - number: `42`
+      - null: `null`
+  Operation constraints
+    select:
+      - built-in paths
+      - meta paths
+      - refs
+      - refs.<ref_field>
+      - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+      - content.raw
+      - content.sections
+      - content.sections.<section_name>
+    sort:
+      - built-in scalar paths
+      - meta.<meta_field>
+      - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+      - content.raw
+      - content.sections.<section_name>
+    where:
+      allowed paths:
+        - built-in paths
+        - meta.<meta_field>
+        - refs.<ref_field>
+        - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+        - content.sections.<section_name>
+      forbidden:
+        - content root except content.sections...
+        - content.raw
+        - meta.<ref_field> access for entityRef values
+      runtime notes:
+        - evaluates against the same query-item read model
+        - optional and conditional fields may be absent at runtime
+        - use guards or fallbacks when needed
+  Defaults
+    default projection:
+      - type
+      - id
+      - slug
+      - meta
+      - refs
+    default order:
+      - type:asc
+      - id:asc
+  Options
+    --type <entity_type>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: entity type keys from the specification projection
+      description: Restrict the active entity-type set.
     --where <expr>
       takes_value: true
       required: false
       repeatable: false
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: JMESPath expression over query item schema
-      description: Schema-aware JMESPath filter expression.
-    --select <field>
+      schema_derivation: JMESPath expression over the query-item read model
+      description: Evaluate a JMESPath filter over the query-item read model.
+    --select <path>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: selectors from CLI projection-namespace
-      description: Projection-namespace selector.
-    --sort <field[:asc|desc]>
+      schema_derivation: selectable paths from the query-item read model
+      description: Select a path from the query-item read model.
+    --sort <path[:asc|desc]>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: sort fields from CLI filter-namespace
-      description: Deterministic sort term.
+      schema_derivation: sortable paths from the query-item read model
+      description: Sort by a sortable query-item read-model path.
     --limit <n>
       takes_value: true
       required: false
@@ -114,29 +308,82 @@ query
       schema_derivation: none
       description: Page offset; integer >= 0; default 0.
   Rules
-    - projection-namespace argument is --select.
-    - filter-namespace arguments are --sort and --where.
-    - projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
-    - filter-namespace sort paths: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs.<field>.resolved, refs.<field>.type, refs.<field>.id, refs.<field>.slug, refs.<field>.reason, content.raw, content.sections.<name>.
-    - --type uses schema-derived entity type keys and is not part of projection-namespace or filter-namespace.
-    - If --select is omitted, default projection is type, id, slug, meta and refs.
-    - Query guarantees deterministic ordering.
+    - If --type is omitted, all entity types from the specification projection participate.
+    - Only paths compatible with the active type set may be selected, sorted, or used in --where.
     - If --sort is omitted, effective sort is type:asc, then id:asc.
-    - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that tail is already present at the end.
-    - --where uses JMESPath truthiness over schema-aware query-item context.
-    - --where forbids content root access except content.sections... and forbids content.raw.
-    - --where forbids meta.<field> access for entityRef fields; use refs.<field>.
-  Examples
-    spec-cli query --type feature --select id --select meta.status
-    spec-cli query --where "meta.status == 'active'"
-    spec-cli query --where "refs.owner.id == 'SVC-2'"
-    spec-cli query --where "contains(content.sections.summary, 'retry')"
-    spec-cli query --where "length(refs.watchers[?reason == 'missing']) > `0`"
+    - If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that exact tail is already present at the end.
+    - entityRef values are addressed through refs.<ref_field>, not meta.<ref_field>.
+    - Selected leaf paths under meta.<meta_field>, refs.<ref_field>, and content.sections.<section_name> materialize as null when absent.
+    - Aggregate selectors meta, refs, and content.sections keep sparse objects and do not synthesize unknown children.
+  Examples (syntax-only)
+    spec-cli query --type <entity_type> --select id --select meta.<meta_field>
+    spec-cli query --select refs.<ref_field> --select content.sections.<section_name>
+    spec-cli query --where "meta.<meta_scalar_field> == '<string_value>'"
+    spec-cli query --where "refs.<scalar_ref_field>.id == '<entity_id>'"
+    spec-cli query --where "contains(content.sections.<section_name> || '', '<substring>')"
+    spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
     spec-cli query --sort updatedDate:desc --limit 50 --offset 0
+    Available paths, value kinds, and ref cardinality depend on the effective schema.
 
 get
   Syntax
     spec-cli get [options] --id <entity_id>
+  Operation model
+    get reads one entity through a schema-derived single-entity read model.
+    --id selects the target entity.
+    --select projects fields from the single-entity read model.
+  Target type
+    The single-entity read model is determined by the resolved target entity type.
+    Built-ins are always present.
+    Type-local meta, refs, content.raw, and content.sections fields come from the target type in the Specification projection.
+  Read model
+    built-ins:
+      - type
+      - id
+      - slug
+      - revision
+      - createdDate
+      - updatedDate
+    type-local fields:
+      - meta.<meta_field> from the target entity type
+      - refs.<ref_field> from the target entity type
+      - content.raw from the target entity type
+      - content.sections.<section_name> from the target entity type
+    entityRef values are exposed through refs.<ref_field> and are not projected under meta.<ref_field>.
+  Read-model path forms
+    built-in paths:
+      - type
+      - id
+      - slug
+      - revision
+      - createdDate
+      - updatedDate
+    meta paths:
+      - meta.<meta_field>
+    scalar ref paths:
+      - refs.<scalar_ref_field>
+      - refs.<scalar_ref_field>.id|type|slug|resolved|reason
+    content paths:
+      - content.raw
+      - content.sections
+      - content.sections.<section_name>
+  Operation constraints
+    select:
+      - built-in paths
+      - meta paths
+      - refs
+      - refs.<ref_field>
+      - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
+      - content.raw
+      - content.sections
+      - content.sections.<section_name>
+  Defaults
+    if --select is omitted, default projection:
+      - type
+      - id
+      - slug
+      - meta
+      - refs
   Options
     --id <entity_id>
       takes_value: true
@@ -146,30 +393,59 @@ get
       schema_derived: false
       schema_derivation: none
       description: Exact target id.
-    --select <field>
+    --select <path>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: selectors from CLI projection-namespace
-      description: Projection-namespace selector.
+      schema_derivation: selectable paths from the single-entity read model
+      description: Select a path from the single-entity read model.
   Rules
-    - Projection-namespace selectors: type, id, slug, revision, createdDate, updatedDate, meta.<name>, refs, refs.<field>, content.raw, content.sections, content.sections.<name>.
-    - Path-based ref leaf selectors refs.<field>.id|resolved|type|slug|reason are allowed only for scalar entityRef fields.
-    - --select uses projection-namespace selectors.
-    - --id addresses one entity by exact id and returns a single-entity read result.
-    - If --select is omitted, default projection is type, id, slug, meta and refs.
-    - entityRef scalar fields are exposed through refs.<field> and are not projected under meta.<name>.
-    - If selected content.sections.<name> is absent, the field must be present with null value.
+    - Selected leaf paths under meta.<meta_field>, refs.<ref_field>, and content.sections.<section_name> materialize as null when absent.
+    - Aggregate selectors meta, refs, and content.sections keep sparse objects and do not synthesize unknown children.
     - Existing but invalid target data must not degrade into false ENTITY_NOT_FOUND when deterministic read is still possible.
-  Examples
-    spec-cli get --id FEAT-8
-    spec-cli get --id FEAT-8 --select id --select meta.status
+  Examples (syntax-only)
+    spec-cli get --id <entity_id>
+    spec-cli get --id <entity_id> --select id --select meta.<meta_field>
 
 add
   Syntax
     spec-cli add --type <entity_type> --slug <slug> [options]
+  Operation model
+    add creates one logical entity document through a schema-derived write model.
+    Path-based writes target writable logical fields.
+    Whole-body content input is a separate input mode, not the primary document model.
+  Identity and system fields
+    `type` is chosen by `--type`.
+    `slug` is chosen by `--slug`.
+    `id` is derived by the command from the new entity type, the provided slug, and the effective schema.
+    `createdDate`, `updatedDate`, and `revision` are command-managed built-ins and are not set directly.
+  Write model
+    writable paths:
+      - meta.<meta_field>
+      - refs.<ref_field>
+      - content.sections.<section_name>
+    whole-body operations:
+      - --content-file
+      - --content-stdin
+  Value syntax
+    `--set` uses `<path=value>`.
+    Shell quoting applies outside the argument; for non-ref metadata fields the right-hand side is parsed as a YAML value.
+    Value forms (syntax only)
+      - string scalar meta: `meta.<meta_scalar_field>=<string_value>`
+      - boolean scalar meta: `meta.<meta_scalar_field>=true`
+      - number scalar meta: `meta.<meta_scalar_field>=42`
+      - array meta: `meta.<meta_array_field>='[<value_1>, <value_2>]'`
+      - scalar entityRef: `refs.<scalar_ref_field>=<entity_id>`
+      - array entityRef: `refs.<array_ref_field>='[<entity_id_1>, <entity_id_2>]'`
+    Actual writable paths, value kinds, and ref cardinality depend on the effective schema.
+    Empty value after `=` is treated as an empty string and may still fail schema type checks.
+    `content.sections.<section_name>` values are treated as raw section text, not YAML-decoded values.
+  Whole-body heading contract
+    Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.
+    In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.
+    If the schema defines multiple titles for one section, help publishes only the first canonical title.
   Options
     --type <entity_type>
       takes_value: true
@@ -177,7 +453,7 @@ add
       repeatable: false
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: entity type keys from Schema.entity
+      schema_derivation: entity type keys from the specification projection
       description: Target entity type.
     --slug <slug>
       takes_value: true
@@ -186,23 +462,23 @@ add
       mutually_exclusive_groups: none
       schema_derived: false
       schema_derivation: none
-      description: Entity slug for id/path derivation.
+      description: Entity slug used to derive the new entity identity in the effective schema.
     --set <path=value>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: write paths from CLI write-namespace
-      description: Set writable slot value by write-namespace path.
+      schema_derivation: writable paths from the entity write model
+      description: Set a writable logical field by path.
     --set-file <path=file_path>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: content.sections.<name> from raw schema sections
-      description: Set section body from file content.
+      schema_derivation: section paths from the entity write model
+      description: Set a content section body from file content.
     --content-file <path>
       takes_value: true
       required: false
@@ -228,26 +504,53 @@ add
       schema_derivation: none
       description: Run validation and planning without filesystem mutation.
   Rules
-    - Write-namespace arguments are --set and --set-file.
-    - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
-    - Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.
-    - Allowed write-paths are derived from the effective schema.
-    - refs.<field> values are target entity ids (scalar id or YAML array of ids).
-    - --set-file is allowed only for content.sections.<name>.
-    - Whole-body inputs --content-file and --content-stdin are not write-namespace paths.
-    - For whole-body --content-file/--content-stdin input, use headings like `## <title> {#<sectionName>}`.
+    - Allowed write paths are derived from the effective schema.
+    - Reference writes use target entity ids, not read-side ref objects produced by query/get.
+    - --set-file is allowed only for content.sections.<section_name>.
+    - Whole-body inputs are not write-model paths.
+    - Whole-body serializer emits canonical headings as `## <title> {#<section_name>}`.
+    - Specification projection `title` fields expose canonical heading titles used by default.
+    - Whole-body inputs may be combined with meta.<meta_field> and refs.<ref_field> writes.
+    - Whole-body inputs cannot be combined with content.sections.<section_name> path-based operations.
     - Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.
     - --content-file and --content-stdin are mutually exclusive.
-  Examples
-    spec-cli add --type feature --slug login-flow --set meta.status=active
-    spec-cli add --type feature --slug login-flow --set refs.owner=SVC-2 --set content.sections.summary='Short summary'
-    spec-cli add --type feature --slug login-flow --set meta.tags='[api, reliability]' --set refs.watchers='[SVC-1, SVC-2]'
-    spec-cli add --type feature --slug login-flow --set-file content.sections.summary=./input/summary.md
-    spec-cli add --type feature --slug login-flow --content-file ./input/body.md
+  Examples (syntax-only)
+    spec-cli add --type <entity_type> --slug <slug> --set meta.<meta_scalar_field>=<string_value>
+    spec-cli add --type <entity_type> --slug <slug> --content-file ./input/body.md
 
 update
   Syntax
     spec-cli update [options] --id <entity_id>
+  Operation model
+    update patches one logical entity document through a schema-derived write model.
+    --set, --unset, and --set-file operate on writable logical paths.
+    Whole-body replacement and clear are a separate operation family.
+  Write model
+    writable paths:
+      - meta.<meta_field>
+      - refs.<ref_field>
+      - content.sections.<section_name>
+    whole-body operations:
+      - --content-file
+      - --content-stdin
+      - --clear-content
+  Value syntax
+    `--set` uses `<path=value>`.
+    Shell quoting applies outside the argument; for non-ref metadata fields the right-hand side is parsed as a YAML value.
+    Value forms (syntax only)
+      - string scalar meta: `meta.<meta_scalar_field>=<string_value>`
+      - boolean scalar meta: `meta.<meta_scalar_field>=true`
+      - number scalar meta: `meta.<meta_scalar_field>=42`
+      - array meta: `meta.<meta_array_field>='[<value_1>, <value_2>]'`
+      - scalar entityRef: `refs.<scalar_ref_field>=<entity_id>`
+      - array entityRef: `refs.<array_ref_field>='[<entity_id_1>, <entity_id_2>]'`
+    Actual writable paths, value kinds, and ref cardinality depend on the effective schema.
+    Empty value after `=` is treated as an empty string and may still fail schema type checks.
+    `content.sections.<section_name>` values are treated as raw section text, not YAML-decoded values.
+  Whole-body heading contract
+    Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.
+    In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.
+    If the schema defines multiple titles for one section, help publishes only the first canonical title.
   Options
     --id <entity_id>
       takes_value: true
@@ -263,24 +566,24 @@ update
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: write paths from CLI write-namespace
-      description: Set writable slot by write-namespace path.
+      schema_derivation: writable paths from the entity write model
+      description: Set a writable logical field by path.
     --set-file <path=file_path>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: content.sections.<name> from raw schema sections
-      description: Set section body from file content.
+      schema_derivation: section paths from the entity write model
+      description: Set a content section body from file content.
     --unset <path>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
-      schema_derivation: write paths from CLI write-namespace
-      description: Unset writable slot by write-namespace path.
+      schema_derivation: writable paths from the entity write model
+      description: Unset a writable logical field by path.
     --content-file <path>
       takes_value: true
       required: false
@@ -322,30 +625,30 @@ update
       schema_derivation: none
       description: Run full checks without filesystem mutation.
   Rules
-    - Write-namespace arguments are --set, --set-file and --unset.
-    - Write-namespace paths: meta.<name>, refs.<field>, content.sections.<name>.
-    - Projection from raw schema: non-entityRef metadata -> meta.<name>; entityRef metadata (scalar or array items.type=entityRef) -> refs.<field>; sections -> content.sections.<name>.
-    - Allowed write-paths are derived from the effective schema.
-    - refs.<field> values are target entity ids (scalar id or YAML array of ids).
-    - --set-file is allowed only for content.sections.<name>.
-    - Whole-body operations are --content-file, --content-stdin and --clear-content; they are not write-namespace paths.
-    - For whole-body operations --content-file/--content-stdin, use headings like `## <title> {#<sectionName>}`.
+    - Allowed write paths are derived from the effective schema.
+    - Reference writes use target entity ids, not read-side ref objects produced by query/get.
+    - --set-file is allowed only for content.sections.<section_name>.
+    - Whole-body operations are not write-model paths.
+    - Whole-body serializer emits canonical headings as `## <title> {#<section_name>}`.
+    - Specification projection `title` fields expose canonical heading titles used by default.
+    - Whole-body operations may be combined with meta.<meta_field> and refs.<ref_field> writes.
     - Built-in fields and aggregate content paths are not writable: type, id, slug, createdDate, updatedDate, content, content.raw, content.sections.
     - At least one patch operation must be provided.
-    - --unset removes a writable slot by write-namespace path.
-    - Whole-body operations and content.sections.<name> path-based operations cannot be mixed.
+    - Whole-body operations and content.sections.<section_name> path-based operations cannot be mixed.
     - --content-file, --content-stdin and --clear-content are mutually exclusive.
     - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
-  Examples
-    spec-cli update --id FEAT-8 --set meta.status=deprecated
-    spec-cli update --id FEAT-8 --unset refs.owner
-    spec-cli update --id FEAT-8 --set meta.tags='[ops, batch]' --set refs.watchers='[SVC-1, SVC-2]'
-    spec-cli update --id FEAT-8 --set-file content.sections.summary=./input/summary.md
-    spec-cli update --id FEAT-8 --content-file ./input/body.md --expect-revision sha256:...
+  Examples (syntax-only)
+    spec-cli update --id <entity_id> --set meta.<meta_scalar_field>=<string_value>
+    spec-cli update --id <entity_id> --content-file ./input/body.md --expect-revision <token>
 
 delete
   Syntax
     spec-cli delete [options] --id <entity_id>
+  Operation model
+    delete removes one entity by exact id, subject to inbound reference integrity.
+  Reference integrity model
+    delete is blocked when other entities still reference the target through entityRef fields.
+    both scalar and array entityRef links participate in blocking checks.
   Options
     --id <entity_id>
       takes_value: true
@@ -376,54 +679,19 @@ delete
     - Deletion is blocked when incoming entityRef references exist.
     - Blocking checks include scalar entityRef and array items with entityRef type.
     - --expect-revision is an optimistic concurrency guard; command fails on revision mismatch.
-  Examples
-    spec-cli delete --id FEAT-8
-    spec-cli delete --id FEAT-8 --expect-revision sha256:...
-    spec-cli delete --id FEAT-8 --dry-run
-
-validate
-  Syntax
-    spec-cli validate [options]
-  Options
-    --type <entity_type>
-      takes_value: true
-      required: false
-      repeatable: true
-      mutually_exclusive_groups: none
-      schema_derived: true
-      schema_derivation: entity type keys from Schema.entity
-      description: Restrict validation to selected entity types.
-    --fail-fast
-      takes_value: false
-      required: false
-      repeatable: false
-      mutually_exclusive_groups: none
-      schema_derived: false
-      schema_derivation: none
-      description: Stop checks after first blocking validation error when supported by rule.
-    --warnings-as-errors
-      takes_value: false
-      required: false
-      repeatable: false
-      mutually_exclusive_groups: none
-      schema_derived: false
-      schema_derivation: none
-      description: Treat warnings as non-zero exit status.
-  Rules
-    - Validation always includes effective schema and workspace documents in one deterministic run.
-    - Type filters are validated against schema-derived entity type keys.
-  Examples
-    spec-cli validate
-    spec-cli validate --type feature --type service
-    spec-cli validate --fail-fast
-    spec-cli validate --warnings-as-errors
+  Examples (syntax-only)
+    spec-cli delete --id <entity_id>
+    spec-cli delete --id <entity_id> --expect-revision <token>
+    spec-cli delete --id <entity_id> --dry-run
 
 version
   Syntax
     spec-cli version
+  Operation model
+    Returns the CLI version only.
   Options
     none
   Rules
     - Returns semantic version string for current binary build.
-  Examples
+  Examples (syntax-only)
     spec-cli version

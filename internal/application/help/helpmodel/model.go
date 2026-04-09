@@ -21,14 +21,21 @@ type OptionSpec struct {
 	Description             string
 }
 
+type DetailSectionSpec struct {
+	Title string
+	Lines []string
+}
+
 type CommandSpec struct {
-	Name        string
-	Summary     string
-	Syntaxes    []string
-	Positionals []PositionalSpec
-	Options     []OptionSpec
-	Rules       []string
-	Examples    []string
+	Name           string
+	Summary        string
+	Syntaxes       []string
+	OperationModel []string
+	DetailSections []DetailSectionSpec
+	Positionals    []PositionalSpec
+	Options        []OptionSpec
+	Rules          []string
+	Examples       []string
 }
 
 type GlobalOptionSpec struct {
