@@ -4,18 +4,14 @@
 
 `spec-cli` works with a spec workspace: Markdown documents with structured metadata described by a schema based on the [Spec Schema](https://spec-schema.org/).
 
-> **Status:** early / experimental. Not for production now.
+> **Status:** early / experimental.
 
 ## Why
 
-Engineering documentation is easy for people to read, but hard to use from automation.
+`spec-cli` is for working with Markdown like code.
+The right way to use it is through an AI agent working with the documentation.
 
-Usually one of two things happens:
-
-- tools end up reading too much raw Markdown;
-- a separate technology (JSON/index/DB) appears next to the documents and starts drifting away from them.
-
-`spec-cli` is a tool to keep the documents as the source of truth while still making them usable from tooling.
+No separate database, no second JSON layer, and no manual sync between "docs for people" and "data for machines".
 
 ## What it does
 
@@ -38,64 +34,77 @@ The source stays as normal Markdown. This is not a separate database and not a m
 
 See [INSTALL.md](./INSTALL.md).
 
+## Example schema
+
+```yaml
+version: "0.0.4"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/${slug}/index.md"
+    content:
+      sections:
+        description: { title: Description }
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "${refs.service.dirPath}/features/${meta.status}/${slug}.md"
+    meta:
+      fields:
+        status:
+          schema:
+            type: string
+            enum: [draft, active, deprecated]
+        service:
+          schema:
+            type: entityRef
+            refTypes: [service]
+    content:
+      sections:
+        description: { title: Description }
+```
+
 ## Example workspace
 
 ```text
 specs/
-  domains/
-    payments/domain.md
-  services/
-    ledger-api/service.md
-    features/retry-window.md
-    adr/2026-03-10-idempotency-key.md
-````
+└── services/
+    └── ledger-api/
+        ├── index.md
+        └── features/
+            ├── active/
+            │   └── retry-window.md
+            └── deprecated/
+                └── legacy-retry.md
+```
 
 ## Example document
 
 ```md
 ---
-type: adr
-id: ADR-12
-slug: retry-policy
+type: feature
+id: FEAT-7
+slug: retry-window
 createdDate: 2026-03-10
-updatedDate: 2026-03-10
-status: accepted
-decision_makers:
-  - payments-arch
-  - sre-lead
+updatedDate: 2026-03-12
+status: active
+service: SVC-1
 ---
 
-## Context {#context}
-During partial degradations, clients were generating too many repeated requests.
-
-## Decision {#decision}
-Use capped exponential backoff, jitter, and mandatory idempotency.
-
-## Consequences {#consequences}
-Load during incidents goes down, but some clients get slightly slower recovery.
+## Description {#description}
+Retry failed requests with capped exponential backoff and idempotency keys.
 ```
 
 ## Example query
 
 ```bash
 spec-cli query \
-  --type adr \
-  --where-json '{"field":"meta.status","op":"eq","value":"accepted"}' \
-  --select id \
-  --select slug \
-  --select createdDate \
-  --select content.sections.decision \
-  --sort createdDate:desc \
-  --format json
+  --type feature \
+  --where "meta.status == 'active'" \
+  --select meta \
+  --select refs \
+  --select content.sections
 ```
-
-The point is simple: people keep reading the full documents, while tooling reads only the fields and sections it needs.
-
-## Where this fits
-
-This fits workflows where specs are real working artifacts, not just documents that sit on the side.
-
-Instead of maintaining separate human-readable and agent-readable layers, the goal is to keep a single set of Markdown documents and still supports validation, queries, and controlled writes.
 
 ## Related example
 
