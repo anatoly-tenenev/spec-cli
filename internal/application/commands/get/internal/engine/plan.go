@@ -77,6 +77,10 @@ func BuildSelectorPlan(rawSelectors []string, readCapability schemacapread.Capab
 		}
 
 		switch parts[0] {
+		case "meta":
+			if len(parts) == 2 {
+				nullIfMissing[selector] = struct{}{}
+			}
 		case "refs":
 			requiresRefs = true
 			if len(parts) == 1 {

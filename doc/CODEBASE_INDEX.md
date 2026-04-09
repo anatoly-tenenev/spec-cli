@@ -411,7 +411,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Validate selectors against shared read capability and build terminal select tree, including rejection of path-based ref leaf selectors for array refs and scalar/array conflicts across schema types.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
-    - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for `refs.<name>`/`refs.<name>.<leaf>` and `content.sections.<name>`.
+    - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for selected missing leaf paths `meta.<name>`, `refs.<name>`/`refs.<name>.<leaf>`, and `content.sections.<name>` while keeping aggregate selectors sparse.
     - Build read-view of target entity (`meta`, expanded `refs`, `content`) with scalar/array refs and unresolved classification `missing|ambiguous|type_mismatch` (`reason` in unresolved public refs) driven by shared ref `AllowedTypes`.
     - Mark `resolved=true` only for unique ref target compatible with `AllowedTypes`; unique incompatible target stays unresolved with deterministic fallback and `reason`.
     - Apply blocking policy only when a requested ref slot is structurally unreadable and deterministic `id` cannot be obtained.
@@ -803,7 +803,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/query/50_errors/*` - argument/global-option validation failures before compile.
     - `tests/integration/cases/query/60_infra/*` - schema/workspace infra failures plus strict shared-compiler blocking cases (`SCHEMA_*`), including malformed schema-type and const/enum mismatch classification.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
-    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including `array.items.type=entityRef` under `refs.<field>` and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
+    - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including selected-leaf null materialization for missing schema-known `meta.<field>`, `refs.<field>`, and `content.sections.<name>`, sparse aggregate `--select meta`, `array.items.type=entityRef` under `refs.<field>`, and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.
     - `tests/integration/cases/get/40_blocking/*` - blocking read failures.
     - `tests/integration/cases/add/10_happy/*` - happy-path `add`, including expression-based `required` success scenarios and interpolated `schema.enum` acceptance via resolved refs.
