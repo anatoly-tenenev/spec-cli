@@ -13,7 +13,7 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"
   feature:
     idPrefix: FEAT
     pathTemplate:
@@ -53,4 +53,4 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"

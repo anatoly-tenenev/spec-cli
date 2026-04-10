@@ -52,9 +52,9 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 		if exists {
 			if len(parts) == 1 {
 				return map[string]any{
-					"type":     ref.Type,
-					"id":       ref.ID,
-					"slug":     ref.Slug,
+					"type":    ref.Type,
+					"id":      ref.ID,
+					"slug":    ref.Slug,
 					"dirPath": ref.DirPath,
 				}, true
 			}
@@ -98,9 +98,9 @@ func (l Candidate) Lookup(pathValue string) (any, bool) {
 		values := make([]any, 0, len(refArray))
 		for _, item := range refArray {
 			values = append(values, map[string]any{
-				"type":     item.Type,
-				"id":       item.ID,
-				"slug":     item.Slug,
+				"type":    item.Type,
+				"id":      item.ID,
+				"slug":    item.Slug,
 				"dirPath": item.DirPath,
 			})
 		}

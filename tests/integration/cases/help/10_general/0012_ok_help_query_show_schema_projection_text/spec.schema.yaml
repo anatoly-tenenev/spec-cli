@@ -57,9 +57,7 @@ entity:
         summary:
           description: Short summary
           required: ${meta.status == 'active'}
-          title:
-            - Summary
-            - Overview
+          title: "Summary"
   service:
     idPrefix: SVC
     pathTemplate: "services/{slug}.md"

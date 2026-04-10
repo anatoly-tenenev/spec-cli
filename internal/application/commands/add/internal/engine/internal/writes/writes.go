@@ -158,8 +158,8 @@ func BuildBody(typeSpec model.EntityTypeSpec, applied Applied) string {
 		}
 
 		title := sectionName
-		if len(typeSpec.Sections[sectionName].Titles) > 0 {
-			title = typeSpec.Sections[sectionName].Titles[0]
+		if strings.TrimSpace(typeSpec.Sections[sectionName].Title) != "" {
+			title = typeSpec.Sections[sectionName].Title
 		}
 
 		heading := fmt.Sprintf("## %s {#%s}", title, sectionName)

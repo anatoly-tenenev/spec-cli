@@ -260,12 +260,12 @@ func validateRequiredSections(
 		}
 
 		if title, exists := sections[sectionRule.Name]; exists {
-			if len(sectionRule.Titles) > 0 && !containsSectionTitle(sectionRule.Titles, title) {
+			if strings.TrimSpace(sectionRule.Title) != "" && sectionRule.Title != title {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "content.section_title_mismatch",
 					Level:       domainvalidation.LevelError,
 					Class:       "InstanceError",
-					Message:     fmt.Sprintf("section '%s' title must be one of %v", sectionRule.Name, sectionRule.Titles),
+					Message:     fmt.Sprintf("section '%s' title must exactly match '%s'", sectionRule.Name, sectionRule.Title),
 					StandardRef: "13.2",
 					Field:       fmt.Sprintf("content.sections.%s.title", sectionRule.Name),
 				})
@@ -329,13 +329,4 @@ func resolveRuleValue(value schemacapvalidate.RuleValue, context map[string]any)
 	}
 
 	return rendered, nil
-}
-
-func containsSectionTitle(allowed []string, title string) bool {
-	for _, candidate := range allowed {
-		if candidate == title {
-			return true
-		}
-	}
-	return false
 }

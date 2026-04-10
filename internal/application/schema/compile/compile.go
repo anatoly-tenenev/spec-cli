@@ -265,10 +265,9 @@ func cloneMetaField(field model.MetaField) model.MetaField {
 }
 
 func cloneSection(section model.Section) model.Section {
-	titles := append([]string(nil), section.Titles...)
 	return model.Section{
 		Name:        section.Name,
-		Titles:      titles,
+		Title:       section.Title,
 		Required:    cloneRequirement(section.Required),
 		Description: section.Description,
 		SchemaPath:  section.SchemaPath,

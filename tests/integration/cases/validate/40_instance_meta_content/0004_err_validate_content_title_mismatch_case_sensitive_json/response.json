@@ -10,7 +10,7 @@
       },
       "field": "content.sections.goal.title",
       "level": "error",
-      "message": "section 'goal' title must be one of [Goal]",
+      "message": "section 'goal' title must exactly match 'Goal'",
       "standard_ref": "13.2"
     }
   ],

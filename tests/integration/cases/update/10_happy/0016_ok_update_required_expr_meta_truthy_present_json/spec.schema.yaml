@@ -17,4 +17,4 @@ entity:
       sections:
         summary:
           required: "${meta.trigger}"
-          title: ["Summary"]
+          title: "Summary"

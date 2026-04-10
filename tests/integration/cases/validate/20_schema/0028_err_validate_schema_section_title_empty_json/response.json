@@ -1,0 +1,40 @@
+{
+  "result_state": "invalid",
+  "validation_scope": "full",
+  "summary": {
+    "validator_conformant": true,
+    "entities_scanned": 0,
+    "entities_valid": 0,
+    "errors": 0,
+    "warnings": 0,
+    "coverage": {
+      "mode": "strict",
+      "complete": true,
+      "candidate_entities": 0,
+      "checked_entities": 0,
+      "skipped_entities": 0
+    }
+  },
+  "issues": [],
+  "schema": {
+    "valid": false,
+    "summary": {
+      "errors": 1,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "code": "schema.value.string_empty",
+        "level": "error",
+        "class": "SchemaError",
+        "message": "value must be a non-empty string",
+        "path": "schema.entity.doc.content.sections.goal.title"
+      }
+    ]
+  },
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "message": "schema contains validation errors",
+    "exit_code": 4
+  }
+}

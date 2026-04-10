@@ -187,37 +187,6 @@ func ParseRequirement(node *yaml.Node, path string, defaultValue bool, issues *[
 	}
 }
 
-func ParseTitles(node *yaml.Node, path string, issues *[]diagnostics.Issue) ([]string, bool) {
-	if node.Kind == yaml.ScalarNode {
-		title, ok := ScalarString(node, path, true, issues)
-		if !ok {
-			return nil, false
-		}
-		return []string{title}, true
-	}
-	if node.Kind != yaml.SequenceNode {
-		AddError(issues, "schema.section.title_invalid", "title must be string or non-empty array of strings", path)
-		return nil, false
-	}
-	if len(node.Content) == 0 {
-		AddError(issues, "schema.section.title_empty", "title array must be non-empty", path)
-		return nil, false
-	}
-	titles := make([]string, 0, len(node.Content))
-	for idx, itemNode := range node.Content {
-		itemPath := fmt.Sprintf("%s[%d]", path, idx)
-		title, ok := ScalarString(itemNode, itemPath, true, issues)
-		if !ok {
-			continue
-		}
-		titles = append(titles, title)
-	}
-	if len(titles) == 0 {
-		return nil, false
-	}
-	return titles, true
-}
-
 func CompileTemplate(raw string, path string, issues *[]diagnostics.Issue) *schemaexpressions.CompiledTemplate {
 	parts := make([]schemaexpressions.TemplatePart, 0)
 	rest := raw

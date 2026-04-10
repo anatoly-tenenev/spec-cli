@@ -50,7 +50,6 @@ func HelpSpec() helpmodel.CommandSpec {
 				Lines: []string{
 					"Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.",
 					"In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.",
-					"If the schema defines multiple titles for one section, help publishes only the first canonical title.",
 				},
 			},
 		},

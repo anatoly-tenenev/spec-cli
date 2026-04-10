@@ -65,7 +65,7 @@ type MetaField struct {
 
 type SectionSpec struct {
 	Name         string
-	Titles       []string
+	Title        string
 	Required     bool
 	RequiredExpr *schemaexpressions.CompiledExpression
 	RequiredPath string
@@ -236,7 +236,7 @@ func buildMetaField(field model.MetaField) MetaField {
 func buildSection(section model.Section) SectionSpec {
 	return SectionSpec{
 		Name:         section.Name,
-		Titles:       append([]string(nil), section.Titles...),
+		Title:        section.Title,
 		Required:     section.Required.Always,
 		RequiredExpr: section.Required.Expr,
 		RequiredPath: section.Required.Path,

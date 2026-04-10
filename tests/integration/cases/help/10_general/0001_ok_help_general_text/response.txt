@@ -28,7 +28,7 @@ Projection conventions
     - x-const: dynamic const as {"kind":"interpolation","source":"<original-source>"}
     - x-enum: dynamic or mixed enum as ordered [{"kind":"literal","value":...}|{"kind":"interpolation","source":"<original-source>"}]
   Native const/enum are emitted only for fully static literal constraints.
-  content.sections.<section_name>.title is canonical scalar heading title; only the first schema title is published.
+  content.sections.<section_name>.title is canonical scalar heading title when specified in schema.
   x-kind=entityRef describes the schema-level meaning of a reference field.
   Read-side ref objects exposed by query/get are described separately in Reference value model.
 
@@ -572,7 +572,6 @@ add
   Whole-body heading contract
     Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.
     In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.
-    If the schema defines multiple titles for one section, help publishes only the first canonical title.
   Options
     --type <entity_type>
       takes_value: true
@@ -681,7 +680,6 @@ update
   Whole-body heading contract
     Whole-body serializer uses canonical headings in the form `## <title> {#<section_name>}`.
     In the Specification projection, `content.sections.<section_name>.title` is the canonical heading title used by default.
-    If the schema defines multiple titles for one section, help publishes only the first canonical title.
   Options
     --id <entity_id>
       takes_value: true

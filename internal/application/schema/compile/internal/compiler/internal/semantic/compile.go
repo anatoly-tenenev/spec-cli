@@ -309,17 +309,15 @@ func parseSection(sectionName string, node *yaml.Node, path string, issues *[]di
 	}
 	shared.AppendUnsupportedKeys(values, path, shared.SetOf("title", "required", "description"), issues)
 
-	titles := make([]string, 0)
+	title := ""
 	titlePath := path + ".title"
 	if titleNode, exists := values["title"]; exists {
-		parsedTitles, isValid := shared.ParseTitles(titleNode, titlePath, issues)
+		parsedTitle, isValid := shared.ScalarString(titleNode, titlePath, true, issues)
 		if isValid {
-			for _, title := range parsedTitles {
-				if strings.Contains(title, "${") {
-					shared.AddError(issues, "schema.section.title_interpolation_forbidden", "title must not contain interpolation", titlePath)
-					continue
-				}
-				titles = append(titles, title)
+			if strings.Contains(parsedTitle, "${") {
+				shared.AddError(issues, "schema.section.title_interpolation_forbidden", "title must not contain interpolation", titlePath)
+			} else {
+				title = parsedTitle
 			}
 		}
 	}
@@ -337,7 +335,7 @@ func parseSection(sectionName string, node *yaml.Node, path string, issues *[]di
 
 	return model.Section{
 		Name:        sectionName,
-		Titles:      titles,
+		Title:       title,
 		Required:    required,
 		Description: description,
 		SchemaPath:  path,

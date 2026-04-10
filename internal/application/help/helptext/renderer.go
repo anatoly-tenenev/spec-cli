@@ -258,7 +258,7 @@ func renderProjectionConventionsSection() string {
 		"    - x-const: dynamic const as {\"kind\":\"interpolation\",\"source\":\"<original-source>\"}",
 		"    - x-enum: dynamic or mixed enum as ordered [{\"kind\":\"literal\",\"value\":...}|{\"kind\":\"interpolation\",\"source\":\"<original-source>\"}]",
 		"  Native const/enum are emitted only for fully static literal constraints.",
-		"  content.sections.<section_name>.title is canonical scalar heading title; only the first schema title is published.",
+		"  content.sections.<section_name>.title is canonical scalar heading title when specified in schema.",
 		"  x-kind=entityRef describes the schema-level meaning of a reference field.",
 		"  Read-side ref objects exposed by query/get are described separately in Reference value model.",
 	}

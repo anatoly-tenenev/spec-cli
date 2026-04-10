@@ -189,10 +189,10 @@ func Validate(
 			continue
 		}
 
-		if len(sectionSpec.Titles) > 0 && !contains(sectionSpec.Titles, sectionContent.Title) {
+		if strings.TrimSpace(sectionSpec.Title) != "" && sectionContent.Title != sectionSpec.Title {
 			validationIssues = append(validationIssues, issues.New(
 				"content.section_title_mismatch",
-				fmt.Sprintf("section '%s' title is not allowed by schema", sectionName),
+				fmt.Sprintf("section '%s' title must exactly match '%s'", sectionName, sectionSpec.Title),
 				"12.2",
 				"content.sections."+sectionName,
 				candidate,
@@ -476,13 +476,4 @@ func parseIDSuffix(id string, prefix string) (int, bool) {
 		value = value*10 + int(ch-'0')
 	}
 	return value, true
-}
-
-func contains(values []string, target string) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
 }

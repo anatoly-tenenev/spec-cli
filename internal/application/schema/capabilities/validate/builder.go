@@ -43,7 +43,7 @@ type RequiredFieldRule struct {
 
 type RequiredSectionRule struct {
 	Name         string
-	Titles       []string
+	Title        string
 	Required     bool
 	RequiredExpr *schemaexpressions.CompiledExpression
 	RequiredPath string
@@ -159,7 +159,7 @@ func buildFieldRule(field model.MetaField) RequiredFieldRule {
 func buildSectionRule(section model.Section) RequiredSectionRule {
 	return RequiredSectionRule{
 		Name:         section.Name,
-		Titles:       append([]string(nil), section.Titles...),
+		Title:        section.Title,
 		Required:     section.Required.Always,
 		RequiredExpr: section.Required.Expr,
 		RequiredPath: section.Required.Path,

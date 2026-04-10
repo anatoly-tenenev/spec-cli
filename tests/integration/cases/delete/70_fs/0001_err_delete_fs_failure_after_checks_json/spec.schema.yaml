@@ -13,7 +13,7 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"
   feature:
     idPrefix: FEAT
     pathTemplate: "features/{slug}.md"
@@ -33,7 +33,7 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"
   release:
     idPrefix: REL
     pathTemplate: "releases/{slug}.md"
@@ -54,7 +54,7 @@ entity:
       sections:
         summary:
           required: false
-          title: ["Summary"]
+          title: "Summary"
   note:
     idPrefix: NOTE
     pathTemplate: "notes/{slug}.md"

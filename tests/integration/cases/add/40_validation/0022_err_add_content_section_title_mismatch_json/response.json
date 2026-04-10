@@ -1,0 +1,35 @@
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "validation": {
+        "issues": [
+          {
+            "class": "InstanceError",
+            "code": "content.section_title_mismatch",
+            "entity": {
+              "id": "FEAT-5",
+              "slug": "retry-window",
+              "type": "feature"
+            },
+            "field": "content.sections.summary",
+            "level": "error",
+            "message": "section 'summary' title must exactly match 'Summary'",
+            "standard_ref": "12.2"
+          }
+        ]
+      }
+    },
+    "exit_code": 1,
+    "message": "created entity failed validation"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

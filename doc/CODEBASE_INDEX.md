@@ -341,7 +341,7 @@ Compact project map for fast entry into the code.
     - Preserve dynamic literal constraints in projection without heuristics: static `const/enum` stay native JSON Schema keywords, dynamic `const` is published as `x-const`, and dynamic/mixed `enum` is published as ordered `x-enum` entries (`literal|interpolation` objects).
     - Normalize projection-level `x-refTypes` for open refs (`refType` omitted) to the full deterministic entity-type list from the effective schema (never `null`).
     - Publish `content.raw` together with `content.sections` in the specification projection whenever the entity type has content sections.
-    - Publish section heading metadata as canonical scalar `title` only (first schema title), intentionally hiding additional schema aliases in help projection.
+    - Publish section heading metadata as canonical scalar `title` when it is explicitly defined in schema.
     - Keep deterministic ordering for entity types, fields, sections, and projection output.
     - Build degraded-mode recovery contract (`Impact`, `RecoveryClass`, `RetryCommand`) without heuristic schema-derived values.
     - Use `spec-cli schema check --schema <path>` as degraded `RetryCommand` for schema syntax/semantic failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_VALIDATION_ERROR`) while preserving existing retry semantics for missing/read/projection scenarios.

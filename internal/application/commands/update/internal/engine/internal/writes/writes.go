@@ -102,8 +102,8 @@ func Apply(
 					nextBody = strings.Join(updatedLines, "\n")
 				} else {
 					headingTitle := label
-					if sectionSpec, ok := typeSpec.Sections[label]; ok && len(sectionSpec.Titles) > 0 {
-						headingTitle = sectionSpec.Titles[0]
+					if sectionSpec, ok := typeSpec.Sections[label]; ok && strings.TrimSpace(sectionSpec.Title) != "" {
+						headingTitle = sectionSpec.Title
 					}
 					inserted := insertMissingSection(layout, label, headingTitle, afterBody, typeSpec.SectionOrder)
 					nextBody = strings.Join(inserted, "\n")

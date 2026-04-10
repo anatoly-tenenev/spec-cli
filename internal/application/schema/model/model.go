@@ -30,7 +30,7 @@ type MetaField struct {
 
 type Section struct {
 	Name        string
-	Titles      []string
+	Title       string
 	Required    Requirement
 	Description string
 	SchemaPath  string

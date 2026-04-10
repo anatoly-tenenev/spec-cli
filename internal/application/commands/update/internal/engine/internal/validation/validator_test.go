@@ -163,7 +163,7 @@ func TestValidateUsesCompilerOwnedRequiredPaths(t *testing.T) {
 		Sections: map[string]model.SectionSpec{
 			"summary": {
 				Name:         "summary",
-				Titles:       []string{"Summary"},
+				Title:        "Summary",
 				RequiredExpr: requiredExpr,
 				RequiredPath: "entity.feature.content.sections.summary.required",
 			},

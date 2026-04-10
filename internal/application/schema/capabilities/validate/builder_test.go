@@ -45,7 +45,7 @@ func TestBuildValidationCapabilityDeterministicProjection(t *testing.T) {
 				Sections: map[string]model.Section{
 					"summary": {
 						Name:     "summary",
-						Titles:   []string{"Summary"},
+						Title:    "Summary",
 						Required: model.Requirement{Always: true},
 					},
 				},
@@ -109,6 +109,9 @@ func TestBuildValidationCapabilityDeterministicProjection(t *testing.T) {
 	}
 	if len(service.RequiredSections) != 1 || service.RequiredSections[0].Name != "summary" {
 		t.Fatalf("unexpected section rules: %#v", service.RequiredSections)
+	}
+	if service.RequiredSections[0].Title != "Summary" {
+		t.Fatalf("unexpected summary title rule: %#v", service.RequiredSections[0])
 	}
 	if len(service.PathPattern.Cases) != 1 || service.PathPattern.Cases[0].Use != "services/${slug}.md" {
 		t.Fatalf("unexpected path pattern rules: %#v", service.PathPattern.Cases)

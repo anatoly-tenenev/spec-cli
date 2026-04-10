@@ -55,12 +55,12 @@ func TestBuildWriteCapability(t *testing.T) {
 				Sections: map[string]model.Section{
 					"summary": {
 						Name:     "summary",
-						Titles:   []string{"Summary"},
+						Title:    "Summary",
 						Required: model.Requirement{Always: true, Path: "entity.feature.content.sections.summary.required"},
 					},
 					"implementation": {
 						Name:     "implementation",
-						Titles:   []string{"Implementation"},
+						Title:    "Implementation",
 						Required: model.Requirement{Always: false, Path: "entity.feature.content.sections.implementation.required"},
 					},
 				},
@@ -136,6 +136,9 @@ func TestBuildWriteCapability(t *testing.T) {
 	}
 	if got := entity.Sections["summary"].RequiredPath; got != "entity.feature.content.sections.summary.required" {
 		t.Fatalf("unexpected summary required path: %q", got)
+	}
+	if got := entity.Sections["summary"].Title; got != "Summary" {
+		t.Fatalf("unexpected summary title: %q", got)
 	}
 	if got := entity.PathPattern.Cases[0].WhenPath; got != "entity.feature.pathTemplate.cases[0].when" {
 		t.Fatalf("unexpected when path: %q", got)

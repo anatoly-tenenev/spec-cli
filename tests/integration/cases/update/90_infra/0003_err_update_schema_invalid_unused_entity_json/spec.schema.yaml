@@ -14,7 +14,7 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"
   service:
     idPrefix: SVC
     pathTemplate: "services/${slug}.md"
@@ -29,4 +29,4 @@ entity:
       sections:
         summary:
           required: false
-          title: ["Summary"]
+          title: "Summary"

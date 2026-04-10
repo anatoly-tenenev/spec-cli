@@ -17,7 +17,7 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary"]
+          title: "Summary"
   feature:
     idPrefix: FEAT
     pathTemplate:
@@ -55,13 +55,13 @@ entity:
       sections:
         summary:
           required: true
-          title: ["Summary", "Overview"]
+          title: "Summary"
         implementation:
           required: false
-          title: ["Implementation"]
+          title: "Implementation"
         rollout:
           required: false
-          title: ["Rollout plan", "Rollout"]
+          title: "Rollout plan"
   memo:
     idPrefix: MEMO
     pathTemplate: "memos/${slug}.md"
@@ -75,7 +75,7 @@ entity:
       sections:
         summary:
           required: false
-          title: ["Summary"]
+          title: "Summary"
   note:
     idPrefix: NOTE
     pathTemplate: "notes/${slug}.md"

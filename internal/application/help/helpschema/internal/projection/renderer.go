@@ -178,14 +178,10 @@ func applyDescription(result *orderedJSONObject, description string) {
 }
 
 func applyCanonicalSectionTitle(result *orderedJSONObject, section model.Section) {
-	if len(section.Titles) == 0 {
+	if strings.TrimSpace(section.Title) == "" {
 		return
 	}
-	canonicalTitle := section.Titles[0]
-	if strings.TrimSpace(canonicalTitle) == "" {
-		return
-	}
-	result.add("title", canonicalTitle)
+	result.add("title", section.Title)
 }
 
 func applyConstProjection(result *orderedJSONObject, constValue *model.Literal) {
