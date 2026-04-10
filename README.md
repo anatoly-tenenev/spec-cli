@@ -37,7 +37,7 @@ See [INSTALL.md](./INSTALL.md).
 ## Example schema
 
 ```yaml
-version: "0.0.4"
+version: "0.0.7"
 entity:
   service:
     idPrefix: SVC

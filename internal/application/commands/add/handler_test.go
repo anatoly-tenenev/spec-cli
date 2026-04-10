@@ -56,7 +56,7 @@ func TestHandleUnknownTypeIncludesTopLevelSchemaAfterCompile(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
-version: "0.0.4"
+version: "0.0.7"
 entity:
   note:
     idPrefix: NOTE
@@ -98,7 +98,7 @@ func TestHandleSuccessIncludesTopLevelSchema(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
-version: "0.0.4"
+version: "0.0.7"
 entity:
   note:
     idPrefix: NOTE

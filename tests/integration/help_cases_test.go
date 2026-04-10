@@ -713,7 +713,7 @@ func assertJSONError(t *testing.T, raw string, resultState string, errorCode str
 	}
 }
 
-const helpSchemaFixture = `version: "0.0.4"
+const helpSchemaFixture = `version: "0.0.7"
 description: Workspace specification schema
 entity:
   feature:
@@ -764,7 +764,7 @@ entity:
             type: string
 `
 
-const helpSchemaMissingPathTemplateFixture = `version: "0.0.4"
+const helpSchemaMissingPathTemplateFixture = `version: "0.0.7"
 description: Workspace specification schema
 entity:
   feature:

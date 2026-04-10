@@ -10,7 +10,7 @@ import (
 )
 
 func TestBuild_ProjectsReadSemanticsAndNormalizesRefs(t *testing.T) {
-	schemaText := `version: "0.0.4"
+	schemaText := `version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
@@ -134,7 +134,7 @@ entity:
 }
 
 func TestBuild_DeterministicProjection(t *testing.T) {
-	schemaText := `version: "0.0.4"
+	schemaText := `version: "0.0.7"
 entity:
   zeta:
     idPrefix: ZETA
@@ -164,7 +164,7 @@ entity:
 }
 
 func TestBuild_ProjectsOnlyStaticLiteralConstraints(t *testing.T) {
-	schemaText := `version: "0.0.4"
+	schemaText := `version: "0.0.7"
 entity:
   doc:
     idPrefix: DOC

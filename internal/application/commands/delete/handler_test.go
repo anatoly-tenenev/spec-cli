@@ -53,7 +53,7 @@ func TestHandlePostCompileDomainErrorIncludesTopLevelSchema(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
-version: "0.0.4"
+version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
@@ -93,7 +93,7 @@ func TestHandleSuccessIncludesTopLevelSchema(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
-version: "0.0.4"
+version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
