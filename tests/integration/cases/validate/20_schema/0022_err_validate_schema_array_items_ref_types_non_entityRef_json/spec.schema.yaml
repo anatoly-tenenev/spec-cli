@@ -11,7 +11,7 @@ entity:
             type: array
             items:
               type: string
-              refTypes: [doc]
+              refType: [doc]
     content:
       sections:
         goal: {}

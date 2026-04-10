@@ -3,6 +3,7 @@ package compile
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -307,6 +308,79 @@ func TestCompilerKeepsIndependentExpressionErrorsWhenConstMismatchProjected(t *t
 	assertSchemaIssue(t, result, "schema.value.const_type_mismatch", "schema.entity.service.meta.fields.status.schema.const")
 	assertSchemaIssuePathPresent(t, result, "schema.entity.service.meta.fields.owner.required")
 	assertSchemaIssueCodeAbsent(t, result, "schema.expression.context_invalid")
+}
+
+func TestCompilerAcceptsEntityRefRefTypeScalar(t *testing.T) {
+	schemaPath := writeSchema(t, ""+
+		"version: v1\n"+
+		"entity:\n"+
+		"  service:\n"+
+		"    idPrefix: SVC\n"+
+		"    pathTemplate: services/${slug}.md\n"+
+		"  feature:\n"+
+		"    idPrefix: FEAT\n"+
+		"    pathTemplate: features/${slug}.md\n"+
+		"    meta:\n"+
+		"      fields:\n"+
+		"        owner:\n"+
+		"          schema:\n"+
+		"            type: entityRef\n"+
+		"            refType: service\n",
+	)
+
+	result, compileErr := NewCompiler().Compile(schemaPath, "spec.schema.yaml")
+	if compileErr != nil {
+		t.Fatalf("expected nil compile app error, got %#v", compileErr)
+	}
+	if !result.Valid {
+		t.Fatalf("expected scalar refType schema to be valid, got %#v", result.Issues)
+	}
+
+	owner := result.Schema.Entities["feature"].MetaFields["owner"].Value.Ref
+	if owner == nil {
+		t.Fatalf("expected owner ref spec to be compiled")
+	}
+	if !reflect.DeepEqual(owner.AllowedTypes, []string{"service"}) {
+		t.Fatalf("unexpected owner allowed types: %#v", owner.AllowedTypes)
+	}
+}
+
+func TestCompilerAcceptsEntityRefRefTypeArrayAndNormalizes(t *testing.T) {
+	schemaPath := writeSchema(t, ""+
+		"version: v1\n"+
+		"entity:\n"+
+		"  service:\n"+
+		"    idPrefix: SVC\n"+
+		"    pathTemplate: services/${slug}.md\n"+
+		"  feature:\n"+
+		"    idPrefix: FEAT\n"+
+		"    pathTemplate: features/${slug}.md\n"+
+		"  doc:\n"+
+		"    idPrefix: DOC\n"+
+		"    pathTemplate: docs/${slug}.md\n"+
+		"    meta:\n"+
+		"      fields:\n"+
+		"        owner:\n"+
+		"          schema:\n"+
+		"            type: entityRef\n"+
+		"            refType: [service, feature]\n",
+	)
+
+	result, compileErr := NewCompiler().Compile(schemaPath, "spec.schema.yaml")
+	if compileErr != nil {
+		t.Fatalf("expected nil compile app error, got %#v", compileErr)
+	}
+	if !result.Valid {
+		t.Fatalf("expected array refType schema to be valid, got %#v", result.Issues)
+	}
+
+	owner := result.Schema.Entities["doc"].MetaFields["owner"].Value.Ref
+	if owner == nil {
+		t.Fatalf("expected owner ref spec to be compiled")
+	}
+	if !reflect.DeepEqual(owner.AllowedTypes, []string{"feature", "service"}) {
+		t.Fatalf("unexpected owner allowed types: %#v", owner.AllowedTypes)
+	}
 }
 
 func assertCompileErrorCode(t *testing.T, compileErr *domainerrors.AppError, expectedCode domainerrors.Code) {

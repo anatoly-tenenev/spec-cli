@@ -24,11 +24,11 @@
     },
     "issues": [
       {
-        "code": "schema.value.ref_types_empty",
+        "code": "schema.value.ref_type_empty",
         "level": "error",
         "class": "SchemaError",
-        "message": "schema.refTypes must be a non-empty array",
-        "path": "schema.entity.doc.meta.fields.owners.schema.items.refTypes"
+        "message": "schema.refType must be a non-empty array",
+        "path": "schema.entity.doc.meta.fields.owners.schema.items.refType"
       }
     ]
   },

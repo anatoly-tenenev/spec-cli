@@ -58,7 +58,7 @@ entity:
         service:
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: service
     content:
       sections:
         description: { title: Description }

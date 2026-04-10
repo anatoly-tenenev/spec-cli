@@ -35,7 +35,7 @@ entity:
         owner:
           schema:
             type: entityRef
-            refTypes: [service, feature]
+            refType: service
         watchers:
           schema:
             type: array
@@ -107,7 +107,7 @@ entity:
 	if ownerRef.Cardinality != RefCardinalityScalar {
 		t.Fatalf("expected scalar cardinality, got %q", ownerRef.Cardinality)
 	}
-	if !reflect.DeepEqual(ownerRef.AllowedTypes, []string{"feature", "service"}) {
+	if !reflect.DeepEqual(ownerRef.AllowedTypes, []string{"service"}) {
 		t.Fatalf("unexpected owner allowed types: %#v", ownerRef.AllowedTypes)
 	}
 

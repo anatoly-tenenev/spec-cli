@@ -28,7 +28,7 @@ entity:
           required: true
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
     content:
       sections:
         summary:
@@ -45,7 +45,7 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes: [feature]
+              refType: [feature]
         summary_text:
           required: false
           schema:

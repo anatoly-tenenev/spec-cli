@@ -8,7 +8,7 @@
             "code": "meta.entityRef_type_mismatch",
             "level": "error",
             "class": "InstanceError",
-            "message": "entityRef 'watchers[0]' points to type 'feature' outside refTypes",
+            "message": "entityRef 'watchers[0]' points to type 'feature' outside refType",
             "standard_ref": "11.5",
             "entity": {
               "type": "feature",

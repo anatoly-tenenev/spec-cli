@@ -12,4 +12,4 @@ entity:
           required: true
           schema:
             type: entityRef
-            refTypes: [feature]
+            refType: [feature]

@@ -140,7 +140,7 @@ Compact project map for fast entry into the code.
   - Subpackages:
     - `compile/internal/compiler` - thin bridge from compile entrypoint to semantic compiler.
     - `compile/internal/compiler/internal/semantic` - canonical semantic compiler for `idPrefix`, `required`, section-title rules, const/enum interpolation, pathTemplate cases/guards, and expression-aware checks.
-    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refTypes/items/min/max`), deterministic diagnostics, and primary literal mismatch checks via `derivedschema.LiteralMatchesKind`.
+    - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refType/items/min/max`), deterministic diagnostics, and primary literal mismatch checks via `derivedschema.LiteralMatchesKind`.
 
 - `internal/application/schema/capabilities/read`
   - Entrypoint: `builder.go` - `Build`.
@@ -149,7 +149,7 @@ Compact project map for fast entry into the code.
     - Split non-ref `meta` fields from `entityRef` fields at shared boundary (`MetaFields` excludes refs; `RefFields` contains scalar and array entityRef only).
     - Project read semantics for `query/get`: field kinds (`kind/itemKind`), static-only `enum/const`, `required` (`Always` only), ref cardinality, and normalized ref `AllowedTypes`.
     - Apply conservative static-literal projection for read planning: interpolated string `const` and any `enum` containing an interpolated literal are excluded from static constraints.
-    - Normalize open ref targets once in shared layer (`refTypes` omitted => all entity types) so consumers do not implement special-case expansion.
+    - Normalize open ref targets once in shared layer (`refType` omitted => all entity types) so consumers do not implement special-case expansion.
     - Keep read capability independent from YAML parsing and command handlers.
   - Subpackages: none.
 
@@ -158,7 +158,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Derive write-side capability from compiled schema for mutating commands: `idPrefix`, `pathTemplate`, `meta/section` rules, `hasContent`, and write-path allowlists.
     - Project write namespace split (`meta.<field>`, `refs.<field>`, `content.sections.<name>`) including scalar/array `entityRef` support for `refs`.
-    - Expose deterministic field/section order plus value constraints (`type/refTypes/items/min/max/unique/enum/const`) for write parsing and validation runtime, preserving template-aware `const/enum` as `{literal, template}`.
+    - Expose deterministic field/section order plus value constraints (`type/refType/items/min/max/unique/enum/const`) for write parsing and validation runtime, preserving template-aware `const/enum` as `{literal, template}`.
     - Preserve compiler-owned provenance paths for runtime diagnostics (`meta.required`, `section.required`, `pathTemplate.cases[].when`, `pathTemplate.cases[].use`) in capability projection.
     - Keep canonical sorted/deduplicated `SetPaths/UnsetPaths/SetFilePaths` output while preserving source-derived serialization order in dedicated fields.
   - Subpackages: none.
@@ -178,7 +178,7 @@ Compact project map for fast entry into the code.
     - Build reverse-reference capability (`inbound slots`) keyed by target entity type.
     - Build source-oriented slot capability (`slots by source type`) consumed by `delete` reverse-ref scanning.
     - Distinguish scalar vs array cardinality for both inbound and source slot views.
-    - Normalize allowed target-type expansion (`refTypes` or all entity types) and deterministic slot ordering in both views.
+    - Normalize allowed target-type expansion (`refType` or all entity types) and deterministic slot ordering in both views.
   - Subpackages: none.
 
 - `internal/application/commands/schema`
@@ -339,7 +339,7 @@ Compact project map for fast entry into the code.
     - Delegate specification projection rendering to a data-driven shared-model projector so all compiled value facets (`items`, `minItems`, `maxItems`, `uniqueItems`, `const`, `enum`, `format`, refs metadata) flow automatically from `model.ValueSpec`.
     - Publish ref cardinality only through projection shape (`x-kind=entityRef` on scalar refs; `type=array` + `items.x-kind=entityRef` on array refs); `x-cardinality` is intentionally not emitted.
     - Preserve dynamic literal constraints in projection without heuristics: static `const/enum` stay native JSON Schema keywords, dynamic `const` is published as `x-const`, and dynamic/mixed `enum` is published as ordered `x-enum` entries (`literal|interpolation` objects).
-    - Normalize projection-level `x-refTypes` for open refs (`refTypes` omitted) to the full deterministic entity-type list from the effective schema (never `null`).
+    - Normalize projection-level `x-refTypes` for open refs (`refType` omitted) to the full deterministic entity-type list from the effective schema (never `null`).
     - Publish `content.raw` together with `content.sections` in the specification projection whenever the entity type has content sections.
     - Publish section heading metadata as canonical scalar `title` only (first schema title), intentionally hiding additional schema aliases in help projection.
     - Keep deterministic ordering for entity types, fields, sections, and projection output.
@@ -782,7 +782,7 @@ Compact project map for fast entry into the code.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
     - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
-    - Cover open-ref behavior in `query` when schema omits `refTypes` / `items.refTypes`: scalar and array refs resolve against all schema entity types, and `--where` on `refs.<field>.type` / `refs.<field>[].type` compiles and filters by resolved target entity types.
+    - Cover open-ref behavior in `query` when schema omits `refType` / `items.refType`: scalar and array refs resolve against all schema entity types, and `--where` on `refs.<field>.type` / `refs.<field>[].type` compiles and filters by resolved target entity types.
     - Cover schema-aware `--where` literal validation for built-in entity `type`: unknown literals such as `type == 'unknown'` fail as `INVALID_QUERY` before workspace scan, so their fixtures stay on `workspace.in/.keep`.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entityRef`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
@@ -790,15 +790,15 @@ Compact project map for fast entry into the code.
     - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, placeholder/path utilities, stderr/response/workspace assertions, permission setup).
     - `tests/integration/internal/runner` - response normalization and workspace permission adapter used by harness and selected tests.
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
-    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refTypes` constraints for arrays and `required` expressions rejected by static nullable-function checks.
+    - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refType` constraints for arrays and `required` expressions rejected by static nullable-function checks.
     - `tests/integration/cases/validate/30_instance_builtin/*` - built-in entity checks.
     - `tests/integration/cases/validate/40_instance_meta_content/*` - `meta.fields` and `content.sections`.
     - `tests/integration/cases/validate/50_pathTemplate_expr/*` - `pathTemplate.cases[].when` scenarios, including optional-field guards that permit `${meta.<field>}` reuse in `use`.
-    - `tests/integration/cases/validate/60_entityRef_context/*` - scalar/array `entityRef`, `items.refTypes`, blank array item handling, `ref.*`, `ref.dirPath`.
+    - `tests/integration/cases/validate/60_entityRef_context/*` - scalar/array `entityRef`, `items.refType`, blank array item handling, `ref.*`, `ref.dirPath`.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
-    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`, scalar open-ref resolution when `refTypes` is omitted, and array open-ref resolution when `items.refTypes` is omitted.
-    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, schema-aware rejection of unknown built-in `type` literals, scalar/array open-ref filtering by `refs.<field>.type` and `refs.<field>[].type` when schema omits `refTypes` / `items.refTypes`, conservative handling of interpolated `schema.const/schema.enum` (no false static reject), and preserved static `const/enum` rejection.
+    - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`, scalar open-ref resolution when `refType` is omitted, and array open-ref resolution when `items.refType` is omitted.
+    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, schema-aware rejection of unknown built-in `type` literals, scalar/array open-ref filtering by `refs.<field>.type` and `refs.<field>[].type` when schema omits `refType` / `items.refType`, conservative handling of interpolated `schema.const/schema.enum` (no false static reject), and preserved static `const/enum` rejection.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/query/50_errors/*` - argument/global-option validation failures before compile.
     - `tests/integration/cases/query/60_infra/*` - schema/workspace infra failures plus strict shared-compiler blocking cases (`SCHEMA_*`), including malformed schema-type and const/enum mismatch classification.
@@ -825,7 +825,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/delete/20_args/*` - `delete` argument failures.
     - `tests/integration/cases/delete/30_lookup/*` - `delete` lookup diagnostics.
     - `tests/integration/cases/delete/40_concurrency/*` - `delete` concurrency scenarios.
-    - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking, including conservative raw `target.id` blocking from source-declared slots even when `refTypes` does not include the target type.
+    - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking, including conservative raw `target.id` blocking from source-declared slots even when `refType` does not include the target type.
     - `tests/integration/cases/delete/60_infra/*` - strict shared-compiler failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_NOT_FOUND`, `SCHEMA_INVALID`, `SCHEMA_READ_ERROR`) with diagnostics carried via top-level `schema.issues`, plus post-compile workspace read failure (`READ_FAILED`) that keeps top-level successful `schema` (`valid=true`, `issues=[]`).
     - `tests/integration/cases/delete/70_fs/*` - delete-time filesystem failures.
     - `tests/integration/cases/delete/80_help/*` - unsupported command-local `delete --help`.

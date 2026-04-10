@@ -9,7 +9,7 @@ entity:
           required: false
           schema:
             type: entityRef
-            refTypes: [ghost_type]
+            refType: ghost_type
     content:
       sections:
         goal: {}

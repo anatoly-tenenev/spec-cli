@@ -15,7 +15,7 @@ entity:
           required: false
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         owner_slug_snapshot:
           required: true
           schema:

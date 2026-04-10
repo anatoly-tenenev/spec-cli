@@ -34,7 +34,7 @@ entity:
           required: ${meta.status != 'deprecated'}
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         score:
           schema:
             type: number

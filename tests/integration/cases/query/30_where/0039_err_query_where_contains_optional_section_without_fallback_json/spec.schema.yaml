@@ -34,7 +34,7 @@ entity:
         owner:
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         score:
           schema:
             type: number

@@ -24,11 +24,11 @@
     },
     "issues": [
       {
-        "code": "schema.value.ref_types_duplicate",
+        "code": "schema.value.ref_type_duplicate",
         "level": "error",
         "class": "SchemaError",
         "message": "duplicate ref type 'service'",
-        "path": "schema.entity.doc.meta.fields.owners.schema.items.refTypes[1]"
+        "path": "schema.entity.doc.meta.fields.owners.schema.items.refType[1]"
       }
     ]
   },

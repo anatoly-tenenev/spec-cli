@@ -8,7 +8,7 @@ entity:
         owner:
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
   service:
     idPrefix: SVC
     pathTemplate: "services/{slug}.md"

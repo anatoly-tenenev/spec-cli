@@ -14,7 +14,7 @@
             },
             "field": "frontmatter.container",
             "level": "error",
-            "message": "entityRef 'container' points to type 'note' outside refTypes",
+            "message": "entityRef 'container' points to type 'note' outside refType",
             "standard_ref": "11.5"
           }
         ]

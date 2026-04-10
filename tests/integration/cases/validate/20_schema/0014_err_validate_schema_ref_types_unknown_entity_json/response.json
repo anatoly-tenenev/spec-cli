@@ -27,8 +27,8 @@
         "code": "schema.value.ref_type_unknown",
         "level": "error",
         "class": "SchemaError",
-        "message": "unknown entity type 'ghost_type' in refTypes",
-        "path": "schema.entity.doc.meta.fields.owner.schema.refTypes[0]"
+        "message": "unknown entity type 'ghost_type' in refType",
+        "path": "schema.entity.doc.meta.fields.owner.schema.refType"
       }
     ]
   },

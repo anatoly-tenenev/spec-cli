@@ -24,11 +24,11 @@
     },
     "issues": [
       {
-        "code": "schema.value.ref_types_unexpected",
+        "code": "schema.value.ref_type_unexpected",
         "level": "error",
         "class": "SchemaError",
-        "message": "schema.refTypes is allowed only for schema.type=entityRef",
-        "path": "schema.entity.doc.meta.fields.tags.schema.items.refTypes"
+        "message": "schema.refType is allowed only for schema.type=entityRef",
+        "path": "schema.entity.doc.meta.fields.tags.schema.items.refType"
       }
     ]
   },

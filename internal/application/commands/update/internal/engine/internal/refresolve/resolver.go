@@ -76,7 +76,7 @@ func Resolve(
 				if len(fieldSpec.ItemRefTypes) > 0 && !contains(fieldSpec.ItemRefTypes, target.Type) {
 					refIssues = append(refIssues, issues.New(
 						"meta.entityRef_type_mismatch",
-						fmt.Sprintf("entityRef '%s[%d]' points to type '%s' outside refTypes", fieldName, idx, target.Type),
+						fmt.Sprintf("entityRef '%s[%d]' points to type '%s' outside refType", fieldName, idx, target.Type),
 						"11.5",
 						itemField,
 						candidate,
@@ -143,7 +143,7 @@ func Resolve(
 		if len(fieldSpec.RefTypes) > 0 && !contains(fieldSpec.RefTypes, target.Type) {
 			refIssues = append(refIssues, issues.New(
 				"meta.entityRef_type_mismatch",
-				fmt.Sprintf("entityRef '%s' points to type '%s' outside refTypes", fieldName, target.Type),
+				fmt.Sprintf("entityRef '%s' points to type '%s' outside refType", fieldName, target.Type),
 				"11.5",
 				"frontmatter."+fieldName,
 				candidate,

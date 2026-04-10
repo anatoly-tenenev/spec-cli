@@ -17,7 +17,7 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes: [service, service]
+              refType: [service, service]
     content:
       sections:
         goal: {}

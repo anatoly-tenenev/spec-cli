@@ -738,14 +738,14 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes:
+              refType:
                 - service
         owner:
           description: Parent service
           required: ${meta.status == 'active'}
           schema:
             type: entityRef
-            refTypes:
+            refType:
               - service
     content:
       sections:
@@ -788,14 +788,14 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes:
+              refType:
                 - service
         owner:
           description: Parent service
           required: ${meta.status == 'active'}
           schema:
             type: entityRef
-            refTypes:
+            refType:
               - service
     content:
       sections:

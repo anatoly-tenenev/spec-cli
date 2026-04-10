@@ -27,7 +27,7 @@ entity:
           required: false
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         owner_slug:
           required: "${refs.owner.type == 'service'}"
           schema:

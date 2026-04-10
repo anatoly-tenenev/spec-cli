@@ -23,7 +23,7 @@ entity:
           required: true
           schema:
             type: entityRef
-            refTypes: [person]
+            refType: [person]
         ownerSlug:
           required: true
           schema:

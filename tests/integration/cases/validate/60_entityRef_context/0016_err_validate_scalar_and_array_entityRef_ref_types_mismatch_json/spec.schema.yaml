@@ -21,14 +21,14 @@ entity:
           required: false
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         owners:
           required: false
           schema:
             type: array
             items:
               type: entityRef
-              refTypes: [service]
+              refType: [service]
     content:
       sections:
         goal: {}

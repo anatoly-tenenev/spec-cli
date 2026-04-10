@@ -14,4 +14,4 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes: [service]
+              refType: [service]

@@ -32,7 +32,7 @@ entity:
           required: true
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
         tags:
           required: false
           schema:
@@ -48,7 +48,7 @@ entity:
             type: array
             items:
               type: entityRef
-              refTypes: [service]
+              refType: [service]
     content:
       sections:
         summary:

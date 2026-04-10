@@ -28,7 +28,7 @@ entity:
           required: true
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]
     content:
       sections:
         summary:

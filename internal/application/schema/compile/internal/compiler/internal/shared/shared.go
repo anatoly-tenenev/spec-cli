@@ -26,7 +26,7 @@ func ParseValueSpec(
 	AppendUnsupportedKeys(
 		values,
 		path,
-		SetOf("type", "format", "enum", "const", "refTypes", "items", "uniqueItems", "minItems", "maxItems", "description"),
+		SetOf("type", "format", "enum", "const", "refType", "refTypes", "items", "uniqueItems", "minItems", "maxItems", "description"),
 		issues,
 	)
 
@@ -47,6 +47,15 @@ func ParseValueSpec(
 			"schema.value.type_unsupported",
 			fmt.Sprintf("unsupported schema type '%s'", typeName),
 			path+".type",
+		)
+	}
+
+	if _, exists := values["refTypes"]; exists {
+		AddError(
+			issues,
+			"schema.value.ref_type_legacy",
+			"schema.refTypes is not supported; use schema.refType",
+			path+".refTypes",
 		)
 	}
 
@@ -88,7 +97,7 @@ func ParseValueSpec(
 	}
 
 	if kind == model.ValueKindEntityRef {
-		refTypes := parseRefTypes(values["refTypes"], path+".refTypes", typeSet, issues)
+		refTypes := parseRefType(values["refType"], path+".refType", typeSet, issues)
 		spec.Ref = &model.RefSpec{
 			Cardinality:  model.RefCardinalityScalar,
 			AllowedTypes: refTypes,
@@ -97,12 +106,12 @@ func ParseValueSpec(
 		return spec
 	}
 
-	if _, exists := values["refTypes"]; exists {
+	if _, exists := values["refType"]; exists {
 		AddError(
 			issues,
-			"schema.value.ref_types_unexpected",
-			"schema.refTypes is allowed only for schema.type=entityRef",
-			path+".refTypes",
+			"schema.value.ref_type_unexpected",
+			"schema.refType is allowed only for schema.type=entityRef",
+			path+".refType",
 		)
 	}
 
@@ -445,50 +454,89 @@ func parseEnum(node *yaml.Node, path string, issues *[]diagnostics.Issue) []mode
 	return values
 }
 
-func parseRefTypes(node *yaml.Node, path string, typeSet map[string]struct{}, issues *[]diagnostics.Issue) []string {
+func parseRefType(node *yaml.Node, path string, typeSet map[string]struct{}, issues *[]diagnostics.Issue) []string {
 	if node == nil {
 		return nil
 	}
-	if node.Kind != yaml.SequenceNode {
-		AddError(issues, "schema.value.ref_types_invalid", "schema.refTypes must be a non-empty array", path)
-		return nil
-	}
-	if len(node.Content) == 0 {
-		AddError(issues, "schema.value.ref_types_empty", "schema.refTypes must be a non-empty array", path)
-		return nil
-	}
 
-	seen := make(map[string]struct{}, len(node.Content))
-	values := make([]string, 0, len(node.Content))
-	for index, itemNode := range node.Content {
-		itemPath := fmt.Sprintf("%s[%d]", path, index)
-		value, isValid := ScalarString(itemNode, itemPath, true, issues)
-		if !isValid {
-			continue
-		}
-		if _, exists := seen[value]; exists {
-			AddError(
-				issues,
-				"schema.value.ref_types_duplicate",
-				fmt.Sprintf("duplicate ref type '%s'", value),
-				itemPath,
-			)
-			continue
+	seen := map[string]struct{}{}
+	values := make([]string, 0)
+
+	switch node.Kind {
+	case yaml.ScalarNode:
+		value, ok := parseRefTypeItem(node, path, issues)
+		if !ok {
+			return nil
 		}
 		seen[value] = struct{}{}
 		if _, known := typeSet[value]; !known {
 			AddError(
 				issues,
 				"schema.value.ref_type_unknown",
-				fmt.Sprintf("unknown entity type '%s' in refTypes", value),
-				itemPath,
+				fmt.Sprintf("unknown entity type '%s' in refType", value),
+				path,
 			)
 		}
 		values = append(values, value)
+	case yaml.SequenceNode:
+		if len(node.Content) == 0 {
+			AddError(issues, "schema.value.ref_type_empty", "schema.refType must be a non-empty array", path)
+			return nil
+		}
+
+		values = make([]string, 0, len(node.Content))
+		seen = make(map[string]struct{}, len(node.Content))
+		for index, itemNode := range node.Content {
+			itemPath := fmt.Sprintf("%s[%d]", path, index)
+			value, ok := parseRefTypeItem(itemNode, itemPath, issues)
+			if !ok {
+				continue
+			}
+			if _, exists := seen[value]; exists {
+				AddError(
+					issues,
+					"schema.value.ref_type_duplicate",
+					fmt.Sprintf("duplicate ref type '%s'", value),
+					itemPath,
+				)
+				continue
+			}
+			seen[value] = struct{}{}
+			if _, known := typeSet[value]; !known {
+				AddError(
+					issues,
+					"schema.value.ref_type_unknown",
+					fmt.Sprintf("unknown entity type '%s' in refType", value),
+					itemPath,
+				)
+			}
+			values = append(values, value)
+		}
+	default:
+		AddError(issues, "schema.value.ref_type_invalid", "schema.refType must be a string or non-empty array of strings", path)
+		return nil
 	}
 
 	sort.Strings(values)
 	return values
+}
+
+func parseRefTypeItem(node *yaml.Node, path string, issues *[]diagnostics.Issue) (string, bool) {
+	if node == nil || node.Kind != yaml.ScalarNode {
+		AddError(issues, "schema.value.ref_type_invalid", "schema.refType must contain string values", path)
+		return "", false
+	}
+
+	var value string
+	if err := node.Decode(&value); err != nil {
+		AddError(issues, "schema.value.ref_type_invalid", "schema.refType must contain string values", path)
+		return "", false
+	}
+	if strings.TrimSpace(value) == "" {
+		AddError(issues, "schema.value.ref_type_empty", "schema.refType values must be non-empty strings", path)
+		return "", false
+	}
+	return value, true
 }
 
 func compileSingleExpression(raw string, path string, issues *[]diagnostics.Issue) *schemaexpressions.CompiledExpression {

@@ -22,4 +22,4 @@ entity:
         owner:
           schema:
             type: entityRef
-            refTypes: [service]
+            refType: [service]

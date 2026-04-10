@@ -26,15 +26,15 @@
         "level": "error",
         "class": "SchemaError",
         "code": "schema.value.ref_type_unknown",
-        "message": "unknown entity type 'unknown' in refTypes",
-        "path": "schema.entity.service.meta.fields.owner.schema.refTypes[0]"
+        "message": "unknown entity type 'unknown' in refType",
+        "path": "schema.entity.service.meta.fields.owner.schema.refType[0]"
       },
       {
         "level": "error",
         "class": "SchemaError",
-        "code": "schema.value.ref_types_duplicate",
+        "code": "schema.value.ref_type_duplicate",
         "message": "duplicate ref type 'unknown'",
-        "path": "schema.entity.service.meta.fields.owner.schema.refTypes[1]"
+        "path": "schema.entity.service.meta.fields.owner.schema.refType[1]"
       },
       {
         "level": "error",
