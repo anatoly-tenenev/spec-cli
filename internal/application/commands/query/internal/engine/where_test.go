@@ -66,6 +66,7 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 		SelectTree:    tree,
 		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
 		Where:         wherePlan,
+		ActiveTypeSet: []string{"feature"},
 		Limit:         100,
 		Offset:        0,
 	}
@@ -93,7 +94,7 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 	if execErr != nil {
 		t.Fatalf("unexpected execute error: %v", execErr)
 	}
-	if result.Matched != 1 || len(result.Items) != 1 {
+	if len(result.RootFields) != 1 || result.RootFields[0].TotalCount != 1 || len(result.RootFields[0].Items) != 1 {
 		t.Fatalf("unexpected match result: %#v", result)
 	}
 }
@@ -113,6 +114,7 @@ func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
 		SelectTree:    tree,
 		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
 		Where:         wherePlan,
+		ActiveTypeSet: []string{"feature"},
 		Limit:         100,
 		Offset:        0,
 	}

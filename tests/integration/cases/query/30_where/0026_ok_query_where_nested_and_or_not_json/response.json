@@ -1,39 +1,57 @@
 {
-  "items": [
-    {
-      "id": "FEAT-3",
-      "meta": {
-        "score": 1,
-        "status": "deprecated",
-        "tags": [
-          "legacy"
+  "data": {
+    "service": {
+      "items": [],
+      "totalCount": 0,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 0,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
         ]
-      },
-      "refs": {
-        "owner": {
-          "id": "SVC-404",
-          "reason": "missing",
-          "resolved": false,
-          "slug": null,
-          "type": "service"
+      }
+    },
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-3",
+          "meta": {
+            "score": 1,
+            "status": "deprecated",
+            "tags": [
+              "legacy"
+            ]
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-404",
+              "reason": "missing",
+              "resolved": false,
+              "slug": null,
+              "type": "service"
+            }
+          },
+          "slug": "orphan",
+          "type": "feature"
         }
-      },
-      "slug": "orphan",
-      "type": "feature"
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
     }
-  ],
-  "matched": 1,
-  "page": {
-    "effective_sort": [
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 1
   },
   "result_state": "valid",
   "schema": {

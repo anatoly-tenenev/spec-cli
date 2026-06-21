@@ -1,17 +1,35 @@
 {
-  "items": [],
-  "matched": 5,
-  "page": {
-    "effective_sort": [
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 2,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 6,
-    "returned": 0
+  "data": {
+    "service": {
+      "items": [],
+      "totalCount": 2,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 2,
+        "offset": 6,
+        "returned": 0,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    },
+    "feature": {
+      "items": [],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 2,
+        "offset": 6,
+        "returned": 0,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    }
   },
   "result_state": "valid",
   "schema": {

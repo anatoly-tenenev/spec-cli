@@ -1,47 +1,50 @@
 {
-  "items": [
-    {
-      "id": "FEAT-3",
-      "refs": {
-        "owner": null
-      }
-    },
-    {
-      "id": "FEAT-2",
-      "refs": {
-        "owner": {
-          "id": "SVC-1",
-          "resolved": true,
-          "slug": "api",
-          "type": "service"
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-3",
+          "refs": {
+            "owner": null
+          }
+        },
+        {
+          "id": "FEAT-2",
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "resolved": true,
+              "slug": "api",
+              "type": "service"
+            }
+          }
+        },
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "owner": {
+              "id": "SVC-2",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          }
         }
-      }
-    },
-    {
-      "id": "FEAT-1",
-      "refs": {
-        "owner": {
-          "id": "SVC-2",
-          "resolved": true,
-          "slug": "billing",
-          "type": "service"
-        }
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 3,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "refs.owner.id:asc",
+          "id:asc"
+        ]
       }
     }
-  ],
-  "matched": 3,
-  "page": {
-    "effective_sort": [
-      "refs.owner.id:asc",
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 3
   },
   "result_state": "valid",
   "schema": {

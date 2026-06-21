@@ -6,6 +6,7 @@ type CompiledSchema struct {
 	Version     string
 	Description string
 	Entities    map[string]EntityType
+	EntityOrder []string
 }
 
 type EntityType struct {

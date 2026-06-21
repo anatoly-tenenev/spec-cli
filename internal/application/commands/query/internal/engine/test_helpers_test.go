@@ -4,6 +4,7 @@ import schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/s
 
 func newEngineTestCapability() schemacapread.Capability {
 	return schemacapread.Capability{
+		EntityOrder: []string{"service", "feature"},
 		EntityTypes: map[string]schemacapread.EntityReadModel{
 			"feature": {
 				MetaFields: map[string]schemacapread.MetaField{

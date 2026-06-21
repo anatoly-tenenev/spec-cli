@@ -1,80 +1,82 @@
 {
-  "items": [
-    {
-      "content": {
-        "sections": {
-          "summary": "Retry window for outbound requests."
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "content": {
+            "sections": {
+              "summary": "Retry window for outbound requests."
+            }
+          },
+          "id": "FEAT-1",
+          "meta": {
+            "status": "active"
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-2",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          },
+          "type": "feature"
+        },
+        {
+          "content": {
+            "sections": {
+              "summary": "Login flow for user authentication."
+            }
+          },
+          "id": "FEAT-2",
+          "meta": {
+            "status": "draft"
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "resolved": true,
+              "slug": "api",
+              "type": "service"
+            }
+          },
+          "type": "feature"
+        },
+        {
+          "content": {
+            "sections": {
+              "summary": "Legacy flow."
+            }
+          },
+          "id": "FEAT-3",
+          "meta": {
+            "status": "deprecated"
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-404",
+              "reason": "missing",
+              "resolved": false,
+              "slug": null,
+              "type": "service"
+            }
+          },
+          "type": "feature"
         }
-      },
-      "id": "FEAT-1",
-      "meta": {
-        "status": "active"
-      },
-      "refs": {
-        "owner": {
-          "id": "SVC-2",
-          "resolved": true,
-          "slug": "billing",
-          "type": "service"
-        }
-      },
-      "type": "feature"
-    },
-    {
-      "content": {
-        "sections": {
-          "summary": "Login flow for user authentication."
-        }
-      },
-      "id": "FEAT-2",
-      "meta": {
-        "status": "draft"
-      },
-      "refs": {
-        "owner": {
-          "id": "SVC-1",
-          "resolved": true,
-          "slug": "api",
-          "type": "service"
-        }
-      },
-      "type": "feature"
-    },
-    {
-      "content": {
-        "sections": {
-          "summary": "Legacy flow."
-        }
-      },
-      "id": "FEAT-3",
-      "meta": {
-        "status": "deprecated"
-      },
-      "refs": {
-        "owner": {
-          "id": "SVC-404",
-          "reason": "missing",
-          "resolved": false,
-          "slug": null,
-          "type": "service"
-        }
-      },
-      "type": "feature"
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 3,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
     }
-  ],
-  "matched": 3,
-  "page": {
-    "effective_sort": [
-      "id:asc",
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 3
   },
   "result_state": "valid",
   "schema": {

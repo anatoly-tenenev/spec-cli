@@ -15,6 +15,7 @@ func HelpSpec() helpmodel.CommandSpec {
 			"--select projects fields from that read model.",
 			"--sort orders results by sortable read-model paths.",
 			"--where evaluates JMESPath truthiness over the same read model.",
+			"JSON success output groups results under data.<entity_type> with independent pagination per entity type.",
 		},
 		DetailSections: []helpmodel.DetailSectionSpec{
 			{
@@ -126,7 +127,6 @@ func HelpSpec() helpmodel.CommandSpec {
 					"  - meta",
 					"  - refs",
 					"default order:",
-					"  - type:asc",
 					"  - id:asc",
 				},
 			},
@@ -195,9 +195,11 @@ func HelpSpec() helpmodel.CommandSpec {
 		},
 		Rules: []string{
 			"If --type is omitted, all entity types from the specification projection participate.",
+			"If --type is omitted, data root fields follow schema entity declaration order.",
+			"If --type is repeated, data root fields follow first occurrence order from the CLI arguments.",
 			"Only paths compatible with the active type set may be selected, sorted, or used in --where.",
-			"If --sort is omitted, effective sort is type:asc, then id:asc.",
-			"If --sort is provided, effective sort is user sort plus hidden tail type:asc, then id:asc, unless that exact tail is already present at the end.",
+			"If --sort is omitted, effective sort is id:asc.",
+			"If --sort is provided, effective sort is user sort plus hidden tail id:asc, unless that exact tail is already present at the end.",
 			"entityRef values are addressed through refs.<ref_field>, not meta.<ref_field>.",
 			"Selected leaf paths under meta.<meta_field>, refs.<ref_field>, and content.sections.<section_name> materialize as null when absent.",
 			"Aggregate selectors meta, refs, and content.sections keep sparse objects and do not synthesize unknown children.",

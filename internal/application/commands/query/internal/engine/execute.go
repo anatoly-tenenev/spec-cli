@@ -8,53 +8,64 @@ import (
 )
 
 func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResponse, *domainerrors.AppError) {
-	matchedEntities := make([]model.EntityView, 0, len(entities))
-	for _, entity := range entities {
-		if plan.Where != nil {
-			whereValue, whereErr := plan.Where.Query.Search(entity.WhereContext)
-			if whereErr != nil {
-				return model.QueryResponse{}, domainerrors.New(
-					domainerrors.CodeReadFailed,
-					"failed to evaluate --where expression",
-					map[string]any{"reason": whereErr.Error()},
-				)
-			}
-			if !isTruthy(whereValue) {
+	roots := make([]model.QueryRootField, 0, len(plan.ActiveTypeSet))
+	for _, entityType := range plan.ActiveTypeSet {
+		matchedEntities := make([]model.EntityView, 0, len(entities))
+		for _, entity := range entities {
+			if entity.Type != entityType {
 				continue
 			}
+			if plan.Where != nil {
+				whereValue, whereErr := plan.Where.Query.Search(entity.WhereContext)
+				if whereErr != nil {
+					return model.QueryResponse{}, domainerrors.New(
+						domainerrors.CodeReadFailed,
+						"failed to evaluate --where expression",
+						map[string]any{"reason": whereErr.Error()},
+					)
+				}
+				if !isTruthy(whereValue) {
+					continue
+				}
+			}
+			matchedEntities = append(matchedEntities, entity)
 		}
-		matchedEntities = append(matchedEntities, entity)
-	}
 
-	SortEntities(matchedEntities, plan.EffectiveSort)
+		SortEntities(matchedEntities, plan.EffectiveSort)
 
-	matchedCount := len(matchedEntities)
-	pagedEntities, returned := paginateEntities(matchedEntities, plan.Offset, plan.Limit)
+		matchedCount := len(matchedEntities)
+		pagedEntities, returned := paginateEntities(matchedEntities, plan.Offset, plan.Limit)
 
-	items := make([]map[string]any, 0, len(pagedEntities))
-	for _, entity := range pagedEntities {
-		items = append(items, ProjectEntity(entity.View, plan.SelectTree))
-	}
+		items := make([]map[string]any, 0, len(pagedEntities))
+		for _, entity := range pagedEntities {
+			items = append(items, ProjectEntity(entity.View, plan.SelectTree))
+		}
 
-	hasMore := matchedCount > plan.Offset+returned
-	var nextOffset any
-	if hasMore {
-		nextOffset = plan.Offset + returned
+		hasMore := matchedCount > plan.Offset+returned
+		var nextOffset any
+		if hasMore {
+			nextOffset = plan.Offset + returned
+		}
+
+		roots = append(roots, model.QueryRootField{
+			EntityType: entityType,
+			Items:      items,
+			TotalCount: matchedCount,
+			PageInfo: model.PageInfo{
+				Mode:          "offset",
+				Limit:         plan.Limit,
+				Offset:        plan.Offset,
+				Returned:      returned,
+				HasMore:       hasMore,
+				NextOffset:    nextOffset,
+				EffectiveSort: sortTermsToStrings(plan.EffectiveSort),
+			},
+		})
 	}
 
 	return model.QueryResponse{
 		ResultState: "valid",
-		Items:       items,
-		Matched:     matchedCount,
-		Page: model.PageInfo{
-			Mode:          "offset",
-			Limit:         plan.Limit,
-			Offset:        plan.Offset,
-			Returned:      returned,
-			HasMore:       hasMore,
-			NextOffset:    nextOffset,
-			EffectiveSort: sortTermsToStrings(plan.EffectiveSort),
-		},
+		RootFields:  roots,
 	}, nil
 }
 

@@ -67,9 +67,14 @@ type PageInfo struct {
 
 type QueryResponse struct {
 	ResultState string
-	Items       []map[string]any
-	Matched     int
-	Page        PageInfo
+	RootFields  []QueryRootField
+}
+
+type QueryRootField struct {
+	EntityType string
+	Items      []map[string]any
+	TotalCount int
+	PageInfo   PageInfo
 }
 
 type JSONValue = json.RawMessage

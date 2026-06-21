@@ -1,57 +1,60 @@
 {
-  "items": [
-    {
-      "createdDate": "2026-03-04",
-      "id": "FEAT-2",
-      "refs": {
-        "owner": {
-          "id": "SVC-1",
-          "resolved": true,
-          "slug": "api",
-          "type": "service"
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "createdDate": "2026-03-04",
+          "id": "FEAT-2",
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "resolved": true,
+              "slug": "api",
+              "type": "service"
+            }
+          }
+        },
+        {
+          "createdDate": "2026-03-05",
+          "id": "FEAT-1",
+          "refs": {
+            "owner": {
+              "id": "SVC-2",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          }
+        },
+        {
+          "createdDate": "2026-03-06",
+          "id": "FEAT-3",
+          "refs": {
+            "owner": {
+              "id": "SVC-404",
+              "reason": "missing",
+              "resolved": false,
+              "slug": null,
+              "type": "service"
+            }
+          }
         }
-      }
-    },
-    {
-      "createdDate": "2026-03-05",
-      "id": "FEAT-1",
-      "refs": {
-        "owner": {
-          "id": "SVC-2",
-          "resolved": true,
-          "slug": "billing",
-          "type": "service"
-        }
-      }
-    },
-    {
-      "createdDate": "2026-03-06",
-      "id": "FEAT-3",
-      "refs": {
-        "owner": {
-          "id": "SVC-404",
-          "reason": "missing",
-          "resolved": false,
-          "slug": null,
-          "type": "service"
-        }
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 3,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "refs.owner.id:asc",
+          "createdDate:desc",
+          "id:asc"
+        ]
       }
     }
-  ],
-  "matched": 3,
-  "page": {
-    "effective_sort": [
-      "refs.owner.id:asc",
-      "createdDate:desc",
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 3
   },
   "result_state": "valid",
   "schema": {

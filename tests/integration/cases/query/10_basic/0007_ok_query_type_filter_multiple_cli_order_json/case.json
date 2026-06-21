@@ -1,6 +1,6 @@
 {
-  "id": "query_10_0007_ok_query_type_filter_multiple_order_independent_json",
-  "description": "query_10_0007_ok_query_type_filter_multiple_order_independent_json",
+  "id": "query_10_0007_ok_query_type_filter_multiple_cli_order_json",
+  "description": "query_10_0007_ok_query_type_filter_multiple_cli_order_json",
   "command": "query",
   "args": [
     "--workspace",

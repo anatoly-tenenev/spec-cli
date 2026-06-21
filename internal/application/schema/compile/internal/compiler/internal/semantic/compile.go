@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	semanticmetafields "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/metafields"
+	semanticsections "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/sections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/shared"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressioncontext"
@@ -15,10 +17,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	idPrefixPattern      = regexp.MustCompile(`^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$`)
-	schemaKeyNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]*$`)
-)
+var idPrefixPattern = regexp.MustCompile(`^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*$`)
 
 func CompileDocument(doc source.Document) (model.CompiledSchema, []diagnostics.Issue) {
 	issues := make([]diagnostics.Issue, 0)
@@ -60,20 +59,27 @@ func CompileDocument(doc source.Document) (model.CompiledSchema, []diagnostics.I
 		return compiled, issues
 	}
 
-	typeNames := shared.SortedKeys(entityValues)
-	typeSet := make(map[string]struct{}, len(typeNames))
-	for _, typeName := range typeNames {
+	sortedTypeNames := shared.SortedKeys(entityValues)
+	typeSet := make(map[string]struct{}, len(sortedTypeNames))
+	for _, typeName := range sortedTypeNames {
 		typeSet[typeName] = struct{}{}
 	}
 
 	usedPrefixes := map[string]string{}
-	for _, typeName := range typeNames {
+	for _, typeName := range sortedTypeNames {
 		node := entityValues[typeName]
 		path := "schema.entity." + typeName
 		entity, entityOK := parseEntityType(typeName, node, path, typeSet, usedPrefixes, &issues)
 		if entityOK {
 			compiled.Entities[typeName] = entity
 		}
+	}
+
+	for _, typeName := range shared.OrderedKeys(entityValues, entityNode) {
+		if _, exists := compiled.Entities[typeName]; !exists {
+			continue
+		}
+		compiled.EntityOrder = append(compiled.EntityOrder, typeName)
 	}
 
 	return compiled, issues
@@ -131,11 +137,11 @@ func parseEntityType(
 	}
 
 	if metaNode, exists := values["meta"]; exists {
-		entity.MetaFields, entity.MetaFieldOrder = parseMetaFields(metaNode, path+".meta", typeSet, issues)
+		entity.MetaFields, entity.MetaFieldOrder = semanticmetafields.Parse(metaNode, path+".meta", typeSet, issues)
 	}
 	if contentNode, exists := values["content"]; exists {
 		entity.HasContent = true
-		entity.Sections, entity.SectionOrder = parseSections(contentNode, path+".content", issues)
+		entity.Sections, entity.SectionOrder = semanticsections.Parse(contentNode, path+".content", issues)
 	}
 
 	expressionEngine := buildExpressionEngine(entity, path, issues)
@@ -149,198 +155,6 @@ func parseEntityType(
 	}
 
 	return entity, true
-}
-
-func parseMetaFields(
-	node *yaml.Node,
-	path string,
-	typeSet map[string]struct{},
-	issues *[]diagnostics.Issue,
-) (map[string]model.MetaField, []string) {
-	values, ok := shared.MappingValues(node, path, issues)
-	if !ok {
-		return map[string]model.MetaField{}, []string{}
-	}
-	shared.AppendUnsupportedKeys(values, path, shared.SetOf("fields"), issues)
-
-	fieldsNode, exists := values["fields"]
-	if !exists {
-		return map[string]model.MetaField{}, []string{}
-	}
-	fieldValues, fieldsOK := shared.MappingValues(fieldsNode, path+".fields", issues)
-	if !fieldsOK {
-		return map[string]model.MetaField{}, []string{}
-	}
-
-	result := make(map[string]model.MetaField, len(fieldValues))
-	order := shared.OrderedKeys(fieldValues, fieldsNode)
-	for _, fieldName := range shared.SortedKeys(fieldValues) {
-		if !schemaKeyNamePattern.MatchString(fieldName) {
-			shared.AddError(
-				issues,
-				"schema.meta_field.name_invalid",
-				fmt.Sprintf("meta field name '%s' has invalid format", fieldName),
-				path+".fields."+fieldName,
-			)
-			continue
-		}
-		if expressioncontext.IsBuiltinMetaField(fieldName) {
-			shared.AddError(
-				issues,
-				"schema.meta_field.reserved_name",
-				fmt.Sprintf("meta field name '%s' is reserved", fieldName),
-				path+".fields."+fieldName,
-			)
-			continue
-		}
-
-		field, fieldOK := parseMetaField(fieldName, fieldValues[fieldName], path+".fields."+fieldName, typeSet, issues)
-		if fieldOK {
-			result[fieldName] = field
-		}
-	}
-
-	filteredOrder := make([]string, 0, len(order))
-	for _, fieldName := range order {
-		if _, exists := result[fieldName]; !exists {
-			continue
-		}
-		filteredOrder = append(filteredOrder, fieldName)
-	}
-
-	return result, filteredOrder
-}
-
-func parseMetaField(
-	fieldName string,
-	node *yaml.Node,
-	path string,
-	typeSet map[string]struct{},
-	issues *[]diagnostics.Issue,
-) (model.MetaField, bool) {
-	values, ok := shared.MappingValues(node, path, issues)
-	if !ok {
-		return model.MetaField{}, false
-	}
-	shared.AppendUnsupportedKeys(values, path, shared.SetOf("schema", "required", "description"), issues)
-
-	schemaNode, hasSchema := values["schema"]
-	if !hasSchema {
-		shared.AddError(issues, "schema.meta_field.schema_required", "meta field schema is required", path+".schema")
-		return model.MetaField{}, false
-	}
-
-	valueSpec := shared.ParseValueSpec(schemaNode, path+".schema", typeSet, true, issues)
-	required := shared.ParseRequirement(values["required"], path+".required", true, issues)
-	description := ""
-	if descriptionNode, exists := values["description"]; exists {
-		if parsed, isValid := shared.ScalarString(descriptionNode, path+".description", true, issues); isValid {
-			description = parsed
-			if strings.Contains(parsed, "${") {
-				shared.AddError(issues, "schema.meta_field.description_interpolation_forbidden", "description must not contain interpolation", path+".description")
-			}
-		}
-	}
-
-	return model.MetaField{
-		Name:        fieldName,
-		Value:       valueSpec,
-		Required:    required,
-		Description: description,
-		SchemaPath:  path,
-	}, true
-}
-
-func parseSections(node *yaml.Node, path string, issues *[]diagnostics.Issue) (map[string]model.Section, []string) {
-	values, ok := shared.MappingValues(node, path, issues)
-	if !ok {
-		return map[string]model.Section{}, []string{}
-	}
-	shared.AppendUnsupportedKeys(values, path, shared.SetOf("sections"), issues)
-
-	sectionsNode, exists := values["sections"]
-	if !exists {
-		return map[string]model.Section{}, []string{}
-	}
-	sectionValues, sectionsOK := shared.MappingValues(sectionsNode, path+".sections", issues)
-	if !sectionsOK {
-		return map[string]model.Section{}, []string{}
-	}
-
-	if len(sectionValues) == 0 {
-		shared.AddError(issues, "schema.section.empty", "content.sections must be a non-empty mapping", path+".sections")
-		return map[string]model.Section{}, []string{}
-	}
-
-	result := make(map[string]model.Section, len(sectionValues))
-	order := shared.OrderedKeys(sectionValues, sectionsNode)
-	for _, sectionName := range shared.SortedKeys(sectionValues) {
-		if !schemaKeyNamePattern.MatchString(sectionName) {
-			shared.AddError(
-				issues,
-				"schema.section.name_invalid",
-				fmt.Sprintf("section name '%s' has invalid format", sectionName),
-				path+".sections."+sectionName,
-			)
-			continue
-		}
-
-		section, sectionOK := parseSection(sectionName, sectionValues[sectionName], path+".sections."+sectionName, issues)
-		if sectionOK {
-			result[sectionName] = section
-		}
-	}
-
-	filteredOrder := make([]string, 0, len(order))
-	for _, sectionName := range order {
-		if _, exists := result[sectionName]; !exists {
-			continue
-		}
-		filteredOrder = append(filteredOrder, sectionName)
-	}
-
-	return result, filteredOrder
-}
-
-func parseSection(sectionName string, node *yaml.Node, path string, issues *[]diagnostics.Issue) (model.Section, bool) {
-	values, ok := shared.MappingValues(node, path, issues)
-	if !ok {
-		return model.Section{}, false
-	}
-	shared.AppendUnsupportedKeys(values, path, shared.SetOf("title", "required", "description"), issues)
-
-	title := ""
-	titlePath := path + ".title"
-	if titleNode, exists := values["title"]; exists {
-		parsedTitle, isValid := shared.ScalarString(titleNode, titlePath, true, issues)
-		if isValid {
-			if strings.Contains(parsedTitle, "${") {
-				shared.AddError(issues, "schema.section.title_interpolation_forbidden", "title must not contain interpolation", titlePath)
-			} else {
-				title = parsedTitle
-			}
-		}
-	}
-
-	required := shared.ParseRequirement(values["required"], path+".required", true, issues)
-	description := ""
-	if descriptionNode, exists := values["description"]; exists {
-		if parsed, isValid := shared.ScalarString(descriptionNode, path+".description", true, issues); isValid {
-			description = parsed
-			if strings.Contains(parsed, "${") {
-				shared.AddError(issues, "schema.section.description_interpolation_forbidden", "description must not contain interpolation", path+".description")
-			}
-		}
-	}
-
-	return model.Section{
-		Name:        sectionName,
-		Title:       title,
-		Required:    required,
-		Description: description,
-		SchemaPath:  path,
-		TitlePath:   titlePath,
-	}, true
 }
 
 func buildExpressionEngine(entity model.EntityType, entityPath string, issues *[]diagnostics.Issue) *schemaexpressions.Engine {

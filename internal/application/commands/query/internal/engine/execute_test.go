@@ -17,11 +17,11 @@ func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 	plan := model.QueryPlan{
 		SelectTree: tree,
 		EffectiveSort: []model.SortTerm{
-			{Path: "type", Direction: model.SortDirectionAsc},
 			{Path: "id", Direction: model.SortDirectionAsc},
 		},
-		Limit:  100,
-		Offset: 0,
+		ActiveTypeSet: []string{"service", "feature"},
+		Limit:         100,
+		Offset:        0,
 	}
 
 	setA := []model.EntityView{
@@ -40,8 +40,8 @@ func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 		t.Fatalf("unexpected execute error: %v", resultBErr)
 	}
 
-	if !reflect.DeepEqual(resultA.Items, resultB.Items) {
-		t.Fatalf("items must be deterministic:\nA=%#v\nB=%#v", resultA.Items, resultB.Items)
+	if !reflect.DeepEqual(resultA.RootFields, resultB.RootFields) {
+		t.Fatalf("root fields must be deterministic:\nA=%#v\nB=%#v", resultA.RootFields, resultB.RootFields)
 	}
 }
 
@@ -57,19 +57,54 @@ func TestExecute_PaginationBoundaries(t *testing.T) {
 		{Type: "feature", ID: "FEAT-2", View: map[string]any{"type": "feature", "id": "FEAT-2"}},
 	}
 
-	limitZero, limitZeroErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "type", Direction: model.SortDirectionAsc}, {Path: "id", Direction: model.SortDirectionAsc}}, Limit: 0, Offset: 0}, entities)
+	limitZero, limitZeroErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}, ActiveTypeSet: []string{"feature"}, Limit: 0, Offset: 0}, entities)
 	if limitZeroErr != nil {
 		t.Fatalf("unexpected execute error: %v", limitZeroErr)
 	}
-	if len(limitZero.Items) != 0 || limitZero.Matched != 2 || !limitZero.Page.HasMore || limitZero.Page.NextOffset != 0 {
+	if len(limitZero.RootFields) != 1 {
+		t.Fatalf("expected one root field, got %#v", limitZero.RootFields)
+	}
+	limitZeroRoot := limitZero.RootFields[0]
+	if len(limitZeroRoot.Items) != 0 || limitZeroRoot.TotalCount != 2 || !limitZeroRoot.PageInfo.HasMore || limitZeroRoot.PageInfo.NextOffset != 0 {
 		t.Fatalf("unexpected limit=0 response: %#v", limitZero)
 	}
 
-	offsetOutside, offsetOutsideErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "type", Direction: model.SortDirectionAsc}, {Path: "id", Direction: model.SortDirectionAsc}}, Limit: 100, Offset: 10}, entities)
+	offsetOutside, offsetOutsideErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}, ActiveTypeSet: []string{"feature"}, Limit: 100, Offset: 10}, entities)
 	if offsetOutsideErr != nil {
 		t.Fatalf("unexpected execute error: %v", offsetOutsideErr)
 	}
-	if len(offsetOutside.Items) != 0 || offsetOutside.Page.Returned != 0 || offsetOutside.Page.HasMore || offsetOutside.Page.NextOffset != nil {
+	offsetOutsideRoot := offsetOutside.RootFields[0]
+	if len(offsetOutsideRoot.Items) != 0 || offsetOutsideRoot.PageInfo.Returned != 0 || offsetOutsideRoot.PageInfo.HasMore || offsetOutsideRoot.PageInfo.NextOffset != nil {
 		t.Fatalf("unexpected offset>=matched response: %#v", offsetOutside)
+	}
+}
+
+func TestExecute_IncludesNoMatchRootField(t *testing.T) {
+	index := newEngineTestCapability()
+	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"service", "feature"})
+	if err != nil {
+		t.Fatalf("unexpected select error: %v", err)
+	}
+
+	result, execErr := Execute(model.QueryPlan{
+		SelectTree:    tree,
+		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
+		ActiveTypeSet: []string{"service", "feature"},
+		Limit:         100,
+		Offset:        0,
+	}, []model.EntityView{
+		{Type: "feature", ID: "FEAT-1", View: map[string]any{"type": "feature", "id": "FEAT-1"}},
+	})
+	if execErr != nil {
+		t.Fatalf("unexpected execute error: %v", execErr)
+	}
+	if len(result.RootFields) != 2 {
+		t.Fatalf("expected two root fields, got %#v", result.RootFields)
+	}
+	if result.RootFields[0].EntityType != "service" || len(result.RootFields[0].Items) != 0 || result.RootFields[0].TotalCount != 0 {
+		t.Fatalf("unexpected empty service root: %#v", result.RootFields[0])
+	}
+	if result.RootFields[1].EntityType != "feature" || result.RootFields[1].TotalCount != 1 {
+		t.Fatalf("unexpected feature root: %#v", result.RootFields[1])
 	}
 }

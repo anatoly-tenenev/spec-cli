@@ -64,7 +64,7 @@ spec-cli query [options]
 
 For `query`, the practical branches are:
 
-- `0` for valid execution, including `matched = 0`;
+- `0` for valid execution, including per-root `totalCount = 0`;
 - `2` for `INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`;
 - `3` for workspace read errors;
 - `4` for invalid/incomplete schema;
@@ -368,25 +368,37 @@ Lexical section prefilter:
 ```json
 {
   "result_state": "valid",
-  "items": [
-    {
-      "type": "feature",
-      "id": "FEAT-8",
-      "slug": "retry-window",
-      "meta": {
-        "status": "active"
+  "schema": {
+    "valid": true,
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "issues": []
+  },
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "type": "feature",
+          "id": "FEAT-8",
+          "slug": "retry-window",
+          "meta": {
+            "status": "active"
+          }
+        }
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": ["id:asc"]
       }
     }
-  ],
-  "matched": 1,
-  "page": {
-    "mode": "offset",
-    "limit": 100,
-    "offset": 0,
-    "returned": 1,
-    "has_more": false,
-    "next_offset": null,
-    "effective_sort": ["type:asc", "id:asc"]
   }
 }
 ```
@@ -394,35 +406,41 @@ Lexical section prefilter:
 Mandatory success fields:
 
 - `result_state`
-- `items`
-- `matched`
-- `page.mode`
-- `page.limit`
-- `page.offset`
-- `page.returned`
-- `page.has_more`
-- `page.next_offset`
-- `page.effective_sort`
+- `schema`
+- `data`
+- `data.<entityType>.items`
+- `data.<entityType>.totalCount`
+- `data.<entityType>.pageInfo.mode`
+- `data.<entityType>.pageInfo.limit`
+- `data.<entityType>.pageInfo.offset`
+- `data.<entityType>.pageInfo.returned`
+- `data.<entityType>.pageInfo.hasMore`
+- `data.<entityType>.pageInfo.nextOffset`
+- `data.<entityType>.pageInfo.effectiveSort`
 
 ### 6.2 Response Rules
 
 - On success, `result_state` is always `valid`.
-- No matches is still success: `result_state = "valid"`, `matched = 0`, `items = []`.
+- Top-level `schema` remains a CLI diagnostics block and is not nested under `data`.
+- `data` contains one root field per active entity type.
+- If `--type` is omitted, active root fields follow entity declaration order in the effective schema.
+- If `--type` is repeated, active root fields follow first occurrence order in CLI arguments.
+- No matches is still success: `result_state = "valid"`, `totalCount = 0`, `items = []` for each active root field.
 - If `--select` is omitted, default projection is `type`, `id`, `slug`.
-- If `--sort` is omitted, default sort is `type:asc`, then `id:asc`.
-- If `--limit 0`, return page aggregates without items.
+- If `--sort` is omitted, default sort is `id:asc`.
+- If `--limit 0`, return per-root page aggregates without items.
 
 ### 6.3 Fixed Decisions for Ambiguous Areas
 
 Additional rules fixed to make this document self-sufficient:
 
-- With `--limit 0`, `items` is mandatory and equals `[]`.
-- If `offset >= matched`, then:
+- With `--limit 0`, `data.<entityType>.items` is mandatory and equals `[]`.
+- If `offset >= totalCount` for a root field, then:
   - `items = []`
-  - `page.returned = 0`
-  - `page.has_more = false`
-  - `page.next_offset = null`
-- When the user provides `--sort`, the implementation must append a hidden tail `type:asc`, `id:asc` if the resulting sort list does not already end with exactly that tail.
+  - `pageInfo.returned = 0`
+  - `pageInfo.hasMore = false`
+  - `pageInfo.nextOffset = null`
+- When the user provides `--sort`, the implementation must append a hidden tail `id:asc` if the resulting sort list does not already end with exactly that tail.
 - If the user already specified `type` or `id` earlier with a different direction, that is still allowed; the hidden tail is added only as a tie-breaker at the end.
 - For sorting, missing values are less than present ones in `asc` and greater than present ones in `desc`.
 - Sorting must be deterministic and stable for equal keys.
@@ -651,10 +669,11 @@ Recommended order:
 7. early filter by `--type`;
 8. build full read-view for remaining entities;
 9. apply `where-json`;
-10. sort the matched set;
-11. apply `offset/limit`;
-12. project `items` via `--select`;
-13. build the final JSON response.
+10. split the active result into per-entity root fields;
+11. sort each root field's matched set independently;
+12. apply `offset/limit` independently per root field;
+13. project `items` via `--select`;
+14. build the final JSON response.
 
 Reason for this order:
 
@@ -666,26 +685,27 @@ Reason for this order:
 Sorting requires:
 
 - `QuerySortTerm { path, direction }`;
-- default sort `type:asc`, `id:asc`;
-- hidden suffix `type:asc`, `id:asc`;
+- default sort `id:asc`;
+- hidden suffix `id:asc`;
 - comparator with deterministic handling of missing values.
 
 Pagination requires:
 
-- `matched`: count after filtering and before paging;
+- `totalCount`: per-root count after filtering and before paging;
 - `returned`: count after paging;
-- `has_more`: `matched > offset + returned`;
-- `next_offset`: `offset + returned` if `has_more`, else `null`;
-- `effective_sort`: final list of sort terms after hidden-tail injection.
+- `hasMore`: `totalCount > offset + returned`;
+- `nextOffset`: `offset + returned` if `hasMore`, else `null`;
+- `effectiveSort`: final list of sort terms after hidden-tail injection.
 
 ### Stage 8. Build Response and Error Mapping
 
 Success:
 
 - `result_state = "valid"`
-- `items`
-- `matched`
-- `page`
+- `schema`
+- `data.<entityType>.items`
+- `data.<entityType>.totalCount`
+- `data.<entityType>.pageInfo`
 
 Errors:
 
@@ -720,7 +740,7 @@ Minimum required tests.
 - query without `--where-json`;
 - default projection;
 - default sort;
-- `matched = 0`;
+- per-root `totalCount = 0`;
 - multiple entity types without `--type`;
 - early narrowing by one `--type`;
 - early narrowing by multiple `--type`.
@@ -775,11 +795,11 @@ Minimum required tests.
 - `limit > 0`;
 - `offset = 0`;
 - `offset` within range;
-- `offset >= matched`;
+- `offset >= totalCount`;
 - correct `returned`;
-- correct `has_more`;
-- correct `next_offset`;
-- correct `effective_sort`.
+- correct `hasMore`;
+- correct `nextOffset`;
+- correct `effectiveSort`.
 
 ### 10.6. Errors and Infrastructure
 
@@ -813,7 +833,7 @@ To get a working vertical slice faster without rewrites:
 - `--where-json` supports the complete language described here;
 - `content.raw` is forbidden in `where-json`, and only `contains|exists|not_exists` are allowed for `content.sections.<name>`;
 - sorting and offset pagination are deterministic;
-- `items`, `matched`, and `page.*` match the contract;
+- `data.<entityType>.items`, `totalCount`, and `pageInfo.*` match the contract;
 - errors map to the correct `code` and `exit_code`;
 - `help query` explains the read namespace and filter language without external documentation;
 - the minimal test matrix passes.

@@ -1,30 +1,33 @@
 {
-  "items": [
-    {
-      "id": "FEAT-1",
-      "refs": {
-        "owner": {
-          "id": "OWNER-1",
-          "reason": "type_mismatch",
-          "resolved": false,
-          "slug": null,
-          "type": "service"
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "owner": {
+              "id": "OWNER-1",
+              "reason": "type_mismatch",
+              "resolved": false,
+              "slug": null,
+              "type": "service"
+            }
+          }
         }
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
       }
     }
-  ],
-  "matched": 1,
-  "page": {
-    "effective_sort": [
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 1
   },
   "result_state": "valid",
   "schema": {

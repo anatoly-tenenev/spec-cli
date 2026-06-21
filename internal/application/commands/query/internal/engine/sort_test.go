@@ -15,7 +15,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(terms) != 2 || terms[0].Path != "type" || terms[1].Path != "id" {
+	if len(terms) != 1 || terms[0].Path != "id" {
 		t.Fatalf("unexpected default sort: %#v", terms)
 	}
 
@@ -24,7 +24,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(effective) != 3 || effective[1].Path != "type" || effective[2].Path != "id" {
+	if len(effective) != 2 || effective[1].Path != "id" {
 		t.Fatalf("tail not appended: %#v", effective)
 	}
 }

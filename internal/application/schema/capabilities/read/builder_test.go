@@ -60,6 +60,9 @@ entity:
 `
 
 	capability := buildCapabilityFromSchema(t, schemaText)
+	if !reflect.DeepEqual(capability.EntityOrder, []string{"service", "feature"}) {
+		t.Fatalf("unexpected entity order: %#v", capability.EntityOrder)
+	}
 
 	service, ok := capability.EntityTypes["service"]
 	if !ok {

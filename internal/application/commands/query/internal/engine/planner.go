@@ -2,9 +2,9 @@ package engine
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/support"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -75,12 +75,29 @@ func validateTypeFilters(typeFilters []string, capability schemacapread.Capabili
 
 func resolveActiveTypeSet(typeFilters []string, capability schemacapread.Capability) []string {
 	if len(typeFilters) == 0 {
-		return support.SortedMapKeys(capability.EntityTypes)
+		if len(capability.EntityOrder) > 0 {
+			return append([]string(nil), capability.EntityOrder...)
+		}
+		return sortedEntityTypes(capability.EntityTypes)
 	}
 
 	set := map[string]struct{}{}
+	ordered := make([]string, 0, len(typeFilters))
 	for _, typeName := range typeFilters {
+		if _, exists := set[typeName]; exists {
+			continue
+		}
 		set[typeName] = struct{}{}
+		ordered = append(ordered, typeName)
 	}
-	return support.SortedMapKeys(set)
+	return ordered
+}
+
+func sortedEntityTypes(entityTypes map[string]schemacapread.EntityReadModel) []string {
+	names := make([]string, 0, len(entityTypes))
+	for typeName := range entityTypes {
+		names = append(names, typeName)
+	}
+	sort.Strings(names)
+	return names
 }

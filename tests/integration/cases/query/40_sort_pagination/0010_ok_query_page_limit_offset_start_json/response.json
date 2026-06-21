@@ -1,59 +1,105 @@
 {
-  "items": [
-    {
-      "id": "FEAT-1",
-      "meta": {
-        "score": 9.5,
-        "status": "active",
-        "tags": [
-          "reliability",
-          "billing"
-        ]
-      },
-      "refs": {
-        "owner": {
+  "data": {
+    "service": {
+      "items": [
+        {
+          "id": "SVC-1",
+          "meta": {
+            "status": "active",
+            "tags": [
+              "core",
+              "public"
+            ],
+            "tier": 1
+          },
+          "refs": {},
+          "slug": "api",
+          "type": "service"
+        },
+        {
           "id": "SVC-2",
-          "resolved": true,
+          "meta": {
+            "status": "deprecated",
+            "tags": [
+              "billing"
+            ],
+            "tier": 2
+          },
+          "refs": {},
           "slug": "billing",
           "type": "service"
         }
-      },
-      "slug": "retry-window",
-      "type": "feature"
-    },
-    {
-      "id": "FEAT-2",
-      "meta": {
-        "score": 5,
-        "status": "draft",
-        "tags": [
-          "auth"
+      ],
+      "totalCount": 2,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 2,
+        "offset": 0,
+        "returned": 2,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
         ]
-      },
-      "refs": {
-        "owner": {
-          "id": "SVC-1",
-          "resolved": true,
-          "slug": "api",
-          "type": "service"
+      }
+    },
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "meta": {
+            "score": 9.5,
+            "status": "active",
+            "tags": [
+              "reliability",
+              "billing"
+            ]
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-2",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          },
+          "slug": "retry-window",
+          "type": "feature"
+        },
+        {
+          "id": "FEAT-2",
+          "meta": {
+            "score": 5,
+            "status": "draft",
+            "tags": [
+              "auth"
+            ]
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "resolved": true,
+              "slug": "api",
+              "type": "service"
+            }
+          },
+          "slug": "login",
+          "type": "feature"
         }
-      },
-      "slug": "login",
-      "type": "feature"
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 2,
+        "offset": 0,
+        "returned": 2,
+        "hasMore": true,
+        "nextOffset": 2,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
     }
-  ],
-  "matched": 5,
-  "page": {
-    "effective_sort": [
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": true,
-    "limit": 2,
-    "mode": "offset",
-    "next_offset": 2,
-    "offset": 0,
-    "returned": 2
   },
   "result_state": "valid",
   "schema": {

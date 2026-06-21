@@ -222,6 +222,7 @@ func cloneSchema(schema model.CompiledSchema) model.CompiledSchema {
 		Version:     schema.Version,
 		Description: schema.Description,
 		Entities:    entities,
+		EntityOrder: append([]string(nil), schema.EntityOrder...),
 	}
 }
 

@@ -1,30 +1,33 @@
 {
-  "items": [
-    {
-      "id": "FEAT-1",
-      "revision": "sha256:a4aea4d976d81191b585ff1cee8603028fe808ef955a3f93013f44b9642f41f1"
-    },
-    {
-      "id": "FEAT-2",
-      "revision": "sha256:0a0cccc8b0206e6b841c951c57c09381d8e7769a153f2380c16a7ed567d6a137"
-    },
-    {
-      "id": "FEAT-3",
-      "revision": "sha256:57077e4ac45f98e6d54f83382c9be93a5658ab4b34eb81638ee2dd2afb3e63c1"
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "revision": "sha256:a4aea4d976d81191b585ff1cee8603028fe808ef955a3f93013f44b9642f41f1"
+        },
+        {
+          "id": "FEAT-2",
+          "revision": "sha256:0a0cccc8b0206e6b841c951c57c09381d8e7769a153f2380c16a7ed567d6a137"
+        },
+        {
+          "id": "FEAT-3",
+          "revision": "sha256:57077e4ac45f98e6d54f83382c9be93a5658ab4b34eb81638ee2dd2afb3e63c1"
+        }
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 3,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
     }
-  ],
-  "matched": 3,
-  "page": {
-    "effective_sort": [
-      "type:asc",
-      "id:asc"
-    ],
-    "has_more": false,
-    "limit": 100,
-    "mode": "offset",
-    "next_offset": null,
-    "offset": 0,
-    "returned": 3
   },
   "result_state": "valid",
   "schema": {

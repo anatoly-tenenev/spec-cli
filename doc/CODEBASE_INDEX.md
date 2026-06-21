@@ -139,13 +139,15 @@ Compact project map for fast entry into the code.
     - Keep warnings-only diagnostics non-blocking (`compileErr=nil`, `result.Valid=true`) and classify failures once in shared layer for all migrated commands.
   - Subpackages:
     - `compile/internal/compiler` - thin bridge from compile entrypoint to semantic compiler.
-    - `compile/internal/compiler/internal/semantic` - canonical semantic compiler for `idPrefix`, `required`, section-title rules, const/enum interpolation, pathTemplate cases/guards, and expression-aware checks.
+    - `compile/internal/compiler/internal/semantic` - canonical semantic compiler entrypoint for top-level schema/entity orchestration, `idPrefix`, `required`, const/enum interpolation, pathTemplate cases/guards, and expression-aware checks.
+    - `compile/internal/compiler/internal/semantic/internal/metafields` - parse `schema.entity.<type>.meta.fields`, validate meta field names/reserved built-ins, parse value schemas and required/description facets, and return declaration order filtered to valid fields.
+    - `compile/internal/compiler/internal/semantic/internal/sections` - parse `schema.entity.<type>.content.sections`, validate section names, parse title/required/description facets, reject empty section maps, and return declaration order filtered to valid sections.
     - `compile/internal/compiler/internal/shared` - shared parsing primitives for mappings/scalars, requirements, value-schema constraints (`type/enum/const/refType/items/min/max`), deterministic diagnostics, and primary literal mismatch checks via `derivedschema.LiteralMatchesKind`.
 
 - `internal/application/schema/capabilities/read`
   - Entrypoint: `builder.go` - `Build`.
   - Responsibilities:
-    - Build read-side capability projection from compiled schema entity map with explicit `EntityTypes -> {MetaFields, RefFields, Sections}`.
+    - Build read-side capability projection from compiled schema entity map with explicit `EntityTypes -> {MetaFields, RefFields, Sections}` plus declaration-derived `EntityOrder`.
     - Split non-ref `meta` fields from `entityRef` fields at shared boundary (`MetaFields` excludes refs; `RefFields` contains scalar and array entityRef only).
     - Project read semantics for `query/get`: field kinds (`kind/itemKind`), static-only `enum/const`, `required` (`Always` only), ref cardinality, and normalized ref `AllowedTypes`.
     - Apply conservative static-literal projection for read planning: interpolated string `const` and any `enum` containing an interpolated literal are excluded from static constraints.
@@ -252,9 +254,9 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `query`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> plan -> workspace load -> execute.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
-    - Build contractual JSON response (`items`, `matched`, `page`) over the shared compile/read capability pipeline.
+    - Build contractual JSON response (`data.<entityType>.items`, `totalCount`, `pageInfo`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
-    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, and the runtime-mandatory hidden sort tail contract (`type:asc`, `id:asc`).
+    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, per-root `data.<entityType>` response shape, and the runtime-mandatory hidden sort tail contract (`id:asc`).
     - Own `query` help inside shared `help`.
     - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
@@ -290,12 +292,12 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/query/internal/engine`
   - Entrypoint: `planner.go` - `BuildPlan`.
   - Responsibilities:
-    - Validate type filters and build active type set used by path validation and where-schema compilation.
+    - Validate type filters and build ordered active type set used by path validation, where-schema compilation, and `data` root field order.
     - Validate `--select` against `projection-namespace`, including `refs.<field>.reason` and array-ref leaf restrictions.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
     - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks (`content.raw`, root `content`, `meta.<entityRef>`).
-    - Build effective sort (default + hidden tail), including `refs.<field>.reason`, with active-type-set sort-kind compatibility checks, `meta.<entityRef>` rejection, and array-ref leaf restrictions.
-    - Execute filter/sort/paginate/project pipeline and build page metadata (`matched`, `returned`, `has_more`, `next_offset`, `effective_sort`).
+    - Build effective sort (default + hidden `id:asc` tail), including `refs.<field>.reason`, with active-type-set sort-kind compatibility checks, `meta.<entityRef>` rejection, and array-ref leaf restrictions.
+    - Execute per-root filter/sort/paginate/project pipeline and build page metadata (`totalCount`, `returned`, `hasMore`, `nextOffset`, `effectiveSort`).
   - Subpackages: none.
 
 - `internal/application/commands/help`

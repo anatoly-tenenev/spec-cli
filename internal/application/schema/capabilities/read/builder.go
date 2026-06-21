@@ -9,6 +9,7 @@ import (
 
 type Capability struct {
 	EntityTypes map[string]EntityReadModel
+	EntityOrder []string
 }
 
 type EntityReadModel struct {
@@ -54,9 +55,11 @@ type Section struct {
 }
 
 func Build(compiled model.CompiledSchema) Capability {
-	typeNames := sortedNames(compiled.Entities)
+	typeNames := entityOrder(compiled)
+	allTypes := sortedNames(compiled.Entities)
 	capability := Capability{
 		EntityTypes: make(map[string]EntityReadModel, len(typeNames)),
+		EntityOrder: append([]string(nil), typeNames...),
 	}
 
 	for _, typeName := range typeNames {
@@ -67,7 +70,7 @@ func Build(compiled model.CompiledSchema) Capability {
 
 		for _, fieldName := range sortedNames(entity.MetaFields) {
 			field := entity.MetaFields[fieldName]
-			refField, isRef := buildRefField(field, typeNames)
+			refField, isRef := buildRefField(field, allTypes)
 			if isRef {
 				refFields[fieldName] = refField
 				continue
@@ -98,6 +101,31 @@ func Build(compiled model.CompiledSchema) Capability {
 	}
 
 	return capability
+}
+
+func entityOrder(compiled model.CompiledSchema) []string {
+	ordered := make([]string, 0, len(compiled.EntityOrder))
+	seen := map[string]struct{}{}
+	for _, typeName := range compiled.EntityOrder {
+		if _, exists := compiled.Entities[typeName]; !exists {
+			continue
+		}
+		if _, duplicate := seen[typeName]; duplicate {
+			continue
+		}
+		seen[typeName] = struct{}{}
+		ordered = append(ordered, typeName)
+	}
+	if len(ordered) == len(compiled.Entities) {
+		return ordered
+	}
+	for _, typeName := range sortedNames(compiled.Entities) {
+		if _, exists := seen[typeName]; exists {
+			continue
+		}
+		ordered = append(ordered, typeName)
+	}
+	return ordered
 }
 
 func buildRefField(field model.MetaField, allTypes []string) (RefField, bool) {

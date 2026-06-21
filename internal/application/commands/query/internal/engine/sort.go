@@ -12,7 +12,6 @@ import (
 )
 
 var defaultSort = []model.SortTerm{
-	{Path: "type", Direction: model.SortDirectionAsc},
 	{Path: "id", Direction: model.SortDirectionAsc},
 }
 
@@ -43,15 +42,10 @@ func buildEffectiveSort(
 	}
 
 	effective := append([]model.SortTerm(nil), terms...)
-	if len(effective) < 2 ||
-		effective[len(effective)-2].Path != "type" ||
-		effective[len(effective)-2].Direction != model.SortDirectionAsc ||
+	if len(effective) == 0 ||
 		effective[len(effective)-1].Path != "id" ||
 		effective[len(effective)-1].Direction != model.SortDirectionAsc {
-		effective = append(effective,
-			model.SortTerm{Path: "type", Direction: model.SortDirectionAsc},
-			model.SortTerm{Path: "id", Direction: model.SortDirectionAsc},
-		)
+		effective = append(effective, model.SortTerm{Path: "id", Direction: model.SortDirectionAsc})
 	}
 	return effective, nil
 }
