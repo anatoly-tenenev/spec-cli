@@ -1,0 +1,25 @@
+{
+  "id": "query_50_0005_err_query_scoped_duplicate_limit_json",
+  "description": "query rejects duplicate scoped limit for one entity type",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--limit",
+    "feature=1",
+    "--limit",
+    "feature=2"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

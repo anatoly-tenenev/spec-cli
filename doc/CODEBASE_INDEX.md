@@ -254,13 +254,13 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `query`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> plan -> workspace load -> execute.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
-    - Build contractual JSON response (`data.<entityType>.items`, `totalCount`, `pageInfo`) over the shared compile/read capability pipeline.
+    - Build contractual JSON response (`data.<entityType>.items`, `totalCount`, root-specific `pageInfo`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
-    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, per-root `data.<entityType>` response shape, and the runtime-mandatory hidden sort tail contract (`id:asc`).
+    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, per-root `data.<entityType>` response shape, scoped `--limit`/`--offset`/`--sort` override rules, and the runtime-mandatory hidden sort tail contract (`id:asc`).
     - Own `query` help inside shared `help`.
     - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
-    - `query/internal/options` - `--type`, `--where`, `--select`, `--sort`, `--limit`, `--offset`.
+    - `query/internal/options` - `--type`, `--where`, `--select`, unscoped/scoped `--sort`, `--limit`, `--offset`.
     - `query/internal/workspace` - full read-view building and `refs.<field>` resolution.
     - `query/internal/engine` - planner, schema-aware JMESPath `--where` compile/evaluate, sorting, pagination, projection.
     - `query/internal/model` - internal request/plan/AST/response types.
@@ -271,7 +271,8 @@ Compact project map for fast entry into the code.
     - `parse.go` - `Parse`
     - `paths.go` - `NormalizePaths`
   - Responsibilities:
-    - Parse query options with defaults (`limit=100`, `offset=0`) and basic `--sort` syntax validation.
+    - Parse query options with defaults (`limit=100`, `offset=0`), basic `--sort` syntax validation, and schema-agnostic scoped forms (`<entity_type>=<value>`) for `--limit`, `--offset`, and `--sort`.
+    - Reject empty scoped values, duplicate scoped `--limit` / `--offset`, and invalid scoped numeric/sort syntax before schema compilation.
     - Return `INVALID_ARGS` centrally for unknown/incomplete arguments.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
   - Subpackages: none.
@@ -292,12 +293,12 @@ Compact project map for fast entry into the code.
 - `internal/application/commands/query/internal/engine`
   - Entrypoint: `planner.go` - `BuildPlan`.
   - Responsibilities:
-    - Validate type filters and build ordered active type set used by path validation, where-schema compilation, and `data` root field order.
+    - Validate type filters and build ordered active type set used by path validation, where-schema compilation, scoped option validation, and `data` root field order.
     - Validate `--select` against `projection-namespace`, including `refs.<field>.reason` and array-ref leaf restrictions.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
     - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks (`content.raw`, root `content`, `meta.<entityRef>`).
-    - Build effective sort (default + hidden `id:asc` tail), including `refs.<field>.reason`, with active-type-set sort-kind compatibility checks, `meta.<entityRef>` rejection, and array-ref leaf restrictions.
-    - Execute per-root filter/sort/paginate/project pipeline and build page metadata (`totalCount`, `returned`, `hasMore`, `nextOffset`, `effectiveSort`).
+    - Build one `RootPlan` per active entity type, applying global `--limit`/`--offset`/`--sort` defaults and scoped overrides; scoped sort is validated against the singleton scoped entity type and still receives the hidden `id:asc` tail.
+    - Execute per-root filter/sort/paginate/project pipeline using root-specific `limit`, `offset`, and `effectiveSort`, then build page metadata (`totalCount`, `returned`, `hasMore`, `nextOffset`, `effectiveSort`).
   - Subpackages: none.
 
 - `internal/application/commands/help`

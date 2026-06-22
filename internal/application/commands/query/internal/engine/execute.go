@@ -8,11 +8,11 @@ import (
 )
 
 func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResponse, *domainerrors.AppError) {
-	roots := make([]model.QueryRootField, 0, len(plan.ActiveTypeSet))
-	for _, entityType := range plan.ActiveTypeSet {
+	roots := make([]model.QueryRootField, 0, len(plan.RootPlans))
+	for _, rootPlan := range plan.RootPlans {
 		matchedEntities := make([]model.EntityView, 0, len(entities))
 		for _, entity := range entities {
-			if entity.Type != entityType {
+			if entity.Type != rootPlan.EntityType {
 				continue
 			}
 			if plan.Where != nil {
@@ -31,34 +31,34 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 			matchedEntities = append(matchedEntities, entity)
 		}
 
-		SortEntities(matchedEntities, plan.EffectiveSort)
+		SortEntities(matchedEntities, rootPlan.EffectiveSort)
 
 		matchedCount := len(matchedEntities)
-		pagedEntities, returned := paginateEntities(matchedEntities, plan.Offset, plan.Limit)
+		pagedEntities, returned := paginateEntities(matchedEntities, rootPlan.Offset, rootPlan.Limit)
 
 		items := make([]map[string]any, 0, len(pagedEntities))
 		for _, entity := range pagedEntities {
 			items = append(items, ProjectEntity(entity.View, plan.SelectTree))
 		}
 
-		hasMore := matchedCount > plan.Offset+returned
+		hasMore := matchedCount > rootPlan.Offset+returned
 		var nextOffset any
 		if hasMore {
-			nextOffset = plan.Offset + returned
+			nextOffset = rootPlan.Offset + returned
 		}
 
 		roots = append(roots, model.QueryRootField{
-			EntityType: entityType,
+			EntityType: rootPlan.EntityType,
 			Items:      items,
 			TotalCount: matchedCount,
 			PageInfo: model.PageInfo{
 				Mode:          "offset",
-				Limit:         plan.Limit,
-				Offset:        plan.Offset,
+				Limit:         rootPlan.Limit,
+				Offset:        rootPlan.Offset,
 				Returned:      returned,
 				HasMore:       hasMore,
 				NextOffset:    nextOffset,
-				EffectiveSort: sortTermsToStrings(plan.EffectiveSort),
+				EffectiveSort: sortTermsToStrings(rootPlan.EffectiveSort),
 			},
 		})
 	}

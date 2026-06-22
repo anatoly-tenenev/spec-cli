@@ -1,0 +1,25 @@
+{
+  "id": "query_50_0007_err_query_scoped_sort_path_invalid_json",
+  "description": "query rejects invalid scoped sort path after schema compile",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--sort",
+    "feature=meta.unknown:asc"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

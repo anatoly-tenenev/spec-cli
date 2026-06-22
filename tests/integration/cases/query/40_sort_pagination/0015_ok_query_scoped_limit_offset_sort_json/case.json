@@ -1,0 +1,37 @@
+{
+  "id": "query_40_0015_ok_query_scoped_limit_offset_sort_json",
+  "description": "query scoped pagination and sort override only matching root fields",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--type",
+    "service",
+    "--select",
+    "id",
+    "--limit",
+    "100",
+    "--limit",
+    "feature=1",
+    "--offset",
+    "service=1",
+    "--sort",
+    "updatedDate:desc",
+    "--sort",
+    "feature=meta.score:asc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

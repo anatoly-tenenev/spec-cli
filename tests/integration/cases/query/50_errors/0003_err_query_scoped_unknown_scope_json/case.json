@@ -1,0 +1,23 @@
+{
+  "id": "query_50_0003_err_query_scoped_unknown_scope_json",
+  "description": "query rejects scoped pagination for unknown entity type",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--limit",
+    "unknown=1"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

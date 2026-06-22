@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "entity_type": "service"
+    },
+    "exit_code": 2,
+    "message": "scoped entity type is not active: service"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

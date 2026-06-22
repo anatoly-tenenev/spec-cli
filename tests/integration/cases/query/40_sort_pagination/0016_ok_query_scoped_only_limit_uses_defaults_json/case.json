@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0016_ok_query_scoped_only_limit_uses_defaults_json",
+  "description": "query scoped-only limit keeps command defaults for other root fields",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--type",
+    "service",
+    "--select",
+    "id",
+    "--limit",
+    "feature=1"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

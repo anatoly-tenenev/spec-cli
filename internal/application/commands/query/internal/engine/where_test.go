@@ -63,12 +63,12 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 	}
 
 	plan := model.QueryPlan{
-		SelectTree:    tree,
-		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
+		SelectTree: tree,
+		RootPlans: []model.RootPlan{
+			newTestRootPlan("feature", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+		},
 		Where:         wherePlan,
 		ActiveTypeSet: []string{"feature"},
-		Limit:         100,
-		Offset:        0,
 	}
 
 	entities := []model.EntityView{
@@ -111,12 +111,12 @@ func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
 	}
 
 	plan := model.QueryPlan{
-		SelectTree:    tree,
-		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
+		SelectTree: tree,
+		RootPlans: []model.RootPlan{
+			newTestRootPlan("feature", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+		},
 		Where:         wherePlan,
 		ActiveTypeSet: []string{"feature"},
-		Limit:         100,
-		Offset:        0,
 	}
 
 	entities := []model.EntityView{

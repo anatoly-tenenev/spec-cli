@@ -16,12 +16,11 @@ func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 
 	plan := model.QueryPlan{
 		SelectTree: tree,
-		EffectiveSort: []model.SortTerm{
-			{Path: "id", Direction: model.SortDirectionAsc},
+		RootPlans: []model.RootPlan{
+			newTestRootPlan("service", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+			newTestRootPlan("feature", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
 		},
 		ActiveTypeSet: []string{"service", "feature"},
-		Limit:         100,
-		Offset:        0,
 	}
 
 	setA := []model.EntityView{
@@ -57,7 +56,9 @@ func TestExecute_PaginationBoundaries(t *testing.T) {
 		{Type: "feature", ID: "FEAT-2", View: map[string]any{"type": "feature", "id": "FEAT-2"}},
 	}
 
-	limitZero, limitZeroErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}, ActiveTypeSet: []string{"feature"}, Limit: 0, Offset: 0}, entities)
+	limitZero, limitZeroErr := Execute(model.QueryPlan{SelectTree: tree, RootPlans: []model.RootPlan{
+		newTestRootPlan("feature", 0, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+	}, ActiveTypeSet: []string{"feature"}}, entities)
 	if limitZeroErr != nil {
 		t.Fatalf("unexpected execute error: %v", limitZeroErr)
 	}
@@ -69,7 +70,9 @@ func TestExecute_PaginationBoundaries(t *testing.T) {
 		t.Fatalf("unexpected limit=0 response: %#v", limitZero)
 	}
 
-	offsetOutside, offsetOutsideErr := Execute(model.QueryPlan{SelectTree: tree, EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}, ActiveTypeSet: []string{"feature"}, Limit: 100, Offset: 10}, entities)
+	offsetOutside, offsetOutsideErr := Execute(model.QueryPlan{SelectTree: tree, RootPlans: []model.RootPlan{
+		newTestRootPlan("feature", 100, 10, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+	}, ActiveTypeSet: []string{"feature"}}, entities)
 	if offsetOutsideErr != nil {
 		t.Fatalf("unexpected execute error: %v", offsetOutsideErr)
 	}
@@ -87,11 +90,12 @@ func TestExecute_IncludesNoMatchRootField(t *testing.T) {
 	}
 
 	result, execErr := Execute(model.QueryPlan{
-		SelectTree:    tree,
-		EffectiveSort: []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}},
+		SelectTree: tree,
+		RootPlans: []model.RootPlan{
+			newTestRootPlan("service", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+			newTestRootPlan("feature", 100, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+		},
 		ActiveTypeSet: []string{"service", "feature"},
-		Limit:         100,
-		Offset:        0,
 	}, []model.EntityView{
 		{Type: "feature", ID: "FEAT-1", View: map[string]any{"type": "feature", "id": "FEAT-1"}},
 	})
@@ -106,5 +110,59 @@ func TestExecute_IncludesNoMatchRootField(t *testing.T) {
 	}
 	if result.RootFields[1].EntityType != "feature" || result.RootFields[1].TotalCount != 1 {
 		t.Fatalf("unexpected feature root: %#v", result.RootFields[1])
+	}
+}
+
+func TestExecute_UsesIndependentRootPlans(t *testing.T) {
+	index := newEngineTestCapability()
+	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature", "service"})
+	if err != nil {
+		t.Fatalf("unexpected select error: %v", err)
+	}
+
+	result, execErr := Execute(model.QueryPlan{
+		SelectTree: tree,
+		RootPlans: []model.RootPlan{
+			newTestRootPlan("feature", 1, 1, []model.SortTerm{{Path: "id", Direction: model.SortDirectionDesc}}),
+			newTestRootPlan("service", 1, 0, []model.SortTerm{{Path: "id", Direction: model.SortDirectionAsc}}),
+		},
+		ActiveTypeSet: []string{"feature", "service"},
+	}, []model.EntityView{
+		{Type: "feature", ID: "FEAT-1", View: map[string]any{"id": "FEAT-1"}},
+		{Type: "feature", ID: "FEAT-2", View: map[string]any{"id": "FEAT-2"}},
+		{Type: "feature", ID: "FEAT-3", View: map[string]any{"id": "FEAT-3"}},
+		{Type: "service", ID: "SVC-2", View: map[string]any{"id": "SVC-2"}},
+		{Type: "service", ID: "SVC-1", View: map[string]any{"id": "SVC-1"}},
+	})
+	if execErr != nil {
+		t.Fatalf("unexpected execute error: %v", execErr)
+	}
+	if len(result.RootFields) != 2 {
+		t.Fatalf("expected two root fields, got %#v", result.RootFields)
+	}
+
+	feature := result.RootFields[0]
+	if feature.EntityType != "feature" || feature.PageInfo.Limit != 1 || feature.PageInfo.Offset != 1 || feature.PageInfo.Returned != 1 || !feature.PageInfo.HasMore || feature.PageInfo.NextOffset != 2 {
+		t.Fatalf("unexpected feature page info: %#v", feature.PageInfo)
+	}
+	if feature.Items[0]["id"] != "FEAT-2" || !reflect.DeepEqual(feature.PageInfo.EffectiveSort, []string{"id:desc"}) {
+		t.Fatalf("unexpected feature items/sort: %#v", feature)
+	}
+
+	service := result.RootFields[1]
+	if service.EntityType != "service" || service.PageInfo.Limit != 1 || service.PageInfo.Offset != 0 || service.PageInfo.Returned != 1 || !service.PageInfo.HasMore || service.PageInfo.NextOffset != 1 {
+		t.Fatalf("unexpected service page info: %#v", service.PageInfo)
+	}
+	if service.Items[0]["id"] != "SVC-1" || !reflect.DeepEqual(service.PageInfo.EffectiveSort, []string{"id:asc"}) {
+		t.Fatalf("unexpected service items/sort: %#v", service)
+	}
+}
+
+func newTestRootPlan(entityType string, limit int, offset int, sort []model.SortTerm) model.RootPlan {
+	return model.RootPlan{
+		EntityType:    entityType,
+		Limit:         limit,
+		Offset:        offset,
+		EffectiveSort: sort,
 	}
 }

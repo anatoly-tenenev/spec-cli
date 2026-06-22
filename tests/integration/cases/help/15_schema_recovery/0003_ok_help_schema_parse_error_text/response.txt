@@ -167,9 +167,10 @@ query
     query reads many entities through one schema-derived query-item read model.
     --type restricts the active entity-type set before planning and filtering.
     --select projects fields from that read model.
-    --sort orders results by sortable read-model paths.
+    --sort orders results by sortable read-model paths; scoped sort can override one data.<entity_type> root field.
+    --limit and --offset set global pagination defaults; scoped values can override one data.<entity_type> root field.
     --where evaluates JMESPath truthiness over the same read model.
-    JSON success output groups results under data.<entity_type> with independent pagination per entity type.
+    JSON success output groups results under data.<entity_type> with independent pagination and effective sort per entity type.
   Active type set
     If `--type` is omitted, all entity types from the specification projection are active.
     If `--type` is repeated, only the selected entity types are active.
@@ -256,6 +257,10 @@ query
       - slug
       - meta
       - refs
+    default limit:
+      - 100
+    default offset:
+      - 0
     default order:
       - id:asc
   Options
@@ -283,35 +288,40 @@ query
       schema_derived: true
       schema_derivation: selectable paths from the query-item read model
       description: Select a path from the query-item read model.
-    --sort <path[:asc|desc]>
+    --sort <path[:asc|desc]>|<entity_type>=<path[:asc|desc]>
       takes_value: true
       required: false
       repeatable: true
       mutually_exclusive_groups: none
       schema_derived: true
       schema_derivation: sortable paths from the query-item read model
-      description: Sort by a sortable query-item read-model path.
-    --limit <n>
+      description: Sort by a sortable path globally, or override the sort list for one active entity type.
+    --limit <n>|<entity_type>=<n>
       takes_value: true
       required: false
-      repeatable: false
+      repeatable: true
       mutually_exclusive_groups: none
       schema_derived: false
       schema_derivation: none
-      description: Page size; integer >= 0; default 100.
-    --offset <n>
+      description: Global page size default, or page size override for one active entity type; integer >= 0; default 100.
+    --offset <n>|<entity_type>=<n>
       takes_value: true
       required: false
-      repeatable: false
+      repeatable: true
       mutually_exclusive_groups: none
       schema_derived: false
       schema_derivation: none
-      description: Page offset; integer >= 0; default 0.
+      description: Global page offset default, or page offset override for one active entity type; integer >= 0; default 0.
   Rules
     - If --type is omitted, all entity types from the specification projection participate.
     - If --type is omitted, data root fields follow schema entity declaration order.
     - If --type is repeated, data root fields follow first occurrence order from the CLI arguments.
     - Only paths compatible with the active type set may be selected, sorted, or used in --where.
+    - Unscoped --limit, --offset, and --sort define global defaults for every active data.<entity_type> root field.
+    - Scoped --limit <entity_type>=<n>, --offset <entity_type>=<n>, and --sort <entity_type>=<path[:asc|desc]> apply only to the matching active root field.
+    - Scoped sort terms replace the global sort list for that root field; multiple scoped --sort terms for one entity type preserve CLI order.
+    - Scoped entity types must exist in the schema and be part of the active type set.
+    - Duplicate scoped --limit or --offset values for the same entity type are rejected.
     - If --sort is omitted, effective sort is id:asc.
     - If --sort is provided, effective sort is user sort plus hidden tail id:asc, unless that exact tail is already present at the end.
     - entityRef values are addressed through refs.<ref_field>, not meta.<ref_field>.
@@ -325,6 +335,8 @@ query
     spec-cli query --where "contains(content.sections.<section_name> || '', '<substring>')"
     spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
     spec-cli query --sort updatedDate:desc --limit 50 --offset 0
+    spec-cli query --type <entity_type> --type <other_entity_type> --limit 100 --limit <entity_type>=10
+    spec-cli query --type <entity_type> --type <other_entity_type> --sort <entity_type>=updatedDate:desc --sort <other_entity_type>=id:asc
     Available paths, value kinds, and ref cardinality depend on the effective schema.
 
 get

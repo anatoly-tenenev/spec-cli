@@ -1,0 +1,25 @@
+{
+  "id": "query_50_0006_err_query_scoped_duplicate_offset_json",
+  "description": "query rejects duplicate scoped offset for one entity type",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--offset",
+    "feature=1",
+    "--offset",
+    "feature=2"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

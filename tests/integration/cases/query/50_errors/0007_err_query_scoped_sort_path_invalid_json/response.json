@@ -1,0 +1,16 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "invalid filter-namespace sort field 'meta.unknown'"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

@@ -33,11 +33,6 @@ func BuildPlan(opts model.Options, capability schemacapread.Capability) (model.Q
 		return model.QueryPlan{}, selectErr
 	}
 
-	effectiveSort, sortErr := buildEffectiveSort(opts.Sorts, capability, activeTypeSet)
-	if sortErr != nil {
-		return model.QueryPlan{}, sortErr
-	}
-
 	var wherePlan *model.WherePlan
 	if opts.WhereExpr != "" {
 		compiled, compileErr := compileWhereExpression(opts.WhereExpr, capability, activeTypeSet)
@@ -47,16 +42,111 @@ func BuildPlan(opts model.Options, capability schemacapread.Capability) (model.Q
 		wherePlan = compiled
 	}
 
+	if err := validateScopedEntityTypes(opts, capability, activeTypeSet); err != nil {
+		return model.QueryPlan{}, err
+	}
+
+	rootPlans, rootPlanErr := buildRootPlans(opts, capability, activeTypeSet)
+	if rootPlanErr != nil {
+		return model.QueryPlan{}, rootPlanErr
+	}
+
 	return model.QueryPlan{
 		SelectTree:        selectTree,
 		Where:             wherePlan,
-		EffectiveSort:     effectiveSort,
 		ActiveTypeSet:     append([]string(nil), activeTypeSet...),
+		RootPlans:         rootPlans,
 		OriginalSelects:   selects,
 		OriginalSortTerms: opts.Sorts,
-		Limit:             opts.Limit,
-		Offset:            opts.Offset,
 	}, nil
+}
+
+func validateScopedEntityTypes(
+	opts model.Options,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) *domainerrors.AppError {
+	scopes := map[string]struct{}{}
+	for scope := range opts.ScopedLimits {
+		scopes[scope] = struct{}{}
+	}
+	for scope := range opts.ScopedOffsets {
+		scopes[scope] = struct{}{}
+	}
+	for scope := range opts.ScopedSorts {
+		scopes[scope] = struct{}{}
+	}
+
+	active := map[string]struct{}{}
+	for _, typeName := range activeTypeSet {
+		active[typeName] = struct{}{}
+	}
+
+	for _, scope := range sortedScopes(scopes) {
+		if _, exists := capability.EntityTypes[scope]; !exists {
+			return domainerrors.New(
+				domainerrors.CodeEntityTypeUnknown,
+				fmt.Sprintf("unknown scoped entity type: %s", scope),
+				map[string]any{"entity_type": scope},
+			)
+		}
+		if _, enabled := active[scope]; !enabled {
+			return domainerrors.New(
+				domainerrors.CodeInvalidArgs,
+				fmt.Sprintf("scoped entity type is not active: %s", scope),
+				map[string]any{"entity_type": scope},
+			)
+		}
+	}
+	return nil
+}
+
+func sortedScopes(scopes map[string]struct{}) []string {
+	ordered := make([]string, 0, len(scopes))
+	for scope := range scopes {
+		ordered = append(ordered, scope)
+	}
+	sort.Strings(ordered)
+	return ordered
+}
+
+func buildRootPlans(
+	opts model.Options,
+	capability schemacapread.Capability,
+	activeTypeSet []string,
+) ([]model.RootPlan, *domainerrors.AppError) {
+	rootPlans := make([]model.RootPlan, 0, len(activeTypeSet))
+	for _, entityType := range activeTypeSet {
+		limit := opts.Limit
+		if scopedLimit, exists := opts.ScopedLimits[entityType]; exists {
+			limit = scopedLimit
+		}
+
+		offset := opts.Offset
+		if scopedOffset, exists := opts.ScopedOffsets[entityType]; exists {
+			offset = scopedOffset
+		}
+
+		sortInput := opts.Sorts
+		sortValidationTypeSet := activeTypeSet
+		if scopedSorts, exists := opts.ScopedSorts[entityType]; exists {
+			sortInput = scopedSorts
+			sortValidationTypeSet = []string{entityType}
+		}
+
+		effectiveSort, sortErr := buildEffectiveSort(sortInput, capability, sortValidationTypeSet)
+		if sortErr != nil {
+			return nil, sortErr
+		}
+
+		rootPlans = append(rootPlans, model.RootPlan{
+			EntityType:    entityType,
+			Limit:         limit,
+			Offset:        offset,
+			EffectiveSort: effectiveSort,
+		})
+	}
+	return rootPlans, nil
 }
 
 func validateTypeFilters(typeFilters []string, capability schemacapread.Capability) *domainerrors.AppError {

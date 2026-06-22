@@ -1,0 +1,29 @@
+{
+  "id": "query_40_0017_ok_query_multiple_scoped_sort_terms_json",
+  "description": "query multiple scoped sort terms preserve CLI order",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id",
+    "--sort",
+    "feature=meta.status:asc",
+    "--sort",
+    "feature=meta.score:desc"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

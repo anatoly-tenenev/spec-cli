@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "entity_type": "feature"
+    },
+    "exit_code": 2,
+    "message": "duplicate scoped --limit for entity type: feature"
+  },
+  "result_state": "invalid"
+}

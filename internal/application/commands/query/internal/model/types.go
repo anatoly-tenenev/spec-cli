@@ -19,12 +19,15 @@ type SortTerm struct {
 }
 
 type Options struct {
-	TypeFilters []string
-	WhereExpr   string
-	Selects     []string
-	Sorts       []SortTerm
-	Limit       int
-	Offset      int
+	TypeFilters   []string
+	WhereExpr     string
+	Selects       []string
+	Sorts         []SortTerm
+	ScopedSorts   map[string][]SortTerm
+	Limit         int
+	ScopedLimits  map[string]int
+	Offset        int
+	ScopedOffsets map[string]int
 }
 
 type EntityView struct {
@@ -41,13 +44,18 @@ type WherePlan struct {
 
 type QueryPlan struct {
 	SelectTree        *SelectNode
-	EffectiveSort     []SortTerm
 	Where             *WherePlan
 	ActiveTypeSet     []string
+	RootPlans         []RootPlan
 	OriginalSelects   []string
 	OriginalSortTerms []SortTerm
-	Limit             int
-	Offset            int
+}
+
+type RootPlan struct {
+	EntityType    string
+	Limit         int
+	Offset        int
+	EffectiveSort []SortTerm
 }
 
 type SelectNode struct {

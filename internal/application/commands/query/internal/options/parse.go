@@ -16,11 +16,14 @@ const (
 
 func Parse(args []string) (model.Options, *domainerrors.AppError) {
 	opts := model.Options{
-		TypeFilters: []string{},
-		Selects:     []string{},
-		Sorts:       []model.SortTerm{},
-		Limit:       defaultLimit,
-		Offset:      defaultOffset,
+		TypeFilters:   []string{},
+		Selects:       []string{},
+		Sorts:         []model.SortTerm{},
+		ScopedSorts:   map[string][]model.SortTerm{},
+		Limit:         defaultLimit,
+		ScopedLimits:  map[string]int{},
+		Offset:        defaultOffset,
+		ScopedOffsets: map[string]int{},
 	}
 	whereProvided := false
 
@@ -94,33 +97,71 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			if err != nil {
 				return model.Options{}, err
 			}
-			term, parseErr := parseSortTerm(value)
+			scope, sortValue, scoped, splitErr := splitScopedValue("--sort", value)
+			if splitErr != nil {
+				return model.Options{}, splitErr
+			}
+			term, parseErr := parseSortTerm(sortValue)
 			if parseErr != nil {
 				return model.Options{}, parseErr
 			}
-			opts.Sorts = append(opts.Sorts, term)
+			if scoped {
+				opts.ScopedSorts[scope] = append(opts.ScopedSorts[scope], term)
+			} else {
+				opts.Sorts = append(opts.Sorts, term)
+			}
 			idx = nextIdx
 		case "--limit":
 			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
-			parsed, parseErr := parseNonNegativeInt("--limit", value)
+			scope, intValue, scoped, splitErr := splitScopedValue("--limit", value)
+			if splitErr != nil {
+				return model.Options{}, splitErr
+			}
+			parsed, parseErr := parseNonNegativeInt("--limit", intValue)
 			if parseErr != nil {
 				return model.Options{}, parseErr
 			}
-			opts.Limit = parsed
+			if scoped {
+				if _, exists := opts.ScopedLimits[scope]; exists {
+					return model.Options{}, domainerrors.New(
+						domainerrors.CodeInvalidArgs,
+						fmt.Sprintf("duplicate scoped --limit for entity type: %s", scope),
+						map[string]any{"entity_type": scope},
+					)
+				}
+				opts.ScopedLimits[scope] = parsed
+			} else {
+				opts.Limit = parsed
+			}
 			idx = nextIdx
 		case "--offset":
 			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
-			parsed, parseErr := parseNonNegativeInt("--offset", value)
+			scope, intValue, scoped, splitErr := splitScopedValue("--offset", value)
+			if splitErr != nil {
+				return model.Options{}, splitErr
+			}
+			parsed, parseErr := parseNonNegativeInt("--offset", intValue)
 			if parseErr != nil {
 				return model.Options{}, parseErr
 			}
-			opts.Offset = parsed
+			if scoped {
+				if _, exists := opts.ScopedOffsets[scope]; exists {
+					return model.Options{}, domainerrors.New(
+						domainerrors.CodeInvalidArgs,
+						fmt.Sprintf("duplicate scoped --offset for entity type: %s", scope),
+						map[string]any{"entity_type": scope},
+					)
+				}
+				opts.ScopedOffsets[scope] = parsed
+			} else {
+				opts.Offset = parsed
+			}
 			idx = nextIdx
 		default:
 			return model.Options{}, domainerrors.New(
@@ -132,6 +173,30 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 	}
 
 	return opts, nil
+}
+
+func splitScopedValue(name string, raw string) (string, string, bool, *domainerrors.AppError) {
+	parts := strings.SplitN(raw, "=", 2)
+	if len(parts) == 1 {
+		return "", raw, false, nil
+	}
+	scope := strings.TrimSpace(parts[0])
+	value := strings.TrimSpace(parts[1])
+	if scope == "" {
+		return "", "", false, domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("%s scope cannot be empty", name),
+			nil,
+		)
+	}
+	if value == "" {
+		return "", "", false, domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("%s scoped value cannot be empty", name),
+			map[string]any{"entity_type": scope},
+		)
+	}
+	return scope, value, true, nil
 }
 
 func parseSortTerm(raw string) (model.SortTerm, *domainerrors.AppError) {

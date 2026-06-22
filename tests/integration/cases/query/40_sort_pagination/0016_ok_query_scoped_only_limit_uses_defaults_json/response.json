@@ -1,0 +1,54 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1"
+        }
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 1,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": true,
+        "nextOffset": 1,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    },
+    "service": {
+      "items": [
+        {
+          "id": "SVC-1"
+        },
+        {
+          "id": "SVC-2"
+        }
+      ],
+      "totalCount": 2,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 2,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    }
+  },
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

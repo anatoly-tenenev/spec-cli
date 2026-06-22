@@ -67,6 +67,30 @@ func TestBuildEffectiveSort_RejectsMetaEntityRefAcrossActiveSet(t *testing.T) {
 	}
 }
 
+func TestBuildEffectiveSort_SingletonValidationAllowsTypeLocalRefSort(t *testing.T) {
+	index := newEngineTestCapability()
+
+	effective, err := buildEffectiveSort([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"feature"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(effective) != 2 || effective[0].Path != "refs.owner.id" || effective[1].Path != "id" {
+		t.Fatalf("unexpected effective sort: %#v", effective)
+	}
+}
+
+func TestBuildEffectiveSort_SingletonValidationRejectsInvalidTypeLocalPath(t *testing.T) {
+	index := newEngineTestCapability()
+
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"service"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if err.Code != domainerrors.CodeInvalidArgs {
+		t.Fatalf("unexpected error code: %s", err.Code)
+	}
+}
+
 func TestSortEntities_MissingValueOrdering(t *testing.T) {
 	entities := []model.EntityView{
 		{Type: "feature", ID: "FEAT-1", View: map[string]any{"type": "feature", "id": "FEAT-1", "meta": map[string]any{"score": 7.0}}},

@@ -1,0 +1,40 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1"
+        },
+        {
+          "id": "FEAT-3"
+        },
+        {
+          "id": "FEAT-2"
+        }
+      ],
+      "totalCount": 3,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 3,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "meta.status:asc",
+          "meta.score:desc",
+          "id:asc"
+        ]
+      }
+    }
+  },
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}
