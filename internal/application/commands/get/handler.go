@@ -39,29 +39,29 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildErrorWithSchema(compileErr, schemaPayload), nil
+		return buildPostCompileError(compileErr, schemaPayload), nil
 	}
 
 	readCapability := schemacapread.Build(compileResult.Schema)
 
 	selectorPlan, selectorErr := engine.BuildSelectorPlan(opts.Selectors, readCapability)
 	if selectorErr != nil {
-		return buildErrorWithSchema(selectorErr, schemaPayload), nil
+		return buildPostCompileError(selectorErr, schemaPayload), nil
 	}
 
 	located, locateErr := workspace.LocateByID(workspacePath, opts.ID)
 	if locateErr != nil {
-		return buildErrorWithSchema(locateErr, schemaPayload), nil
+		return buildPostCompileError(locateErr, schemaPayload), nil
 	}
 
 	target, targetErr := workspace.ReadTarget(located.TargetPath, located.TargetRaw, opts.ID)
 	if targetErr != nil {
-		return buildErrorWithSchema(targetErr, schemaPayload), nil
+		return buildPostCompileError(targetErr, schemaPayload), nil
 	}
 
 	entityView, buildErr := engine.BuildEntityView(target, readCapability, located.IdentityIndex, selectorPlan)
 	if buildErr != nil {
-		return buildErrorWithSchema(buildErr, schemaPayload), nil
+		return buildPostCompileError(buildErr, schemaPayload), nil
 	}
 
 	entityPayload := engine.ProjectEntity(entityView, selectorPlan.Tree, selectorPlan.NullIfMissingPaths)
@@ -69,7 +69,6 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	return responses.CommandOutput{
 		JSON: map[string]any{
 			"result_state": responses.ResultStateValid,
-			"schema":       schemaPayload,
 			"target": map[string]any{
 				"match_by": "id",
 				"id":       opts.ID,
@@ -79,13 +78,17 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	}, nil
 }
 
-func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	jsonPayload := map[string]any{
+		"result_state": errormap.ResultStateForCode(appErr.Code),
+		"error":        outputpayload.BuildErrorPayload(appErr),
+	}
+	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
+		jsonPayload["schema"] = schemaPayload
+	}
+
 	return responses.CommandOutput{
-		JSON: map[string]any{
-			"result_state": errormap.ResultStateForCode(appErr.Code),
-			"schema":       schemaPayload,
-			"error":        outputpayload.BuildErrorPayload(appErr),
-		},
+		JSON:     jsonPayload,
 		ExitCode: appErr.ExitCode,
 	}
 }

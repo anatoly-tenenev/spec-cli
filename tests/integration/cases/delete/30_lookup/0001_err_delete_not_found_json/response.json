@@ -7,13 +7,5 @@
     "exit_code": 1,
     "message": "target entity is not found"
   },
-  "result_state": "not_found",
-  "schema": {
-    "valid": true,
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "issues": []
-  }
+  "result_state": "not_found"
 }

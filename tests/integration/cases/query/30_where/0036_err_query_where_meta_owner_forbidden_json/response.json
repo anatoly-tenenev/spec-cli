@@ -4,13 +4,5 @@
     "exit_code": 2,
     "message": "forbidden where path: 'meta.owner' points to entityRef; use refs.owner"
   },
-  "result_state": "invalid",
-  "schema": {
-    "issues": [],
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "valid": true
-  }
+  "result_state": "invalid"
 }

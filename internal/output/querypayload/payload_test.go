@@ -7,7 +7,7 @@ import (
 )
 
 func TestBuildSuccess_SerializesGraphQLStyleRootsInOrder(t *testing.T) {
-	payload := BuildSuccess("valid", map[string]any{"valid": true}, []RootField{
+	payload := BuildSuccess("valid", []RootField{
 		{
 			EntityType: "service",
 			Items:      []map[string]any{},
@@ -43,6 +43,9 @@ func TestBuildSuccess_SerializesGraphQLStyleRootsInOrder(t *testing.T) {
 	}
 	if strings.Contains(serialized, `"matched"`) || strings.Contains(serialized, `"page"`) {
 		t.Fatalf("payload must not contain old top-level list fields: %s", serialized)
+	}
+	if strings.Contains(serialized, `"schema"`) {
+		t.Fatalf("query success payload must not contain top-level schema: %s", serialized)
 	}
 	if !strings.Contains(serialized, `"totalCount"`) || !strings.Contains(serialized, `"pageInfo"`) {
 		t.Fatalf("payload must contain GraphQL-style list fields: %s", serialized)

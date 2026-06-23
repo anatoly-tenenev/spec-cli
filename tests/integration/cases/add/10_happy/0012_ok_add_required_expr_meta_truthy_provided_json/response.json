@@ -24,13 +24,5 @@
   "validation": {
     "issues": [],
     "ok": true
-  },
-  "schema": {
-    "issues": [],
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "valid": true
   }
 }

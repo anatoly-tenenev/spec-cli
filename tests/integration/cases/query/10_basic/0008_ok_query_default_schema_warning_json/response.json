@@ -116,21 +116,5 @@
       }
     }
   },
-  "result_state": "valid",
-  "schema": {
-    "issues": [
-      {
-        "level": "warning",
-        "class": "SchemaWarning",
-        "code": "schema.top_level.version_missing",
-        "message": "schema.version is recommended",
-        "path": "schema.version"
-      }
-    ],
-    "summary": {
-      "errors": 0,
-      "warnings": 1
-    },
-    "valid": true
-  }
+  "result_state": "valid"
 }

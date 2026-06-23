@@ -8,13 +8,5 @@
     "exit_code": 1,
     "message": "--expect-revision does not match current revision"
   },
-  "result_state": "invalid",
-  "schema": {
-    "valid": true,
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "issues": []
-  }
+  "result_state": "invalid"
 }

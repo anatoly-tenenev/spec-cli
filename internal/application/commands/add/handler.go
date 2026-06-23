@@ -52,13 +52,13 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildErrorWithSchema(compileErr, schemaPayload), nil
+		return buildPostCompileError(compileErr, schemaPayload), nil
 	}
 
 	writeCapability := schemacapwrite.Build(compileResult.Schema)
 	typeSpec, exists := writeCapability.EntityTypes[normalizedOpts.EntityType]
 	if !exists {
-		return buildErrorWithSchema(domainerrors.New(
+		return buildPostCompileError(domainerrors.New(
 			domainerrors.CodeEntityTypeUnknown,
 			fmt.Sprintf("unknown entity type: %s", normalizedOpts.EntityType),
 			map[string]any{"entity_type": normalizedOpts.EntityType},
@@ -67,26 +67,28 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 
 	snapshot, snapshotErr := workspace.BuildSnapshot(workspacePath, writeCapability.EntityTypes)
 	if snapshotErr != nil {
-		return buildErrorWithSchema(snapshotErr, schemaPayload), nil
+		return buildPostCompileError(snapshotErr, schemaPayload), nil
 	}
 
 	payload, executeErr := engine.Execute(normalizedOpts, typeSpec, snapshot, h.now)
 	if executeErr != nil {
-		return buildErrorWithSchema(executeErr, schemaPayload), nil
+		return buildPostCompileError(executeErr, schemaPayload), nil
 	}
-
-	payload["schema"] = schemaPayload
 
 	return responses.CommandOutput{JSON: payload}, nil
 }
 
-func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	jsonPayload := map[string]any{
+		"result_state": errormap.ResultStateForCode(appErr.Code),
+		"error":        outputpayload.BuildErrorPayload(appErr),
+	}
+	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
+		jsonPayload["schema"] = schemaPayload
+	}
+
 	return responses.CommandOutput{
-		JSON: map[string]any{
-			"result_state": errormap.ResultStateForCode(appErr.Code),
-			"schema":       schemaPayload,
-			"error":        outputpayload.BuildErrorPayload(appErr),
-		},
+		JSON:     jsonPayload,
 		ExitCode: appErr.ExitCode,
 	}
 }

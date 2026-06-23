@@ -40,10 +40,9 @@ type pageInfoPayload struct {
 	EffectiveSort []string `json:"effectiveSort"`
 }
 
-func BuildSuccess(resultState string, schema map[string]any, roots []RootField) map[string]any {
+func BuildSuccess(resultState string, roots []RootField) map[string]any {
 	return map[string]any{
 		"result_state": resultState,
-		"schema":       schema,
 		"data":         orderedData(append([]RootField(nil), roots...)),
 	}
 }

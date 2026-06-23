@@ -23,13 +23,5 @@
     "exit_code": 1,
     "message": "updated entity failed validation"
   },
-  "result_state": "invalid",
-  "schema": {
-    "issues": [],
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "valid": true
-  }
+  "result_state": "invalid"
 }

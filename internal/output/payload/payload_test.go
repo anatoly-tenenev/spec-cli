@@ -71,3 +71,30 @@ func TestBuildErrorPayload(t *testing.T) {
 		t.Fatalf("unexpected details: %#v", payload["details"])
 	}
 }
+
+func TestShouldIncludeSchemaForError(t *testing.T) {
+	tests := []struct {
+		name string
+		code domainerrors.Code
+		want bool
+	}{
+		{name: "schema not found", code: domainerrors.CodeSchemaNotFound, want: true},
+		{name: "schema read error", code: domainerrors.CodeSchemaReadError, want: true},
+		{name: "schema parse error", code: domainerrors.CodeSchemaParseError, want: true},
+		{name: "schema invalid", code: domainerrors.CodeSchemaInvalid, want: true},
+		{name: "schema projection error", code: domainerrors.CodeSchemaProjectionError, want: true},
+		{name: "invalid query", code: domainerrors.CodeInvalidQuery, want: false},
+		{name: "entity not found", code: domainerrors.CodeEntityNotFound, want: false},
+		{name: "write contract violation", code: domainerrors.CodeWriteContractViolation, want: false},
+		{name: "read failed", code: domainerrors.CodeReadFailed, want: false},
+		{name: "write failed", code: domainerrors.CodeWriteFailed, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ShouldIncludeSchemaForError(tt.code); got != tt.want {
+				t.Fatalf("ShouldIncludeSchemaForError(%s) = %v, want %v", tt.code, got, tt.want)
+			}
+		})
+	}
+}

@@ -16,13 +16,5 @@
     "exit_code": 3,
     "message": "failed to parse workspace document"
   },
-  "result_state": "invalid",
-  "schema": {
-    "issues": [],
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "valid": true
-  }
+  "result_state": "invalid"
 }

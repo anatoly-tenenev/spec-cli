@@ -29,3 +29,16 @@ func BuildErrorPayload(appErr *domainerrors.AppError) map[string]any {
 
 	return errorPayload
 }
+
+func ShouldIncludeSchemaForError(code domainerrors.Code) bool {
+	switch code {
+	case domainerrors.CodeSchemaNotFound,
+		domainerrors.CodeSchemaReadError,
+		domainerrors.CodeSchemaParseError,
+		domainerrors.CodeSchemaInvalid,
+		domainerrors.CodeSchemaProjectionError:
+		return true
+	default:
+		return false
+	}
+}

@@ -8,13 +8,5 @@
     "exit_code": 1,
     "message": "target id is ambiguous"
   },
-  "result_state": "invalid",
-  "schema": {
-    "valid": true,
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "issues": []
-  }
+  "result_state": "invalid"
 }

@@ -439,10 +439,13 @@ All strict schema-aware commands gain one common top-level block:
 
 Contract rules:
 
-- `schema` is included in success responses for strict commands after compile runs;
-- `schema` is included in error responses if compile ran, even when the final error is not schema-related;
-- on compile failure, commands return their normal error response plus the top-level `schema` block;
-- `schema check` and `validate` use the same schema block model;
+- `schema check` and `validate` include the top-level `schema` block in their
+  schema/validation result model;
+- data/mutation commands include top-level `schema` for schema compile and
+  schema-derived projection failures;
+- data/mutation success and non-schema errors omit top-level `schema`;
+- on compile failure, commands return their normal error response plus the
+  top-level `schema` block;
 - `ndjson` support is explicitly out of scope for this architecture iteration.
 
 ## 13. Caching
@@ -510,7 +513,10 @@ Verify public CLI behavior only:
 
 - `schema check`;
 - strict commands blocked by invalid schema;
-- strict commands returning schema warnings on success;
+- schema/validation commands returning schema warnings on success;
+- data/mutation success responses omitting top-level `schema`;
+- data/mutation non-schema errors omitting top-level `schema`;
+- data/mutation schema-related errors including top-level `schema`;
 - `validate` separating schema diagnostics from workspace issues;
 - `help` degraded behavior unchanged where intended.
 

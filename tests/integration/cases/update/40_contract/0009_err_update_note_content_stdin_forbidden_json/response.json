@@ -4,13 +4,5 @@
     "exit_code": 1,
     "message": "whole-body input is not allowed for entity type without content"
   },
-  "result_state": "invalid",
-  "schema": {
-    "issues": [],
-    "summary": {
-      "errors": 0,
-      "warnings": 0
-    },
-    "valid": true
-  }
+  "result_state": "invalid"
 }

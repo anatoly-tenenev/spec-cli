@@ -335,8 +335,10 @@ Add or update black-box contract cases for:
 
 - `schema check`;
 - strict commands blocked by unrelated schema errors;
-- successful strict commands returning schema warnings;
-- error responses after successful compile still including `schema`;
+- schema/validation commands returning schema warnings;
+- data/mutation success responses omitting top-level `schema`;
+- data/mutation non-schema errors omitting top-level `schema`;
+- schema-related errors including top-level `schema`;
 - `validate` split between top-level `schema` and runtime `issues`.
 
 ## 15. Documentation Migration Strategy

@@ -45,31 +45,34 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 	if compileErr != nil {
-		return buildErrorWithSchema(compileErr, schemaPayload), nil
+		return buildPostCompileError(compileErr, schemaPayload), nil
 	}
 	referencesCapability := schemacapreferences.Build(compileResult.Schema)
 
 	snapshot, snapshotErr := workspace.BuildSnapshot(workspacePath, opts.ID)
 	if snapshotErr != nil {
-		return buildErrorWithSchema(snapshotErr, schemaPayload), nil
+		return buildPostCompileError(snapshotErr, schemaPayload), nil
 	}
 
 	payload, executeErr := engine.Execute(opts, referencesCapability, snapshot)
 	if executeErr != nil {
-		return buildErrorWithSchema(executeErr, schemaPayload), nil
+		return buildPostCompileError(executeErr, schemaPayload), nil
 	}
-	payload["schema"] = schemaPayload
 
 	return responses.CommandOutput{JSON: payload}, nil
 }
 
-func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	jsonPayload := map[string]any{
+		"result_state": errormap.ResultStateForCode(appErr.Code),
+		"error":        outputpayload.BuildErrorPayload(appErr),
+	}
+	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
+		jsonPayload["schema"] = schemaPayload
+	}
+
 	return responses.CommandOutput{
-		JSON: map[string]any{
-			"result_state": errormap.ResultStateForCode(appErr.Code),
-			"schema":       schemaPayload,
-			"error":        outputpayload.BuildErrorPayload(appErr),
-		},
+		JSON:     jsonPayload,
 		ExitCode: appErr.ExitCode,
 	}
 }

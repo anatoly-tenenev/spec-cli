@@ -41,28 +41,28 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildErrorWithSchema(compileErr, schemaPayload), nil
+		return buildPostCompileError(compileErr, schemaPayload), nil
 	}
 
 	readCapability := schemacapread.Build(compileResult.Schema)
 
 	plan, planErr := engine.BuildPlan(opts, readCapability)
 	if planErr != nil {
-		return buildErrorWithSchema(planErr, schemaPayload), nil
+		return buildPostCompileError(planErr, schemaPayload), nil
 	}
 
 	entities, workspaceErr := workspace.LoadEntities(workspacePath, readCapability, opts.TypeFilters)
 	if workspaceErr != nil {
-		return buildErrorWithSchema(workspaceErr, schemaPayload), nil
+		return buildPostCompileError(workspaceErr, schemaPayload), nil
 	}
 
 	queryResult, executeErr := engine.Execute(plan, entities)
 	if executeErr != nil {
-		return buildErrorWithSchema(executeErr, schemaPayload), nil
+		return buildPostCompileError(executeErr, schemaPayload), nil
 	}
 
 	return responses.CommandOutput{
-		JSON: querypayload.BuildSuccess(queryResult.ResultState, schemaPayload, queryRootFields(queryResult.RootFields)),
+		JSON: querypayload.BuildSuccess(queryResult.ResultState, queryRootFields(queryResult.RootFields)),
 	}, nil
 }
 
@@ -87,13 +87,17 @@ func queryRootFields(roots []model.QueryRootField) []querypayload.RootField {
 	return payloadRoots
 }
 
-func buildErrorWithSchema(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
+	jsonPayload := map[string]any{
+		"result_state": errormap.ResultStateForCode(appErr.Code),
+		"error":        outputpayload.BuildErrorPayload(appErr),
+	}
+	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
+		jsonPayload["schema"] = schemaPayload
+	}
+
 	return responses.CommandOutput{
-		JSON: map[string]any{
-			"result_state": errormap.ResultStateForCode(appErr.Code),
-			"schema":       schemaPayload,
-			"error":        outputpayload.BuildErrorPayload(appErr),
-		},
+		JSON:     jsonPayload,
 		ExitCode: appErr.ExitCode,
 	}
 }

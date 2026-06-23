@@ -14,11 +14,11 @@ Compact project map for fast entry into the code.
 4. For `help`: `options.Parse` -> `options.NormalizePaths` (canonical `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
 5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema`, otherwise return success `schema` block.
 6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
-7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile failures stop before plan/workspace and return top-level `error + schema`).
-8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile failures stop before selector/workspace pipeline and return top-level `error + schema`).
-9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
-10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
-11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/references.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile failures stop before snapshot/execution and every post-compile response includes top-level `schema`).
+7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/references.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
 12. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
 
 ## Binary Entrypoint Status
@@ -252,8 +252,8 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `query`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> plan -> workspace load -> execute.
-    - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
+    - Orchestrate `query`: parse options -> normalize paths -> compile schema -> build shared read capability -> plan -> workspace load -> execute.
+    - Include top-level `schema` only for schema compile/projection errors; omit it from success and non-schema query/read/runtime errors after a valid schema.
     - Build contractual JSON response (`data.<entityType>.items`, `totalCount`, root-specific `pageInfo`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
     - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.sections.<section_name>`, `content.raw`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, primary section-path examples before full-body `content.raw` fallback examples, per-root `data.<entityType>` response shape, scoped `--limit`/`--offset`/`--sort` override rules, and the runtime-mandatory hidden sort tail contract (`id:asc`).
@@ -374,8 +374,8 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `get`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
-    - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema lookup/read failures).
+    - Orchestrate `get`: parse options -> normalize paths -> compile schema -> build shared read capability -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
+    - Include top-level `schema` only for schema compile/projection errors; omit it from success and non-schema selector/lookup/read failures after a valid schema.
     - Own `get` help as a structured single-entity read-model contract (`Target type`, `Read-model path forms`, `Defaults`, `Rules`) with selected-leaf `null` materialization semantics, sparse aggregate selectors, section-specific content paths listed before `content.raw` in the read/select contract, and syntax-only examples using `<entity_id>` plus role-specific read-path placeholders.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read over shared compile/read capability.
     - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>`; path-based ref leaf selectors `refs.<name>.id|resolved|type|slug|reason` are scalar-only and are rejected for array refs or scalar/array conflicts across schema types.
@@ -447,7 +447,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `add`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared write capability -> build workspace snapshot -> execute candidate build/validation/write.
     - Stop immediately on compile failure and return top-level `error + schema` before unknown-type checks, snapshot, or execution.
-    - Return top-level `schema` in every post-compile JSON response (`success`, unknown type, write-contract/validation/conflict/read/write errors).
+    - Include top-level `schema` only for schema compile/projection errors; omit it from success and non-schema unknown type, write-contract, validation, conflict, read, and write errors after a valid schema.
     - Keep schema diagnostics only in top-level `schema.issues`; runtime validation diagnostics stay under `error.details.validation.issues` for `VALIDATION_FAILED`.
     - Inject `Clock` for deterministic `createdDate`/`updatedDate`.
     - Own `add` help inside shared `help`, including schema-derived write-model path catalog plus role-specific syntax-only value forms (`meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`), explicit whole-body heading contract (`## <title> {#<section_name>}`), and canonical-title linkage to `Specification projection` (`content.sections.<section_name>.title`).
@@ -520,8 +520,8 @@ Compact project map for fast entry into the code.
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
     - `help.go` - `HelpSpec`
   - Responsibilities:
-    - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build top-level `schema` payload -> build shared references capability -> build workspace snapshot -> execute delete/checks.
-    - Return top-level `schema` in every post-compile response (`success`, compile failure, and post-compile non-schema errors).
+    - Orchestrate `delete`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared references capability -> build workspace snapshot -> execute delete/checks.
+    - Include top-level `schema` only for schema compile/projection errors; omit it from success and non-schema lookup, concurrency, reverse-ref, read, and write failures after a valid schema.
     - Map `INVALID_ARGS`, `SCHEMA_*`, `CONCURRENCY_CONFLICT`, `ENTITY_NOT_FOUND`, `AMBIGUOUS_ENTITY_ID`, `REVISION_UNAVAILABLE`, `DELETE_BLOCKED_BY_REFERENCES`, `WRITE_FAILED`.
     - Own `delete` help inside shared `help` with syntax-only `<entity_id>` examples and schema-neutral revision token placeholder (`<token>`).
   - Subpackages:
@@ -591,7 +591,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `update`: parse options -> normalize paths -> acquire workspace lock -> compile schema -> build shared write capability -> build workspace snapshot -> execute.
     - Support mutating patch (`--set`, `--set-file`, `--unset`, whole-body ops) plus optimistic concurrency (`--expect-revision`).
-    - Return contractual JSON response (`updated/noop/changes/entity/validation`) and include top-level `schema` for every post-compile success/error path.
+    - Return contractual JSON response (`updated/noop/changes/entity/validation`) and include top-level `schema` only for schema compile/projection errors, not for success or non-schema post-compile failures.
     - Own `update` help inside shared `help`, including schema-derived write-model path catalog plus role-specific syntax-only value forms (`meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`), explicit whole-body heading contract (`## <title> {#<section_name>}`), and canonical-title linkage to `Specification projection` (`content.sections.<section_name>.title`).
   - Subpackages:
     - `update/internal/options` - parse/norm of `update` options and conflict checks.
@@ -741,11 +741,21 @@ Compact project map for fast entry into the code.
   - Subpackages: none.
 
 - `internal/output/payload`
-  - Entrypoint: `payload.go` - `BuildSchemaPayload`, `BuildErrorPayload`.
+  - Entrypoint: `payload.go` - `BuildSchemaPayload`, `BuildErrorPayload`, `ShouldIncludeSchemaForError`.
   - Responsibilities:
     - Build shared top-level `schema` payload from shared compile result (`valid`, `summary`, `issues`).
     - Build shared top-level `error` payload (`code`, `message`, `exit_code`, optional `details`) from domain `AppError`.
-    - Keep schema/error response fragments centralized for migrated handlers (`schema check`, `validate`, `query`, `get`, `add`).
+    - Classify schema-related error codes (`SCHEMA_NOT_FOUND`, `SCHEMA_READ_ERROR`, `SCHEMA_PARSE_ERROR`, `SCHEMA_INVALID`, `SCHEMA_PROJECTION_ERROR`) for data/mutation response builders that conditionally include top-level `schema`.
+    - Keep schema/error response fragments centralized for migrated handlers (`schema check`, `validate`, `query`, `get`, `add`, `update`, `delete`).
+  - Subpackages: none.
+
+- `internal/output/querypayload`
+  - Entrypoint: `payload.go` - `BuildSuccess`.
+  - Responsibilities:
+    - Build `query` JSON success payload with `result_state` and GraphQL-style ordered `data.<entityType>` root fields.
+    - Preserve caller-provided root field order during JSON serialization.
+    - Render per-root list payloads with `items`, `totalCount`, and `pageInfo`.
+    - Keep `query` success output free of top-level `schema`; schema diagnostics are exposed through schema/validation flows and schema-related error responses.
   - Subpackages: none.
 
 - `internal/output/errormap`
@@ -830,7 +840,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/delete/30_lookup/*` - `delete` lookup diagnostics.
     - `tests/integration/cases/delete/40_concurrency/*` - `delete` concurrency scenarios.
     - `tests/integration/cases/delete/50_refs/*` - reverse-ref blocking, including conservative raw `target.id` blocking from source-declared slots even when `refType` does not include the target type.
-    - `tests/integration/cases/delete/60_infra/*` - strict shared-compiler failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_NOT_FOUND`, `SCHEMA_INVALID`, `SCHEMA_READ_ERROR`) with diagnostics carried via top-level `schema.issues`, plus post-compile workspace read failure (`READ_FAILED`) that keeps top-level successful `schema` (`valid=true`, `issues=[]`).
+    - `tests/integration/cases/delete/60_infra/*` - strict shared-compiler failures (`SCHEMA_PARSE_ERROR`, `SCHEMA_NOT_FOUND`, `SCHEMA_INVALID`, `SCHEMA_READ_ERROR`) with diagnostics carried via top-level `schema.issues`, plus post-compile workspace read failure (`READ_FAILED`) that omits top-level `schema`.
     - `tests/integration/cases/delete/70_fs/*` - delete-time filesystem failures.
     - `tests/integration/cases/delete/80_help/*` - unsupported command-local `delete --help`.
     - `tests/integration/cases/version/10_happy/*` - happy-path `version`.
@@ -848,9 +858,9 @@ Compact project map for fast entry into the code.
 - `help` - shared text-first discovery interface is implemented (`spec-cli help`, `spec-cli help <command>`, `spec-cli help <command> --show-schema-projection`), with schema projection and `--format json` capability gate.
 - `schema` - shared schema compiler command is implemented (`spec-cli schema check`): deterministic compile diagnostics, top-level `schema` block (`valid/summary/issues`), no workspace scan, and in-process compile cache per command run.
 - `validate` - support for JMESPath `${expr}` (cached compile/evaluate), unified `required`, interpolated `pathTemplate/schema.const/schema.enum`, `refs` runtime context (`dirPath` included), and updated schema/instance diagnostics is implemented.
-- `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.
-- `get` - read-one pipeline is implemented on shared schema compile/read capability (`compile -> capability -> selector plan -> target read -> projection`) with global schema-validity blocking, top-level `schema` in all post-compile JSON responses, tolerant target lookup/read semantics, refs/content projection, and stable JSON contract.
-- `add` - shared-compiler create pipeline is implemented (`lock -> compile -> write capability -> snapshot -> execute`) with global schema-validity blocking, top-level `schema` in every post-compile JSON response, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, template-aware `schema.const/schema.enum` runtime resolution, compiler-owned provenance paths in runtime diagnostics, and fail-fast workspace-level writer lock.
+- `query` - read-only pipeline is implemented on shared schema compile/read capability (`compile -> capability -> adapter index -> plan -> execute`), with global schema-validity blocking, top-level `schema` only for schema compile/projection errors, schema-aware JMESPath `--where`, projection, deterministic sort, and offset pagination.
+- `get` - read-one pipeline is implemented on shared schema compile/read capability (`compile -> capability -> selector plan -> target read -> projection`) with global schema-validity blocking, top-level `schema` only for schema compile/projection errors, tolerant target lookup/read semantics, refs/content projection, and stable JSON contract.
+- `add` - shared-compiler create pipeline is implemented (`lock -> compile -> write capability -> snapshot -> execute`) with global schema-validity blocking, top-level `schema` only for schema compile/projection errors, full pre-write validation, deterministic `id/date/revision`, dry-run, atomic write, array writes in `meta.<field>`, array `entityRef` writes in `refs.<field>`, template-aware `schema.const/schema.enum` runtime resolution, compiler-owned provenance paths in runtime diagnostics, and fail-fast workspace-level writer lock.
 - `delete` - baseline delete pipeline is implemented (exact-`id` lookup, `--expect-revision`, reverse-ref blocking, `dry-run`, filesystem delete, JSON contract) with fail-fast workspace-level writer lock.
 - `update` - baseline update pipeline is implemented (`--set/--set-file/--unset`, whole-body operations, pre-commit full validation, `--expect-revision`, dry-run, atomic write/move, JSON contract), including JMESPath-based `required: "${expr}"` and `${expr}` path-template evaluation, full-replace array patch semantics, array `entityRef` writes in `refs.<field>`, and fail-fast workspace-level writer lock.
 - `version` - baseline version command is implemented (single build-time source `Version` with fallback `dev`, JSON contract, contract error-path cases).

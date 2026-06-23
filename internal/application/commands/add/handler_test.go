@@ -52,7 +52,7 @@ func TestHandleCompileFailureIncludesTopLevelSchema(t *testing.T) {
 	}
 }
 
-func TestHandleUnknownTypeIncludesTopLevelSchemaAfterCompile(t *testing.T) {
+func TestHandleUnknownTypeOmitsTopLevelSchemaAfterCompile(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
@@ -88,13 +88,10 @@ entity:
 		t.Fatalf("unexpected error code: %#v", got)
 	}
 
-	schemaPayload := requireMap(t, output.JSON["schema"], "schema")
-	if valid, ok := schemaPayload["valid"].(bool); !ok || !valid {
-		t.Fatalf("expected schema.valid=true, got %#v", schemaPayload["valid"])
-	}
+	requireNoSchema(t, output.JSON)
 }
 
-func TestHandleSuccessIncludesTopLevelSchema(t *testing.T) {
+func TestHandleSuccessOmitsTopLevelSchema(t *testing.T) {
 	workspacePath := t.TempDir()
 	schemaPath := filepath.Join(t.TempDir(), "spec.schema.yaml")
 	writeFile(t, schemaPath, `
@@ -127,10 +124,7 @@ entity:
 		t.Fatalf("unexpected result_state: %#v", got)
 	}
 
-	schemaPayload := requireMap(t, output.JSON["schema"], "schema")
-	if valid, ok := schemaPayload["valid"].(bool); !ok || !valid {
-		t.Fatalf("expected schema.valid=true, got %#v", schemaPayload["valid"])
-	}
+	requireNoSchema(t, output.JSON)
 	if created, ok := output.JSON["created"].(bool); !ok || !created {
 		t.Fatalf("expected created=true, got %#v", output.JSON["created"])
 	}
@@ -152,4 +146,12 @@ func requireMap(t *testing.T, value any, label string) map[string]any {
 		t.Fatalf("%s must be an object, got %#v", label, value)
 	}
 	return typed
+}
+
+func requireNoSchema(t *testing.T, payload map[string]any) {
+	t.Helper()
+
+	if _, ok := payload["schema"]; ok {
+		t.Fatalf("payload must not contain top-level schema: %#v", payload["schema"])
+	}
 }
