@@ -155,6 +155,7 @@ func buildQueryExamples(loaded *helpschema.LoadedData) []string {
 		"spec-cli query --where \"meta.<meta_scalar_field> == '<string_value>'\"",
 		"spec-cli query --where \"refs.<scalar_ref_field>.id == '<entity_id>'\"",
 		"spec-cli query --where \"contains(content.sections.<section_name> || '', '<substring>')\"",
+		"spec-cli query --where \"contains(content.raw || '', '<substring>')\"",
 		"spec-cli query --where \"length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`\"",
 		"spec-cli query --sort updatedDate:desc --limit 50 --offset 0",
 		"Available paths, value kinds, and ref cardinality depend on the effective schema.",

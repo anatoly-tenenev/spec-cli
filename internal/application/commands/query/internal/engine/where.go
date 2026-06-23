@@ -85,14 +85,17 @@ func validateWherePolicy(expression string, capability schemacapread.Capability,
 			if len(chain) < 2 {
 				return domainerrors.New(
 					domainerrors.CodeInvalidQuery,
-					"forbidden where path: root 'content' is not allowed; use content.sections...",
+					"forbidden where path: root 'content' is not allowed; use content.raw or content.sections...",
 					nil,
 				)
+			}
+			if chain[1] == "raw" {
+				continue
 			}
 			if chain[1] != "sections" {
 				return domainerrors.New(
 					domainerrors.CodeInvalidQuery,
-					fmt.Sprintf("forbidden where path: '%s' is not allowed; only content.sections... is supported", strings.Join(chain, ".")),
+					fmt.Sprintf("forbidden where path: '%s' is not allowed; only content.raw and content.sections... are supported", strings.Join(chain, ".")),
 					nil,
 				)
 			}
@@ -302,6 +305,7 @@ func buildWhereItemShape(
 			"content": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
+					"raw": map[string]any{"type": "string"},
 					"sections": map[string]any{
 						"type":                 "object",
 						"properties":           sectionProperties,
@@ -309,7 +313,7 @@ func buildWhereItemShape(
 						"additionalProperties": false,
 					},
 				},
-				"required":             []any{"sections"},
+				"required":             []any{"raw", "sections"},
 				"additionalProperties": false,
 			},
 		},

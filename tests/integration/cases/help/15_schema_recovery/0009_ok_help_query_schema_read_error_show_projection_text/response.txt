@@ -39,8 +39,8 @@ Read model
   type-local fields:
     - meta.<meta_field> from the active type set
     - refs.<ref_field> from the active type set
-    - content.raw from the active type set
     - content.sections.<section_name> from the active type set
+    - content.raw from the active type set
   The exact type-local field catalog is defined by the Specification projection.
 
 Read-model path forms
@@ -60,9 +60,9 @@ Read-model path forms
     - refs.<array_ref_field>
     - query expressions may inspect array items as ref objects with id|type|slug|resolved|reason
   content paths:
-    - content.raw
     - content.sections
     - content.sections.<section_name>
+    - content.raw
 
 Where language
   `--where` accepts a JMESPath expression.
@@ -81,15 +81,15 @@ Operation constraints
     - refs
     - refs.<ref_field>
     - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
-    - content.raw
     - content.sections
     - content.sections.<section_name>
+    - content.raw
   sort:
     - built-in scalar paths
     - meta.<meta_field>
     - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
-    - content.raw
     - content.sections.<section_name>
+    - content.raw
   where:
     allowed paths:
       - built-in paths
@@ -97,9 +97,9 @@ Operation constraints
       - refs.<ref_field>
       - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
       - content.sections.<section_name>
-    forbidden:
-      - content root except content.sections...
       - content.raw
+    forbidden:
+      - content root except content.sections... and content.raw
       - meta.<ref_field> access for entityRef values
     runtime notes:
       - evaluates against the same query-item read model
@@ -193,6 +193,7 @@ Examples (syntax-only)
   spec-cli query --where "meta.<meta_scalar_field> == '<string_value>'"
   spec-cli query --where "refs.<scalar_ref_field>.id == '<entity_id>'"
   spec-cli query --where "contains(content.sections.<section_name> || '', '<substring>')"
+  spec-cli query --where "contains(content.raw || '', '<substring>')"
   spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
   spec-cli query --sort updatedDate:desc --limit 50 --offset 0
   spec-cli query --type <entity_type> --type <other_entity_type> --limit 100 --limit <entity_type>=10

@@ -129,6 +129,7 @@ func LoadEntities(
 			"meta":        metaWhere,
 			"refs":        refsWhere,
 			"content": map[string]any{
+				"raw":      entity.RawContent,
 				"sections": buildWhereSections(entity.Sections, entityType.Sections),
 			},
 		}

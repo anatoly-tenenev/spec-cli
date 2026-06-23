@@ -256,7 +256,7 @@ Compact project map for fast entry into the code.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema runtime/query failures).
     - Build contractual JSON response (`data.<entityType>.items`, `totalCount`, root-specific `pageInfo`) over the shared compile/read capability pipeline.
     - Keep namespace split in user contract/diagnostics: `projection-namespace` for `--select`, `filter-namespace` for `--sort` and `--where` (JMESPath).
-    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.raw`, `content.sections.<section_name>`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, explicit `content.raw` support for read/select/sort, a `--where`-level ban on `content.raw`, per-root `data.<entityType>` response shape, scoped `--limit`/`--offset`/`--sort` override rules, and the runtime-mandatory hidden sort tail contract (`id:asc`).
+    - Own `query` help as a structured read-model contract (`Active type set`, `Read-model path forms`, `Where language`, `Defaults`, `Rules`) including role-specific syntax-only examples/placeholders (`meta.<meta_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.sections.<section_name>`, `content.raw`), explicit selected-leaf `null` materialization, sparse aggregate-selector semantics, primary section-path examples before full-body `content.raw` fallback examples, per-root `data.<entityType>` response shape, scoped `--limit`/`--offset`/`--sort` override rules, and the runtime-mandatory hidden sort tail contract (`id:asc`).
     - Own `query` help inside shared `help`.
     - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
@@ -281,11 +281,11 @@ Compact project map for fast entry into the code.
   - Entrypoint: `loader.go` - `LoadEntities`.
   - Responsibilities:
     - Deterministically scan `.md` files and parse entity frontmatter/body.
-    - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.raw/content.sections`).
+    - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.sections/content.raw`).
     - Use shared read capability directly for schema-known `meta`/`refs`/`sections` sets (no command-local schema re-mapping).
     - Build global `id` index and resolve `refs.<field>` into scalar/array refs with unresolved classification `missing|ambiguous|type_mismatch`; unresolved public refs include `reason`.
     - Distinguish explicit scalar `null` ref (public `null`) from unresolved ref object; where-context skips explicit-null scalar refs and keeps `reason` leaf for unresolved/resolved paths.
-    - Materialize where-context as schema-known `meta` (non-ref fields only), `refs`, and `content.sections` (schema-known sections only; empty object when absent).
+    - Materialize where-context as schema-known `meta` (non-ref fields only), `refs`, `content.raw` (full body text), and `content.sections` (schema-known sections only; empty object when absent).
     - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`, numeric scalars -> `float64`) and compute opaque `revision` (`sha256:<hex>`).
     - Return `READ_FAILED` for unknown entity types in workspace and syntactically invalid scalar/array ref values.
   - Subpackages: none.
@@ -296,7 +296,7 @@ Compact project map for fast entry into the code.
     - Validate type filters and build ordered active type set used by path validation, where-schema compilation, scoped option validation, and `data` root field order.
     - Validate `--select` against `projection-namespace`, including `refs.<field>.reason` and array-ref leaf restrictions.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
-    - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks (`content.raw`, root `content`, `meta.<entityRef>`).
+    - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks that allow `content.raw` / `content.sections...`, reject root `content` and unknown `content.*`, and reject `meta.<entityRef>`.
     - Build one `RootPlan` per active entity type, applying global `--limit`/`--offset`/`--sort` defaults and scoped overrides; scoped sort is validated against the singleton scoped entity type and still receives the hidden `id:asc` tail.
     - Execute per-root filter/sort/paginate/project pipeline using root-specific `limit`, `offset`, and `effectiveSort`, then build page metadata (`totalCount`, `returned`, `hasMore`, `nextOffset`, `effectiveSort`).
   - Subpackages: none.
@@ -351,7 +351,7 @@ Compact project map for fast entry into the code.
     - Treat any schema validation failure (`SCHEMA_INVALID`) as degraded help status (`invalid` + `SCHEMA_VALIDATION_ERROR`) and never mask it as loaded.
     - Pass absolute `ResolvedPath` into the report.
   - Subpackages:
-    - `helpschema/internal/projection` - deterministic specification projection renderer over `model.CompiledSchema` (`built-ins/meta/refs/content.raw/content.sections`) with recursive value-facet serialization and preserved help `x-*` extensions.
+    - `helpschema/internal/projection` - deterministic specification projection renderer over `model.CompiledSchema` (`built-ins/meta/refs/content.sections/content.raw`) with recursive value-facet serialization and preserved help `x-*` extensions.
 
 - `internal/application/help/helptext`
   - Entrypoint: `renderer.go` - `RenderGeneral`, `RenderCommand`.
@@ -364,7 +364,7 @@ Compact project map for fast entry into the code.
     - Render command help via `Operation model` + `DetailSections` in both loaded and degraded branches; append the schema-unavailable rule in degraded mode without replacing the structural command contract.
     - Reuse the shared specification-projection renderer for both general help and `help <command> --show-schema-projection` so projection source/format stays identical.
     - Render normalized options block (positionals before flags, sentinel `none`) and stable command sections without ANSI/table layout.
-    - Generate deterministic command examples as syntax-only templates with role-specific placeholders (`<entity_type>`, `<entity_id>`, `meta.<meta_field>`, `meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<ref_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.sections.<section_name>`) instead of concrete schema literals.
+    - Generate deterministic command examples as syntax-only templates with role-specific placeholders (`<entity_type>`, `<entity_id>`, `meta.<meta_field>`, `meta.<meta_scalar_field>`, `meta.<meta_array_field>`, `refs.<ref_field>`, `refs.<scalar_ref_field>`, `refs.<array_ref_field>`, `content.sections.<section_name>`, `content.raw`) instead of concrete schema literals, keeping section-specific examples before full-body raw fallback examples.
     - Preserve the same syntax-only example families in loaded and degraded modes (no heuristic substitution of enum values, ids, slugs, field names, section names, or free-text literals).
     - Use one command-order source from the shared help catalog for both loaded/degraded `Commands` and `Command details` sections.
   - Subpackages: none.
@@ -376,7 +376,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Orchestrate `get`: parse options -> normalize paths -> compile schema -> build top-level `schema` payload -> build shared read capability -> validate selectors -> locate target by `id` -> read target -> build read-view -> project JSON.
     - Return top-level `schema` in every post-compile JSON response (`success`, compile failures, and non-schema lookup/read failures).
-    - Own `get` help as a structured single-entity read-model contract (`Target type`, `Read-model path forms`, `Defaults`, `Rules`) with selected-leaf `null` materialization semantics, sparse aggregate selectors, explicit `content.raw` support in the read/select contract, and syntax-only examples using `<entity_id>` plus role-specific read-path placeholders.
+    - Own `get` help as a structured single-entity read-model contract (`Target type`, `Read-model path forms`, `Defaults`, `Rules`) with selected-leaf `null` materialization semantics, sparse aggregate selectors, section-specific content paths listed before `content.raw` in the read/select contract, and syntax-only examples using `<entity_id>` plus role-specific read-path placeholders.
     - Build contractual JSON response (`result_state`, `target`, `entity`) for single-entity read over shared compile/read capability.
     - Enforce projection contract for scalar and array `entityRef`: `meta.<ref_field>` is not selectable; refs are projected via `refs|refs.<name>`; path-based ref leaf selectors `refs.<name>.id|resolved|type|slug|reason` are scalar-only and are rejected for array refs or scalar/array conflicts across schema types.
     - Own `get` help inside shared `help`.
@@ -414,7 +414,7 @@ Compact project map for fast entry into the code.
   - Responsibilities:
     - Validate selectors against shared read capability and build terminal select tree, including rejection of path-based ref leaf selectors for array refs and scalar/array conflicts across schema types.
     - Apply default projection (`type`, `id`, `slug`, `meta`, `refs`) when `--select` is omitted.
-    - Classify projection requirements (`refs`, `content.raw`, `content.sections`, requested ref/section fields) and apply null policy for selected missing leaf paths `meta.<name>`, `refs.<name>`/`refs.<name>.<leaf>`, and `content.sections.<name>` while keeping aggregate selectors sparse.
+    - Classify projection requirements (`refs`, `content.sections`, `content.raw`, requested ref/section fields) and apply null policy for selected missing leaf paths `meta.<name>`, `refs.<name>`/`refs.<name>.<leaf>`, and `content.sections.<name>` while keeping aggregate selectors sparse.
     - Build read-view of target entity (`meta`, expanded `refs`, `content`) with scalar/array refs and unresolved classification `missing|ambiguous|type_mismatch` (`reason` in unresolved public refs) driven by shared ref `AllowedTypes`.
     - Mark `resolved=true` only for unique ref target compatible with `AllowedTypes`; unique incompatible target stays unresolved with deterministic fallback and `reason`.
     - Apply blocking policy only when a requested ref slot is structurally unreadable and deterministic `id` cannot be obtained.
@@ -784,6 +784,7 @@ Compact project map for fast entry into the code.
     - Run extra dynamic black-box test that compares `delete` dry-run and real-run by `target.revision` on clean workspace copies.
     - Run dynamic black-box lock-contention checks for `add`, `update`, `delete` (regular and `--dry-run`) using a dedicated helper process that holds workspace lock.
     - Cover `refs` namespace boundaries and optional-leaf missing semantics: object-level `--select refs` is covered for both `query` and `get`, `refs.<field>` and `refs.<field>.<leaf>` are valid in projection (leaf support is intentionally hidden in help), and `refs.<field>.type|slug=null` behaves as missing in where/sort.
+    - Cover `query --where` full-body filtering through `content.raw`, including direct substring match, empty-result pagination metadata, and `content.raw || ''` fallback behavior.
     - Cover scalar and array `entityRef` namespace split in `query`: `meta.<ref_field>` is rejected in both `--select` and `--where`, while ref filters/selectors must use `refs.<field>` / `refs.<field>.<leaf>`.
     - Cover open-ref behavior in `query` when schema omits `refType` / `items.refType`: scalar and array refs resolve against all schema entity types, and `--where` on `refs.<field>.type` / `refs.<field>[].type` compiles and filters by resolved target entity types.
     - Cover schema-aware `--where` literal validation for built-in entity `type`: unknown literals such as `type == 'unknown'` fail as `INVALID_QUERY` before workspace scan, so their fixtures stay on `workspace.in/.keep`.
@@ -801,7 +802,7 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/validate/70_global_uniqueness/*` - global uniqueness checks.
     - `tests/integration/cases/query/10_basic/*` - basic `query`, including unsupported command-local `--help`.
     - `tests/integration/cases/query/20_select/*` - selector/projection scenarios, including `array.items.type=entityRef` under `refs.<field>`, scalar open-ref resolution when `refType` is omitted, and array open-ref resolution when `items.refType` is omitted.
-    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, schema-aware rejection of unknown built-in `type` literals, scalar/array open-ref filtering by `refs.<field>.type` and `refs.<field>[].type` when schema omits `refType` / `items.refType`, conservative handling of interpolated `schema.const/schema.enum` (no false static reject), and preserved static `const/enum` rejection.
+    - `tests/integration/cases/query/30_where/*` - `--where` (JMESPath) happy/negative scenarios, including truthy `refs.<field>` filtering when an optional scalar ref is absent from frontmatter, full-body `content.raw` filtering, nullable `content.sections.<name>` rejection inside `contains(...)` without a fallback, schema-aware rejection of unknown built-in `type` literals, scalar/array open-ref filtering by `refs.<field>.type` and `refs.<field>[].type` when schema omits `refType` / `items.refType`, conservative handling of interpolated `schema.const/schema.enum` (no false static reject), and preserved static `const/enum` rejection.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/query/50_errors/*` - argument/global-option validation failures before compile.
     - `tests/integration/cases/query/60_infra/*` - schema/workspace infra failures plus strict shared-compiler blocking cases (`SCHEMA_*`), including malformed schema-type and const/enum mismatch classification.

@@ -20,7 +20,7 @@ func HelpSpec() helpmodel.CommandSpec {
 				Lines: []string{
 					"The single-entity read model is determined by the resolved target entity type.",
 					"Built-ins are always present.",
-					"Type-local meta, refs, content.raw, and content.sections fields come from the target type in the Specification projection.",
+					"Type-local meta, refs, content.sections, and content.raw fields come from the target type in the Specification projection.",
 				},
 			},
 			{
@@ -36,8 +36,8 @@ func HelpSpec() helpmodel.CommandSpec {
 					"type-local fields:",
 					"  - meta.<meta_field> from the target entity type",
 					"  - refs.<ref_field> from the target entity type",
-					"  - content.raw from the target entity type",
 					"  - content.sections.<section_name> from the target entity type",
+					"  - content.raw from the target entity type",
 					"entityRef values are exposed through refs.<ref_field> and are not projected under meta.<ref_field>.",
 				},
 			},
@@ -57,9 +57,9 @@ func HelpSpec() helpmodel.CommandSpec {
 					"  - refs.<scalar_ref_field>",
 					"  - refs.<scalar_ref_field>.id|type|slug|resolved|reason",
 					"content paths:",
-					"  - content.raw",
 					"  - content.sections",
 					"  - content.sections.<section_name>",
+					"  - content.raw",
 				},
 			},
 			{
@@ -71,9 +71,9 @@ func HelpSpec() helpmodel.CommandSpec {
 					"  - refs",
 					"  - refs.<ref_field>",
 					"  - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason",
-					"  - content.raw",
 					"  - content.sections",
 					"  - content.sections.<section_name>",
+					"  - content.raw",
 				},
 			},
 			{

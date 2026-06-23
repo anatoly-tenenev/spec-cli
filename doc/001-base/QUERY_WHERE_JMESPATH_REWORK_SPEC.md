@@ -93,8 +93,7 @@ Consequences:
 
 Forbidden constructs:
 
-- any syntactic mention of `content.raw`;
-- any access to `content` that does not go through `content.sections...`;
+- any access to `content` that does not go through `content.sections...` or `content.raw`;
 - access to `meta.<field>` for schema fields of type `entityRef`.
 
 Allowed examples:
@@ -104,17 +103,18 @@ Allowed examples:
 - `length(refs.watchers[?reason == 'missing']) > \`0\``
 - `content.sections.summary`
 - `keys(content.sections)`
+- `contains(content.raw || '', 'backoff')`
 
 Disallowed examples:
 
 - `content`
 - `keys(content)`
-- `content.raw`
+- `content.unknown`
 - `meta.owner`
 
 ### 4.4. Validation of Forbidden Constructs
 
-- The bans on `content.raw` and root `content` outside `content.sections...` are validated against the expression AST.
+- The ban on root `content` outside `content.sections...` / `content.raw` is validated against the expression AST.
 - String heuristics are forbidden.
 - `spec-cli` must not try to guess the meaning of an expression from raw text.
 
@@ -219,12 +219,18 @@ Typing:
 ### 7.3. `content.sections`
 
 - `content.sections` is allowed in `--where` as an object root.
-- Root `content` is still forbidden, except for the path `content.sections...`.
+- Root `content` is still forbidden, except for `content.sections...` and `content.raw`.
 - `content.sections` contains only schema-known sections.
 - A section leaf is modeled as `string`; optionality is represented by whether the property is listed in `required`, not by wrapping the leaf itself into `string|null`.
 - The full set of operations on section leaves is defined by `go-jmespath`; the old `where-json` special restrictions on sections are not preserved.
 
-### 7.4. `refs`
+### 7.4. `content.raw`
+
+- `content.raw` is allowed in `--where` as the full body text leaf.
+- `content.raw` is modeled as `string`.
+- The root `content` object is still not a general filtering surface; prefer `content.sections...` for schema-known section filtering and use `content.raw` only for full-body fallback matching.
+
+### 7.5. `refs`
 
 The scalar ref object in the schema-aware context contains:
 
@@ -293,6 +299,11 @@ Consequence:
 
 - `content.sections` is materialized as an object root with pruning to schema-known sections that actually exist.
 - If the document has no schema-known sections, `content.sections` still exists as an empty object `{}`.
+
+### 8.4. `content.raw`
+
+- `content.raw` is materialized as the full body text of the entity document.
+- If the document has no body, `content.raw` still exists as an empty string.
 
 ## 9. Change to the `query` and `get` Read Contract
 
@@ -572,8 +583,8 @@ When migrating existing cases from `--where-json` to `--where`, preserve the mea
 
 1. `query --where` with truthiness on scalar/object/array result.
 2. Removed `--where-json`.
-3. Ban on `content.raw`.
-4. Ban on root `content` outside `content.sections...`.
+3. `content.raw` full-body filtering, including a fallback expression such as `content.raw || ''`.
+4. Ban on root `content` outside `content.sections...` / `content.raw`.
 5. Ban on `meta.<entityRef>`.
 6. Ban on `--sort meta.<entityRef>` in a mixed active type set, including the case where one type has a ref and another has a scalar meta field.
 7. `createdDate` / `updatedDate` comparisons via date semantics.

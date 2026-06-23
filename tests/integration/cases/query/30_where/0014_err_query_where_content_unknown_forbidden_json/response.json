@@ -2,7 +2,7 @@
   "error": {
     "code": "INVALID_QUERY",
     "exit_code": 2,
-    "message": "forbidden where path: 'content.summary' is not allowed; only content.sections... is supported"
+    "message": "forbidden where path: 'content.unknown' is not allowed; only content.raw and content.sections... are supported"
   },
   "result_state": "invalid",
   "schema": {

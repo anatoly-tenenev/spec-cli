@@ -1,0 +1,65 @@
+{
+  "data": {
+    "service": {
+      "items": [],
+      "totalCount": 0,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 0,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    },
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "meta": {
+            "score": 9.5,
+            "status": "active",
+            "tags": [
+              "reliability",
+              "billing"
+            ]
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-2",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          },
+          "slug": "retry-window",
+          "type": "feature"
+        }
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "mode": "offset",
+        "limit": 100,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": false,
+        "nextOffset": null,
+        "effectiveSort": [
+          "id:asc"
+        ]
+      }
+    }
+  },
+  "result_state": "valid",
+  "schema": {
+    "issues": [],
+    "summary": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "valid": true
+  }
+}

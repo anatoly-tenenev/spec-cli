@@ -1,6 +1,6 @@
 {
-  "id": "query_30_0014_err_query_where_content_section_eq_forbidden_json",
-  "description": "query_30_0014_err_query_where_content_section_eq_forbidden_json",
+  "id": "query_30_0014_err_query_where_content_unknown_forbidden_json",
+  "description": "query_30_0014_err_query_where_content_unknown_forbidden_json",
   "command": "query",
   "args": [
     "--workspace",
@@ -9,7 +9,7 @@
     "${SCHEMA}",
     "query",
     "--where",
-    "content.summary == 'Retry window for outbound requests.'"
+    "content.unknown == 'x'"
   ],
   "expect": {
     "exit_code": 2,

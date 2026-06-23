@@ -1,6 +1,6 @@
 {
-  "id": "query_30_0013_err_query_where_content_raw_forbidden_json",
-  "description": "query_30_0013_err_query_where_content_raw_forbidden_json",
+  "id": "query_30_0013_ok_query_where_content_raw_contains_json",
+  "description": "query_30_0013_ok_query_where_content_raw_contains_json",
   "command": "query",
   "args": [
     "--workspace",
@@ -12,7 +12,7 @@
     "contains(content.raw, 'backoff')"
   ],
   "expect": {
-    "exit_code": 2,
+    "exit_code": 0,
     "response_file": "response.json"
   },
   "workspace": {

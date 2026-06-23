@@ -187,8 +187,8 @@ query
     type-local fields:
       - meta.<meta_field> from the active type set
       - refs.<ref_field> from the active type set
-      - content.raw from the active type set
       - content.sections.<section_name> from the active type set
+      - content.raw from the active type set
     The exact type-local field catalog is defined by the Specification projection.
   Read-model path forms
     built-in paths:
@@ -207,9 +207,9 @@ query
       - refs.<array_ref_field>
       - query expressions may inspect array items as ref objects with id|type|slug|resolved|reason
     content paths:
-      - content.raw
       - content.sections
       - content.sections.<section_name>
+      - content.raw
   Where language
     `--where` accepts a JMESPath expression.
     spec-cli does not add project-specific operators or helper functions on top of JMESPath.
@@ -226,15 +226,15 @@ query
       - refs
       - refs.<ref_field>
       - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
-      - content.raw
       - content.sections
       - content.sections.<section_name>
+      - content.raw
     sort:
       - built-in scalar paths
       - meta.<meta_field>
       - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
-      - content.raw
       - content.sections.<section_name>
+      - content.raw
     where:
       allowed paths:
         - built-in paths
@@ -242,9 +242,9 @@ query
         - refs.<ref_field>
         - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
         - content.sections.<section_name>
-      forbidden:
-        - content root except content.sections...
         - content.raw
+      forbidden:
+        - content root except content.sections... and content.raw
         - meta.<ref_field> access for entityRef values
       runtime notes:
         - evaluates against the same query-item read model
@@ -333,6 +333,7 @@ query
     spec-cli query --where "meta.<meta_scalar_field> == '<string_value>'"
     spec-cli query --where "refs.<scalar_ref_field>.id == '<entity_id>'"
     spec-cli query --where "contains(content.sections.<section_name> || '', '<substring>')"
+    spec-cli query --where "contains(content.raw || '', '<substring>')"
     spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
     spec-cli query --sort updatedDate:desc --limit 50 --offset 0
     spec-cli query --type <entity_type> --type <other_entity_type> --limit 100 --limit <entity_type>=10
@@ -349,7 +350,7 @@ get
   Target type
     The single-entity read model is determined by the resolved target entity type.
     Built-ins are always present.
-    Type-local meta, refs, content.raw, and content.sections fields come from the target type in the Specification projection.
+    Type-local meta, refs, content.sections, and content.raw fields come from the target type in the Specification projection.
   Read model
     built-ins:
       - type
@@ -361,8 +362,8 @@ get
     type-local fields:
       - meta.<meta_field> from the target entity type
       - refs.<ref_field> from the target entity type
-      - content.raw from the target entity type
       - content.sections.<section_name> from the target entity type
+      - content.raw from the target entity type
     entityRef values are exposed through refs.<ref_field> and are not projected under meta.<ref_field>.
   Read-model path forms
     built-in paths:
@@ -378,9 +379,9 @@ get
       - refs.<scalar_ref_field>
       - refs.<scalar_ref_field>.id|type|slug|resolved|reason
     content paths:
-      - content.raw
       - content.sections
       - content.sections.<section_name>
+      - content.raw
   Operation constraints
     select:
       - built-in paths
@@ -388,9 +389,9 @@ get
       - refs
       - refs.<ref_field>
       - scalar ref detail paths refs.<scalar_ref_field>.id|type|slug|resolved|reason
-      - content.raw
       - content.sections
       - content.sections.<section_name>
+      - content.raw
   Defaults
     if --select is omitted, default projection:
       - type

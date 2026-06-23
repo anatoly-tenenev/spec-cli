@@ -19,7 +19,8 @@ entity:
               type: string
     content:
       sections:
-        summary: {}
+        summary:
+          required: false
 
   feature:
     idPrefix: FEAT
@@ -44,5 +45,6 @@ entity:
               type: string
     content:
       sections:
-        summary: {}
+        summary:
+          required: false
         implementation: {}
