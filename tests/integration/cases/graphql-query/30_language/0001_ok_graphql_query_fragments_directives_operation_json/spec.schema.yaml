@@ -1,0 +1,40 @@
+version: "0.0.7"
+entity:
+  service:
+    description: Service specification
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+    meta:
+      fields:
+        team:
+          description: Owning team
+          schema:
+            type: string
+
+  feature:
+    description: Product feature specification
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          description: Lifecycle status
+          schema:
+            type: string
+            enum: [draft, active]
+        owner:
+          description: Owning service
+          schema:
+            type: entityRef
+            refType: service
+        dependencies:
+          description: Feature dependencies
+          schema:
+            type: array
+            items:
+              type: entityRef
+              refType: feature
+    content:
+      sections:
+        summary:
+          description: Short summary

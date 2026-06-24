@@ -1,0 +1,11 @@
+query {
+  feature(where: { slug: { eq: "retry-window" } }) {
+    items {
+      id
+      meta {
+        status
+        statusText: status
+      }
+    }
+  }
+}

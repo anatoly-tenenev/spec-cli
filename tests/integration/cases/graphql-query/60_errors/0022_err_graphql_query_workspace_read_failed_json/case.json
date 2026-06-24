@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_60_0022_err_graphql_query_workspace_read_failed_json",
+  "description": "graphql-query omits schema payload for workspace read failures after valid schema",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "/__spec_cli_tests__/missing-workspace",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--query",
+    "query { feature { items { id slug } totalCount } }"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

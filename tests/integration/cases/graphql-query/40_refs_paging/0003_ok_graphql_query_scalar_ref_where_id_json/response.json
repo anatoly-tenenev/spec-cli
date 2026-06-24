@@ -1,0 +1,22 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "resolved": true,
+              "slug": "billing",
+              "type": "service"
+            }
+          },
+          "slug": "retry-window"
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}

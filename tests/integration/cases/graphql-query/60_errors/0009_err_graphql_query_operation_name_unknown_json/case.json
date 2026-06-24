@@ -1,0 +1,25 @@
+{
+  "id": "graphql-query_60_0009_err_graphql_query_operation_name_unknown_json",
+  "description": "graphql-query rejects unknown operation-name",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql",
+    "--operation-name",
+    "MissingOperation"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

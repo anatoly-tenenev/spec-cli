@@ -1,0 +1,17 @@
+query {
+  feature(
+    where: {
+      meta: {
+        tags: {
+          contains: "core"
+          any: { eq: "payments" }
+          all: { contains: "e" }
+          none: { eq: "deprecated" }
+        }
+      }
+    }
+  ) {
+    items { id slug meta { tags } }
+    totalCount
+  }
+}

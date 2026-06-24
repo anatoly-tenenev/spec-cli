@@ -1,0 +1,11 @@
+query {
+  feature(where: { slug: { eq: "sparse" } }) {
+    items {
+      id
+      meta { priority }
+      refs { owner { id type slug resolved } }
+      content { sections { details } }
+    }
+    totalCount
+  }
+}

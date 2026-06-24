@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "locations": [
+          {
+            "column": 3,
+            "line": 2
+          }
+        ],
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "GraphQL introspection is not supported"
+  },
+  "result_state": "invalid"
+}

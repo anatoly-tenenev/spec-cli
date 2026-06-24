@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_60_0015_err_graphql_query_result_selection_required_json",
+  "description": "graphql-query rejects root result selections without subfields",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,44 @@
+GraphQL help
+
+Use this flow:
+  1. Pick the entity from the catalog below.
+  2. Run `spec-cli graphql-help --schema-only --entity <entity>` to get the exact GraphQL SDL.
+  3. Build the query.
+  4. Run it with `spec-cli graphql-query --file <query.graphql>`.
+
+Catalog is for discovery only. Use SDL from --schema-only to write exact GraphQL queries.
+
+Entities
+
+service
+  description: Service specification
+  rootField: service
+  schema: spec-cli graphql-help --schema-only --entity service
+
+  meta:
+    team - Owning team
+
+  refs:
+    none
+
+  content:
+    raw - full body text
+    sections:
+      none
+
+feature
+  description: Product feature specification
+  rootField: feature
+  schema: spec-cli graphql-help --schema-only --entity feature
+
+  meta:
+    status - Lifecycle status
+
+  refs:
+    owner -> service - Owning service
+    dependencies -> feature[] - Feature dependencies
+
+  content:
+    raw - full body text
+    sections:
+      summary - Short summary

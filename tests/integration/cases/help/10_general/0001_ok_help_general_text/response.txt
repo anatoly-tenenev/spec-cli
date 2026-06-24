@@ -179,7 +179,7 @@ Global options
   --workspace <path>: optional; default "."; root workspace path
   --schema <path>: optional; default "spec.schema.yaml"; effective schema path
   --config <path>: optional; JSON config with "schema"/"workspace"; if omitted, auto-loads "./spec-cli.json" when present
-  --format <json|text>: optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED
+  --format <json|text>: optional; default "json"; help and graphql-help support text output; explicit --format json for help/graphql-help returns CAPABILITY_UNSUPPORTED
   --require-absolute-paths: optional; reject explicit relative filesystem paths
 
 Commands
@@ -187,11 +187,18 @@ Commands
   schema: inspect schema compile diagnostics
   validate: validate schema and workspace entities in one deterministic run
   query: read many entities through a schema-derived read model
+  graphql-help: Show GraphQL semantic catalog and generated SDL.
+  graphql-query: Execute read-only GraphQL queries.
   get: read one entity through a schema-derived read model
   add: create one entity through a schema-derived write model
   update: patch one entity through a schema-derived write model
   delete: delete one entity subject to reference integrity
   version: show CLI version
+
+For GraphQL
+  1. Run `spec-cli graphql-help`.
+  2. Run `spec-cli graphql-help --schema-only --entity <entity>`.
+  3. Run `spec-cli graphql-query --file <query.graphql>`.
 
 Command details
 help
@@ -464,6 +471,100 @@ query
     spec-cli query --where "length(refs.<array_ref_field>[?reason == '<reason_value>']) > `0`"
     spec-cli query --sort updatedDate:desc --limit 50 --offset 0
     Available paths, value kinds, and ref cardinality depend on the effective schema.
+
+graphql-help
+  Syntax
+    spec-cli graphql-help
+    spec-cli graphql-help --schema-only
+    spec-cli graphql-help --schema-only --entity <entity>
+  Operation model
+    Shows the GraphQL discovery catalog by default.
+    --schema-only renders generated SDL from the same projection used by graphql-query.
+    --entity restricts SDL output to selected root entity fields.
+  Options
+    --schema-only
+      takes_value: false
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Render generated GraphQL SDL instead of the semantic catalog.
+    --entity <entity>
+      takes_value: true
+      required: false
+      repeatable: true
+      mutually_exclusive_groups: none
+      schema_derived: true
+      schema_derivation: entity type keys from the effective schema
+      description: Restrict --schema-only SDL to one entity root field.
+  Rules
+    - graphql-help returns text output when --format is omitted.
+    - Explicit --format json returns CAPABILITY_UNSUPPORTED.
+    - --entity is allowed only with --schema-only.
+  Examples (syntax-only)
+    spec-cli graphql-help
+    spec-cli graphql-help --schema-only --entity <entity>
+
+graphql-query
+  Syntax
+    spec-cli graphql-query --query <graphql>
+    spec-cli graphql-query --file <query.graphql>
+    spec-cli graphql-query --file -
+  Operation model
+    Executes read-only GraphQL query operations against the effective schema read model.
+    Use graphql-help --schema-only to get the exact generated SDL.
+    Success output contains result_state and data only; schema is included only for schema compile errors.
+  Options
+    --query <graphql>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: query-input
+      schema_derived: false
+      schema_derivation: none
+      description: Inline GraphQL document.
+    --file <path>|-
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: query-input
+      schema_derived: false
+      schema_derivation: none
+      description: GraphQL document file path, or - for stdin.
+    --variables-json <json>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: variables-input
+      schema_derived: false
+      schema_derivation: none
+      description: Inline JSON object with GraphQL variables.
+    --variables-file <path>|-
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: variables-input
+      schema_derived: false
+      schema_derivation: none
+      description: Variables JSON object file path, or - for stdin.
+    --operation-name <name>
+      takes_value: true
+      required: false
+      repeatable: false
+      mutually_exclusive_groups: none
+      schema_derived: false
+      schema_derivation: none
+      description: Operation name for documents with multiple operations.
+  Rules
+    - One of --query or --file is required.
+    - --query and --file are mutually exclusive.
+    - --variables-json and --variables-file are mutually exclusive.
+    - --file - and --variables-file - cannot both read stdin.
+    - Only query operations are supported.
+    - GraphQL introspection and custom query directives are not supported.
+  Examples (syntax-only)
+    spec-cli graphql-query --file <query.graphql>
 
 get
   Syntax

@@ -1,0 +1,27 @@
+{
+  "id": "graphql-query_30_0001_ok_graphql_query_fragments_directives_operation_json",
+  "description": "graphql-query supports operation-name, fragments, variables, @include, and @skip",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql",
+    "--variables-file",
+    "${CASE}/variables.json",
+    "--operation-name",
+    "FeatureWithFragments"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

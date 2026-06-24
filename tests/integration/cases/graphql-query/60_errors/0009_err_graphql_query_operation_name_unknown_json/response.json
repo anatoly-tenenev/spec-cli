@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "operation_name": "MissingOperation",
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "GraphQL operation not found"
+  },
+  "result_state": "invalid"
+}

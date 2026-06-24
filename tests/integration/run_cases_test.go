@@ -21,6 +21,14 @@ func TestQueryCases(t *testing.T) {
 	runCommandCases(t, "query")
 }
 
+func TestGraphQLHelpCases(t *testing.T) {
+	runCommandCases(t, "graphql-help")
+}
+
+func TestGraphQLQueryCases(t *testing.T) {
+	runCommandCases(t, "graphql-query")
+}
+
 func TestGetCases(t *testing.T) {
 	runCommandCases(t, "get")
 }
@@ -141,6 +149,9 @@ func validateCaseNaming(command string, caseDir string, testCase integrationCase
 	format, err := caseOutputFormat(testCase.Args)
 	if err != nil {
 		return err
+	}
+	if strings.HasSuffix(strings.ToLower(testCase.Expect.ResponseFile), ".txt") {
+		format = "text"
 	}
 	if format == "json" && !strings.HasSuffix(caseName, "_json") {
 		return fmt.Errorf("case directory for --format json must end with _json, got %q", caseName)

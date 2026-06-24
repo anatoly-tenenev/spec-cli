@@ -1,0 +1,3 @@
+query {
+  __type(name: "Feature") { name }
+}

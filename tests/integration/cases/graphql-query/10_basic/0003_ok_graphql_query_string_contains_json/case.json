@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_10_0003_ok_graphql_query_string_contains_json",
+  "description": "graphql-query filters string fields with contains",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

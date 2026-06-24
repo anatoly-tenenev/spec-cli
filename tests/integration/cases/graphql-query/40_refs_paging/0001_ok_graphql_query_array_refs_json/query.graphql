@@ -1,0 +1,16 @@
+query {
+  feature(where: { refs: { watchers: { contains: { id: "TEAM-1", type: team } } } }) {
+    items {
+      id
+      refs {
+        watchers {
+          id
+          type
+          slug
+          resolved
+        }
+      }
+    }
+    totalCount
+  }
+}

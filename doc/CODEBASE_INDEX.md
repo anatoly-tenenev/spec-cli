@@ -14,12 +14,14 @@ Compact project map for fast entry into the code.
 4. For `help`: `options.Parse` -> `options.NormalizePaths` (canonical `ResolvedPath`) -> `helpschema.LoadReport` -> `helptext.RenderGeneral|RenderCommand`.
 5. For `schema check`: `options.Parse` -> `options.NormalizeSchemaPath` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema`, otherwise return success `schema` block.
 6. For `validate`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> on compile failure build top-level `error + schema` with zero runtime summary/issues -> otherwise `schema/capabilities/validate.Build` -> `workspace.BuildCandidateSet` -> `engine.RunValidation`.
-7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildPlan` -> `workspace.LoadEntities` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
-8. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
-9. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
-10. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
-11. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/references.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
-12. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
+7. For `query`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `readmodel/engine.BuildPlan` -> `readmodel/workspace.LoadEntities` -> `readmodel/engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+8. For `graphql-help`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `graphql/projection.Build` -> `graphql/catalog.Render` or `graphql/sdl.Render` (explicit `--format json` returns `CAPABILITY_UNSUPPORTED`; schema compile failures return top-level `error + schema`; GraphQL projection failures omit top-level `schema`).
+9. For `graphql-query`: `options.Parse` -> `options.NormalizePaths` -> `graphql/document.Load` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `graphql/projection.Build` -> `graphql/binding.Build` -> `readmodel/workspace.LoadEntities` -> `graphql/binding.Execute` (success returns `result_state + data`; schema compile failures include `schema`; GraphQL/read/result errors omit partial `data` and top-level `schema`).
+10. For `get`: `options.Parse` -> `options.NormalizePaths` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/read.Build` -> `engine.BuildSelectorPlan` -> `workspace.LocateByID` -> `workspace.ReadTarget` -> `engine.BuildEntityView` -> `engine.ProjectEntity` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+11. For `add`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> unknown type check -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+12. For `update`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/write.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+13. For `delete`: `options.Parse` -> `options.NormalizePaths` -> `workspacelock.AcquireExclusive` -> `schema/compile.(*Compiler).Compile` -> `schema/capabilities/references.Build` -> `workspace.BuildSnapshot` -> `engine.Execute` (compile/projection failures return top-level `error + schema`; success and non-schema post-compile errors omit top-level `schema`).
+14. For `version`: `options.Parse` -> `buildinfo.ResolveVersion` -> build payload `result_state/version`.
 
 ## Binary Entrypoint Status
 
@@ -32,13 +34,13 @@ Compact project map for fast entry into the code.
 - `internal/cli`
   - Entrypoint: `internal/cli/app.go` - `NewApp`, `(*App).Run`.
   - Responsibilities:
-    - Build the application and register handlers (`help`, `schema`, `query`, `get`, `add`, `update`, `delete`, `validate`, `version`) through `internal/cli/command_catalog.go`.
+    - Build the application and register handlers (`help`, `schema`, `query`, `graphql-help`, `graphql-query`, `get`, `add`, `update`, `delete`, `validate`, `version`) through `internal/cli/command_catalog.go`.
     - Parse global options (`--format`, `--workspace`, `--schema`, `--config`, `--require-absolute-paths`, `--verbose`) both before and after the command name.
     - Load active JSON config before dispatch (`--config <path>` or auto-discovered `cwd/spec-cli.json`), apply only supported keys (`schema`, `workspace`), resolve relative config paths from config directory, and enforce priority `explicit CLI > config > defaults`.
     - Return deterministic `INVALID_CONFIG` for missing/unreadable/unparseable explicit config, invalid auto-discovered config, and unknown config keys.
     - Validate global options deterministically: reject duplicate non-repeatable flags and enforce early `--require-absolute-paths` checks for explicit `--workspace/--schema`.
-    - Apply the pre-dispatch capability gate: `--format text` is allowed only for `help`.
-    - Render successful and error responses uniformly: JSON for command payload/error, text-first for `help`.
+    - Apply the pre-dispatch capability gate: `--format text` is allowed only for `help` and `graphql-help`.
+    - Render successful and error responses uniformly: JSON for command payload/error, text-first for `help` and `graphql-help`.
   - Subpackages: none.
 
 - `internal/application/commandbus`
@@ -183,6 +185,57 @@ Compact project map for fast entry into the code.
     - Normalize allowed target-type expansion (`refType` or all entity types) and deterministic slot ordering in both views.
   - Subpackages: none.
 
+- `internal/application/readmodel`
+  - Entrypoints:
+    - `model/types.go` - shared read request, plan, entity-view, selection, sort, and response types.
+    - `workspace/loader.go` - `LoadEntities`.
+    - `engine/engine.go` - `BuildPlan`, `Execute`.
+    - `ordering/ordering.go` - `SortEntities`.
+  - Responsibilities:
+    - Provide the command-neutral read entity view used by `query` and `graphql-query`.
+    - Deterministically scan markdown workspace documents, parse frontmatter/body, normalize values, compute opaque `revision`, and resolve scalar/array `refs.<field>`.
+    - Plan dot-path `query` active type sets, selectors, JMESPath `--where`, sort, limit, and offset from the shared read capability.
+    - Execute per-root filtering, stable sorting with hidden `id:asc` tail, pagination, selected-field projection, and page metadata.
+    - Keep deterministic shared ordering and narrow read-model helper packages for YAML nodes, value normalization, sorted keys, diagnostics, and test capability fixtures.
+  - Subpackages:
+    - `readmodel/model` - shared data types for read planning and execution.
+    - `readmodel/workspace` - entrypoint-first workspace loader facade; details live under `workspace/internal/documents`, `workspace/internal/references`, `workspace/internal/views`, `workspace/internal/diagnostics`, and `workspace/internal/loading`.
+    - `readmodel/engine` - entrypoint-first query planning/execution facade; details live under `engine/internal/planning`, `engine/internal/selection`, `engine/internal/filtering`, `engine/internal/sorting`, and `engine/internal/execution`.
+    - `readmodel/ordering` - entrypoint-first shared stable entity ordering facade reused by `query` and GraphQL execution.
+    - `readmodel/ordering/internal/entitysort` - read-view path resolution, optional ref leaf missing policy, literal comparison, and stable entity sorting.
+    - `readmodel/internal/ordered` - deterministic string-key ordering for readmodel maps.
+    - `readmodel/internal/values` - scalar comparison, numeric normalization, and deep-copy helpers.
+    - `readmodel/internal/yamlnodes` - YAML document-node and duplicate-key helpers for read workspace parsing.
+    - `readmodel/internal/diagnostics` - validation issue detail builders used by readmodel errors.
+    - `readmodel/internal/testsupport` - shared read capability fixtures for readmodel unit tests.
+
+- `internal/application/graphql`
+  - Entrypoints:
+    - `projection/builder.go` - `Build`.
+    - `sdl/renderer.go` - `Render`.
+    - `catalog/renderer.go` - `Render`.
+    - `document/loader.go` - `Load`.
+    - `binding/binding.go` - `Build`, `Execute`.
+  - Responsibilities:
+    - Build one GraphQL projection IR from compiled schema plus shared read capability, validating GraphQL-safe source names, generated-name collisions, and preserving conditional required expressions for SDL directives.
+    - Render deterministic semantic catalog text and generated SDL from the same projection source, including `@requiredWhen` and array constraint directives.
+    - Load inline/file/stdin GraphQL documents and variables JSON while enforcing JSON object variables.
+    - Use `github.com/vektah/gqlparser/v2` only for generated SDL loading and GraphQL document parse/validation.
+    - Bind supported GraphQL query subset into ordered root plans with aliases, fragments, variables, `@include`/`@skip`, typed `where`, sort, limit, offset, selected result fields, and runtime non-null paths.
+    - Execute GraphQL root plans over the shared readmodel entity view and return selection-aware `data` without partial `data + errors`.
+    - Keep package-facade unit coverage for the document loader, projection builder, SDL renderer, and binding build/execute path in addition to black-box `graphql-help`/`graphql-query` integration cases.
+  - Subpackages:
+    - `graphql/model` - projection IR with output nullability/conditional required metadata, root plans, selection nodes, and predicate type.
+    - `graphql/projection` - schema/read-capability to GraphQL projection builder, required-expression preservation, projection diagnostics, generated-name collision checks, and facade-level unit coverage in `projection/builder_test.go`.
+    - `graphql/sdl` - full and selected-entity SDL renderer with output nullability, `@requiredWhen`, `@arrayConstraints`, enum/ref SDL, selected-entity filtering, and facade-level unit coverage in `sdl/renderer_test.go`.
+    - `graphql/catalog` - discovery catalog renderer for `graphql-help`.
+    - `graphql/document` - query/variables loader for inline, file, and stdin sources with variables-object validation and facade-level unit coverage in `document/loader_test.go`.
+    - `graphql/binding` - entrypoint-first GraphQL binding facade with unit coverage in `binding/binding_test.go` for operation selection, aliases, repeated selection merging, fragments, variables, directives, filtering, sorting, pagination, projection, and runtime non-null enforcement.
+    - `graphql/binding/internal/plan` - generated SDL loading, GraphQL validation, operation selection, fragments/directives, root argument binding, sort binding, result selection, and runtime non-null path collection.
+    - `graphql/binding/internal/predicate` - typed `where` predicate evaluation, nested namespace filters, array operators, scalar comparison, and string `contains`.
+    - `graphql/binding/internal/execution` - root filtering/sorting/pagination, GraphQL selection projection, `pageInfo` projection, and non-null result enforcement.
+    - `graphql/binding/internal/diagnostics` - GraphQL validation/binding/result error detail builders.
+
 - `internal/application/commands/schema`
   - Entrypoints:
     - `handler.go` - `NewHandler`, `(*Handler).Handle`
@@ -261,10 +314,33 @@ Compact project map for fast entry into the code.
     - Preserve query-level error classification for non-schema paths (`INVALID_ARGS`, `INVALID_QUERY`, `ENTITY_TYPE_UNKNOWN`, `READ_FAILED`) after successful compile.
   - Subpackages:
     - `query/internal/options` - `--type`, `--where`, `--select`, unscoped/scoped `--sort`, `--limit`, `--offset`.
-    - `query/internal/workspace` - full read-view building and `refs.<field>` resolution.
-    - `query/internal/engine` - planner, schema-aware JMESPath `--where` compile/evaluate, sorting, pagination, projection.
-    - `query/internal/model` - internal request/plan/AST/response types.
-    - `query/internal/support` - pure helpers for YAML/collections/value operations reused by workspace/frontmatter and deterministic map handling.
+    - shared read execution lives in `internal/application/readmodel` and is covered by package-local readmodel unit tests.
+
+- `internal/application/commands/graphqlhelp`
+  - Entrypoints:
+    - `handler.go` - `NewHandler`, `(*Handler).Handle`
+    - `help.go` - `HelpSpec`
+  - Responsibilities:
+    - Orchestrate `graphql-help`: parse options -> normalize paths -> compile schema -> build read capability -> build GraphQL projection -> render catalog or SDL.
+    - Reject explicit `--format json` with `CAPABILITY_UNSUPPORTED` while preserving text output for omitted format and `--format text`.
+    - Return schema compile failures as top-level `error + schema`.
+    - Return `GRAPHQL_PROJECTION_ERROR` without partial SDL/catalog and without top-level `schema`.
+    - Validate repeatable `--entity` against projected root fields and preserve first-occurrence order in selected SDL rendering.
+  - Subpackages:
+    - `graphqlhelp/internal/options` - parse `--schema-only`, repeatable `--entity`, and normalize workspace/schema paths with `--require-absolute-paths`.
+
+- `internal/application/commands/graphqlquery`
+  - Entrypoints:
+    - `handler.go` - `NewHandler`, `(*Handler).Handle`
+    - `help.go` - `HelpSpec`
+  - Responsibilities:
+    - Orchestrate `graphql-query`: parse options -> normalize paths -> load query/variables -> compile schema -> build read capability -> build GraphQL projection -> bind GraphQL document -> load workspace -> execute selected roots.
+    - Enforce input-source contract for `--query` / `--file`, variables JSON sources, operation name, and stdin sentinel `-`.
+    - Return success as `result_state + data` without top-level `schema`.
+    - Return schema compile failures as top-level `error + schema`; return GraphQL validation/binding/read/result failures as top-level `error` without partial `data`.
+    - Use the shared read workspace loader and GraphQL projection source rather than a second workspace engine.
+  - Subpackages:
+    - `graphqlquery/internal/options` - parse query document/variables/operation flags and normalize filesystem paths while treating `-` as stdin.
 
 - `internal/application/commands/query/internal/options`
   - Entrypoints:
@@ -277,21 +353,26 @@ Compact project map for fast entry into the code.
     - Normalize `workspace/schema` paths with `--require-absolute-paths`.
   - Subpackages: none.
 
-- `internal/application/commands/query/internal/workspace`
+- `internal/application/readmodel/workspace`
   - Entrypoint: `loader.go` - `LoadEntities`.
   - Responsibilities:
-    - Deterministically scan `.md` files and parse entity frontmatter/body.
-    - Build full read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.sections/content.raw`).
-    - Use shared read capability directly for schema-known `meta`/`refs`/`sections` sets (no command-local schema re-mapping).
+    - Deterministically scan `.md` files and parse entity frontmatter/body for shared read commands.
+    - Build the command-neutral read-view (`type/id/slug/revision/createdDate/updatedDate/meta/refs/content.sections/content.raw`) consumed by `query` and `graphql-query`.
+    - Use shared read capability directly for schema-known `meta`/`refs`/`sections` sets.
     - Build global `id` index and resolve `refs.<field>` into scalar/array refs with unresolved classification `missing|ambiguous|type_mismatch`; unresolved public refs include `reason`.
     - Distinguish explicit scalar `null` ref (public `null`) from unresolved ref object; where-context skips explicit-null scalar refs and keeps `reason` leaf for unresolved/resolved paths.
     - Materialize where-context as schema-known `meta` (non-ref fields only), `refs`, `content.raw` (full body text), and `content.sections` (schema-known sections only; empty object when absent).
     - Normalize YAML values (`time.Time` -> `YYYY-MM-DD`, numeric scalars -> `float64`) and compute opaque `revision` (`sha256:<hex>`).
     - Return `READ_FAILED` for unknown entity types in workspace and syntactically invalid scalar/array ref values.
-  - Subpackages: none.
+  - Subpackages:
+    - `workspace/internal/loading` - orchestrate scan -> parse -> capability-known view construction -> entity-view result without owning parsing/ref details.
+    - `workspace/internal/documents` - deterministic `.md` scan, file read, frontmatter parse, duplicate-key checks, required built-in fields, section extraction, and `revision` calculation.
+    - `workspace/internal/references` - build global ID index, resolve scalar/array refs, classify unresolved refs, and build public/where ref objects.
+    - `workspace/internal/views` - build schema-known public/where `meta` and `content.sections` maps, normalize scalar/list/map values, and convert section maps for public views.
+    - `workspace/internal/diagnostics` - workspace read standard refs and validation issue detail mapping.
 
-- `internal/application/commands/query/internal/engine`
-  - Entrypoint: `planner.go` - `BuildPlan`.
+- `internal/application/readmodel/engine`
+  - Entrypoint: `engine.go` - `BuildPlan`, `Execute`.
   - Responsibilities:
     - Validate type filters and build ordered active type set used by path validation, where-schema compilation, scoped option validation, and `data` root field order.
     - Validate `--select` against `projection-namespace`, including `refs.<field>.reason` and array-ref leaf restrictions.
@@ -299,7 +380,12 @@ Compact project map for fast entry into the code.
     - Compile `--where` as schema-aware JMESPath expression over query-item schema (`oneOf` over active types) with AST policy checks that allow `content.raw` / `content.sections...`, reject root `content` and unknown `content.*`, and reject `meta.<entityRef>`.
     - Build one `RootPlan` per active entity type, applying global `--limit`/`--offset`/`--sort` defaults and scoped overrides; scoped sort is validated against the singleton scoped entity type and still receives the hidden `id:asc` tail.
     - Execute per-root filter/sort/paginate/project pipeline using root-specific `limit`, `offset`, and `effectiveSort`, then build page metadata (`totalCount`, `returned`, `hasMore`, `nextOffset`, `effectiveSort`).
-  - Subpackages: none.
+  - Subpackages:
+    - `engine/internal/planning` - build ordered active type sets, validate type/scoped options, apply default selects, call where/select/sort builders, and assemble query root plans.
+    - `engine/internal/selection` - validate projection-namespace selectors, enforce scalar/array ref leaf restrictions, build selection trees, and project selected entity maps.
+    - `engine/internal/filtering` - compile schema-aware JMESPath `--where`, enforce AST namespace policy, and build per-active-type query-item schema.
+    - `engine/internal/sorting` - validate filter-namespace sort paths against active read capability and apply deterministic `id:asc` tail.
+    - `engine/internal/execution` - evaluate compiled where plans, call shared readmodel ordering, paginate, project items, and build query response/page metadata.
 
 - `internal/application/commands/help`
   - Entrypoints:
@@ -768,21 +854,21 @@ Compact project map for fast entry into the code.
 
 - `tests/integration`
   - Entrypoints:
-    - `run_cases_test.go` - `TestValidateCases`, `TestQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`, `TestSchemaCases`
+    - `run_cases_test.go` - `TestValidateCases`, `TestQueryCases`, `TestGraphQLHelpCases`, `TestGraphQLQueryCases`, `TestGetCases`, `TestAddCases`, `TestUpdateCases`, `TestDeleteCases`, `TestVersionCases`, `TestSchemaCases`
     - `help_cases_test.go` - `TestHelpGeneralCases`, `TestHelpSchemaRecoveryCases`, `TestHelpErrorCases`, `TestHelpSelectedCases`
     - `global_options_cases_test.go` - `TestGlobalOptionsCases`
     - `delete_multirun_test.go` - `TestDeleteHappy02DryRunMatchesRealRevision`
     - `workspace_lock_test.go` - `TestMutatingCommandsLockConflict`, `TestMutatingCommandsDryRunRespectsWorkspaceLock`
   - Responsibilities:
-    - Run data-first integration cases for `validate`, `query`, `get`, `add`, `update`, `delete`, `version`, `schema` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
+    - Run data-first integration cases for `validate`, `query`, `graphql-help`, `graphql-query`, `get`, `add`, `update`, `delete`, `version`, `schema` from `tests/integration/cases/<command>/<group>/<NNNN_outcome_case-id>`.
     - Run black-box `help` cases for groups `cases/help/10_general`, `cases/help/15_schema_recovery`, `cases/help/20_errors`, including explicit coverage for `help <command> --show-schema-projection` and non-duplication in `help --show-schema-projection`.
     - Run black-box global-config cases (`--config` explicit path, auto-discovery of `cwd/spec-cli.json`, CLI-over-config priority, `INVALID_CONFIG` failures).
     - Run targeted `help` error-path checks (`CAPABILITY_UNSUPPORTED`, `INVALID_ARGS`) through subprocess invocations.
     - Traverse groups/cases deterministically (lexicographic sort on every level).
-    - Validate naming rules `NNNN_ok_*` / `NNNN_err_*` against `expect.exit_code`, `case.json.id`, and `case.json.command`.
+    - Validate naming rules `NNNN_ok_*` / `NNNN_err_*` against `expect.exit_code`, `case.json.id`, and `case.json.command`; JSON response cases use `_json` suffix, while `.txt` response cases are treated as text cases.
     - Delegate shared subprocess/workspace/assert helpers to `tests/integration/internal/harness`.
     - Prepare temporary workspace/schema and execute CLI as subprocess through the integration harness.
-    - Support optional case runtime working directory override (`runtime.cwd`) with `${WORKSPACE}` / `${SCHEMA}` placeholders; default working directory remains repository root.
+    - Support runner placeholders `${WORKSPACE}`, `${SCHEMA}`, and absolute `${CASE}` in case args plus optional `runtime.cwd`; default working directory remains repository root.
     - Keep entrypoint/data-first case traversal and naming validation in `run_cases_test.go`; keep runtime/assert details in `tests/integration/internal/harness`.
     - Compare `exit_code`, `stderr`, and response (`json|text`) with golden expectations.
     - Treat `workspace.in` as optional for `help` cases; create empty workspace when absent.
@@ -801,7 +887,7 @@ Compact project map for fast entry into the code.
     - Cover `add`/`update` array-write contract: `meta.<array_field>` set/replace/unset, `refs.<field>` for `array.items.type=entityRef`, deterministic array-ref diagnostics (`missing|ambiguous|type_mismatch`), and no-partial-write behavior on post-validation failure.
     - Cover explicit projection of built-in `revision` for both `query --select revision` and `get --select revision` with stable opaque tokens in JSON responses.
   - Subpackages:
-    - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, placeholder/path utilities, stderr/response/workspace assertions, permission setup).
+    - `tests/integration/internal/harness` - shared integration test harness (`case.json` loading, subprocess execution, `${WORKSPACE}` / `${SCHEMA}` / `${CASE}` placeholder utilities, stderr/response/workspace assertions, permission setup).
     - `tests/integration/internal/runner` - response normalization and workspace permission adapter used by harness and selected tests.
     - `tests/integration/cases/validate/10_contract/*` - contract scenarios.
     - `tests/integration/cases/validate/20_schema/*` - schema-level scenarios, including `schema.items.refType` constraints for arrays and `required` expressions rejected by static nullable-function checks.
@@ -816,6 +902,14 @@ Compact project map for fast entry into the code.
     - `tests/integration/cases/query/40_sort_pagination/*` - sort and pagination.
     - `tests/integration/cases/query/50_errors/*` - argument/global-option validation failures before compile.
     - `tests/integration/cases/query/60_infra/*` - schema/workspace infra failures plus strict shared-compiler blocking cases (`SCHEMA_*`), including malformed schema-type and const/enum mismatch classification.
+    - `tests/integration/cases/graphql-help/10_catalog/*` - `graphql-help` semantic catalog text output plus full/selected SDL `--schema-only` output from the GraphQL projection.
+    - `tests/integration/cases/graphql-help/20_errors/*` - `graphql-help` capability and argument errors such as explicit `--format json` and unknown `--entity`.
+    - `tests/integration/cases/graphql-query/10_basic/*` - basic `graphql-query` execution using case-root `.graphql` documents, including aliases, enum where filter, string `contains` filter, selected `items`, refs, `totalCount`, `pageInfo`, and repeated root/nested selection merging.
+    - `tests/integration/cases/graphql-query/20_inputs/*` - GraphQL document/variables input sources, including file-backed query documents, inline `--query`, `--variables-file`, `--variables-json`, `--file -`, and variables stdin via `--variables-file -`.
+    - `tests/integration/cases/graphql-query/30_language/*` - GraphQL language/filter subset scenarios: anonymous shorthand without the `query` keyword, operation selection, named fragments, variables, standard `@include` / `@skip`, nested aliases, boolean filter composition, numeric/date comparisons, and exists/notExists filters.
+    - `tests/integration/cases/graphql-query/40_refs_paging/*` - GraphQL read behavior for scalar/array `entityRef` filters/projection, scalar array filters, default sorting, root sort/limit/offset, limit-zero `pageInfo`, unresolved refs, and nullable selected-leaf materialization.
+    - `tests/integration/cases/graphql-query/50_args/*` - GraphQL query argument-source conflicts and absolute-path checks before document/schema/workspace loading.
+    - `tests/integration/cases/graphql-query/60_errors/*` - GraphQL document/variables read failures, validation/binding/projection/runtime errors, operation-name/mutation/subscription/introspection/directive rejection, pagination/sort argument errors, schema compile payload policy, and post-schema workspace read failures without partial `data`.
     - `tests/integration/cases/get/10_contract/*` - `get` contract scenarios.
     - `tests/integration/cases/get/20_select/*` - `get` selector scenarios, including selected-leaf null materialization for missing schema-known `meta.<field>`, `refs.<field>`, and `content.sections.<name>`, sparse aggregate `--select meta`, `array.items.type=entityRef` under `refs.<field>`, and rejection of array-ref leaf selectors `refs.<field>.<leaf>`.
     - `tests/integration/cases/get/30_lookup/*` - `id` lookup scenarios.

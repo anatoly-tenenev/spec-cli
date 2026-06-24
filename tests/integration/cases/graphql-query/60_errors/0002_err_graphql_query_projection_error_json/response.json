@@ -1,0 +1,11 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "GRAPHQL_PROJECTION_ERROR",
+    "message": "entity name is not GraphQL-safe",
+    "exit_code": 4,
+    "details": {
+      "name": "bad-name"
+    }
+  }
+}

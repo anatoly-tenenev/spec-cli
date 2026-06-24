@@ -1,0 +1,9 @@
+{
+  feature {
+    items {
+      id
+      slug
+    }
+    totalCount
+  }
+}

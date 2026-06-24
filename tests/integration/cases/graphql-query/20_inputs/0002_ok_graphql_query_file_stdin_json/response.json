@@ -1,0 +1,17 @@
+{
+  "result_state": "valid",
+  "data": {
+    "service": {
+      "items": [
+        {
+          "id": "SVC-1",
+          "slug": "billing",
+          "meta": {
+            "team": "platform"
+          }
+        }
+      ],
+      "totalCount": 1
+    }
+  }
+}

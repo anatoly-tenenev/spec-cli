@@ -1,0 +1,2 @@
+query FirstOperation { feature { totalCount } }
+query SecondOperation { service { totalCount } }

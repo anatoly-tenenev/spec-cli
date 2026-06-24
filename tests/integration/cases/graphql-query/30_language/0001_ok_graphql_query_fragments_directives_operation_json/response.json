@@ -1,0 +1,34 @@
+{
+  "result_state": "valid",
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "slug": "retry-window",
+          "meta": {
+            "status": "active"
+          },
+          "refs": {
+            "owner": {
+              "id": "SVC-1",
+              "type": "service",
+              "slug": "billing",
+              "resolved": true
+            }
+          },
+          "content": {
+            "sections": {
+              "summary": "Retry window."
+            }
+          }
+        }
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "returned": 1,
+        "hasMore": false
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_60_0004_err_graphql_query_file_missing_json",
+  "description": "graphql-query reports READ_FAILED for missing query file",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "/__spec_cli_tests__/missing-query.graphql"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

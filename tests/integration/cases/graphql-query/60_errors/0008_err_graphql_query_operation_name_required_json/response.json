@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "GraphQL operation name is required when document contains multiple operations"
+  },
+  "result_state": "invalid"
+}

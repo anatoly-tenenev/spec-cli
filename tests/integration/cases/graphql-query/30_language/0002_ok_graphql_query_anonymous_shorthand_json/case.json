@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_30_0002_ok_graphql_query_anonymous_shorthand_json",
+  "description": "graphql-query supports anonymous query shorthand without the query keyword",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

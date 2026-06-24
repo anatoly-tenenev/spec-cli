@@ -39,10 +39,10 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		a.writeError(parseErr)
 		return parseErr.ExitCode
 	}
-	if globalOpts.Format == requests.FormatText && commandName != "help" {
+	if globalOpts.Format == requests.FormatText && commandName != "help" && commandName != "graphql-help" {
 		unsupported := domainerrors.New(
 			domainerrors.CodeCapabilityUnsupported,
-			"text output is supported only for help command",
+			"text output is supported only for help and graphql-help commands",
 			nil,
 		)
 		a.writeError(unsupported)

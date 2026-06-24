@@ -1,0 +1,16 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "meta": {
+            "status": "active",
+            "statusText": "active"
+          }
+        }
+      ]
+    }
+  },
+  "result_state": "valid"
+}

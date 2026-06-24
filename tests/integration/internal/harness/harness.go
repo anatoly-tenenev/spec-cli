@@ -79,6 +79,11 @@ func LoadCase(caseDir string) (Case, error) {
 func RunCase(t *testing.T, caseDir string, testCase Case) {
 	t.Helper()
 
+	casePath, absErr := filepath.Abs(caseDir)
+	if absErr != nil {
+		t.Fatalf("resolve case directory: %v", absErr)
+	}
+
 	tempRoot := t.TempDir()
 	workspacePath := filepath.Join(tempRoot, "workspace")
 	if err := CopyDir(filepath.Join(caseDir, testCase.Workspace.InputDir), workspacePath); err != nil {
@@ -99,8 +104,8 @@ func RunCase(t *testing.T, caseDir string, testCase Case) {
 		t.Fatalf("copy spec.schema.yaml: %v", err)
 	}
 
-	args := ReplacePlaceholders(testCase.Args, workspacePath, schemaPath)
-	runCWD := ReplaceRuntimePlaceholder(testCase.Runtime.CWD, workspacePath, schemaPath)
+	args := ReplacePlaceholdersWithCase(testCase.Args, workspacePath, schemaPath, casePath)
+	runCWD := ReplaceRuntimePlaceholder(testCase.Runtime.CWD, workspacePath, schemaPath, casePath)
 	stdinValue := ""
 	if strings.TrimSpace(testCase.Runtime.StdinFile) != "" {
 		stdinRaw, readErr := os.ReadFile(filepath.Join(caseDir, testCase.Runtime.StdinFile))
@@ -197,12 +202,12 @@ func RunCLIProcessInDir(
 	}, nil
 }
 
-func ReplaceRuntimePlaceholder(raw string, workspace string, schema string) string {
+func ReplaceRuntimePlaceholder(raw string, workspace string, schema string, caseDir string) string {
 	value := strings.TrimSpace(raw)
 	if value == "" {
 		return ""
 	}
-	return ReplacePlaceholders([]string{value}, workspace, schema)[0]
+	return ReplacePlaceholdersWithCase([]string{value}, workspace, schema, caseDir)[0]
 }
 
 func ApplyWorkspacePermissions(workspacePath string, permissions []WorkspacePermission) (func(), error) {
@@ -235,6 +240,12 @@ func AssertResponse(t *testing.T, caseDir string, testCase Case, actualOutput []
 	expectedRaw, err := os.ReadFile(filepath.Join(caseDir, testCase.Expect.ResponseFile))
 	if err != nil {
 		t.Fatalf("read expected response: %v", err)
+	}
+	if strings.HasSuffix(strings.ToLower(testCase.Expect.ResponseFile), ".txt") {
+		if string(actualOutput) != string(expectedRaw) {
+			t.Fatalf("response mismatch:\nexpected:\n%s\nactual:\n%s", string(expectedRaw), string(actualOutput))
+		}
+		return
 	}
 
 	actualValue, err := parseJSON(actualOutput)
@@ -324,9 +335,14 @@ func CollectWorkspaceFiles(root string) (map[string]string, error) {
 }
 
 func ReplacePlaceholders(args []string, workspace string, schema string) []string {
+	return ReplacePlaceholdersWithCase(args, workspace, schema, "")
+}
+
+func ReplacePlaceholdersWithCase(args []string, workspace string, schema string, caseDir string) []string {
 	replacer := strings.NewReplacer(
 		"${WORKSPACE}", workspace,
 		"${SCHEMA}", schema,
+		"${CASE}", caseDir,
 	)
 
 	replaced := make([]string, len(args))
@@ -394,8 +410,14 @@ func ensureCLIBinary() (string, error) {
 		}
 		buildCmd := exec.Command("go", "build", "-o", binPath, "./cmd/spec-cli")
 		buildCmd.Dir = repoRoot
-		goCache := filepath.Join(repoRoot, "tmp", "go-build")
-		goModCache := filepath.Join(repoRoot, "tmp", "go-mod")
+		goCache := os.Getenv("GOCACHE")
+		if strings.TrimSpace(goCache) == "" {
+			goCache = filepath.Join(os.TempDir(), "spec-cli-go-build")
+		}
+		goModCache := os.Getenv("GOMODCACHE")
+		if strings.TrimSpace(goModCache) == "" {
+			goModCache = filepath.Join(os.TempDir(), "spec-cli-go-mod")
+		}
 		if mkErr := os.MkdirAll(goCache, 0o755); mkErr != nil {
 			cliBinaryBuildErr = mkErr
 			return

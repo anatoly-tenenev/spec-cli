@@ -1,0 +1,17 @@
+{
+  "result_state": "invalid",
+  "error": {
+    "code": "INVALID_QUERY_RESULT",
+    "message": "selected non-null field is missing",
+    "exit_code": 1,
+    "details": {
+      "graphql": {
+        "field": "meta.status",
+        "entity": {
+          "type": "feature",
+          "id": "FEAT-1"
+        }
+      }
+    }
+  }
+}

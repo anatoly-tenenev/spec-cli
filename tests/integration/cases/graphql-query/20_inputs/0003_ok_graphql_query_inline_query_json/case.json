@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_20_0003_ok_graphql_query_inline_query_json",
+  "description": "graphql-query reads GraphQL document from --query",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--query",
+    "query { feature { items { id slug } totalCount } }"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "locations": [
+          {
+            "column": 3,
+            "line": 2
+          }
+        ],
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "limit must not exceed 1000"
+  },
+  "result_state": "invalid"
+}

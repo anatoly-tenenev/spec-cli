@@ -1,0 +1,6 @@
+query ActiveByStdinVariables($status: FeatureStatus!) {
+  activeByStdinVariables: feature(where: { meta: { status: { eq: $status } } }) {
+    items { id slug }
+    totalCount
+  }
+}

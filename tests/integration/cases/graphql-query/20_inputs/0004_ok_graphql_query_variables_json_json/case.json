@@ -1,0 +1,25 @@
+{
+  "id": "graphql-query_20_0004_ok_graphql_query_variables_json_json",
+  "description": "graphql-query reads variables from --variables-json",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql",
+    "--variables-json",
+    "{\"status\":\"active\",\"limit\":1,\"offset\":0}"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "owner": {
+              "id": "SVC-MISSING",
+              "resolved": false,
+              "slug": null,
+              "type": "service"
+            }
+          },
+          "slug": "unresolved-owner"
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}

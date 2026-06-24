@@ -1,0 +1,29 @@
+{
+  "result_state": "valid",
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "watchers": [
+              {
+                "id": "TEAM-1",
+                "type": "team",
+                "slug": "platform",
+                "resolved": true
+              },
+              {
+                "id": "SVC-1",
+                "type": "service",
+                "slug": "api",
+                "resolved": true
+              }
+            ]
+          }
+        }
+      ],
+      "totalCount": 1
+    }
+  }
+}

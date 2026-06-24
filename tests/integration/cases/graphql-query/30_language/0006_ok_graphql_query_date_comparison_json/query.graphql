@@ -1,0 +1,6 @@
+query {
+  feature(where: { createdDate: { gte: "2026-01-01", lt: "2026-02-01" } }) {
+    items { id slug createdDate }
+    totalCount
+  }
+}

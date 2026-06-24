@@ -1,0 +1,22 @@
+{
+  "id": "graphql-help_10_0003_ok_graphql_help_schema_only_text",
+  "description": "graphql-help renders full SDL with --schema-only",
+  "command": "graphql-help",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-help",
+    "--schema-only"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

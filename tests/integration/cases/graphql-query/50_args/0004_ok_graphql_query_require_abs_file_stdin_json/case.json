@@ -1,0 +1,27 @@
+{
+  "id": "graphql-query_50_0004_ok_graphql_query_require_abs_file_stdin_json",
+  "description": "graphql-query accepts --file - under --require-absolute-paths",
+  "command": "graphql-query",
+  "args": [
+    "--require-absolute-paths",
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "-"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  },
+  "runtime": {
+    "stdin_file": "query.graphql"
+  }
+}

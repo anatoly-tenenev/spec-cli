@@ -3,7 +3,7 @@ package options
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 

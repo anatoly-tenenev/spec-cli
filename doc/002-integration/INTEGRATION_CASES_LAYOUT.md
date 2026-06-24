@@ -140,10 +140,10 @@ Field rules:
 
 - `command`: one of `validate|query|add|update` (for dedicated global-options suites the command in each case remains the real CLI command, e.g. `validate`).
 - `args`: CLI arguments without the binary name.
-- `${WORKSPACE}` and `${SCHEMA}` are runner placeholders.
+- `${WORKSPACE}`, `${SCHEMA}`, and `${CASE}` are runner placeholders. `${CASE}` resolves to the absolute current case directory.
 - `expect.exit_code`: expected process exit code.
 - `expect.response_file`: path to the expected response file (usually `response.json`).
-- `runtime.cwd` (optional): process working directory for the case; supports `${WORKSPACE}` and `${SCHEMA}` placeholders; default is repository root.
+- `runtime.cwd` (optional): process working directory for the case; supports `${WORKSPACE}`, `${SCHEMA}`, and `${CASE}` placeholders; default is repository root.
 - `workspace.assert_output`:
   - `false` for read-only commands (`validate`, `query`),
   - `true` for mutating commands (`add`, `update`).

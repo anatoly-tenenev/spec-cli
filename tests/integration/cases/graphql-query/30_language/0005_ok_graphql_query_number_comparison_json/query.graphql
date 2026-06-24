@@ -1,0 +1,6 @@
+query {
+  feature(where: { meta: { score: { gt: 10, lte: 20 } } }) {
+    items { id slug meta { score } }
+    totalCount
+  }
+}

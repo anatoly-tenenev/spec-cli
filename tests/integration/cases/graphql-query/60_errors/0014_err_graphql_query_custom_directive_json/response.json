@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "locations": [
+          {
+            "column": 12,
+            "line": 2
+          }
+        ],
+        "phase": "validation"
+      }
+    },
+    "exit_code": 2,
+    "message": "invalid GraphQL query"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,6 @@
+query {
+  feature {
+    items { id slug }
+    totalCount
+  }
+}

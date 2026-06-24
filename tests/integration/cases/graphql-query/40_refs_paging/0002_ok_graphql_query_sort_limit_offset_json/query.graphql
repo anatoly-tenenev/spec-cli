@@ -1,0 +1,16 @@
+query {
+  feature(sort: [{ field: slug, direction: desc }], limit: 1, offset: 1) {
+    items {
+      id
+      slug
+    }
+    totalCount
+    pageInfo {
+      limit
+      offset
+      returned
+      hasMore
+      nextOffset
+    }
+  }
+}

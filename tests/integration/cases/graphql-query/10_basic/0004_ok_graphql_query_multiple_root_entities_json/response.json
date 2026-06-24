@@ -1,0 +1,33 @@
+{
+  "result_state": "valid",
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "slug": "retry-window"
+        }
+      ],
+      "totalCount": 1
+    },
+    "service": {
+      "items": [
+        {
+          "id": "SVC-1",
+          "slug": "billing",
+          "meta": {
+            "team": "platform"
+          }
+        },
+        {
+          "id": "SVC-2",
+          "slug": "notifications",
+          "meta": {
+            "team": "growth"
+          }
+        }
+      ],
+      "totalCount": 2
+    }
+  }
+}

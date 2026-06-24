@@ -1,0 +1,21 @@
+{
+  "result_state": "valid",
+  "data": {
+    "activeByVariable": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "slug": "retry-window"
+        }
+      ],
+      "totalCount": 1,
+      "pageInfo": {
+        "limit": 1,
+        "offset": 0,
+        "returned": 1,
+        "hasMore": false,
+        "nextOffset": null
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_60_0021_err_graphql_query_schema_invalid_json",
+  "description": "graphql-query includes schema payload for invalid schema",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--query",
+    "query { feature { items { id slug } totalCount } }"
+  ],
+  "expect": {
+    "exit_code": 4,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

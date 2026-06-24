@@ -1,0 +1,3 @@
+query {
+  feature @custom { totalCount }
+}

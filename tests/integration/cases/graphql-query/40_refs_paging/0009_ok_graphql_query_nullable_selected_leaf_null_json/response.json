@@ -1,0 +1,24 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "content": {
+            "sections": {
+              "details": null
+            }
+          },
+          "id": "FEAT-2",
+          "meta": {
+            "priority": null
+          },
+          "refs": {
+            "owner": null
+          }
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}

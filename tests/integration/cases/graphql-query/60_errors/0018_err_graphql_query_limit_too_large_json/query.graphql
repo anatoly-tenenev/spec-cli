@@ -1,0 +1,3 @@
+query {
+  feature(limit: 1001) { totalCount }
+}

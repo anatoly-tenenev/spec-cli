@@ -1,0 +1,18 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "slug": "retry-window"
+        },
+        {
+          "id": "FEAT-2",
+          "slug": "draft-mode"
+        }
+      ],
+      "totalCount": 2
+    }
+  },
+  "result_state": "valid"
+}

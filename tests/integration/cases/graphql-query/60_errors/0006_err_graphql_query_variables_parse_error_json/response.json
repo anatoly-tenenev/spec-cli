@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "reason": "unexpected end of JSON input"
+    },
+    "exit_code": 2,
+    "message": "GraphQL variables must be a JSON object"
+  },
+  "result_state": "invalid"
+}

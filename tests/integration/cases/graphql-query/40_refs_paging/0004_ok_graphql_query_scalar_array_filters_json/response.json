@@ -1,0 +1,20 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "meta": {
+            "tags": [
+              "core",
+              "payments"
+            ]
+          },
+          "slug": "retry-window"
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}

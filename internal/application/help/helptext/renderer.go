@@ -46,6 +46,7 @@ func RenderGeneral(
 		renderReferenceValueModelSection(),
 		renderGlobalOptionsSection(globalOptions),
 		renderCommandsSection(resolvedCommands),
+		renderGraphQLFlowSection(),
 		renderCommandDetailsSection(resolvedCommands),
 	)
 	return strings.Join(sections, "\n\n") + "\n"
@@ -116,6 +117,15 @@ func buildSchemaDerivedExamples(commandName string, loaded *helpschema.LoadedDat
 		return buildValidateExamples(loaded)
 	case "query":
 		return buildQueryExamples(loaded)
+	case "graphql-help":
+		return []string{
+			"spec-cli graphql-help",
+			"spec-cli graphql-help --schema-only --entity <entity>",
+		}
+	case "graphql-query":
+		return []string{
+			"spec-cli graphql-query --file <query.graphql>",
+		}
 	case "get":
 		return buildGetExamples(loaded)
 	case "add":
@@ -288,6 +298,16 @@ func renderReferenceValueModelSection() string {
 		"  Write-side form:",
 		"    - add/update accept target ids for refs.<ref_field>",
 		"    - array ref fields accept arrays of target ids",
+	}
+	return strings.Join(lines, "\n")
+}
+
+func renderGraphQLFlowSection() string {
+	lines := []string{
+		"For GraphQL",
+		"  1. Run `spec-cli graphql-help`.",
+		"  2. Run `spec-cli graphql-help --schema-only --entity <entity>`.",
+		"  3. Run `spec-cli graphql-query --file <query.graphql>`.",
 	}
 	return strings.Join(lines, "\n")
 }

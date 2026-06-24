@@ -1,0 +1,20 @@
+query ActiveByVariable($status: FeatureStatus!, $limit: Int!, $offset: Int!) {
+  activeByVariable: feature(
+    where: { meta: { status: { eq: $status } } }
+    limit: $limit
+    offset: $offset
+  ) {
+    items {
+      id
+      slug
+    }
+    totalCount
+    pageInfo {
+      limit
+      offset
+      returned
+      hasMore
+      nextOffset
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "locations": [
+          {
+            "column": 3,
+            "line": 2
+          }
+        ],
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "limit and offset must be non-negative"
+  },
+  "result_state": "invalid"
+}

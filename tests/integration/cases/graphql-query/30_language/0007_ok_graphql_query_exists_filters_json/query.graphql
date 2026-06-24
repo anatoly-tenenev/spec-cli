@@ -1,0 +1,11 @@
+query {
+  feature(
+    where: {
+      meta: { priority: { exists: true } }
+      content: { sections: { details: { notExists: true } } }
+    }
+  ) {
+    items { id slug meta { priority } content { sections { details } } }
+    totalCount
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "graphql-query_40_0003_ok_graphql_query_scalar_ref_where_id_json",
+  "description": "graphql-query filters scalar entityRef by refs.<field>.id",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

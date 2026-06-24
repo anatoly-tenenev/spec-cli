@@ -1,0 +1,10 @@
+query {
+  feature {
+    items {
+      id
+      meta {
+        status
+      }
+    }
+  }
+}

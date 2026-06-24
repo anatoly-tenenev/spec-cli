@@ -1,0 +1,26 @@
+query {
+  feature {
+    items {
+      id
+      meta {
+        status
+      }
+    }
+  }
+  feature {
+    items {
+      slug
+      meta {
+        lifecycle: status
+      }
+    }
+    totalCount
+    pageInfo {
+      limit
+      offset
+      returned
+      hasMore
+      nextOffset
+    }
+  }
+}

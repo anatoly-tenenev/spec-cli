@@ -1,0 +1,27 @@
+query {
+  activeFeatures: feature(where: { meta: { status: { eq: active } } }) {
+    items {
+      id
+      slug
+      meta {
+        status
+      }
+      refs {
+        owner {
+          id
+          type
+          slug
+          resolved
+        }
+      }
+    }
+    totalCount
+    pageInfo {
+      limit
+      offset
+      returned
+      hasMore
+      nextOffset
+    }
+  }
+}

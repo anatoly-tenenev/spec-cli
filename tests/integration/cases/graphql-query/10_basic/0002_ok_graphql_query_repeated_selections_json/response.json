@@ -1,0 +1,33 @@
+{
+  "result_state": "valid",
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "slug": "retry-window",
+          "meta": {
+            "status": "active",
+            "lifecycle": "active"
+          }
+        },
+        {
+          "id": "FEAT-2",
+          "slug": "draft-mode",
+          "meta": {
+            "status": "draft",
+            "lifecycle": "draft"
+          }
+        }
+      ],
+      "totalCount": 2,
+      "pageInfo": {
+        "limit": 100,
+        "offset": 0,
+        "returned": 2,
+        "hasMore": false,
+        "nextOffset": null
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+query {
+  feature(limit: 0) {
+    items { id slug }
+    totalCount
+    pageInfo { limit offset returned hasMore nextOffset }
+  }
+}

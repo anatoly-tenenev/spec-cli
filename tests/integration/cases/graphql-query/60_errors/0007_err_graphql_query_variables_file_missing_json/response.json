@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "reason": "open /__spec_cli_tests__/missing-variables.json: no such file or directory"
+    },
+    "exit_code": 3,
+    "message": "failed to read GraphQL variables"
+  },
+  "result_state": "invalid"
+}

@@ -1,0 +1,14 @@
+query {
+  feature(
+    where: {
+      and: [
+        { meta: { status: { eq: active } } }
+        { or: [{ slug: { eq: "retry-window" } }, { slug: { eq: "missing" } }] }
+        { not: { slug: { eq: "draft-mode" } } }
+      ]
+    }
+  ) {
+    items { id slug }
+    totalCount
+  }
+}

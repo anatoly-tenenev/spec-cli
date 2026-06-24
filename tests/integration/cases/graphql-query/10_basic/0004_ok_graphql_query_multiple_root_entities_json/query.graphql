@@ -1,0 +1,19 @@
+query {
+  feature(where: { meta: { status: { eq: active } } }) {
+    items {
+      id
+      slug
+    }
+    totalCount
+  }
+  service {
+    items {
+      id
+      slug
+      meta {
+        team
+      }
+    }
+    totalCount
+  }
+}

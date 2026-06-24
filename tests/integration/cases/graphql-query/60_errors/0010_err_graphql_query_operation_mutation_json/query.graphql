@@ -1,0 +1,2 @@
+query ReadFeature { feature { totalCount } }
+mutation TryMutation { __typename }

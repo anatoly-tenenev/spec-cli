@@ -1,0 +1,25 @@
+{
+  "id": "graphql-query_50_0006_err_graphql_query_two_stdin_sources_json",
+  "description": "graphql-query rejects two stdin input sources",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "-",
+    "--variables-file",
+    "-"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

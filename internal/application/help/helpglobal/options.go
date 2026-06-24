@@ -22,7 +22,7 @@ func Options() []helpmodel.GlobalOptionSpec {
 		{
 			Name:        "--format",
 			ValueSyntax: "<json|text>",
-			Description: `optional; default "json"; help supports only text output; explicit --format json for help returns CAPABILITY_UNSUPPORTED`,
+			Description: `optional; default "json"; help and graphql-help support text output; explicit --format json for help/graphql-help returns CAPABILITY_UNSUPPORTED`,
 		},
 		{
 			Name:        "--require-absolute-paths",

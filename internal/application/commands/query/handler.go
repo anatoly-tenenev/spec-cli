@@ -3,10 +3,10 @@ package query
 import (
 	"context"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/engine"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/options"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"

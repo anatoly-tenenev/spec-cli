@@ -1,0 +1,143 @@
+"""Date string in YYYY-MM-DD format."""
+scalar Date
+
+directive @requiredWhen(expr: String!) on FIELD_DEFINITION
+directive @arrayConstraints(minItems: Int, maxItems: Int, uniqueItems: Boolean) on FIELD_DEFINITION
+
+enum SortDirection {
+  asc
+  desc
+}
+
+input StringFilter { eq: String neq: String in: [String!] notIn: [String!] contains: String exists: Boolean notExists: Boolean }
+input IDFilter { eq: ID neq: ID in: [ID!] notIn: [ID!] exists: Boolean notExists: Boolean }
+input DateFilter { eq: Date neq: Date in: [Date!] notIn: [Date!] gt: Date gte: Date lt: Date lte: Date exists: Boolean notExists: Boolean }
+input IntFilter { eq: Int neq: Int in: [Int!] notIn: [Int!] gt: Int gte: Int lt: Int lte: Int exists: Boolean notExists: Boolean }
+input FloatFilter { eq: Float neq: Float in: [Float!] notIn: [Float!] gt: Float gte: Float lt: Float lte: Float exists: Boolean notExists: Boolean }
+input BooleanFilter { eq: Boolean neq: Boolean exists: Boolean notExists: Boolean }
+
+input StringArrayFilter { exists: Boolean notExists: Boolean contains: String any: StringFilter all: StringFilter none: StringFilter }
+input IDArrayFilter { exists: Boolean notExists: Boolean contains: ID any: IDFilter all: IDFilter none: IDFilter }
+input DateArrayFilter { exists: Boolean notExists: Boolean contains: Date any: DateFilter all: DateFilter none: DateFilter }
+input IntArrayFilter { exists: Boolean notExists: Boolean contains: Int any: IntFilter all: IntFilter none: IntFilter }
+input FloatArrayFilter { exists: Boolean notExists: Boolean contains: Float any: FloatFilter all: FloatFilter none: FloatFilter }
+input BooleanArrayFilter { exists: Boolean notExists: Boolean contains: Boolean any: BooleanFilter all: BooleanFilter none: BooleanFilter }
+enum EntityType {
+  service
+  feature
+}
+
+type Query {
+  """Product feature specification"""
+  feature(where: FeatureWhere, sort: [FeatureSort!], limit: Int = 100, offset: Int = 0): FeatureList!
+}
+
+type PageInfo {
+  limit: Int!
+  offset: Int!
+  returned: Int!
+  hasMore: Boolean!
+  nextOffset: Int
+}
+enum FeatureStatus {
+  draft
+  active
+}
+
+input FeatureStatusFilter { eq: FeatureStatus neq: FeatureStatus in: [FeatureStatus!] notIn: [FeatureStatus!] exists: Boolean notExists: Boolean }
+
+enum FeatureOwnerRefType {
+  service
+}
+
+input FeatureOwnerRefTypeFilter { eq: FeatureOwnerRefType neq: FeatureOwnerRefType in: [FeatureOwnerRefType!] notIn: [FeatureOwnerRefType!] exists: Boolean notExists: Boolean }
+
+"""Targets: service"""
+type FeatureOwnerRef {
+  id: ID!
+  resolved: Boolean!
+  type: FeatureOwnerRefType!
+  slug: String!
+}
+
+input FeatureOwnerRefMatch { id: ID type: FeatureOwnerRefType slug: String }
+input FeatureOwnerRefWhere { id: IDFilter resolved: BooleanFilter type: FeatureOwnerRefTypeFilter slug: StringFilter }
+
+"""Product feature specification"""
+type Feature {
+  type: EntityType!
+  id: ID!
+  slug: String!
+  revision: String!
+  createdDate: Date!
+  updatedDate: Date!
+  meta: FeatureMeta
+  refs: FeatureRefs
+  content: FeatureContent
+}
+
+type FeatureList { items: [Feature!]! totalCount: Int! pageInfo: PageInfo! }
+
+type FeatureMeta {
+  status: FeatureStatus!
+  reviewer: String @requiredWhen(expr: "meta.status == 'active'")
+}
+
+type FeatureRefs {
+  owner: FeatureOwnerRef @requiredWhen(expr: "meta.status == 'active'")
+}
+
+type FeatureContent { raw: String sections: FeatureSections }
+
+type FeatureSections {
+  summary: String!
+  rolloutPlan: String @requiredWhen(expr: "meta.status == 'active'")
+}
+
+input FeatureWhere {
+  and: [FeatureWhere!]
+  or: [FeatureWhere!]
+  not: FeatureWhere
+  id: IDFilter
+  slug: StringFilter
+  revision: StringFilter
+  createdDate: DateFilter
+  updatedDate: DateFilter
+  meta: FeatureMetaWhere
+  refs: FeatureRefsWhere
+  content: FeatureContentWhere
+}
+
+input FeatureMetaWhere {
+  status: FeatureStatusFilter
+  reviewer: StringFilter
+}
+
+input FeatureRefsWhere {
+  owner: FeatureOwnerRefWhere
+}
+
+input FeatureContentWhere { raw: StringFilter sections: FeatureSectionsWhere }
+
+input FeatureSectionsWhere {
+  summary: StringFilter
+  rolloutPlan: StringFilter
+}
+
+enum FeatureSortField {
+  id
+  slug
+  revision
+  createdDate
+  updatedDate
+  meta_status
+  meta_reviewer
+  refs_owner_id
+  refs_owner_type
+  refs_owner_slug
+  refs_owner_resolved
+  content_sections_summary
+  content_sections_rolloutPlan
+}
+
+input FeatureSort { field: FeatureSortField! direction: SortDirection = asc }

@@ -1,0 +1,43 @@
+query FeatureWithFragments($includeRefs: Boolean!, $skipSummary: Boolean!) {
+  feature(where: { meta: { status: { eq: active } } }) {
+    items {
+      ...FeatureIdentity
+      refs @include(if: $includeRefs) {
+        owner {
+          id
+          type
+          slug
+          resolved
+        }
+      }
+      content @skip(if: $skipSummary) {
+        sections {
+          summary
+        }
+      }
+    }
+    ...FeatureResultStats
+  }
+}
+
+query DraftOnly {
+  feature(where: { meta: { status: { eq: draft } } }) {
+    totalCount
+  }
+}
+
+fragment FeatureIdentity on Feature {
+  id
+  slug
+  meta {
+    status
+  }
+}
+
+fragment FeatureResultStats on FeatureList {
+  totalCount
+  pageInfo {
+    returned
+    hasMore
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "graphql-query_20_0002_ok_graphql_query_file_stdin_json",
+  "description": "graphql-query reads GraphQL document from stdin when --file is -",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "-"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  },
+  "runtime": {
+    "stdin_file": "query.graphql"
+  }
+}

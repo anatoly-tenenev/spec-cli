@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": "INVALID_QUERY",
+    "details": {
+      "graphql": {
+        "field": "missing",
+        "phase": "binding"
+      }
+    },
+    "exit_code": 2,
+    "message": "unknown sort field"
+  },
+  "result_state": "invalid"
+}

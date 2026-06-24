@@ -1,0 +1,27 @@
+{
+  "id": "graphql-query_50_0005_err_graphql_query_variables_sources_conflict_json",
+  "description": "graphql-query rejects --variables-json and --variables-file together",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql",
+    "--variables-json",
+    "{}",
+    "--variables-file",
+    "${CASE}/variables.json"
+  ],
+  "expect": {
+    "exit_code": 2,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "graphql-query_60_0007_err_graphql_query_variables_file_missing_json",
+  "description": "graphql-query reports READ_FAILED for missing variables file",
+  "command": "graphql-query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-query",
+    "--file",
+    "${CASE}/query.graphql",
+    "--variables-file",
+    "/__spec_cli_tests__/missing-variables.json"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

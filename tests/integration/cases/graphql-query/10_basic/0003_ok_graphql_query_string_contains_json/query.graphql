@@ -1,0 +1,12 @@
+query {
+  service(where: { meta: { team: { contains: "plat" } } }) {
+    items {
+      id
+      slug
+      meta {
+        team
+      }
+    }
+    totalCount
+  }
+}

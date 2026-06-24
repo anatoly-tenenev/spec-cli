@@ -1,0 +1,38 @@
+{
+  "error": {
+    "code": "SCHEMA_INVALID",
+    "exit_code": 4,
+    "message": "schema contains validation errors"
+  },
+  "result_state": "invalid",
+  "schema": {
+    "issues": [
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.entity.id_prefix_required",
+        "message": "idPrefix is required",
+        "path": "schema.entity.feature.idPrefix"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.expression.invalid",
+        "message": "expression must have form ${expr}",
+        "path": "schema.entity.feature.meta.fields.priority.required"
+      },
+      {
+        "level": "error",
+        "class": "SchemaError",
+        "code": "schema.entity.path_template_required",
+        "message": "pathTemplate is required",
+        "path": "schema.entity.feature.pathTemplate"
+      }
+    ],
+    "summary": {
+      "errors": 3,
+      "warnings": 0
+    },
+    "valid": false
+  }
+}

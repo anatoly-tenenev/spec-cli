@@ -1,0 +1,32 @@
+version: "0.0.7"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        priority:
+          required: false
+          schema:
+            type: string
+        owner:
+          required: false
+          schema:
+            type: entityRef
+            refType: service
+        watchers:
+          required: false
+          schema:
+            type: array
+            items:
+              type: entityRef
+              refType: service
+    content:
+      sections:
+        details:
+          required: false
+          description: Optional details

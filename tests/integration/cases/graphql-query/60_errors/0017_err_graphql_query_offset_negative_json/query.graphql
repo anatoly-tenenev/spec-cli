@@ -1,0 +1,3 @@
+query {
+  feature(offset: -1) { totalCount }
+}

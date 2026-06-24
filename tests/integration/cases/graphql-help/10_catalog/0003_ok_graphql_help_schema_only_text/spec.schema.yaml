@@ -1,0 +1,37 @@
+version: "0.0.7"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/{slug}.md"
+    meta:
+      fields:
+        team:
+          schema:
+            type: string
+
+  feature:
+    description: Product feature specification
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string
+            enum: [draft, active]
+        reviewer:
+          required: "${meta.status == 'active'}"
+          schema:
+            type: string
+        owner:
+          required: "${meta.status == 'active'}"
+          schema:
+            type: entityRef
+            refType: service
+    content:
+      sections:
+        summary:
+          required: true
+        rolloutPlan:
+          required: "${meta.status == 'active'}"

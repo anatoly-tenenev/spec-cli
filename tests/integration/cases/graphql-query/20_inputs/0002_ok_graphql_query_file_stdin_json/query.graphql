@@ -1,0 +1,12 @@
+query {
+  service {
+    items {
+      id
+      slug
+      meta {
+        team
+      }
+    }
+    totalCount
+  }
+}

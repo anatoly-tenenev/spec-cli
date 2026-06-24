@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "exit_code": 2,
+    "message": "--file - and --variables-file - cannot both read stdin"
+  },
+  "result_state": "invalid"
+}

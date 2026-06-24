@@ -1,0 +1,21 @@
+{
+  "id": "graphql-help_10_0001_ok_graphql_help_catalog",
+  "description": "graphql-help renders semantic catalog text",
+  "command": "graphql-help",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "graphql-help"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.txt"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

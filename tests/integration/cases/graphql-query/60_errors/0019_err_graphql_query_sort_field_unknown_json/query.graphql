@@ -1,0 +1,3 @@
+query SortByVariable($field: FeatureSortField!) {
+  feature(sort: [{ field: $field }]) { totalCount }
+}

@@ -1,0 +1,11 @@
+version: "0.0.7"
+entity:
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/{slug}.md"
+    meta:
+      fields:
+        status:
+          required: true
+          schema:
+            type: string

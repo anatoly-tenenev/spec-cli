@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_ARGS",
+    "details": {
+      "entity_type": "missing"
+    },
+    "exit_code": 2,
+    "message": "unknown GraphQL entity"
+  },
+  "result_state": "invalid"
+}

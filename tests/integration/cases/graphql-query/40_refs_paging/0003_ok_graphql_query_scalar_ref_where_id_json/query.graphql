@@ -1,0 +1,6 @@
+query {
+  feature(where: { refs: { owner: { id: { eq: "SVC-1" } } } }) {
+    items { id slug refs { owner { id type slug resolved } } }
+    totalCount
+  }
+}

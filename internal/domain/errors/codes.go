@@ -24,6 +24,8 @@ const (
 	CodeRevisionUnavailable    Code = "REVISION_UNAVAILABLE"
 	CodeDeleteBlockedByRefs    Code = "DELETE_BLOCKED_BY_REFERENCES"
 	CodeInvalidQuery           Code = "INVALID_QUERY"
+	CodeInvalidQueryResult     Code = "INVALID_QUERY_RESULT"
+	CodeGraphQLProjectionError Code = "GRAPHQL_PROJECTION_ERROR"
 	CodeReadFailed             Code = "READ_FAILED"
 	CodeWriteFailed            Code = "WRITE_FAILED"
 	CodeInternalError          Code = "INTERNAL_ERROR"
@@ -60,7 +62,7 @@ func ExitCodeFor(code Code) int {
 		return 2
 	case CodeReadFailed, CodeWriteFailed:
 		return 3
-	case CodeSchemaNotFound, CodeSchemaReadError, CodeSchemaParseError, CodeSchemaInvalid, CodeSchemaProjectionError:
+	case CodeSchemaNotFound, CodeSchemaReadError, CodeSchemaParseError, CodeSchemaInvalid, CodeSchemaProjectionError, CodeGraphQLProjectionError:
 		return 4
 	case CodeInternalError:
 		return 5

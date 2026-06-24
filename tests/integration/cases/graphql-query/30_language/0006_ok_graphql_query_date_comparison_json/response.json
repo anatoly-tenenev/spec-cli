@@ -1,0 +1,15 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "createdDate": "2026-01-10",
+          "id": "FEAT-1",
+          "slug": "retry-window"
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}

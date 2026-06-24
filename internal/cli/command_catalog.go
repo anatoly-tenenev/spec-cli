@@ -7,6 +7,8 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlhelp"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlquery"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/help"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query"
 	schemacmd "github.com/anatoly-tenenev/spec-cli/internal/application/commands/schema"
@@ -21,6 +23,8 @@ var appCommandCatalog = helpmodel.MustCatalog([]helpmodel.CommandSpec{
 	schemacmd.HelpSpec(),
 	validate.HelpSpec(),
 	query.HelpSpec(),
+	graphqlhelp.HelpSpec(),
+	graphqlquery.HelpSpec(),
 	get.HelpSpec(),
 	add.HelpSpec(),
 	update.HelpSpec(),
@@ -45,6 +49,8 @@ func registerCommandHandlers(bus *commandbus.Bus, now func() time.Time) {
 	bus.Register("help", help.NewHandler(catalog))
 	bus.Register("schema", schemacmd.NewHandler())
 	bus.Register("query", query.NewHandler())
+	bus.Register("graphql-help", graphqlhelp.NewHandler())
+	bus.Register("graphql-query", graphqlquery.NewHandler())
 	bus.Register("get", get.NewHandler())
 	bus.Register("add", add.NewHandler(now))
 	bus.Register("update", update.NewHandler(now))

@@ -1,0 +1,30 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1",
+          "refs": {
+            "watchers": [
+              {
+                "id": "SVC-1",
+                "resolved": true,
+                "slug": "billing",
+                "type": "service"
+              },
+              {
+                "id": "SVC-MISSING",
+                "resolved": false,
+                "slug": null,
+                "type": "service"
+              }
+            ]
+          },
+          "slug": "unresolved-owner"
+        }
+      ],
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}
