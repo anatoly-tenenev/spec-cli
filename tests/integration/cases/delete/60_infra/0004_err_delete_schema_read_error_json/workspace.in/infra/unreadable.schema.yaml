@@ -2,4 +2,4 @@ version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}/index.md"
+    pathTemplate: "services/${slug}/index.md"

@@ -2,11 +2,11 @@ version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
 
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         priority:

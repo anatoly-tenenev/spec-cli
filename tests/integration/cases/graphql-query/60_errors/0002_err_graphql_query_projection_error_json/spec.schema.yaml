@@ -2,4 +2,4 @@ version: "0.0.7"
 entity:
   bad-name:
     idPrefix: BAD
-    pathTemplate: "bad/{slug}.md"
+    pathTemplate: "bad/${slug}.md"

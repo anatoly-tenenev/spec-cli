@@ -395,12 +395,41 @@ func parsePathCaseFromValues(
 	}
 }
 
+// checkLegacyPlaceholders reports whether the template was rejected for using
+// bare {path} placeholders instead of ${expr}, appending the diagnostic.
+func checkLegacyPlaceholders(use string, path string, issues *[]diagnostics.Issue) bool {
+	containsLegacy, legacyErr := schemaexpressions.ContainsLegacyPlaceholder(use)
+	if legacyErr != nil {
+		shared.AddError(
+			issues,
+			normalizedExpressionCode(legacyErr, "schema.path_template.use_invalid"),
+			fmt.Sprintf("invalid pathTemplate.use interpolation: %s", legacyErr.Message),
+			path,
+		)
+		return true
+	}
+	if containsLegacy {
+		shared.AddError(
+			issues,
+			"schema.path_template.use_legacy_placeholder",
+			"pathTemplate.use must use ${expr} interpolation, legacy {path} placeholders are not supported",
+			path,
+		)
+		return true
+	}
+	return false
+}
+
 func compileUseTemplate(
 	use string,
 	path string,
 	engine *schemaexpressions.Engine,
 	issues *[]diagnostics.Issue,
 ) *schemaexpressions.CompiledTemplate {
+	if legacyErr := checkLegacyPlaceholders(use, path, issues); legacyErr {
+		return nil
+	}
+
 	if engine == nil {
 		return shared.CompileTemplate(use, path, issues)
 	}

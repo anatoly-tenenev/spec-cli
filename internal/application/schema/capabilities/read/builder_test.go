@@ -14,7 +14,7 @@ func TestBuild_ProjectsReadSemanticsAndNormalizesRefs(t *testing.T) {
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
     meta:
       fields:
         status:
@@ -51,7 +51,7 @@ entity:
           required: "${meta.status == 'active'}"
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         title:
@@ -141,7 +141,7 @@ func TestBuild_DeterministicProjection(t *testing.T) {
 entity:
   zeta:
     idPrefix: ZETA
-    pathTemplate: "zeta/{slug}.md"
+    pathTemplate: "zeta/${slug}.md"
     meta:
       fields:
         target:
@@ -149,7 +149,7 @@ entity:
             type: entityRef
   alpha:
     idPrefix: ALPHA
-    pathTemplate: "alpha/{slug}.md"
+    pathTemplate: "alpha/${slug}.md"
     meta:
       fields:
         title:
@@ -171,7 +171,7 @@ func TestBuild_ProjectsOnlyStaticLiteralConstraints(t *testing.T) {
 entity:
   doc:
     idPrefix: DOC
-    pathTemplate: "docs/{slug}.md"
+    pathTemplate: "docs/${slug}.md"
     meta:
       fields:
         dynamicConst:

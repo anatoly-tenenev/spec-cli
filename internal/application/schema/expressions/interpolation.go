@@ -15,8 +15,39 @@ type TemplatePart struct {
 	Expression *CompiledExpression
 }
 
-func ContainsInterpolation(value string) bool {
-	return strings.Contains(value, "${")
+// ContainsLegacyPlaceholder reports whether a template mixes in bare {path}
+// placeholders from the pre-JMESPath template syntax. Those look close enough
+// to ${expr} that a typo passes unnoticed and ends up in the rendered value.
+func ContainsLegacyPlaceholder(raw string) (bool, *CompileError) {
+	cursor := 0
+	for cursor < len(raw) {
+		relativeStart := strings.Index(raw[cursor:], "${")
+		if relativeStart < 0 {
+			return literalContainsBraces(raw[cursor:]), nil
+		}
+
+		start := cursor + relativeStart
+		if literalContainsBraces(raw[cursor:start]) {
+			return true, nil
+		}
+
+		exprEnd, parseErr := findInterpolationEnd(raw, start+2)
+		if parseErr != nil {
+			return false, &CompileError{
+				Code:       "schema.interpolation.syntax_error",
+				Message:    parseErr.Error(),
+				Expression: raw,
+				Offset:     start,
+			}
+		}
+		cursor = exprEnd + 1
+	}
+
+	return false, nil
+}
+
+func literalContainsBraces(value string) bool {
+	return strings.Contains(value, "{") || strings.Contains(value, "}")
 }
 
 func CompileScalarInterpolation(raw string, engine *Engine) (*CompiledExpression, *CompileError) {

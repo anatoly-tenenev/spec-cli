@@ -2,15 +2,15 @@ version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
 
   team:
     idPrefix: TEAM
-    pathTemplate: "teams/{slug}.md"
+    pathTemplate: "teams/${slug}.md"
 
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         status:

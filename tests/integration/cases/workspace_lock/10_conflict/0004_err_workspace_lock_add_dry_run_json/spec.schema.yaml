@@ -2,7 +2,7 @@ version: "0.0.7"
 entity:
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}/index.md"
+    pathTemplate: "services/${slug}/index.md"
     meta:
       fields:
         owner:
@@ -24,8 +24,8 @@ entity:
       cases:
         - when:
             exists: refs.container.dirPath
-          use: "{refs.container.dirPath}/features/{slug}.md"
-        - use: "features/{slug}.md"
+          use: "${refs.container.dirPath}/features/${slug}.md"
+        - use: "features/${slug}.md"
     meta:
       fields:
         status:
@@ -68,7 +68,7 @@ entity:
           title: "Implementation"
   note:
     idPrefix: NOTE
-    pathTemplate: "notes/{slug}.md"
+    pathTemplate: "notes/${slug}.md"
     meta:
       fields:
         title:

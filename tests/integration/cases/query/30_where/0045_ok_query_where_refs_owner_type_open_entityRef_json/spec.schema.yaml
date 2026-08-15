@@ -2,11 +2,11 @@ version: "0.0.7"
 entity:
   team:
     idPrefix: TEAM
-    pathTemplate: "teams/{slug}.md"
+    pathTemplate: "teams/${slug}.md"
 
   feature:
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         owner:

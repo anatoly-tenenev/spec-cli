@@ -719,7 +719,7 @@ entity:
   feature:
     description: Feature specifications
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         status:
@@ -755,7 +755,7 @@ entity:
           title: Summary
   service:
     idPrefix: SVC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
     meta:
       fields:
         tier:

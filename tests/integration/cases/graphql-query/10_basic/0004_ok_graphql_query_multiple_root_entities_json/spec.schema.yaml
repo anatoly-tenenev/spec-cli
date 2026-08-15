@@ -3,7 +3,7 @@ entity:
   service:
     description: Service specification
     idPrefix: SVC
-    pathTemplate: "services/{slug}.md"
+    pathTemplate: "services/${slug}.md"
     meta:
       fields:
         team:
@@ -14,7 +14,7 @@ entity:
   feature:
     description: Product feature specification
     idPrefix: FEAT
-    pathTemplate: "features/{slug}.md"
+    pathTemplate: "features/${slug}.md"
     meta:
       fields:
         status:
