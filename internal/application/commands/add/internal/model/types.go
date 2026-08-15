@@ -1,7 +1,10 @@
 package model
 
-import schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
-import domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+import (
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
+	schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
+	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
+)
 
 type Options struct {
 	EntityType   string
@@ -51,45 +54,12 @@ type Snapshot struct {
 	ExistingPaths   map[string]struct{}
 }
 
-type WorkspaceEntity struct {
-	PathAbs      string
-	PathRelPOSIX string
-	DirPath      string
-	Type         string
-	ID           string
-	Slug         string
-	Frontmatter  map[string]any
-	Meta         map[string]any
-	Body         string
-}
+// Shared with the update pipeline; see commands/internal/writemodel.
+type WorkspaceEntity = writemodel.WorkspaceEntity
 
-type Candidate struct {
-	Type         string
-	ID           string
-	Slug         string
-	CreatedDate  string
-	UpdatedDate  string
-	Frontmatter  map[string]any
-	Meta         map[string]any
-	RefIDs       map[string]string
-	RefIDArrays  map[string][]string
-	Refs         map[string]ResolvedRef
-	RefArrays    map[string][]ResolvedRef
-	Body         string
-	Sections     map[string]string
-	PathRelPOSIX string
-	PathAbs      string
-	Serialized   []byte
-	Revision     string
-}
+type Candidate = writemodel.Candidate
 
-type ResolvedRef struct {
-	Type    string
-	ID      string
-	Slug    string
-	DirPath string
-	Meta    map[string]any
-}
+type ResolvedRef = writemodel.ResolvedRef
 
 type ValidationResult struct {
 	Issues []domainvalidation.Issue

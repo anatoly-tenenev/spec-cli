@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 

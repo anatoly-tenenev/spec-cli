@@ -3,15 +3,15 @@ package pathcalc
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 )
 
 func TestEvaluateWhenEvaluationFailureUsesCompilerOwnedPath(t *testing.T) {
 	whenExpr := compileExpression(t, "contains(meta.trigger, 'x')")
-	typeSpec := model.EntityTypeSpec{
-		PathPattern: model.PathPattern{
-			Cases: []model.PathPatternCase{
+	typeSpec := writemodel.EntityTypeSpec{
+		PathPattern: writemodel.PathPattern{
+			Cases: []writemodel.PathPatternCase{
 				{
 					Use:         "features/static.md",
 					UseTemplate: compileTemplate(t, "features/static.md"),
@@ -30,7 +30,7 @@ func TestEvaluateWhenEvaluationFailureUsesCompilerOwnedPath(t *testing.T) {
 			},
 		},
 	}
-	candidate := &model.Candidate{Type: "feature", ID: "FEAT-1", Slug: "retry-window"}
+	candidate := &writemodel.Candidate{Type: "feature", ID: "FEAT-1", Slug: "retry-window"}
 
 	resolvedPath, issues := Evaluate(typeSpec, candidate, map[string]any{
 		"slug": "retry-window",
@@ -54,9 +54,9 @@ func TestEvaluateWhenEvaluationFailureUsesCompilerOwnedPath(t *testing.T) {
 }
 
 func TestEvaluateUseRenderFailureUsesCompilerOwnedPath(t *testing.T) {
-	typeSpec := model.EntityTypeSpec{
-		PathPattern: model.PathPattern{
-			Cases: []model.PathPatternCase{
+	typeSpec := writemodel.EntityTypeSpec{
+		PathPattern: writemodel.PathPattern{
+			Cases: []writemodel.PathPatternCase{
 				{
 					Use:         "${refs.owner.slug}/features/${slug}.md",
 					UseTemplate: compileTemplate(t, "${refs.owner.slug}/features/${slug}.md"),
@@ -67,7 +67,7 @@ func TestEvaluateUseRenderFailureUsesCompilerOwnedPath(t *testing.T) {
 			},
 		},
 	}
-	candidate := &model.Candidate{Type: "feature", ID: "FEAT-1", Slug: "retry-window"}
+	candidate := &writemodel.Candidate{Type: "feature", ID: "FEAT-1", Slug: "retry-window"}
 
 	resolvedPath, issues := Evaluate(typeSpec, candidate, map[string]any{
 		"slug": "retry-window",

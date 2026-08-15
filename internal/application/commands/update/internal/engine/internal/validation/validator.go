@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
 	updateworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"

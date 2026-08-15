@@ -1,0 +1,36 @@
+{
+  "changes": [
+    {
+      "after_hash": "sha256:5a86488d5bd17174f1d4886e95d5bc64b3c9da88a4587c5d1f82ecf0434a62d2",
+      "after_present": true,
+      "before_hash": "sha256:80fba416277960887a7c5aaba202d0755d36393aea43cac0a9852e5b74c37fdb",
+      "before_present": true,
+      "field": "content.sections.summary",
+      "op": "set"
+    }
+  ],
+  "dry_run": false,
+  "entity": {
+    "createdDate": "2026-02-08",
+    "id": "FEAT-1",
+    "meta": {
+      "status": "active"
+    },
+    "refs": {
+      "container": {
+        "id": "SVC-1"
+      }
+    },
+    "revision": "sha256:c8fbe2ce1ac2b3da0a6f0dc7068695f532913436bba93f8cfc11a6dde1d572f3",
+    "slug": "retry-window",
+    "type": "feature",
+    "updatedDate": "2026-03-14"
+  },
+  "noop": false,
+  "result_state": "valid",
+  "updated": true,
+  "validation": {
+    "issues": [],
+    "ok": true
+  }
+}

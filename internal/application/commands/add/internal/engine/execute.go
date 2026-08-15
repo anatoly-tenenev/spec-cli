@@ -5,15 +5,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/markdown"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/payload"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/refresolve"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/storage"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/validation"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -65,7 +65,7 @@ func Execute(
 		PathRelPOSIX: "",
 	}
 
-	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
+	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot.EntitiesByID)
 	candidate.Refs = resolvedRefs
 	candidate.RefArrays = resolvedRefArrays
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"gopkg.in/yaml.v3"
 )
 

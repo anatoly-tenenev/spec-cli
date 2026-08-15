@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/support"
 	addworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"

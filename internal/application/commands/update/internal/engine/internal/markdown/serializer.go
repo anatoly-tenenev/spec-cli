@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
 	"gopkg.in/yaml.v3"
 )
 
@@ -62,8 +62,8 @@ func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byt
 
 	frontmatterText := strings.TrimSuffix(string(frontmatterRaw), "\n")
 	document := "---\n" + frontmatterText + "\n---"
-	if candidate.Body != "" {
-		document += "\n\n" + strings.ReplaceAll(candidate.Body, "\r\n", "\n")
+	if body := normalizeDocumentBody(candidate.Body); body != "" {
+		document += "\n\n" + body
 	}
 	document = applyPlatformNewlines(withTrailingNewline(document))
 
@@ -132,4 +132,12 @@ func applyPlatformNewlines(value string) string {
 func withTrailingNewline(value string) string {
 	trimmed := strings.TrimRight(value, "\r\n")
 	return trimmed + "\n"
+}
+
+// normalizeDocumentBody strips the blank line that separates frontmatter from
+// the body, so that re-serializing an already serialized document is stable.
+// Parsed bodies keep that separator; freshly built ones do not.
+func normalizeDocumentBody(body string) string {
+	normalized := strings.ReplaceAll(body, "\r\n", "\n")
+	return strings.TrimLeft(normalized, "\n")
 }

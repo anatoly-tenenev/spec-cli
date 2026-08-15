@@ -6,9 +6,10 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"gopkg.in/yaml.v3"
 )
 
@@ -61,10 +62,10 @@ func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byt
 
 	frontmatterText := strings.TrimSuffix(string(frontmatterRaw), "\n")
 	document := "---\n" + frontmatterText + "\n---"
-	if candidate.Body != "" {
-		document += "\n" + candidate.Body
+	if body := normalizeDocumentBody(candidate.Body); body != "" {
+		document += "\n\n" + body
 	}
-	document = applyPlatformNewlines(document)
+	document = applyPlatformNewlines(withTrailingNewline(document))
 
 	return []byte(document), nil
 }
@@ -76,18 +77,57 @@ func ComputeRevision(serialized []byte) string {
 
 func appendYAMLField(mapping *yaml.Node, key string, value any) error {
 	keyNode := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}
-	valueNode, err := support.EncodeYAMLNode(value)
-	if err != nil {
-		return err
+	var valueNode *yaml.Node
+	if builtinDateNode, ok := buildBuiltinDateNode(key, value); ok {
+		valueNode = builtinDateNode
+	} else {
+		var err error
+		valueNode, err = support.EncodeYAMLNode(value)
+		if err != nil {
+			return err
+		}
 	}
 	mapping.Content = append(mapping.Content, keyNode, valueNode)
 	return nil
 }
 
+func buildBuiltinDateNode(key string, value any) (*yaml.Node, bool) {
+	if key != "createdDate" && key != "updatedDate" {
+		return nil, false
+	}
+
+	switch typed := value.(type) {
+	case time.Time:
+		return &yaml.Node{Kind: yaml.ScalarNode, Value: typed.Format("2006-01-02")}, true
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if _, err := time.Parse("2006-01-02", trimmed); err != nil {
+			return nil, false
+		}
+		return &yaml.Node{Kind: yaml.ScalarNode, Value: trimmed}, true
+	default:
+		return nil, false
+	}
+}
+
 func applyPlatformNewlines(value string) string {
 	normalized := strings.ReplaceAll(value, "\r\n", "\n")
+	normalized = strings.ReplaceAll(normalized, "\r", "\n")
 	if runtime.GOOS == "windows" {
 		return strings.ReplaceAll(normalized, "\n", "\r\n")
 	}
 	return normalized
+}
+
+func withTrailingNewline(value string) string {
+	trimmed := strings.TrimRight(value, "\r\n")
+	return trimmed + "\n"
+}
+
+// normalizeDocumentBody strips the blank line that separates frontmatter from
+// the body, so that re-serializing an already serialized document is stable.
+// Parsed bodies keep that separator; freshly built ones do not.
+func normalizeDocumentBody(body string) string {
+	normalized := strings.ReplaceAll(body, "\r\n", "\n")
+	return strings.TrimLeft(normalized, "\n")
 }

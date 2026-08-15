@@ -6,15 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/markdown"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/payload"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/refresolve"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/storage"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/validation"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -103,7 +103,7 @@ func Execute(
 	candidate := buildCandidate(applied.Frontmatter, applied.Body)
 	hydrateMetaAndRefIDs(candidate, typeSpec)
 
-	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot)
+	resolvedRefs, resolvedRefArrays, refIssues := refresolve.Resolve(typeSpec, candidate, snapshot.EntitiesByID)
 	candidate.Refs = resolvedRefs
 	candidate.RefArrays = resolvedRefArrays
 

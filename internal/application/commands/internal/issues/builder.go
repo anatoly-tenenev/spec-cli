@@ -1,11 +1,11 @@
 package issues
 
 import (
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
-func New(code string, message string, standardRef string, field string, candidate *model.Candidate) domainvalidation.Issue {
+func New(code string, message string, standardRef string, field string, candidate *writemodel.Candidate) domainvalidation.Issue {
 	item := domainvalidation.Issue{
 		Code:        code,
 		Level:       domainvalidation.LevelError,

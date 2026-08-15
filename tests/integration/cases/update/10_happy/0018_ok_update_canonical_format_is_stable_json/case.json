@@ -1,0 +1,30 @@
+{
+  "id": "update_10_0018_ok_update_canonical_format_is_stable_json",
+  "description": "updating a document that is already in canonical layout changes only the edited field: no extra blank line, no growth. The neighbour service document is deliberately left in the pre-canonical layout to pin that update does not reformat documents it is not targeting.",
+  "command": "update",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "update",
+    "--id",
+    "FEAT-1",
+    "--set",
+    "content.sections.summary=Updated summary."
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": true,
+    "permissions": []
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-03-14"
+  }
+}

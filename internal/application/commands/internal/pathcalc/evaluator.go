@@ -4,20 +4,20 @@ import (
 	"path"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
 func Evaluate(
-	typeSpec model.EntityTypeSpec,
-	candidate *model.Candidate,
+	typeSpec writemodel.EntityTypeSpec,
+	candidate *writemodel.Candidate,
 	evaluationContext map[string]any,
 ) (string, []domainvalidation.Issue) {
 	pathIssues := make([]domainvalidation.Issue, 0)
 
-	selectedCase := (*model.PathPatternCase)(nil)
+	selectedCase := (*writemodel.PathPatternCase)(nil)
 	for idx := range typeSpec.PathPattern.Cases {
 		pathCase := &typeSpec.PathPattern.Cases[idx]
 		shouldUse := false

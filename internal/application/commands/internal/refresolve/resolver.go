@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
 func Resolve(
-	typeSpec model.EntityTypeSpec,
-	candidate *model.Candidate,
-	snapshot model.Snapshot,
-) (map[string]model.ResolvedRef, map[string][]model.ResolvedRef, []domainvalidation.Issue) {
-	resolved := map[string]model.ResolvedRef{}
-	resolvedArrays := map[string][]model.ResolvedRef{}
+	typeSpec writemodel.EntityTypeSpec,
+	candidate *writemodel.Candidate,
+	entitiesByID map[string][]writemodel.WorkspaceEntity,
+) (map[string]writemodel.ResolvedRef, map[string][]writemodel.ResolvedRef, []domainvalidation.Issue) {
+	resolved := map[string]writemodel.ResolvedRef{}
+	resolvedArrays := map[string][]writemodel.ResolvedRef{}
 	refIssues := make([]domainvalidation.Issue, 0)
 	candidate.RefIDs = map[string]string{}
 	candidate.RefIDArrays = map[string][]string{}
@@ -44,10 +44,10 @@ func Resolve(
 			}
 			candidate.RefIDArrays[fieldName] = targetIDs
 
-			resolvedItems := make([]model.ResolvedRef, 0, len(targetIDs))
+			resolvedItems := make([]writemodel.ResolvedRef, 0, len(targetIDs))
 			hasRefIssue := false
 			for idx, targetID := range targetIDs {
-				targets := snapshot.EntitiesByID[targetID]
+				targets := entitiesByID[targetID]
 				itemField := fmt.Sprintf("frontmatter.%s[%d]", fieldName, idx)
 				if len(targets) == 0 {
 					refIssues = append(refIssues, issues.New(
@@ -85,7 +85,7 @@ func Resolve(
 					continue
 				}
 
-				resolvedItems = append(resolvedItems, model.ResolvedRef{
+				resolvedItems = append(resolvedItems, writemodel.ResolvedRef{
 					Type:    target.Type,
 					ID:      target.ID,
 					Slug:    target.Slug,
@@ -117,7 +117,7 @@ func Resolve(
 		}
 		candidate.RefIDs[fieldName] = targetID
 
-		targets := snapshot.EntitiesByID[targetID]
+		targets := entitiesByID[targetID]
 		if len(targets) == 0 {
 			refIssues = append(refIssues, issues.New(
 				"meta.entityRef_target_missing",
@@ -151,7 +151,7 @@ func Resolve(
 			continue
 		}
 
-		resolved[fieldName] = model.ResolvedRef{
+		resolved[fieldName] = writemodel.ResolvedRef{
 			Type:    target.Type,
 			ID:      target.ID,
 			Slug:    target.Slug,
