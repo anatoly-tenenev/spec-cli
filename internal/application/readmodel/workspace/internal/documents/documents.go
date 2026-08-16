@@ -33,7 +33,7 @@ func ScanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
-			map[string]any{"reason": walkErr.Error()},
+			entitydoc.IOFailureDetails(walkErr),
 		)
 	}
 	return markdownFiles, nil
@@ -45,7 +45,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to read workspace document",
-			map[string]any{"reason": err.Error()},
+			entitydoc.IOFailureDetails(err),
 		)
 	}
 

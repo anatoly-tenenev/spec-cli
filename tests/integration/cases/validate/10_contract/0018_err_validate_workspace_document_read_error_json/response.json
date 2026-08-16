@@ -3,7 +3,11 @@
   "error": {
     "code": "READ_FAILED",
     "message": "failed to read workspace document",
-    "exit_code": 3
+    "exit_code": 3,
+    "details": {
+      "reason": "permission denied",
+      "detail": "<workspace>/docs/broken.md: permission denied"
+    }
   },
   "validation_scope": "full",
   "schema": {

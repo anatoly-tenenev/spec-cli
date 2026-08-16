@@ -31,7 +31,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			return model.Snapshot{}, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				map[string]any{"reason": entitydoc.ClassifyIOReason(err)},
+				entitydoc.IOFailureDetails(err),
 			)
 		}
 
@@ -79,7 +79,7 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
-			map[string]any{"reason": entitydoc.ClassifyIOReason(walkErr)},
+			entitydoc.IOFailureDetails(walkErr),
 		)
 	}
 	return markdownFiles, nil

@@ -14,7 +14,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
-			map[string]any{"reason": walkErr.Error()},
+			entitydoc.IOFailureDetails(walkErr),
 		)
 	}
 
@@ -33,7 +33,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 			return nil, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				nil,
+				entitydoc.IOFailureDetails(err),
 			)
 		}
 

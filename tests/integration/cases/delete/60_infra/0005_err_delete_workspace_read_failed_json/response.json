@@ -2,7 +2,8 @@
   "error": {
     "code": "READ_FAILED",
     "details": {
-      "reason": "permission denied"
+      "reason": "permission denied",
+      "detail": "<workspace>/docs/broken.md: permission denied"
     },
     "exit_code": 3,
     "message": "failed to read workspace document"

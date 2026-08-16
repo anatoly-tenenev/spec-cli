@@ -9,6 +9,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -262,7 +263,7 @@ func parseCandidates(
 			return nil, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				nil,
+				entitydoc.IOFailureDetails(err),
 			)
 		}
 

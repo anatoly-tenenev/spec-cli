@@ -2,7 +2,8 @@
   "error": {
     "code": "WRITE_FAILED",
     "details": {
-      "reason": "<workspace>/services/ledger-api/features/.spec-cli-add-<tmp>.tmp: permission denied"
+      "reason": "permission denied",
+      "detail": "<workspace>/services/ledger-api/features/.spec-cli-add-<tmp>.tmp: permission denied"
     },
     "exit_code": 3,
     "message": "failed to create temporary file"
