@@ -20,7 +20,11 @@ type Entity struct {
 	Revision    string
 	Frontmatter map[string]any
 	Sections    map[string]string
-	RawContent  string
+	// DuplicateSectionLabels lists labels that appear more than once. Such a
+	// section is absent from Sections: the document does not say which block is
+	// meant, so reading it is left to fail where it is actually requested.
+	DuplicateSectionLabels []string
+	RawContent             string
 }
 
 func ScanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
@@ -89,32 +93,26 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 	revisionHash := sha256.Sum256(raw)
 	revision := "sha256:" + hex.EncodeToString(revisionHash[:])
 
+	parsedSections, duplicateLabels := entitydoc.ExtractSections(body)
+	sections := make(map[string]string, len(parsedSections))
+	for label, section := range parsedSections {
+		sections[label] = section.Body
+	}
+
 	return &Entity{
-		Type:        typeName,
-		ID:          id,
-		Slug:        slug,
-		CreatedDate: createdDate,
-		UpdatedDate: updatedDate,
-		Revision:    revision,
-		Frontmatter: frontmatter,
-		Sections:    lastWinsSections(body),
-		RawContent:  body,
+		Type:                   typeName,
+		ID:                     id,
+		Slug:                   slug,
+		CreatedDate:            createdDate,
+		UpdatedDate:            updatedDate,
+		Revision:               revision,
+		Frontmatter:            frontmatter,
+		Sections:               sections,
+		DuplicateSectionLabels: duplicateLabels,
+		RawContent:             body,
 	}, nil
 }
 
 func requiredBuiltinFieldMessage(field string) string {
 	return fmt.Sprintf("built-in field '%s' is required", field)
-}
-
-// lastWinsSections keeps the read model's long-standing behaviour of letting a
-// repeated section label overwrite the earlier block. It disagrees with every
-// other command and is replaced separately; kept here so that moving parsing
-// into entitydoc changes no behaviour.
-func lastWinsSections(body string) map[string]string {
-	layout := entitydoc.BuildSectionLayout(body)
-	sections := make(map[string]string, len(layout.Ranges))
-	for _, item := range layout.Ranges {
-		sections[item.Label] = layout.Body(item)
-	}
-	return sections
 }

@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
@@ -17,6 +18,12 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 			if entity.Type != rootPlan.EntityType {
 				continue
 			}
+			// A repeated section label carries no value. Filtering on it would
+			// silently drop the document, so refuse before evaluating.
+			if label, ambiguous := ambiguousSection(entity, plan.WhereSections); ambiguous {
+				return model.QueryResponse{}, duplicateSectionError(entity, label, "--where")
+			}
+
 			if plan.Where != nil {
 				whereValue, whereErr := plan.Where.Query.Search(entity.WhereContext)
 				if whereErr != nil {
@@ -40,6 +47,11 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 
 		items := make([]map[string]any, 0, len(pagedEntities))
 		for _, entity := range pagedEntities {
+			// Returning the document without a section it repeats would read as
+			// "this section is absent", which is not what the document says.
+			if label, ambiguous := ambiguousSection(entity, plan.SelectSections); ambiguous {
+				return model.QueryResponse{}, duplicateSectionError(entity, label, "--select")
+			}
 			items = append(items, selection.ProjectEntity(entity.View, plan.SelectTree))
 		}
 
@@ -69,6 +81,30 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 		ResultState: "valid",
 		RootFields:  roots,
 	}, nil
+}
+
+// ambiguousSection returns the first repeated label the access set reaches.
+func ambiguousSection(entity model.EntityView, access model.SectionAccess) (string, bool) {
+	for _, label := range entity.DuplicateSectionLabels {
+		if access.Touches(label) {
+			return label, true
+		}
+	}
+	return "", false
+}
+
+func duplicateSectionError(entity model.EntityView, label string, via string) *domainerrors.AppError {
+	return domainerrors.New(
+		domainerrors.CodeReadFailed,
+		"failed to read requested content sections",
+		map[string]any{
+			"reason":  fmt.Sprintf("section label '%s' is duplicated", label),
+			"section": label,
+			"id":      entity.ID,
+			"type":    entity.Type,
+			"via":     via,
+		},
+	)
 }
 
 func paginateEntities(entities []model.EntityView, offset int, limit int) ([]model.EntityView, int) {

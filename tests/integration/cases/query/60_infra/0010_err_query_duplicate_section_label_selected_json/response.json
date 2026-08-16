@@ -1,0 +1,15 @@
+{
+  "error": {
+    "code": "READ_FAILED",
+    "details": {
+      "id": "FEAT-1",
+      "reason": "section label 'summary' is duplicated",
+      "section": "summary",
+      "type": "feature",
+      "via": "--select"
+    },
+    "exit_code": 3,
+    "message": "failed to read requested content sections"
+  },
+  "result_state": "invalid"
+}

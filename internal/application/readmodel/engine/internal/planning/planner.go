@@ -3,6 +3,7 @@ package planning
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/filtering"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
@@ -54,6 +55,11 @@ func BuildPlan(opts model.Options, capability schemacapread.Capability) (model.Q
 		return model.QueryPlan{}, rootPlanErr
 	}
 
+	whereSections := model.SectionAccess{Names: map[string]struct{}{}}
+	if wherePlan != nil {
+		whereSections = wherePlan.Sections
+	}
+
 	return model.QueryPlan{
 		SelectTree:        selectTree,
 		Where:             wherePlan,
@@ -61,7 +67,22 @@ func BuildPlan(opts model.Options, capability schemacapread.Capability) (model.Q
 		RootPlans:         rootPlans,
 		OriginalSelects:   selects,
 		OriginalSortTerms: opts.Sorts,
+		SelectSections:    selectSectionAccess(selects),
+		WhereSections:     whereSections,
 	}, nil
+}
+
+// selectSectionAccess reports whether --select asks for content.sections.
+// The selector is all-or-nothing: individual labels cannot be selected.
+func selectSectionAccess(selects []string) model.SectionAccess {
+	access := model.SectionAccess{Names: map[string]struct{}{}}
+	for _, selector := range selects {
+		if strings.TrimSpace(selector) == "content.sections" {
+			access.All = true
+			break
+		}
+	}
+	return access
 }
 
 func validateScopedEntityTypes(

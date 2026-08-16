@@ -35,11 +35,31 @@ type EntityView struct {
 	ID           string
 	View         map[string]any
 	WhereContext map[string]any
+	// DuplicateSectionLabels lists section labels the document repeats. Such a
+	// section carries no value; reading it fails where it is requested.
+	DuplicateSectionLabels []string
+}
+
+// SectionAccess records how a query reaches content.sections, so that an
+// ambiguous section only breaks the queries that actually touch it.
+type SectionAccess struct {
+	All   bool
+	Names map[string]struct{}
+}
+
+// Touches reports whether the access set covers a label.
+func (access SectionAccess) Touches(label string) bool {
+	if access.All {
+		return true
+	}
+	_, named := access.Names[label]
+	return named
 }
 
 type WherePlan struct {
-	Source string
-	Query  *jmespath.JMESPath
+	Source   string
+	Query    *jmespath.JMESPath
+	Sections SectionAccess
 }
 
 type QueryPlan struct {
@@ -49,6 +69,8 @@ type QueryPlan struct {
 	RootPlans         []RootPlan
 	OriginalSelects   []string
 	OriginalSortTerms []SortTerm
+	SelectSections    SectionAccess
+	WhereSections     SectionAccess
 }
 
 type RootPlan struct {

@@ -54,7 +54,37 @@ func Compile(
 		)
 	}
 
-	return &model.WherePlan{Source: trimmed, Query: query}, nil
+	return &model.WherePlan{
+		Source:   trimmed,
+		Query:    query,
+		Sections: collectSectionAccess(trimmed),
+	}, nil
+}
+
+// collectSectionAccess reports which content.sections the expression reads,
+// reusing the same AST walk that validates where-path policy. A bare
+// `content.sections` reference counts as reaching every section.
+func collectSectionAccess(expression string) model.SectionAccess {
+	access := model.SectionAccess{Names: map[string]struct{}{}}
+
+	parser := jmespath.NewParser()
+	ast, err := parser.Parse(expression)
+	if err != nil {
+		return access
+	}
+
+	for _, chain := range collectFieldChains(reflect.ValueOf(ast)) {
+		if len(chain) < 2 || chain[0] != "content" || chain[1] != "sections" {
+			continue
+		}
+		if len(chain) == 2 {
+			access.All = true
+			continue
+		}
+		access.Names[chain[2]] = struct{}{}
+	}
+
+	return access
 }
 
 func validateWherePolicy(expression string, capability schemacapread.Capability, activeTypeSet []string) *domainerrors.AppError {

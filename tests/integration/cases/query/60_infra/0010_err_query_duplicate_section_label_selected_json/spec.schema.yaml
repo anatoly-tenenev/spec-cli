@@ -1,0 +1,22 @@
+version: "1"
+entity:
+  feature:
+    idPrefix: FEAT
+    pathTemplate: "features/${slug}.md"
+    meta:
+      fields:
+        owner:
+          schema:
+            type: entityRef
+        status:
+          schema:
+            type: string
+    content:
+      sections:
+        summary:
+          required: false
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/${slug}.md"
+    meta:
+      fields: {}

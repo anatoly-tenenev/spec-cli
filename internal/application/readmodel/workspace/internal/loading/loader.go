@@ -96,10 +96,11 @@ func LoadEntities(
 		}
 
 		entityViews = append(entityViews, model.EntityView{
-			Type:         entity.Type,
-			ID:           entity.ID,
-			View:         publicView,
-			WhereContext: whereView,
+			Type:                   entity.Type,
+			ID:                     entity.ID,
+			View:                   publicView,
+			WhereContext:           whereView,
+			DuplicateSectionLabels: entity.DuplicateSectionLabels,
 		})
 	}
 

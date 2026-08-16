@@ -1,0 +1,29 @@
+{
+  "id": "query_60_0010_err_query_duplicate_section_label_selected_json",
+  "description": "selecting content.sections on a document that repeats a section label fails instead of silently answering with one of the blocks",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "content.sections"
+  ],
+  "expect": {
+    "exit_code": 3,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-01-01"
+  }
+}

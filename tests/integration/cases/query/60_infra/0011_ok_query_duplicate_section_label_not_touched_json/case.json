@@ -1,0 +1,29 @@
+{
+  "id": "query_60_0011_ok_query_duplicate_section_label_not_touched_json",
+  "description": "a repeated section label does not block a query that never reaches content.sections",
+  "command": "query",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "query",
+    "--type",
+    "feature",
+    "--select",
+    "id"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  },
+  "runtime": {
+    "fixed_now_utc": "2026-01-01"
+  }
+}

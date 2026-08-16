@@ -1,0 +1,24 @@
+{
+  "data": {
+    "feature": {
+      "items": [
+        {
+          "id": "FEAT-1"
+        }
+      ],
+      "pageInfo": {
+        "effectiveSort": [
+          "id:asc"
+        ],
+        "hasMore": false,
+        "limit": 100,
+        "mode": "offset",
+        "nextOffset": null,
+        "offset": 0,
+        "returned": 1
+      },
+      "totalCount": 1
+    }
+  },
+  "result_state": "valid"
+}
