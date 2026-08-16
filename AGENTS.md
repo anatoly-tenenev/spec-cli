@@ -1,8 +1,46 @@
 # AGENTS.md
 
-## Project Goal
+## Constitution
+
 `spec-cli` is a machine-first CLI utility written in Go for working with spec documents.
-The current prototype must cover the `validate`, `query`, `add`, and `update` commands according to the contracts in `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE.md`.
+
+The statements below decide cases the rules further down do not cover. If a rule contradicts a statement here, the rule is wrong. Each item names what would overturn it; an item that cannot be overturned is a slogan, not a decision.
+
+1. **The consumer is an agent, not a person at a terminal.**
+   Machine format by default, no interactive prompts, responses that describe themselves. Contract stability outweighs readability by eye.
+   *Overturned by:* a primary workflow with a human at the terminal.
+
+2. **Markdown stays the source; there is no second data layer.**
+   No index, cache, or derived state that can desynchronise. Documents stay readable and editable without the tool, and written output stays diff-friendly.
+   *Overturned by:* accepting a store that the tool owns.
+
+3. **The schema is the single source of truth about structure.**
+   Entity types, paths, validation, help, and projections all derive from the schema. When the schema is unavailable, refuse rather than guess.
+   *Overturned by:* supporting documents without a schema.
+
+4. **Editing goes through an agent; hand edits stay repairable.**
+   Direct edits are tolerated, so the workspace can be non-conforming at any moment. Bringing a document back into conformance is a first-class operation, and every repair path starts by reading a non-conforming document.
+   *Overturned by:* hand editing becoming forbidden rather than tolerated.
+
+5. **Storage layout is an implementation detail; the model is logical.**
+   An entity is `meta`, `refs`, and `content.sections`, not a file. Filesystem paths do not appear in responses, and the layout can change without breaking contracts.
+   *Overturned by:* promoting paths to part of the public model.
+
+6. **Responses are machine-stable and deterministic.**
+   The same input yields the same bytes. Traversal and sort order are fixed; map iteration order must never reach the output. The shape of a response is a contract.
+   *Overturned by:* nothing currently foreseen.
+
+7. **Strictness on write, usability on read.**
+   `add`, `update`, and `delete` must not leave a non-conforming workspace. Read commands return what is on disk; `validate` judges conformance. Reads must keep working on a non-conforming workspace, because repair depends on them.
+   *Overturned by:* hand editing becoming forbidden, which removes the need to repair.
+
+8. **The tool never invents data.**
+   When there is no unambiguous answer, say so and name the document and the field. Never pick one candidate silently, and never report silent absence in place of ambiguity. A loud refusal beats a quiet guess.
+   *Overturned by:* nothing currently foreseen.
+
+9. **Breaking changes are allowed; silent ones are not.**
+   The project is early, so backward compatibility does not bind. Every behaviour change must surface as a failing test, an error, or an updated fixture, and never as the same exit code with different behaviour.
+   *Overturned by:* the first release that promises stability.
 
 ## Communication Rules
 - Communicate in the language the dialogue started in unless the user explicitly asks to switch languages.
@@ -96,7 +134,6 @@ The current prototype must cover the `validate`, `query`, `add`, and `update` co
   - `internal/engine` - main validation pipeline and issue aggregation.
   - `internal/support` - narrow pure helper functions (`yaml`/collections/values).
 - Do not change business logic, error codes, or issue codes without an explicit task to change behavior.
-- Validation must remain deterministic: stable traversal/sort order and stable response format.
 - After any command changes, run at least `make vet` and `make test`.
 
 ## Documentation Rules
