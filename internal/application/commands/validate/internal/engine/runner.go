@@ -260,7 +260,7 @@ func parseCandidates(
 		raw, err := os.ReadFile(candidate.Path)
 		if err != nil {
 			return nil, domainerrors.New(
-				domainerrors.CodeWriteFailed,
+				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
 				nil,
 			)
@@ -269,7 +269,7 @@ func parseCandidates(
 		relativePath, relErr := filepath.Rel(workspaceRoot, candidate.Path)
 		if relErr != nil {
 			return nil, domainerrors.New(
-				domainerrors.CodeWriteFailed,
+				domainerrors.CodeReadFailed,
 				"failed to resolve workspace-relative path",
 				map[string]any{"reason": relErr.Error()},
 			)

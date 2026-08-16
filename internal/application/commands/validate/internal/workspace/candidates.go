@@ -27,7 +27,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 	})
 	if walkErr != nil {
 		return nil, domainerrors.New(
-			domainerrors.CodeWriteFailed,
+			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
 			map[string]any{"reason": walkErr.Error()},
 		)
@@ -47,7 +47,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return nil, domainerrors.New(
-				domainerrors.CodeWriteFailed,
+				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
 				nil,
 			)
