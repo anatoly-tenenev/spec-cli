@@ -1,30 +1,15 @@
 package workspace
 
 import (
-	"io/fs"
 	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
 func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]model.WorkspaceCandidate, *domainerrors.AppError) {
-	markdownFiles := make([]string, 0)
-	walkErr := filepath.WalkDir(workspace, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		if strings.EqualFold(filepath.Ext(entry.Name()), ".md") {
-			markdownFiles = append(markdownFiles, path)
-		}
-		return nil
-	})
+	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspace)
 	if walkErr != nil {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -33,7 +18,6 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 		)
 	}
 
-	sort.Strings(markdownFiles)
 	if len(typeFilters) == 0 {
 		candidates := make([]model.WorkspaceCandidate, 0, len(markdownFiles))
 		for _, path := range markdownFiles {

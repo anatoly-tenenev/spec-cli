@@ -3,19 +3,13 @@ package workspace
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
-	"regexp"
-	"sort"
-	"strings"
-	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
+	commandsupport "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -23,18 +17,6 @@ const (
 	getWorkspaceTypeStandardRef        = "5.3"
 	getWorkspaceIDStandardRef          = "11.1"
 )
-
-var (
-	headingPattern            = regexp.MustCompile(`^\s{0,3}#{1,6}\s+(.+?)\s*$`)
-	headingLinkLabelPattern   = regexp.MustCompile(`^\[(.+)]\(#([^\s#()]+)\)\s*$`)
-	headingSuffixLabelPattern = regexp.MustCompile(`^(.*?)\s+\{#([^\s{}]+)\}\s*$`)
-	locatorIDPattern          = regexp.MustCompile(`^id\s*:\s*(.+?)\s*$`)
-)
-
-type sectionStart struct {
-	line  int
-	label string
-}
 
 type locatedCandidate struct {
 	path string
@@ -60,7 +42,9 @@ func LocateByID(workspacePath string, targetID string) (model.LocateResult, *dom
 			)
 		}
 
-		if extractedID, ok := extractIDForLocate(raw); ok && extractedID == targetID {
+		// Locating stays tolerant of malformed frontmatter so that a broken
+		// target is reported as broken rather than masked as NOT_FOUND.
+		if extractedID, ok := entitydoc.ExtractIDLenient(raw); ok && extractedID == targetID {
 			matches = append(matches, locatedCandidate{path: path, raw: raw})
 		}
 
@@ -92,7 +76,7 @@ func LocateByID(workspacePath string, targetID string) (model.LocateResult, *dom
 }
 
 func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget, *domainerrors.AppError) {
-	frontmatter, body, parseErr := parseFrontmatter(raw)
+	frontmatter, body, parseErr := entitydoc.ParseFrontmatter(raw)
 	if parseErr != nil {
 		return model.ParsedTarget{}, newReadError(
 			"failed to parse target frontmatter",
@@ -102,7 +86,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	typeName, ok := readStringField(frontmatter, "type")
+	typeName, ok := entitydoc.ReadStringField(frontmatter, "type")
 	if !ok {
 		return model.ParsedTarget{}, newReadError(
 			"failed to determine entity type",
@@ -112,7 +96,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	entityID, ok := readStringField(frontmatter, "id")
+	entityID, ok := entitydoc.ReadStringField(frontmatter, "id")
 	if !ok {
 		return model.ParsedTarget{}, newReadError(
 			"failed to determine entity id",
@@ -131,9 +115,9 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	slug, _ := readStringField(frontmatter, "slug")
-	createdDate, _ := readStringField(frontmatter, "createdDate")
-	updatedDate, _ := readStringField(frontmatter, "updatedDate")
+	slug, _ := entitydoc.ReadStringField(frontmatter, "slug")
+	createdDate, _ := entitydoc.ReadStringField(frontmatter, "createdDate")
+	updatedDate, _ := entitydoc.ReadStringField(frontmatter, "updatedDate")
 
 	revisionHash := sha256.Sum256(raw)
 	revision := "sha256:" + hex.EncodeToString(revisionHash[:])
@@ -155,19 +139,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 }
 
 func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles := make([]string, 0)
-	walkErr := filepath.WalkDir(workspacePath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		if strings.EqualFold(filepath.Ext(entry.Name()), ".md") {
-			markdownFiles = append(markdownFiles, path)
-		}
-		return nil
-	})
+	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if walkErr != nil {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -175,26 +147,24 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 			map[string]any{"reason": walkErr.Error()},
 		)
 	}
-
-	sort.Strings(markdownFiles)
 	return markdownFiles, nil
 }
 
 func extractIdentity(raw []byte) (model.EntityIdentity, bool) {
-	frontmatter, _, err := parseFrontmatter(raw)
+	frontmatter, _, err := entitydoc.ParseFrontmatter(raw)
 	if err != nil {
 		return model.EntityIdentity{}, false
 	}
 
-	typeName, ok := readStringField(frontmatter, "type")
+	typeName, ok := entitydoc.ReadStringField(frontmatter, "type")
 	if !ok {
 		return model.EntityIdentity{}, false
 	}
-	id, ok := readStringField(frontmatter, "id")
+	id, ok := entitydoc.ReadStringField(frontmatter, "id")
 	if !ok {
 		return model.EntityIdentity{}, false
 	}
-	slug, ok := readStringField(frontmatter, "slug")
+	slug, ok := entitydoc.ReadStringField(frontmatter, "slug")
 	if !ok {
 		return model.EntityIdentity{}, false
 	}
@@ -202,234 +172,33 @@ func extractIdentity(raw []byte) (model.EntityIdentity, bool) {
 	return model.EntityIdentity{Type: typeName, ID: id, Slug: slug}, true
 }
 
-func extractIDForLocate(raw []byte) (string, bool) {
-	source := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	lines := strings.Split(source, "\n")
-	if len(lines) == 0 || lines[0] != "---" {
-		return "", false
-	}
-
-	endIdx := -1
-	for idx := 1; idx < len(lines); idx++ {
-		if lines[idx] == "---" || lines[idx] == "..." {
-			endIdx = idx
-			break
-		}
-	}
-	if endIdx == -1 {
-		// Keep locator tolerant: malformed frontmatter without a closing delimiter
-		// may still contain a determinable id we can use to avoid masking with NOT_FOUND.
-		return extractIDFromLines(strings.Join(lines[1:], "\n"))
-	}
-
-	frontmatterBody := strings.Join(lines[1:endIdx], "\n")
-	if parsedID, ok := extractIDFromYAML(frontmatterBody); ok {
-		return parsedID, true
-	}
-	return extractIDFromLines(frontmatterBody)
-}
-
-func extractIDFromYAML(frontmatterBody string) (string, bool) {
-	var root yaml.Node
-	if err := yaml.Unmarshal([]byte(frontmatterBody), &root); err != nil {
-		return "", false
-	}
-
-	doc := support.FirstContentNode(&root)
-	if doc == nil || doc.Kind != yaml.MappingNode {
-		return "", false
-	}
-
-	fields := map[string]any{}
-	if err := doc.Decode(&fields); err != nil {
-		return "", false
-	}
-
-	return readStringField(fields, "id")
-}
-
-func extractIDFromLines(frontmatterBody string) (string, bool) {
-	for _, line := range strings.Split(frontmatterBody, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-		matches := locatorIDPattern.FindStringSubmatch(trimmed)
-		if len(matches) != 2 {
-			continue
-		}
-
-		value := strings.TrimSpace(matches[1])
-		if index := strings.Index(value, " #"); index >= 0 {
-			value = strings.TrimSpace(value[:index])
-		}
-		value = trimWrappingQuotes(value)
-		if value == "" {
-			continue
-		}
-		return value, true
-	}
-	return "", false
-}
-
-func trimWrappingQuotes(value string) string {
-	trimmed := strings.TrimSpace(value)
-	if len(trimmed) >= 2 {
-		if (trimmed[0] == '\'' && trimmed[len(trimmed)-1] == '\'') ||
-			(trimmed[0] == '"' && trimmed[len(trimmed)-1] == '"') {
-			return strings.TrimSpace(trimmed[1 : len(trimmed)-1])
-		}
-	}
-	return trimmed
-}
-
-func parseFrontmatter(raw []byte) (map[string]any, string, error) {
-	source := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	lines := strings.Split(source, "\n")
-	if len(lines) == 0 || lines[0] != "---" {
-		return nil, "", fmt.Errorf("frontmatter must start with '---' on the first line")
-	}
-
-	endIdx := -1
-	for idx := 1; idx < len(lines); idx++ {
-		if lines[idx] == "---" || lines[idx] == "..." {
-			endIdx = idx
-			break
-		}
-	}
-	if endIdx == -1 {
-		return nil, "", fmt.Errorf("frontmatter closing delimiter ('---' or '...') is missing")
-	}
-
-	frontmatterBody := strings.Join(lines[1:endIdx], "\n")
-	body := strings.Join(lines[endIdx+1:], "\n")
-
-	var root yaml.Node
-	if err := yaml.Unmarshal([]byte(frontmatterBody), &root); err != nil {
-		return nil, "", fmt.Errorf("frontmatter is not valid yaml: %w", err)
-	}
-
-	doc := support.FirstContentNode(&root)
-	if doc == nil || doc.Kind != yaml.MappingNode {
-		return nil, "", fmt.Errorf("frontmatter root must be a yaml mapping")
-	}
-	if duplicateKey, ok := support.FindDuplicateMappingKey(doc); ok {
-		return nil, "", fmt.Errorf("frontmatter contains duplicate key '%s'", duplicateKey)
-	}
-
-	fields := map[string]any{}
-	if err := doc.Decode(&fields); err != nil {
-		return nil, "", fmt.Errorf("frontmatter decode failed: %w", err)
-	}
-
-	return fields, body, nil
-}
-
-func readStringField(values map[string]any, key string) (string, bool) {
-	raw, exists := values[key]
-	if !exists {
-		return "", false
-	}
-
-	var value string
-	switch typed := raw.(type) {
-	case string:
-		value = typed
-	case time.Time:
-		value = typed.Format("2006-01-02")
-	default:
-		return "", false
-	}
-
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return "", false
-	}
-	return value, true
-}
-
 func normalizeMap(values map[string]any) map[string]any {
 	normalized := make(map[string]any, len(values))
 	for key, value := range values {
-		normalized[key] = normalizeValue(value)
+		normalized[key] = commandsupport.NormalizeValue(value)
 	}
 	return normalized
 }
 
-func normalizeValue(value any) any {
-	switch typed := value.(type) {
-	case time.Time:
-		return typed.Format("2006-01-02")
-	case map[string]any:
-		normalized := make(map[string]any, len(typed))
-		for key, item := range typed {
-			normalized[key] = normalizeValue(item)
-		}
-		return normalized
-	case []any:
-		normalized := make([]any, len(typed))
-		for idx := range typed {
-			normalized[idx] = normalizeValue(typed[idx])
-		}
-		return normalized
-	default:
-		return typed
-	}
-}
-
+// extractSections returns unambiguous sections plus a count per repeated label.
 func extractSections(body string) (map[string]string, map[string]int) {
-	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
-	starts := make([]sectionStart, 0)
-	labelCounts := map[string]int{}
-
-	for idx, line := range lines {
-		headingMatches := headingPattern.FindStringSubmatch(line)
-		if len(headingMatches) != 2 {
-			continue
-		}
-		label, _, ok := parseHeadingLabel(strings.TrimSpace(headingMatches[1]))
-		if !ok {
-			continue
-		}
-		starts = append(starts, sectionStart{line: idx, label: label})
-		labelCounts[label]++
-	}
+	layout := entitydoc.BuildSectionLayout(body)
 
 	duplicates := map[string]int{}
-	for label, count := range labelCounts {
+	for label, count := range layout.LabelCount {
 		if count > 1 {
 			duplicates[label] = count
 		}
 	}
 
 	sections := map[string]string{}
-	for idx, start := range starts {
-		if labelCounts[start.label] > 1 {
+	for _, item := range layout.Ranges {
+		if layout.LabelCount[item.Label] > 1 {
 			continue
 		}
-
-		startLine := start.line + 1
-		endLine := len(lines)
-		if idx+1 < len(starts) {
-			endLine = starts[idx+1].line
-		}
-
-		rawText := strings.Join(lines[startLine:endLine], "\n")
-		sections[start.label] = strings.TrimSpace(rawText)
+		sections[item.Label] = layout.Body(item)
 	}
 	return sections, duplicates
-}
-
-func parseHeadingLabel(heading string) (label string, title string, ok bool) {
-	if linkMatches := headingLinkLabelPattern.FindStringSubmatch(heading); len(linkMatches) == 3 {
-		return linkMatches[2], strings.TrimSpace(linkMatches[1]), true
-	}
-
-	if suffixMatches := headingSuffixLabelPattern.FindStringSubmatch(heading); len(suffixMatches) == 3 {
-		return suffixMatches[2], strings.TrimSpace(suffixMatches[1]), true
-	}
-
-	return "", "", false
 }
 
 func newReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {

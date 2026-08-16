@@ -1,0 +1,49 @@
+package entitydoc
+
+import (
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+// ScanMarkdownFiles walks a workspace and returns its Markdown documents in a
+// stable order. The raw walk error is returned as-is; callers decide which
+// diagnostic code and message to report.
+func ScanMarkdownFiles(workspacePath string) ([]string, error) {
+	markdownFiles := make([]string, 0)
+	walkErr := filepath.WalkDir(workspacePath, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if strings.EqualFold(filepath.Ext(entry.Name()), ".md") {
+			markdownFiles = append(markdownFiles, path)
+		}
+		return nil
+	})
+	if walkErr != nil {
+		return nil, walkErr
+	}
+
+	sort.Strings(markdownFiles)
+	return markdownFiles, nil
+}
+
+// ClassifyIOReason maps a filesystem error onto a small, stable vocabulary.
+// It compares the kernel error number rather than the message, so the result is
+// the same on every platform while err.Error() is not.
+func ClassifyIOReason(err error) string {
+	switch {
+	case errors.Is(err, os.ErrPermission):
+		return "permission denied"
+	case errors.Is(err, os.ErrNotExist):
+		return "not found"
+	default:
+		return "i/o error"
+	}
+}

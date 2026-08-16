@@ -1,16 +1,15 @@
 package workspace
 
 import (
-	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -105,19 +104,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 }
 
 func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles := make([]string, 0)
-	walkErr := filepath.WalkDir(workspacePath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		if strings.EqualFold(filepath.Ext(entry.Name()), ".md") {
-			markdownFiles = append(markdownFiles, path)
-		}
-		return nil
-	})
+	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if walkErr != nil {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -125,8 +112,6 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 			map[string]any{"reason": walkErr.Error()},
 		)
 	}
-
-	sort.Strings(markdownFiles)
 	return markdownFiles, nil
 }
 
