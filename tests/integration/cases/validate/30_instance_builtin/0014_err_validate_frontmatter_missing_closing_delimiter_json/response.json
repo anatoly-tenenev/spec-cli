@@ -5,7 +5,7 @@
       "code": "frontmatter.invalid",
       "level": "error",
       "message": "frontmatter closing delimiter ('---' or '...') is missing",
-      "standard_ref": "10.2"
+      "standard_ref": "11"
     }
   ],
   "result_state": "invalid",

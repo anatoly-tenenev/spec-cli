@@ -13,7 +13,7 @@ import (
 const (
 	getEntityTypeStandardRef     = "5.3"
 	getEntityRefStandardRef      = "6"
-	getEntitySectionsStandardRef = "8.3"
+	getEntitySectionsStandardRef = "13.2"
 )
 
 type resolvedRef struct {

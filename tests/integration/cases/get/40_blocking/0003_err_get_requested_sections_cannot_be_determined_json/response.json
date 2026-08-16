@@ -9,7 +9,7 @@
             "class": "InstanceError",
             "level": "error",
             "message": "section label 'summary' is duplicated",
-            "standard_ref": "8.3"
+            "standard_ref": "13.2"
           }
         ]
       }

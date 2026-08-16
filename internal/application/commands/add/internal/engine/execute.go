@@ -106,7 +106,7 @@ func Execute(
 				issues.New(
 					"instance.pathTemplate.no_matching_case",
 					"pathTemplate has no matching case for created entity",
-					"12.4",
+					"8.4",
 					"schema.pathTemplate",
 					candidate,
 				),

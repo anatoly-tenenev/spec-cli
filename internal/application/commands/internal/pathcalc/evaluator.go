@@ -31,7 +31,7 @@ func Evaluate(
 				pathIssues = append(pathIssues, issues.New(
 					"instance.pathTemplate.when_evaluation_failed",
 					"failed to evaluate pathTemplate.when expression",
-					"12.4",
+					"8.4",
 					schemaPathOrDefault(pathCase.WhenPath, "schema.pathTemplate.when"),
 					candidate,
 				))
@@ -52,7 +52,7 @@ func Evaluate(
 		pathIssues = append(pathIssues, issues.New(
 			"instance.pathTemplate.no_matching_case",
 			"pathTemplate has no matching case for created entity",
-			"12.4",
+			"8.4",
 			"schema.pathTemplate",
 			candidate,
 		))
@@ -64,7 +64,7 @@ func Evaluate(
 		pathIssues = append(pathIssues, issues.New(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate placeholder cannot be resolved: "+renderErrorLabel(renderErr),
-			"12.4",
+			"8.6",
 			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))
@@ -76,7 +76,7 @@ func Evaluate(
 		pathIssues = append(pathIssues, issues.New(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate resolved outside workspace",
-			"12.4",
+			"8.6",
 			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))

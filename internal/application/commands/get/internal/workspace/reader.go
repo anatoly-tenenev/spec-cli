@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	getWorkspaceFrontmatterStandardRef = "10.2"
+	getWorkspaceFrontmatterStandardRef = "11"
 	getWorkspaceTypeStandardRef        = "5.3"
 	getWorkspaceIDStandardRef          = "11.1"
 )

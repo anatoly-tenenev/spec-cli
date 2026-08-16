@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	FrontmatterStandardRef = "10.2"
+	FrontmatterStandardRef = "11"
 	TypeStandardRef        = "5.3"
 	IDStandardRef          = "11.1"
 	SlugStandardRef        = "11.2"

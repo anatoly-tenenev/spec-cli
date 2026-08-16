@@ -168,7 +168,7 @@ func Execute(
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
 				Message:     "pathTemplate has no matching case for updated entity",
-				StandardRef: "12.4",
+				StandardRef: "8.4",
 				Field:       "schema.pathTemplate",
 				Entity:      issueEntity(candidate),
 			},
@@ -307,7 +307,7 @@ func pathMismatchIssue(candidate *model.Candidate) domainvalidation.Issue {
 		Level:       domainvalidation.LevelError,
 		Class:       "InstanceError",
 		Message:     "entity path does not match canonical pathTemplate result",
-		StandardRef: "12.4",
+		StandardRef: "8.6",
 		Field:       "schema.pathTemplate",
 		Entity:      issueEntity(candidate),
 	}

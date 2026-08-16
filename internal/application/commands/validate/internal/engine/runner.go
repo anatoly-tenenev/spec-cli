@@ -95,7 +95,7 @@ func RunValidation(
 				Level:       domainvalidation.LevelError,
 				Class:       "InstanceError",
 				Message:     candidate.ParseErr.Error(),
-				StandardRef: "10.2",
+				StandardRef: "11",
 			})
 			checked = append(checked, entity)
 			if opts.FailFast && entity.HasError {
