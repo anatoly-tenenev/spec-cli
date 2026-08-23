@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -46,7 +47,7 @@ func BuildSelectorPlan(rawSelectors []string, readCapability schemacapread.Capab
 		selectors = append([]string(nil), defaultSelectors...)
 	}
 
-	activeTypeSet := support.SortedMapKeys(readCapability.EntityTypes)
+	activeTypeSet := collections.SortedMapKeys(readCapability.EntityTypes)
 	allowedSelectors := buildAllowedSelectors(readCapability, activeTypeSet)
 
 	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
@@ -329,7 +330,7 @@ func projectValue(value any, node *model.SelectNode, prefix string, nullIfMissin
 		return nil, false
 	}
 	if node.Terminal {
-		return support.DeepCopy(value), true
+		return values.DeepCopy(value), true
 	}
 
 	typed, ok := value.(map[string]any)

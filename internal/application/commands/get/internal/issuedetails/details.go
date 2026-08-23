@@ -1,23 +1,6 @@
-package support
+package issuedetails
 
-func DeepCopy(value any) any {
-	switch typed := value.(type) {
-	case map[string]any:
-		copied := make(map[string]any, len(typed))
-		for key, item := range typed {
-			copied[key] = DeepCopy(item)
-		}
-		return copied
-	case []any:
-		copied := make([]any, len(typed))
-		for idx := range typed {
-			copied[idx] = DeepCopy(typed[idx])
-		}
-		return copied
-	default:
-		return typed
-	}
-}
+import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 
 func ValidationIssue(level string, class string, message string, standardRef string) map[string]any {
 	return map[string]any{
@@ -34,7 +17,7 @@ func WithValidationIssues(details map[string]any, issues ...map[string]any) map[
 		if len(issue) == 0 {
 			continue
 		}
-		validIssues = append(validIssues, DeepCopy(issue).(map[string]any))
+		validIssues = append(validIssues, values.DeepCopy(issue).(map[string]any))
 	}
 	if len(validIssues) == 0 {
 		return details

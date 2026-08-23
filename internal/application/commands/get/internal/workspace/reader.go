@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"os"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/issuedetails"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -202,6 +202,6 @@ func extractSections(body string) (map[string]string, map[string]int) {
 }
 
 func newReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
-	issue := support.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
-	return domainerrors.New(domainerrors.CodeReadFailed, message, support.WithValidationIssues(details, issue))
+	issue := issuedetails.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
+	return domainerrors.New(domainerrors.CodeReadFailed, message, issuedetails.WithValidationIssues(details, issue))
 }

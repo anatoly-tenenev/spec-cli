@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/issuedetails"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -96,12 +98,12 @@ func BuildEntityView(
 
 func buildMeta(frontmatter map[string]any, allowedFields map[string]schemacapread.MetaField) map[string]any {
 	meta := map[string]any{}
-	for _, field := range support.SortedMapKeys(allowedFields) {
+	for _, field := range collections.SortedMapKeys(allowedFields) {
 		value, exists := frontmatter[field]
 		if !exists {
 			continue
 		}
-		meta[field] = support.DeepCopy(value)
+		meta[field] = values.DeepCopy(value)
 	}
 	return meta
 }
@@ -112,7 +114,7 @@ func resolveRefs(
 	requestedFields map[string]schemacapread.RefField,
 ) (map[string]any, *domainerrors.AppError) {
 	refs := map[string]any{}
-	for _, refField := range support.SortedMapKeys(requestedFields) {
+	for _, refField := range collections.SortedMapKeys(requestedFields) {
 		refSpec := requestedFields[refField]
 		rawTarget, exists := frontmatter[refField]
 		if !exists {
@@ -316,7 +318,7 @@ func validateRequestedSections(duplicates map[string]int, plan model.SelectorPla
 	}
 
 	if plan.RequiresAllSections {
-		for _, label := range support.SortedMapKeys(duplicates) {
+		for _, label := range collections.SortedMapKeys(duplicates) {
 			return newReadError(
 				"failed to compute requested content sections",
 				fmt.Sprintf("section label '%s' is duplicated", label),
@@ -359,6 +361,6 @@ func invalidRefReadError(refField string) *domainerrors.AppError {
 }
 
 func newReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
-	issue := support.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
-	return domainerrors.New(domainerrors.CodeReadFailed, message, support.WithValidationIssues(details, issue))
+	issue := issuedetails.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
+	return domainerrors.New(domainerrors.CodeReadFailed, message, issuedetails.WithValidationIssues(details, issue))
 }
