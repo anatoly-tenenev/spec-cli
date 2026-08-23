@@ -84,15 +84,6 @@ func LiteralEqual(left any, right any) bool {
 	}
 }
 
-func NormalizeScalar(value any) any {
-	switch typed := value.(type) {
-	case time.Time:
-		return typed.Format("2006-01-02")
-	default:
-		return value
-	}
-}
-
 func NormalizeValue(value any) any {
 	switch typed := value.(type) {
 	case time.Time:

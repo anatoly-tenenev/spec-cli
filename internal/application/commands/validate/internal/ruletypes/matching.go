@@ -1,28 +1,6 @@
 package ruletypes
 
-import (
-	"fmt"
-	"regexp"
-)
-
-var expressionPlaceholderPattern = regexp.MustCompile(`<[^<>]+>`)
-
-func IsSupportedRuleType(value string) bool {
-	switch value {
-	case "string", "integer", "number", "boolean", "null", "entityRef", "array":
-		return true
-	default:
-		return false
-	}
-}
-
-func IsExpressionValue(value any) bool {
-	s, ok := value.(string)
-	if !ok {
-		return false
-	}
-	return expressionPlaceholderPattern.MatchString(s)
-}
+import "fmt"
 
 func MatchesRuleType(value any, expected string) bool {
 	switch expected {
