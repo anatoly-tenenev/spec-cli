@@ -113,8 +113,8 @@ The statements below decide cases the rules further down do not cover. If a rule
 - Detail files next to the entrypoint in the directory root are forbidden.
 - If a directory root has multiple `.go` files, each of them must be an entrypoint for a separate top-level role; otherwise move the file into a subpackage.
 - For command use cases, the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
-- For complex commands, place details under `internal/application/commands/<command>/internal/...` using domain-specific package names (`options`, `schema`, `workspace`, `engine`, `support`, etc.).
-- Do not use `common` as a universal package; prefer domain-specific names by purpose.
+- For complex commands, place details under `internal/application/commands/<command>/internal/...` using domain-specific package names (`options`, `schema`, `workspace`, `engine`, etc.).
+- Do not use `common`, `support`, `util`, or `helpers` as universal packages; name a package after its subject, not after its role in the dependency graph.
 - Create a new directory with non-trivial logic only together with a clear entrypoint file and an explicit directory role.
 - `.go` files are limited to `600` lines; when the limit is exceeded, split the file while preserving the entrypoint-first rules.
 - If a `.go` file exceeds `600` lines, move detailed logic into subpackages under `internal/<domain_role>/...`; splitting into several detail files in the same root directory is forbidden.
@@ -129,10 +129,12 @@ The statements below decide cases the rules further down do not cover. If a rule
 - For `validate`, use the current structure as the baseline:
   - `internal/model` - internal command types.
   - `internal/options` - command option parsing and path normalization.
-  - `internal/schema` - schema loading/validation.
   - `internal/workspace` - candidate scan and frontmatter/content parsing.
   - `internal/engine` - main validation pipeline and issue aggregation.
-  - `internal/support` - narrow pure helper functions (`yaml`/collections/values).
+  - `internal/ruletypes` - matching a value against a declared rule type or enum.
+  - `internal/duplicates` - finding duplicated keys in an index.
+- Before creating a subpackage, check whether a package with that name already exists under another command. Identical names across commands are a signal to look for shared logic, not a template to copy.
+- Logic shared by two or more commands belongs in `internal/application/commands/internal/<role>`. Logic shared with `readmodel` or `schema` belongs in a package directly under `internal/application/` (see `entitydoc`, `values`). Copying is allowed only with a written reason why the copies must differ.
 - Do not change business logic, error codes, or issue codes without an explicit task to change behavior.
 - After any command changes, run at least `make vet` and `make test`.
 
