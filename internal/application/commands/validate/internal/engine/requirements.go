@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/ruletypes"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -49,7 +49,7 @@ func validateRequiredFields(
 			continue
 		}
 
-		if !support.MatchesRuleType(value, rule.Type) {
+		if !ruletypes.MatchesRuleType(value, rule.Type) {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_type_mismatch",
 				Level:       domainvalidation.LevelError,
@@ -90,7 +90,7 @@ func validateRequiredFields(
 			continue
 		}
 
-		if len(resolvedEnum) > 0 && !support.ContainsEnumValue(resolvedEnum, value) {
+		if len(resolvedEnum) > 0 && !ruletypes.ContainsEnumValue(resolvedEnum, value) {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_enum_mismatch",
 				Level:       domainvalidation.LevelError,
@@ -115,7 +115,7 @@ func validateRequiredFields(
 				continue
 			}
 
-			if !support.LiteralEqual(value, resolvedConst) {
+			if !ruletypes.LiteralEqual(value, resolvedConst) {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "meta.required_value_mismatch",
 					Level:       domainvalidation.LevelError,
@@ -163,7 +163,7 @@ func validateArrayField(
 
 	if rule.HasItemType {
 		for idx, item := range arrayValue {
-			matchesItemType := support.MatchesRuleType(item, rule.ItemType)
+			matchesItemType := ruletypes.MatchesRuleType(item, rule.ItemType)
 			if matchesItemType && rule.ItemType == "entityRef" {
 				referenceID, _ := item.(string)
 				if strings.TrimSpace(referenceID) == "" {
@@ -206,7 +206,7 @@ func validateArrayField(
 	if rule.UniqueItems {
 		for left := 0; left < itemCount; left++ {
 			for right := left + 1; right < itemCount; right++ {
-				if !support.LiteralEqual(arrayValue[left], arrayValue[right]) {
+				if !ruletypes.LiteralEqual(arrayValue[left], arrayValue[right]) {
 					continue
 				}
 				addIssue(issues, entity, domainvalidation.Issue{

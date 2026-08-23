@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/duplicates"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/support"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -22,7 +23,7 @@ func validateAllowedFrontmatterKeys(issues *[]domainvalidation.Issue, entity *mo
 		allowed[fieldName] = struct{}{}
 	}
 
-	keys := support.SortedMapKeys(frontmatter)
+	keys := collections.SortedMapKeys(frontmatter)
 	for _, key := range keys {
 		if _, ok := allowed[key]; ok {
 			continue
@@ -45,7 +46,7 @@ func appendGlobalUniquenessIssues(
 	slugsByType map[string]map[string][]int,
 	suffixByType map[string]map[int][]int,
 ) {
-	duplicatedIDs := support.DuplicatedStringKeys(ids)
+	duplicatedIDs := duplicates.DuplicatedStringKeys(ids)
 	for _, id := range duplicatedIDs {
 		for _, idx := range ids[id] {
 			checked[idx].HasError = true
@@ -60,9 +61,9 @@ func appendGlobalUniquenessIssues(
 		})
 	}
 
-	typeNames := support.SortedMapKeys(slugsByType)
+	typeNames := collections.SortedMapKeys(slugsByType)
 	for _, typeName := range typeNames {
-		duplicatedSlugs := support.DuplicatedStringKeys(slugsByType[typeName])
+		duplicatedSlugs := duplicates.DuplicatedStringKeys(slugsByType[typeName])
 		for _, slug := range duplicatedSlugs {
 			for _, idx := range slugsByType[typeName][slug] {
 				checked[idx].HasError = true
@@ -78,9 +79,9 @@ func appendGlobalUniquenessIssues(
 		}
 	}
 
-	typeNames = support.SortedMapKeys(suffixByType)
+	typeNames = collections.SortedMapKeys(suffixByType)
 	for _, typeName := range typeNames {
-		suffixes := support.DuplicatedIntKeys(suffixByType[typeName])
+		suffixes := duplicates.DuplicatedIntKeys(suffixByType[typeName])
 		for _, suffix := range suffixes {
 			for _, idx := range suffixByType[typeName][suffix] {
 				checked[idx].HasError = true

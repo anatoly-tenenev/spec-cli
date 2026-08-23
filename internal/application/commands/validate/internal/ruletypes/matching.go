@@ -1,4 +1,4 @@
-package support
+package ruletypes
 
 import (
 	"fmt"
