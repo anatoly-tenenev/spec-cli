@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlnodes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -74,7 +75,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 				}
 				continue
 			}
-			applied.MetaPayload[field.Name] = support.NormalizeValue(value)
+			applied.MetaPayload[field.Name] = values.NormalizeValue(value)
 		case model.WritePathRef:
 			field := typeSpec.MetaFields[writeSpec.FieldName]
 			if field.IsEntityRefArray {
@@ -204,7 +205,7 @@ func resolveOperationValue(
 			}
 			return value, nil
 		}
-		parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+		parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
 		if parseErr != nil {
 			return nil, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
@@ -223,11 +224,11 @@ func resolveOperationValue(
 				},
 			)
 		}
-		return support.NormalizeValue(parsed), nil
+		return values.NormalizeValue(parsed), nil
 	case model.WritePathRef:
 		field := typeSpec.MetaFields[writeSpec.FieldName]
 		if field.IsEntityRefArray {
-			parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+			parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
 			if parseErr != nil {
 				return nil, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,
@@ -278,17 +279,17 @@ func resolveOperationValue(
 }
 
 func isTypeCompatible(field model.MetaField, rawValue any) bool {
-	value := support.NormalizeValue(rawValue)
+	value := values.NormalizeValue(rawValue)
 
 	switch field.Type {
 	case "string":
 		_, ok := value.(string)
 		return ok
 	case "integer":
-		number, ok := support.NumberToFloat64(value)
+		number, ok := values.NumberToFloat64(value)
 		return ok && number == float64(int(number))
 	case "number":
-		_, ok := support.NumberToFloat64(value)
+		_, ok := values.NumberToFloat64(value)
 		return ok
 	case "boolean":
 		_, ok := value.(bool)
@@ -305,7 +306,7 @@ func isTypeCompatible(field model.MetaField, rawValue any) bool {
 }
 
 func describeValueType(rawValue any) string {
-	value := support.NormalizeValue(rawValue)
+	value := values.NormalizeValue(rawValue)
 
 	switch typed := value.(type) {
 	case nil:
@@ -317,7 +318,7 @@ func describeValueType(rawValue any) string {
 	case []any:
 		return "array"
 	default:
-		if _, ok := support.NumberToFloat64(typed); ok {
+		if _, ok := values.NumberToFloat64(typed); ok {
 			return "number"
 		}
 		return fmt.Sprintf("%T", value)

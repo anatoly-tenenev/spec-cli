@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/model"
-	commandsupport "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -85,10 +85,10 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 	return markdownFiles, nil
 }
 
-func normalizeMap(values map[string]any) map[string]any {
-	normalized := make(map[string]any, len(values))
-	for key, value := range values {
-		normalized[key] = commandsupport.NormalizeValue(value)
+func normalizeMap(input map[string]any) map[string]any {
+	normalized := make(map[string]any, len(input))
+	for key, value := range input {
+		normalized[key] = values.NormalizeValue(value)
 	}
 	return normalized
 }

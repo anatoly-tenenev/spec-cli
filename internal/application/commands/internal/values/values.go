@@ -1,4 +1,4 @@
-package support
+package values
 
 import (
 	"fmt"
@@ -112,42 +112,4 @@ func NormalizeValue(value any) any {
 	default:
 		return typed
 	}
-}
-
-func ValidationIssue(code string, message string, standardRef string, field string) map[string]any {
-	issue := map[string]any{
-		"code":         code,
-		"level":        "error",
-		"class":        "InstanceError",
-		"message":      message,
-		"standard_ref": standardRef,
-	}
-	if field != "" {
-		issue["field"] = field
-	}
-	return issue
-}
-
-func WithValidationIssues(details map[string]any, issues ...map[string]any) map[string]any {
-	if len(issues) == 0 {
-		return details
-	}
-
-	filtered := make([]map[string]any, 0, len(issues))
-	for _, issue := range issues {
-		if len(issue) == 0 {
-			continue
-		}
-		filtered = append(filtered, DeepCopy(issue).(map[string]any))
-	}
-	if len(filtered) == 0 {
-		return details
-	}
-
-	merged := map[string]any{}
-	for key, value := range details {
-		merged[key] = value
-	}
-	merged["validation"] = map[string]any{"issues": filtered}
-	return merged
 }

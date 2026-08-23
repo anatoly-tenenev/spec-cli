@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	updateworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
@@ -97,7 +98,7 @@ func Validate(
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		allowedFrontmatterKeys[fieldName] = struct{}{}
 	}
-	for _, key := range support.SortedMapKeys(candidate.Frontmatter) {
+	for _, key := range collections.SortedMapKeys(candidate.Frontmatter) {
 		if _, ok := allowedFrontmatterKeys[key]; ok {
 			continue
 		}
@@ -279,7 +280,7 @@ func validateMetaFieldValue(
 	evaluationContext map[string]any,
 ) []domainvalidation.Issue {
 	issuesList := make([]domainvalidation.Issue, 0)
-	value := support.NormalizeValue(rawValue)
+	value := values.NormalizeValue(rawValue)
 
 	typeMismatch := func(expected string) {
 		issuesList = append(issuesList, issues.New(
@@ -297,12 +298,12 @@ func validateMetaFieldValue(
 			typeMismatch("string")
 		}
 	case "integer":
-		number, ok := support.NumberToFloat64(value)
+		number, ok := values.NumberToFloat64(value)
 		if !ok || number != float64(int(number)) {
 			typeMismatch("integer")
 		}
 	case "number":
-		if _, ok := support.NumberToFloat64(value); !ok {
+		if _, ok := values.NumberToFloat64(value); !ok {
 			typeMismatch("number")
 		}
 	case "boolean":
@@ -341,7 +342,7 @@ func validateMetaFieldValue(
 		if fieldSpec.UniqueItems {
 			for i := 0; i < len(arr); i++ {
 				for j := i + 1; j < len(arr); j++ {
-					if support.LiteralEqual(arr[i], arr[j]) {
+					if values.LiteralEqual(arr[i], arr[j]) {
 						issuesList = append(issuesList, issues.New(
 							"meta.required_array_unique_items",
 							fmt.Sprintf("field '%s' requires unique items", fieldSpec.Name),
@@ -384,7 +385,7 @@ func validateMetaFieldValue(
 
 		matched := false
 		for _, enumValue := range resolvedEnum {
-			if support.LiteralEqual(enumValue, value) {
+			if values.LiteralEqual(enumValue, value) {
 				matched = true
 				break
 			}
@@ -410,7 +411,7 @@ func validateMetaFieldValue(
 				"frontmatter."+fieldSpec.Name,
 				candidate,
 			))
-		} else if !support.LiteralEqual(resolvedConst, value) {
+		} else if !values.LiteralEqual(resolvedConst, value) {
 			issuesList = append(issuesList, issues.New(
 				"meta.required_value_mismatch",
 				fmt.Sprintf("field '%s' must match schema const", fieldSpec.Name),
@@ -426,17 +427,17 @@ func validateMetaFieldValue(
 
 func isValueOfType(value any, typeName string) bool {
 	typeName = strings.TrimSpace(typeName)
-	value = support.NormalizeValue(value)
+	value = values.NormalizeValue(value)
 
 	switch typeName {
 	case "string":
 		_, ok := value.(string)
 		return ok
 	case "integer":
-		number, ok := support.NumberToFloat64(value)
+		number, ok := values.NumberToFloat64(value)
 		return ok && number == float64(int(number))
 	case "number":
-		_, ok := support.NumberToFloat64(value)
+		_, ok := values.NumberToFloat64(value)
 		return ok
 	case "boolean":
 		_, ok := value.(bool)

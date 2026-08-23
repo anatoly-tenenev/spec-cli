@@ -1,4 +1,4 @@
-package support
+package yamlnodes
 
 import (
 	"fmt"

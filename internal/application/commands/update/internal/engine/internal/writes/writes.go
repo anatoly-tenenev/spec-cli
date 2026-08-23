@@ -9,7 +9,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlnodes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
@@ -53,8 +54,8 @@ func Apply(
 
 			switch op.Kind {
 			case model.WriteOperationSet, model.WriteOperationSetFile:
-				after := support.NormalizeValue(op.Value)
-				if exists && support.LiteralEqual(support.NormalizeValue(before), after) {
+				after := values.NormalizeValue(op.Value)
+				if exists && values.LiteralEqual(values.NormalizeValue(before), after) {
 					continue
 				}
 				nextFrontmatter[op.Spec.FieldName] = after
@@ -287,7 +288,7 @@ func resolveOperationValue(
 	switch writeSpec.Kind {
 	case model.WritePathMeta:
 		field := typeSpec.MetaFields[writeSpec.FieldName]
-		parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+		parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
 		if parseErr != nil {
 			return nil, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
@@ -306,11 +307,11 @@ func resolveOperationValue(
 				},
 			)
 		}
-		return support.NormalizeValue(parsed), nil
+		return values.NormalizeValue(parsed), nil
 	case model.WritePathRef:
 		field := typeSpec.MetaFields[writeSpec.FieldName]
 		if field.IsEntityRefArray {
-			parsed, parseErr := support.ParseYAMLValue(op.RawValue)
+			parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
 			if parseErr != nil {
 				return nil, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,
@@ -361,17 +362,17 @@ func resolveOperationValue(
 }
 
 func isTypeCompatible(field model.MetaField, rawValue any) bool {
-	value := support.NormalizeValue(rawValue)
+	value := values.NormalizeValue(rawValue)
 
 	switch field.Type {
 	case "string":
 		_, ok := value.(string)
 		return ok
 	case "integer":
-		number, ok := support.NumberToFloat64(value)
+		number, ok := values.NumberToFloat64(value)
 		return ok && number == float64(int(number))
 	case "number":
-		_, ok := support.NumberToFloat64(value)
+		_, ok := values.NumberToFloat64(value)
 		return ok
 	case "boolean":
 		_, ok := value.(bool)
@@ -385,7 +386,7 @@ func isTypeCompatible(field model.MetaField, rawValue any) bool {
 }
 
 func describeValueType(rawValue any) string {
-	value := support.NormalizeValue(rawValue)
+	value := values.NormalizeValue(rawValue)
 
 	switch typed := value.(type) {
 	case nil:
@@ -397,7 +398,7 @@ func describeValueType(rawValue any) string {
 	case []any:
 		return "array"
 	default:
-		if _, ok := support.NumberToFloat64(typed); ok {
+		if _, ok := values.NumberToFloat64(typed); ok {
 			return "number"
 		}
 		return fmt.Sprintf("%T", value)
@@ -435,7 +436,7 @@ func containsPath(paths []string, target string) bool {
 func cloneMap(input map[string]any) map[string]any {
 	next := make(map[string]any, len(input))
 	for key, value := range input {
-		next[key] = support.DeepCopy(value)
+		next[key] = values.DeepCopy(value)
 	}
 	return next
 }
@@ -444,7 +445,7 @@ func normalizeScalarOrNil(value any, exists bool) any {
 	if !exists {
 		return nil
 	}
-	return support.NormalizeValue(value)
+	return values.NormalizeValue(value)
 }
 
 func splitRawLines(value string) []string {

@@ -1,7 +1,7 @@
 package workspace
 
 import (
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 )
 
@@ -21,7 +21,7 @@ func BuildMeta(frontmatter map[string]any) map[string]any {
 		case "type", "id", "slug", "createdDate", "updatedDate":
 			continue
 		default:
-			meta[key] = support.NormalizeValue(value)
+			meta[key] = values.NormalizeValue(value)
 		}
 	}
 	return meta

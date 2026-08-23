@@ -7,7 +7,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/support"
-	commandsupport "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -172,10 +172,10 @@ func extractIdentity(raw []byte) (model.EntityIdentity, bool) {
 	return model.EntityIdentity{Type: typeName, ID: id, Slug: slug}, true
 }
 
-func normalizeMap(values map[string]any) map[string]any {
-	normalized := make(map[string]any, len(values))
-	for key, value := range values {
-		normalized[key] = commandsupport.NormalizeValue(value)
+func normalizeMap(input map[string]any) map[string]any {
+	normalized := make(map[string]any, len(input))
+	for key, value := range input {
+		normalized[key] = values.NormalizeValue(value)
 	}
 	return normalized
 }

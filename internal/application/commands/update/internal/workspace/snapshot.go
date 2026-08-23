@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/support"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlnodes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -146,7 +146,7 @@ func extractIDFromYAML(frontmatterBody string) (string, bool) {
 		return "", false
 	}
 
-	doc := support.FirstContentNode(&root)
+	doc := yamlnodes.FirstContentNode(&root)
 	if doc == nil || doc.Kind != yaml.MappingNode {
 		return "", false
 	}
