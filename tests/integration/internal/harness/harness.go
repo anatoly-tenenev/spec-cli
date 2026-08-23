@@ -408,26 +408,13 @@ func ensureCLIBinary() (string, error) {
 		if runtime.GOOS == "windows" {
 			binPath += ".exe"
 		}
+		// The build inherits the environment as-is, so it reuses the same Go
+		// caches as `go build` in a shell. Overriding them here is worse on
+		// both counts: an isolated GOCACHE recompiles what `go test` just
+		// built, and an isolated GOMODCACHE cannot be filled without network
+		// access. Set either variable in the environment to isolate the build.
 		buildCmd := exec.Command("go", "build", "-o", binPath, "./cmd/spec-cli")
 		buildCmd.Dir = repoRoot
-		goCache := os.Getenv("GOCACHE")
-		if strings.TrimSpace(goCache) == "" {
-			goCache = filepath.Join(os.TempDir(), "spec-cli-go-build")
-		}
-		goModCache := os.Getenv("GOMODCACHE")
-		if strings.TrimSpace(goModCache) == "" {
-			goModCache = filepath.Join(os.TempDir(), "spec-cli-go-mod")
-		}
-		if mkErr := os.MkdirAll(goCache, 0o755); mkErr != nil {
-			cliBinaryBuildErr = mkErr
-			return
-		}
-		if mkErr := os.MkdirAll(goModCache, 0o755); mkErr != nil {
-			cliBinaryBuildErr = mkErr
-			return
-		}
-		buildCmd.Env = append([]string{}, os.Environ()...)
-		buildCmd.Env = append(buildCmd.Env, "GOCACHE="+goCache, "GOMODCACHE="+goModCache)
 		buildOutput, err := buildCmd.CombinedOutput()
 		if err != nil {
 			cliBinaryBuildErr = fmt.Errorf("go build failed: %w\n%s", err, string(buildOutput))
