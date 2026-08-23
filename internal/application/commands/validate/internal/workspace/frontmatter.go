@@ -1,8 +1,8 @@
 package workspace
 
 import (
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 )
 
 // ParseFrontmatter normalizes decoded values before handing them to the

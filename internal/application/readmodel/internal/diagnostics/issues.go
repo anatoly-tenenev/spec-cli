@@ -1,6 +1,6 @@
 package diagnostics
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/values"
+import "github.com/anatoly-tenenev/spec-cli/internal/application/values"
 
 const (
 	ValidationIssueLevelError         = "error"

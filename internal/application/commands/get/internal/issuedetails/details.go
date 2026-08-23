@@ -1,6 +1,6 @@
 package issuedetails
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
+import "github.com/anatoly-tenenev/spec-cli/internal/application/values"
 
 func ValidationIssue(level string, class string, message string, standardRef string) map[string]any {
 	return map[string]any{

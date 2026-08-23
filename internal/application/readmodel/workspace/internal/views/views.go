@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/ordered"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/values"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 )
 
 func BuildMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/markdown"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/payload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/storage"
@@ -16,6 +15,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"

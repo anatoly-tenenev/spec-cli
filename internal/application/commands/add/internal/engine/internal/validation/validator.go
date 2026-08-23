@@ -11,8 +11,8 @@ import (
 	addworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/workspace"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )

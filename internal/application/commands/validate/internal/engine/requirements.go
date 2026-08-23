@@ -8,6 +8,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/ruletypes"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
@@ -115,7 +116,7 @@ func validateRequiredFields(
 				continue
 			}
 
-			if !ruletypes.LiteralEqual(value, resolvedConst) {
+			if !values.LiteralEqual(value, resolvedConst) {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "meta.required_value_mismatch",
 					Level:       domainvalidation.LevelError,
@@ -206,7 +207,7 @@ func validateArrayField(
 	if rule.UniqueItems {
 		for left := 0; left < itemCount; left++ {
 			for right := left + 1; right < itemCount; right++ {
-				if !ruletypes.LiteralEqual(arrayValue[left], arrayValue[right]) {
+				if !values.LiteralEqual(arrayValue[left], arrayValue[right]) {
 					continue
 				}
 				addIssue(issues, entity, domainvalidation.Issue{

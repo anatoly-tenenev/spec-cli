@@ -7,8 +7,8 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 

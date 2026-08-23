@@ -9,10 +9,10 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	updateworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )

@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
