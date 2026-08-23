@@ -1,0 +1,24 @@
+{
+  "id": "validate_40_0010_ok_validate_meta_unquoted_date_json",
+  "description": "validate_40_0010_ok_validate_meta_unquoted_date_json",
+  "command": "validate",
+  "args": [
+    "--workspace",
+    "${WORKSPACE}",
+    "--schema",
+    "${SCHEMA}",
+    "--format",
+    "json",
+    "validate"
+  ],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json",
+    "stderr_file": ""
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "",
+    "assert_output": false
+  }
+}
