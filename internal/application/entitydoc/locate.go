@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/yamlnodes"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,7 +48,7 @@ func extractIDFromYAML(frontmatterBody string) (string, bool) {
 		return "", false
 	}
 
-	doc := FirstContentNode(&root)
+	doc := yamlnodes.FirstContentNode(&root)
 	if doc == nil || doc.Kind != yaml.MappingNode {
 		return "", false
 	}

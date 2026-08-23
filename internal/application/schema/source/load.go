@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/source/internal/yamlnodes"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/yamlnodes"
 	"gopkg.in/yaml.v3"
 )
 
@@ -66,7 +66,7 @@ func Load(path string, displayPath string) (Document, []diagnostics.Issue, error
 		}, nil
 	}
 
-	if duplicate, ok := yamlnodes.FindDuplicateMappingKey(doc); ok {
+	if duplicate, ok := yamlnodes.FindDuplicateMappingKey(doc, "schema"); ok {
 		return Document{}, []diagnostics.Issue{
 			diagnostics.NewError(
 				"schema.source.duplicate_key",

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlnodes"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlvalues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -205,7 +205,7 @@ func resolveOperationValue(
 			}
 			return value, nil
 		}
-		parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
+		parsed, parseErr := yamlvalues.ParseYAMLValue(op.RawValue)
 		if parseErr != nil {
 			return nil, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
@@ -228,7 +228,7 @@ func resolveOperationValue(
 	case model.WritePathRef:
 		field := typeSpec.MetaFields[writeSpec.FieldName]
 		if field.IsEntityRefArray {
-			parsed, parseErr := yamlnodes.ParseYAMLValue(op.RawValue)
+			parsed, parseErr := yamlvalues.ParseYAMLValue(op.RawValue)
 			if parseErr != nil {
 				return nil, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,

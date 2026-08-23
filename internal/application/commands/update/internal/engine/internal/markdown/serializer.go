@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlnodes"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlvalues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"gopkg.in/yaml.v3"
 )
@@ -92,7 +92,7 @@ func appendYAMLField(mapping *yaml.Node, key string, value any) error {
 		valueNode = builtinDateNode
 	} else {
 		var err error
-		valueNode, err = yamlnodes.EncodeYAMLNode(value)
+		valueNode, err = yamlvalues.EncodeYAMLNode(value)
 		if err != nil {
 			return err
 		}

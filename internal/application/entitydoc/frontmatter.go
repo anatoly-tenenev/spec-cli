@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/yamlnodes"
 	"gopkg.in/yaml.v3"
 )
 
@@ -43,13 +44,13 @@ func ParseFrontmatter(raw []byte) (map[string]any, string, error) {
 		return nil, "", fmt.Errorf("frontmatter is not valid yaml: %w", err)
 	}
 
-	doc := FirstContentNode(&root)
+	doc := yamlnodes.FirstContentNode(&root)
 	if doc == nil || doc.Kind != yaml.MappingNode {
 		return nil, "", fmt.Errorf("frontmatter root must be a yaml mapping")
 	}
 
-	if duplicateKey, ok := FindDuplicateMappingKey(doc); ok {
-		return nil, "", fmt.Errorf("frontmatter contains duplicate key '%s'", duplicateKey)
+	if duplicate, ok := yamlnodes.FindDuplicateMappingKey(doc, ""); ok {
+		return nil, "", fmt.Errorf("frontmatter contains duplicate key '%s'", duplicate.Key)
 	}
 
 	fields := map[string]any{}
@@ -83,53 +84,4 @@ func ReadStringField(values map[string]any, key string) (string, bool) {
 		return "", false
 	}
 	return value, true
-}
-
-// FirstContentNode unwraps a document node down to its first content node.
-func FirstContentNode(node *yaml.Node) *yaml.Node {
-	if node == nil {
-		return nil
-	}
-	if node.Kind == yaml.DocumentNode {
-		if len(node.Content) == 0 {
-			return nil
-		}
-		return node.Content[0]
-	}
-	return node
-}
-
-// FindDuplicateMappingKey reports the first key repeated within a mapping,
-// searching nested mappings and sequences as well.
-func FindDuplicateMappingKey(node *yaml.Node) (string, bool) {
-	if node == nil {
-		return "", false
-	}
-
-	switch node.Kind {
-	case yaml.MappingNode:
-		seen := map[string]struct{}{}
-		// idx+1 keeps the value lookup in range if a mapping ever carries an
-		// unpaired trailing key.
-		for idx := 0; idx+1 < len(node.Content); idx += 2 {
-			keyNode := node.Content[idx]
-			valueNode := node.Content[idx+1]
-			if _, exists := seen[keyNode.Value]; exists {
-				return keyNode.Value, true
-			}
-			seen[keyNode.Value] = struct{}{}
-
-			if duplicateKey, ok := FindDuplicateMappingKey(valueNode); ok {
-				return duplicateKey, true
-			}
-		}
-	case yaml.SequenceNode:
-		for _, child := range node.Content {
-			if duplicateKey, ok := FindDuplicateMappingKey(child); ok {
-				return duplicateKey, true
-			}
-		}
-	}
-
-	return "", false
 }
