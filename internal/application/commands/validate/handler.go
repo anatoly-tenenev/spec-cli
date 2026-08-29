@@ -11,6 +11,7 @@ package validate
 import (
 	"context"
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 	"sort"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/engine"
@@ -40,7 +41,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, parseErr
 	}
 
-	workspacePath, schemaPath, pathErr := options.NormalizePaths(request.Global)
+	workspacePath, schemaPath, pathErr := optionpaths.Normalize(request.Global)
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
 	}

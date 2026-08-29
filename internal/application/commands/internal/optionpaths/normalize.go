@@ -1,4 +1,11 @@
-package options
+// Package optionpaths resolves the workspace and schema paths every command
+// receives through the global options, and enforces --require-absolute-paths
+// on them.
+//
+// Commands that accept further paths of their own (a content file, a query
+// file) normalize those afterwards, so the two global paths are reported in the
+// same order and with the same wording everywhere.
+package optionpaths
 
 import (
 	"path/filepath"
@@ -7,7 +14,7 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-func NormalizePaths(global requests.GlobalOptions) (string, string, *domainerrors.AppError) {
+func Normalize(global requests.GlobalOptions) (string, string, *domainerrors.AppError) {
 	if global.RequireAbsolutePaths {
 		if !filepath.IsAbs(global.Workspace) {
 			return "", "", domainerrors.New(

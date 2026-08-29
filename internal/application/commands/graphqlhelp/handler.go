@@ -12,6 +12,7 @@ package graphqlhelp
 
 import (
 	"context"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlhelp/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/catalog"
@@ -42,7 +43,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	if parseErr != nil {
 		return responses.CommandOutput{}, parseErr
 	}
-	_, schemaPath, pathErr := options.NormalizePaths(request.Global)
+	_, schemaPath, pathErr := optionpaths.Normalize(request.Global)
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
 	}

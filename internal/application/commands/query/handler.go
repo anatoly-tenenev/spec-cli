@@ -10,6 +10,7 @@ package query
 
 import (
 	"context"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/query/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine"
@@ -39,7 +40,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, parseErr
 	}
 
-	workspacePath, schemaPath, pathErr := options.NormalizePaths(request.Global)
+	workspacePath, schemaPath, pathErr := optionpaths.Normalize(request.Global)
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
 	}
