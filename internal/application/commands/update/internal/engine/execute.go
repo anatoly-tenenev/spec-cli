@@ -23,6 +23,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -40,7 +41,7 @@ func Execute(
 		return nil, locateErr
 	}
 
-	frontmatter, body, parseErr := workspace.ParseFrontmatter(targetMatch.Raw)
+	frontmatter, body, parseErr := workspace.ParseWithNormalizedDates(targetMatch.Raw)
 	if parseErr != nil {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -49,7 +50,7 @@ func Execute(
 		)
 	}
 
-	entityType, hasType := workspace.ReadStringField(frontmatter, "type")
+	entityType, hasType := entitydoc.ReadStringField(frontmatter, "type")
 	if !hasType {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -57,7 +58,7 @@ func Execute(
 			map[string]any{"field": "type"},
 		)
 	}
-	entityID, hasID := workspace.ReadStringField(frontmatter, "id")
+	entityID, hasID := entitydoc.ReadStringField(frontmatter, "id")
 	if !hasID {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
@@ -243,11 +244,11 @@ func locateTarget(snapshot model.Snapshot, requestedID string) (model.TargetMatc
 }
 
 func buildCandidate(frontmatter map[string]any, body string) *model.Candidate {
-	entityType, _ := workspace.ReadStringField(frontmatter, "type")
-	id, _ := workspace.ReadStringField(frontmatter, "id")
-	slug, _ := workspace.ReadStringField(frontmatter, "slug")
-	createdDate, _ := workspace.ReadStringField(frontmatter, "createdDate")
-	updatedDate, _ := workspace.ReadStringField(frontmatter, "updatedDate")
+	entityType, _ := entitydoc.ReadStringField(frontmatter, "type")
+	id, _ := entitydoc.ReadStringField(frontmatter, "id")
+	slug, _ := entitydoc.ReadStringField(frontmatter, "slug")
+	createdDate, _ := entitydoc.ReadStringField(frontmatter, "createdDate")
+	updatedDate, _ := entitydoc.ReadStringField(frontmatter, "updatedDate")
 
 	return &model.Candidate{
 		Type:         entityType,

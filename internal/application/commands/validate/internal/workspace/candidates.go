@@ -58,11 +58,11 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 }
 
 func extractTypeForFilter(raw []byte) (string, bool) {
-	frontmatter, _, err := ParseFrontmatter(raw)
+	frontmatter, _, err := ParseWithNormalizedValues(raw)
 	if err != nil {
 		return "", false
 	}
-	typeName, ok := ReadStringField(frontmatter, "type")
+	typeName, ok := entitydoc.ReadStringField(frontmatter, "type")
 	if !ok {
 		return "", false
 	}

@@ -7,6 +7,7 @@
 package workspace
 
 import (
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	"os"
 	"path"
 	"path/filepath"
@@ -44,14 +45,14 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 			)
 		}
 
-		frontmatter, body, parseErr := ParseFrontmatter(raw)
+		frontmatter, body, parseErr := entitydoc.ParseFrontmatter(raw)
 		if parseErr != nil {
 			continue
 		}
 
-		typeName, hasType := ReadStringField(frontmatter, "type")
-		id, hasID := ReadStringField(frontmatter, "id")
-		slug, hasSlug := ReadStringField(frontmatter, "slug")
+		typeName, hasType := entitydoc.ReadStringField(frontmatter, "type")
+		id, hasID := entitydoc.ReadStringField(frontmatter, "id")
+		slug, hasSlug := entitydoc.ReadStringField(frontmatter, "slug")
 		if !hasType || !hasID || !hasSlug {
 			continue
 		}
@@ -78,7 +79,7 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 			ID:           id,
 			Slug:         slug,
 			Frontmatter:  frontmatter,
-			Meta:         BuildMeta(frontmatter),
+			Meta:         writemodel.BuildMeta(frontmatter),
 			Body:         body,
 		}
 

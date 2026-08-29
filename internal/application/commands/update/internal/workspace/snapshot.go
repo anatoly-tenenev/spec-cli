@@ -9,6 +9,7 @@
 package workspace
 
 import (
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	"os"
 	"path"
 	"path/filepath"
@@ -62,14 +63,14 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			}
 		}
 
-		frontmatter, body, parseErr := ParseFrontmatter(raw)
+		frontmatter, body, parseErr := ParseWithNormalizedDates(raw)
 		if parseErr != nil {
 			continue
 		}
 
-		typeName, hasType := ReadStringField(frontmatter, "type")
-		id, hasID := ReadStringField(frontmatter, "id")
-		slug, hasSlug := ReadStringField(frontmatter, "slug")
+		typeName, hasType := entitydoc.ReadStringField(frontmatter, "type")
+		id, hasID := entitydoc.ReadStringField(frontmatter, "id")
+		slug, hasSlug := entitydoc.ReadStringField(frontmatter, "slug")
 		if !hasType || !hasID || !hasSlug {
 			continue
 		}
@@ -96,7 +97,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			ID:           id,
 			Slug:         slug,
 			Frontmatter:  frontmatter,
-			Meta:         BuildMeta(frontmatter),
+			Meta:         writemodel.BuildMeta(frontmatter),
 			Body:         body,
 		}
 
@@ -163,7 +164,7 @@ func extractIDFromYAML(frontmatterBody string) (string, bool) {
 	if err := doc.Decode(&fields); err != nil {
 		return "", false
 	}
-	return ReadStringField(fields, "id")
+	return entitydoc.ReadStringField(fields, "id")
 }
 
 func extractIDFromLines(frontmatterBody string) (string, bool) {

@@ -5,21 +5,17 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 )
 
-// ParseFrontmatter normalizes decoded values before handing them to the
+// ParseWithNormalizedValues normalizes decoded values before handing them to the
 // validation engine. yaml.v3 decodes a plain YYYY-MM-DD scalar into time.Time,
 // and the engine compares frontmatter against schema literals, which are always
 // strings; without normalization a valid date fails its own `type: string`.
-func ParseFrontmatter(raw []byte) (map[string]any, string, error) {
+func ParseWithNormalizedValues(raw []byte) (map[string]any, string, error) {
 	frontmatter, body, err := entitydoc.ParseFrontmatter(raw)
 	if err != nil {
 		return nil, "", err
 	}
 	normalized, _ := values.NormalizeValue(frontmatter).(map[string]any)
 	return normalized, body, nil
-}
-
-func ReadStringField(values map[string]any, key string) (string, bool) {
-	return entitydoc.ReadStringField(values, key)
 }
 
 // ExtractSectionLabels maps every label present in the body to its heading

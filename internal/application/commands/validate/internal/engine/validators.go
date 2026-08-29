@@ -10,7 +10,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/duplicates"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -99,7 +99,7 @@ func appendGlobalUniquenessIssues(
 }
 
 func validateDateField(issues *[]domainvalidation.Issue, entity *model.CheckedEntity, frontmatter map[string]any, field string, standardRef string) {
-	dateValue, exists := workspace.ReadStringField(frontmatter, field)
+	dateValue, exists := entitydoc.ReadStringField(frontmatter, field)
 	if !exists {
 		addIssue(issues, entity, domainvalidation.Issue{
 			Code:        "builtin.date_missing",

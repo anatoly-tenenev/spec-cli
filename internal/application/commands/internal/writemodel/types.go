@@ -1,9 +1,13 @@
 // Package writemodel holds the entity types shared by the add and update
-// write pipelines. Command-specific shapes (Options, Snapshot) stay in each
+// write pipelines, and builds the fields of those types that both commands
+// fill the same way. Command-specific shapes (Options, Snapshot) stay in each
 // command's own model package, because they genuinely differ.
 package writemodel
 
-import schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
+import (
+	schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
+)
 
 type EntityTypeSpec = schemacapwrite.EntityWriteModel
 
@@ -49,4 +53,20 @@ type ResolvedRef struct {
 	Slug    string
 	DirPath string
 	Meta    map[string]any
+}
+
+// BuildMeta keeps every frontmatter key that is not a built-in field. Both
+// write pipelines report the same Meta for the same document, so the rule for
+// what counts as metadata lives with the type that carries it.
+func BuildMeta(frontmatter map[string]any) map[string]any {
+	meta := map[string]any{}
+	for key, value := range frontmatter {
+		switch key {
+		case "type", "id", "slug", "createdDate", "updatedDate":
+			continue
+		default:
+			meta[key] = values.NormalizeValue(value)
+		}
+	}
+	return meta
 }

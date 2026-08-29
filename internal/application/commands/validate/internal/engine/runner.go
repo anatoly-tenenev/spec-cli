@@ -295,7 +295,7 @@ func parseCandidates(
 			RelativePath: relativePath,
 		}
 
-		frontmatter, body, parseErr := workspace.ParseFrontmatter(raw)
+		frontmatter, body, parseErr := workspace.ParseWithNormalizedValues(raw)
 		if parseErr != nil {
 			entry.ParseErr = parseErr
 			parsed = append(parsed, entry)
@@ -305,7 +305,7 @@ func parseCandidates(
 		entry.Frontmatter = frontmatter
 		entry.Sections, entry.DuplicateLabels = workspace.ExtractSectionLabels(body)
 
-		entry.TypeName, entry.HasType = workspace.ReadStringField(frontmatter, "type")
+		entry.TypeName, entry.HasType = entitydoc.ReadStringField(frontmatter, "type")
 		if entry.HasType {
 			typeSpec, exists := schema.EntityTypes[entry.TypeName]
 			entry.TypeKnown = exists
@@ -314,8 +314,8 @@ func parseCandidates(
 			}
 		}
 
-		entry.ID, entry.HasID = workspace.ReadStringField(frontmatter, "id")
-		entry.Slug, entry.HasSlug = workspace.ReadStringField(frontmatter, "slug")
+		entry.ID, entry.HasID = entitydoc.ReadStringField(frontmatter, "id")
+		entry.Slug, entry.HasSlug = entitydoc.ReadStringField(frontmatter, "slug")
 
 		parsed = append(parsed, entry)
 	}
