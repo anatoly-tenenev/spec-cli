@@ -1,7 +1,12 @@
-// Package markdown serializes a new entity into the document that lands on
-// disk, and computes the revision from those exact bytes. Frontmatter is
-// emitted builtins first, then meta fields in schema order, so two runs
-// producing the same entity produce the same file and diffs stay readable.
+// Package markdown turns an entity into the document that lands on disk.
+// Frontmatter is emitted builtins first, then meta fields in schema order, so
+// the same entity always produces the same bytes and an edit to one field
+// shows up as a one-field diff.
+//
+// add and update share this: a document created by one and then edited by the
+// other must stay formatted the same way. They once had a copy each, the fix
+// for date formatting reached only one of them, and every update of an added
+// document reformatted the whole file.
 package markdown
 
 import (
@@ -10,14 +15,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlvalues"
 	"gopkg.in/yaml.v3"
 )
 
 var builtinFrontmatterOrder = []string{"type", "id", "slug", "createdDate", "updatedDate"}
 
-func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byte, error) {
+func Serialize(candidate *writemodel.Candidate, typeSpec writemodel.EntityTypeSpec) ([]byte, error) {
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	seen := map[string]struct{}{}
 

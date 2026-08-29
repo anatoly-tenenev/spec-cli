@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/markdown"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/markdown"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/payload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/storage"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine/internal/validation"
