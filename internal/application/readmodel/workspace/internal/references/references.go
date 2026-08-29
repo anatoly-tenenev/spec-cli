@@ -10,8 +10,8 @@ package references
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/ordered"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
@@ -19,24 +19,10 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-type entityIdentity struct {
-	Type string
-	ID   string
-	Slug string
-}
-
-type resolvedRef struct {
-	ID       string
-	Resolved bool
-	Type     any
-	Slug     any
-	Reason   any
-}
-
-func BuildIDIndex(entities []documents.Entity) map[string][]entityIdentity {
-	idIndex := map[string][]entityIdentity{}
+func BuildIDIndex(entities []documents.Entity) map[string][]entityrefs.Identity {
+	idIndex := map[string][]entityrefs.Identity{}
 	for _, entity := range entities {
-		idIndex[entity.ID] = append(idIndex[entity.ID], entityIdentity{
+		idIndex[entity.ID] = append(idIndex[entity.ID], entityrefs.Identity{
 			Type: entity.Type,
 			ID:   entity.ID,
 			Slug: entity.Slug,
@@ -48,7 +34,7 @@ func BuildIDIndex(entities []documents.Entity) map[string][]entityIdentity {
 func Resolve(
 	frontmatter map[string]any,
 	refFields map[string]schemacapread.RefField,
-	idIndex map[string][]entityIdentity,
+	idIndex map[string][]entityrefs.Identity,
 ) (map[string]any, map[string]any, *domainerrors.AppError) {
 	publicRefs := map[string]any{}
 	whereRefs := map[string]any{}
@@ -87,26 +73,26 @@ func Resolve(
 func resolveScalarRef(
 	rawTarget any,
 	refSpec schemacapread.RefField,
-	idIndex map[string][]entityIdentity,
+	idIndex map[string][]entityrefs.Identity,
 	refField string,
 ) (public any, where any, includeInWhere bool, err *domainerrors.AppError) {
 	if rawTarget == nil {
 		return nil, nil, false, nil
 	}
 
-	targetID, ok := readRefID(rawTarget)
+	targetID, ok := entityrefs.ReadID(rawTarget)
 	if !ok {
 		return nil, nil, false, invalidRefReadError(refField)
 	}
 
-	resolved := classifyResolvedRef(targetID, refSpec, idIndex)
-	return toPublicRefObject(resolved), toWhereRefObject(resolved), true, nil
+	resolved := entityrefs.Classify(targetID, refSpec, idIndex)
+	return entityrefs.ToPublicObject(resolved), toWhereRefObject(resolved), true, nil
 }
 
 func resolveArrayRef(
 	rawTarget any,
 	refSpec schemacapread.RefField,
-	idIndex map[string][]entityIdentity,
+	idIndex map[string][]entityrefs.Identity,
 	refField string,
 ) (any, any, *domainerrors.AppError) {
 	if rawTarget == nil {
@@ -126,64 +112,19 @@ func resolveArrayRef(
 			whereItems = append(whereItems, nil)
 			continue
 		}
-		targetID, ok := readRefID(item)
+		targetID, ok := entityrefs.ReadID(item)
 		if !ok {
 			return nil, nil, invalidRefReadError(refField)
 		}
-		resolved := classifyResolvedRef(targetID, refSpec, idIndex)
-		publicItems = append(publicItems, toPublicRefObject(resolved))
+		resolved := entityrefs.Classify(targetID, refSpec, idIndex)
+		publicItems = append(publicItems, entityrefs.ToPublicObject(resolved))
 		whereItems = append(whereItems, toWhereRefObject(resolved))
 	}
 
 	return publicItems, whereItems, nil
 }
 
-func classifyResolvedRef(targetID string, refSpec schemacapread.RefField, idIndex map[string][]entityIdentity) resolvedRef {
-	targets := idIndex[targetID]
-	compatibleTargets := filterTargetsByRefTypes(targets, refSpec.AllowedTypes)
-
-	if len(compatibleTargets) == 1 {
-		target := compatibleTargets[0]
-		return resolvedRef{
-			ID:       targetID,
-			Resolved: true,
-			Type:     target.Type,
-			Slug:     target.Slug,
-			Reason:   nil,
-		}
-	}
-
-	reason := "ambiguous"
-	switch {
-	case len(targets) == 0:
-		reason = "missing"
-	case len(compatibleTargets) == 0:
-		reason = "type_mismatch"
-	}
-
-	return resolvedRef{
-		ID:       targetID,
-		Resolved: false,
-		Type:     deterministicRefTypeHint(compatibleTargets, refSpec.AllowedTypes),
-		Slug:     nil,
-		Reason:   reason,
-	}
-}
-
-func toPublicRefObject(ref resolvedRef) map[string]any {
-	value := map[string]any{
-		"resolved": ref.Resolved,
-		"id":       ref.ID,
-		"type":     ref.Type,
-		"slug":     ref.Slug,
-	}
-	if !ref.Resolved {
-		value["reason"] = ref.Reason
-	}
-	return value
-}
-
-func toWhereRefObject(ref resolvedRef) map[string]any {
+func toWhereRefObject(ref entityrefs.Ref) map[string]any {
 	return map[string]any{
 		"resolved": ref.Resolved,
 		"id":       ref.ID,
@@ -191,63 +132,6 @@ func toWhereRefObject(ref resolvedRef) map[string]any {
 		"slug":     ref.Slug,
 		"reason":   ref.Reason,
 	}
-}
-
-func filterTargetsByRefTypes(targets []entityIdentity, refTypes []string) []entityIdentity {
-	allowed := map[string]struct{}{}
-	for _, refType := range refTypes {
-		allowed[refType] = struct{}{}
-	}
-	filtered := make([]entityIdentity, 0, len(targets))
-	for _, target := range targets {
-		if _, ok := allowed[target.Type]; ok {
-			filtered = append(filtered, target)
-		}
-	}
-	return filtered
-}
-
-func deterministicRefTypeHint(targets []entityIdentity, refTypes []string) any {
-	if len(refTypes) == 1 {
-		return refTypes[0]
-	}
-	if len(targets) == 0 {
-		return nil
-	}
-	candidate := targets[0].Type
-	for idx := 1; idx < len(targets); idx++ {
-		if targets[idx].Type != candidate {
-			return nil
-		}
-	}
-	return candidate
-}
-
-func readRefID(rawTarget any) (string, bool) {
-	switch typed := rawTarget.(type) {
-	case string:
-		return normalizeRefID(typed)
-	case map[string]any:
-		rawID, ok := typed["id"]
-		if !ok {
-			return "", false
-		}
-		targetID, ok := rawID.(string)
-		if !ok {
-			return "", false
-		}
-		return normalizeRefID(targetID)
-	default:
-		return "", false
-	}
-}
-
-func normalizeRefID(raw string) (string, bool) {
-	targetID := strings.TrimSpace(raw)
-	if targetID == "" {
-		return "", false
-	}
-	return targetID, true
 }
 
 func invalidRefReadError(refField string) *domainerrors.AppError {

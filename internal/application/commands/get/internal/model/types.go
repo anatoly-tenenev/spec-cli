@@ -5,6 +5,8 @@
 // for.
 package model
 
+import "github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
+
 type Options struct {
 	ID        string
 	Selectors []string
@@ -29,11 +31,7 @@ type SelectorPlan struct {
 	RequiresContentRaw   bool
 }
 
-type EntityIdentity struct {
-	Type string
-	ID   string
-	Slug string
-}
+type EntityIdentity = entityrefs.Identity
 
 type LocateResult struct {
 	TargetPath    string

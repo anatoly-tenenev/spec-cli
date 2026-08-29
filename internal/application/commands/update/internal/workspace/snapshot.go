@@ -18,9 +18,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/yamlnodes"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"gopkg.in/yaml.v3"
 )
 
 var locatorIDPattern = regexp.MustCompile(`^id\s*:\s*(.+?)\s*$`)
@@ -55,7 +53,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 		}
 
 		if trimmedTargetID != "" {
-			if locatedID, ok := extractIDForLocate(raw); ok && locatedID == trimmedTargetID {
+			if locatedID, ok := entitydoc.ExtractIDLenient(raw); ok && locatedID == trimmedTargetID {
 				snapshot.TargetMatches = append(snapshot.TargetMatches, model.TargetMatch{
 					PathAbs: cleanPath,
 					Raw:     raw,
@@ -122,82 +120,4 @@ func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 		)
 	}
 	return markdownFiles, nil
-}
-
-func extractIDForLocate(raw []byte) (string, bool) {
-	source := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	lines := strings.Split(source, "\n")
-	if len(lines) == 0 || lines[0] != "---" {
-		return "", false
-	}
-
-	endIdx := -1
-	for idx := 1; idx < len(lines); idx++ {
-		if lines[idx] == "---" || lines[idx] == "..." {
-			endIdx = idx
-			break
-		}
-	}
-	if endIdx == -1 {
-		return extractIDFromLines(strings.Join(lines[1:], "\n"))
-	}
-
-	frontmatterBody := strings.Join(lines[1:endIdx], "\n")
-	if parsedID, ok := extractIDFromYAML(frontmatterBody); ok {
-		return parsedID, true
-	}
-	return extractIDFromLines(frontmatterBody)
-}
-
-func extractIDFromYAML(frontmatterBody string) (string, bool) {
-	var root yaml.Node
-	if err := yaml.Unmarshal([]byte(frontmatterBody), &root); err != nil {
-		return "", false
-	}
-
-	doc := yamlnodes.FirstContentNode(&root)
-	if doc == nil || doc.Kind != yaml.MappingNode {
-		return "", false
-	}
-
-	fields := map[string]any{}
-	if err := doc.Decode(&fields); err != nil {
-		return "", false
-	}
-	return entitydoc.ReadStringField(fields, "id")
-}
-
-func extractIDFromLines(frontmatterBody string) (string, bool) {
-	for _, line := range strings.Split(frontmatterBody, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-		matches := locatorIDPattern.FindStringSubmatch(trimmed)
-		if len(matches) != 2 {
-			continue
-		}
-
-		value := strings.TrimSpace(matches[1])
-		if index := strings.Index(value, " #"); index >= 0 {
-			value = strings.TrimSpace(value[:index])
-		}
-		value = trimWrappingQuotes(value)
-		if value == "" {
-			continue
-		}
-		return value, true
-	}
-	return "", false
-}
-
-func trimWrappingQuotes(value string) string {
-	trimmed := strings.TrimSpace(value)
-	if len(trimmed) >= 2 {
-		if (trimmed[0] == '\'' && trimmed[len(trimmed)-1] == '\'') ||
-			(trimmed[0] == '"' && trimmed[len(trimmed)-1] == '"') {
-			return strings.TrimSpace(trimmed[1 : len(trimmed)-1])
-		}
-	}
-	return trimmed
 }
