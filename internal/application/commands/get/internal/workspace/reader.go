@@ -9,8 +9,6 @@
 package workspace
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"os"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/issuedetails"
@@ -84,7 +82,7 @@ func LocateByID(workspacePath string, targetID string) (model.LocateResult, *dom
 }
 
 func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget, *domainerrors.AppError) {
-	frontmatter, body, parseErr := entitydoc.ParseFrontmatter(raw)
+	document, parseErr := entitydoc.ParseDocument(raw)
 	if parseErr != nil {
 		return model.ParsedTarget{}, newReadError(
 			"failed to parse target frontmatter",
@@ -94,8 +92,9 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	typeName, ok := entitydoc.ReadStringField(frontmatter, "type")
-	if !ok {
+	// A missing slug is tolerated: get reports the target it was asked for, and
+	// only type and id are needed to identify it.
+	if document.Type == "" {
 		return model.ParsedTarget{}, newReadError(
 			"failed to determine entity type",
 			"built-in field 'type' is required",
@@ -104,8 +103,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	entityID, ok := entitydoc.ReadStringField(frontmatter, "id")
-	if !ok {
+	if document.ID == "" {
 		return model.ParsedTarget{}, newReadError(
 			"failed to determine entity id",
 			"built-in field 'id' is required",
@@ -114,33 +112,27 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		)
 	}
 
-	if entityID != requestedID {
+	if document.ID != requestedID {
 		return model.ParsedTarget{}, newReadError(
 			"failed to read target entity",
 			"target document id does not match requested --id",
 			getWorkspaceIDStandardRef,
-			map[string]any{"expected_id": requestedID, "actual_id": entityID},
+			map[string]any{"expected_id": requestedID, "actual_id": document.ID},
 		)
 	}
 
-	slug, _ := entitydoc.ReadStringField(frontmatter, "slug")
-	createdDate, _ := entitydoc.ReadStringField(frontmatter, "createdDate")
-	updatedDate, _ := entitydoc.ReadStringField(frontmatter, "updatedDate")
-
-	revisionHash := sha256.Sum256(raw)
-	revision := "sha256:" + hex.EncodeToString(revisionHash[:])
-	sections, duplicateLabels := extractSections(body)
+	sections, duplicateLabels := extractSections(document.Body)
 
 	return model.ParsedTarget{
 		Path:                   path,
-		Type:                   typeName,
-		ID:                     entityID,
-		Slug:                   slug,
-		CreatedDate:            createdDate,
-		UpdatedDate:            updatedDate,
-		Revision:               revision,
-		RawBody:                body,
-		Frontmatter:            normalizeMap(frontmatter),
+		Type:                   document.Type,
+		ID:                     document.ID,
+		Slug:                   document.Slug,
+		CreatedDate:            document.CreatedDate,
+		UpdatedDate:            document.UpdatedDate,
+		Revision:               document.Revision,
+		RawBody:                document.Body,
+		Frontmatter:            normalizeMap(document.Frontmatter),
 		Sections:               sections,
 		DuplicateSectionLabels: duplicateLabels,
 	}, nil

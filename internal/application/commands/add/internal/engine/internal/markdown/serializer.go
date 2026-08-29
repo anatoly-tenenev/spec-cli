@@ -5,8 +5,6 @@
 package markdown
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"runtime"
 	"sort"
 	"strings"
@@ -72,11 +70,6 @@ func Serialize(candidate *model.Candidate, typeSpec model.EntityTypeSpec) ([]byt
 	document = applyPlatformNewlines(withTrailingNewline(document))
 
 	return []byte(document), nil
-}
-
-func ComputeRevision(serialized []byte) string {
-	hash := sha256.Sum256(serialized)
-	return "sha256:" + hex.EncodeToString(hash[:])
 }
 
 func appendYAMLField(mapping *yaml.Node, key string, value any) error {

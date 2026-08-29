@@ -9,8 +9,6 @@
 package workspace
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"os"
 	"strings"
 
@@ -49,23 +47,23 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			}
 		}
 
-		frontmatter, _, parseErr := entitydoc.ParseFrontmatter(raw)
+		document, parseErr := entitydoc.ParseDocument(raw)
 		if parseErr != nil {
 			continue
 		}
 
-		typeName, hasType := entitydoc.ReadStringField(frontmatter, "type")
-		id, hasID := entitydoc.ReadStringField(frontmatter, "id")
-		if !hasType || !hasID {
+		// A document that cannot be identified is skipped rather than reported:
+		// delete judges the target, not the rest of the workspace.
+		if document.Type == "" || document.ID == "" {
 			continue
 		}
 
 		snapshot.Documents = append(snapshot.Documents, model.ParsedDocument{
 			PathAbs:     pathAbs,
-			Type:        typeName,
-			ID:          id,
-			Revision:    computeRevision(raw),
-			Frontmatter: normalizeMap(frontmatter),
+			Type:        document.Type,
+			ID:          document.ID,
+			Revision:    document.Revision,
+			Frontmatter: normalizeMap(document.Frontmatter),
 		})
 	}
 
@@ -99,9 +97,4 @@ func normalizeMap(input map[string]any) map[string]any {
 		normalized[key] = values.NormalizeValue(value)
 	}
 	return normalized
-}
-
-func computeRevision(raw []byte) string {
-	sum := sha256.Sum256(raw)
-	return "sha256:" + hex.EncodeToString(sum[:])
 }

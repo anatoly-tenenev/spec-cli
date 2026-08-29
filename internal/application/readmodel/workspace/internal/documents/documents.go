@@ -9,8 +9,6 @@
 package documents
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -57,7 +55,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		)
 	}
 
-	frontmatter, body, parseErr := entitydoc.ParseFrontmatter(raw)
+	document, parseErr := entitydoc.ParseDocument(raw)
 	if parseErr != nil {
 		return nil, diagnostics.NewReadError(
 			"failed to parse workspace document",
@@ -67,8 +65,9 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		)
 	}
 
-	typeName, ok := entitydoc.ReadStringField(frontmatter, "type")
-	if !ok {
+	// The built-in fields are required for reading: without them the document
+	// cannot be identified, so it is reported rather than silently skipped.
+	if document.Type == "" {
 		return nil, diagnostics.NewReadError(
 			"failed to determine entity type",
 			requiredBuiltinFieldMessage("type"),
@@ -76,8 +75,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 			nil,
 		)
 	}
-	id, ok := entitydoc.ReadStringField(frontmatter, "id")
-	if !ok {
+	if document.ID == "" {
 		return nil, diagnostics.NewReadError(
 			"failed to determine entity id",
 			requiredBuiltinFieldMessage("id"),
@@ -85,8 +83,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 			nil,
 		)
 	}
-	slug, ok := entitydoc.ReadStringField(frontmatter, "slug")
-	if !ok {
+	if document.Slug == "" {
 		return nil, diagnostics.NewReadError(
 			"failed to determine entity slug",
 			requiredBuiltinFieldMessage("slug"),
@@ -95,29 +92,23 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		)
 	}
 
-	createdDate, _ := entitydoc.ReadStringField(frontmatter, "createdDate")
-	updatedDate, _ := entitydoc.ReadStringField(frontmatter, "updatedDate")
-
-	revisionHash := sha256.Sum256(raw)
-	revision := "sha256:" + hex.EncodeToString(revisionHash[:])
-
-	parsedSections, duplicateLabels := entitydoc.ExtractSections(body)
+	parsedSections, duplicateLabels := entitydoc.ExtractSections(document.Body)
 	sections := make(map[string]string, len(parsedSections))
 	for label, section := range parsedSections {
 		sections[label] = section.Body
 	}
 
 	return &Entity{
-		Type:                   typeName,
-		ID:                     id,
-		Slug:                   slug,
-		CreatedDate:            createdDate,
-		UpdatedDate:            updatedDate,
-		Revision:               revision,
-		Frontmatter:            frontmatter,
+		Type:                   document.Type,
+		ID:                     document.ID,
+		Slug:                   document.Slug,
+		CreatedDate:            document.CreatedDate,
+		UpdatedDate:            document.UpdatedDate,
+		Revision:               document.Revision,
+		Frontmatter:            document.Frontmatter,
 		Sections:               sections,
 		DuplicateSectionLabels: duplicateLabels,
-		RawContent:             body,
+		RawContent:             document.Body,
 	}, nil
 }
 

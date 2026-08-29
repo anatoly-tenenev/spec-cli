@@ -83,7 +83,7 @@ func Execute(
 		)
 	}
 
-	currentRevision := markdown.ComputePersistedRevision(targetMatch.Raw)
+	currentRevision := entitydoc.Revision(targetMatch.Raw)
 	if opts.ExpectRevision != "" {
 		if opts.ExpectRevision != currentRevision {
 			return nil, domainerrors.New(
@@ -201,7 +201,7 @@ func Execute(
 		)
 	}
 	candidate.Serialized = serialized
-	candidate.Revision = markdown.ComputeRevision(serialized)
+	candidate.Revision = entitydoc.Revision(serialized)
 
 	if !opts.DryRun {
 		if writeErr := storage.Persist(targetMatch.PathAbs, candidate.PathAbs, serialized); writeErr != nil {

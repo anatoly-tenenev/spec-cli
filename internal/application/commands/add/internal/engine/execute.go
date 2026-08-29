@@ -10,6 +10,7 @@ package engine
 
 import (
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"path/filepath"
 	"time"
 
@@ -106,7 +107,7 @@ func Execute(
 		)
 	}
 	candidate.Serialized = serialized
-	candidate.Revision = markdown.ComputeRevision(serialized)
+	candidate.Revision = entitydoc.Revision(serialized)
 
 	if !opts.DryRun {
 		if candidate.PathAbs == "" {
