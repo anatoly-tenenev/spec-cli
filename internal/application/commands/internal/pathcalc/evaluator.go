@@ -36,7 +36,7 @@ func Evaluate(
 					"instance.pathTemplate.when_evaluation_failed",
 					"failed to evaluate pathTemplate.when expression",
 					"8.4",
-					schemaPathOrDefault(pathCase.WhenPath, "schema.pathTemplate.when"),
+					issues.PathOrDefault(pathCase.WhenPath, "schema.pathTemplate.when"),
 					candidate,
 				))
 				continue
@@ -69,7 +69,7 @@ func Evaluate(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate placeholder cannot be resolved: "+renderErrorLabel(renderErr),
 			"8.6",
-			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
+			issues.PathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))
 		return "", pathIssues
@@ -81,7 +81,7 @@ func Evaluate(
 			"instance.pathTemplate.placeholder_unresolved",
 			"pathTemplate resolved outside workspace",
 			"8.6",
-			schemaPathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
+			issues.PathOrDefault(selectedCase.UsePath, "schema.pathTemplate"),
 			candidate,
 		))
 		return "", pathIssues
@@ -100,11 +100,4 @@ func renderErrorLabel(evalErr *schemaexpressions.EvalError) string {
 		return message
 	}
 	return "<unknown>"
-}
-
-func schemaPathOrDefault(path string, fallback string) string {
-	if strings.TrimSpace(path) != "" {
-		return path
-	}
-	return fallback
 }

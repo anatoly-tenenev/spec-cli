@@ -5,6 +5,8 @@
 package issues
 
 import (
+	"strings"
+
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -26,4 +28,15 @@ func New(code string, message string, standardRef string, field string, candidat
 		}
 	}
 	return item
+}
+
+// PathOrDefault names the schema location an issue points at. A compiled
+// schema leaves the path blank where the construct is implicit, and a blank
+// `field` would leave the caller with nothing to open, so each check supplies
+// the location it would have been written at.
+func PathOrDefault(path string, fallback string) string {
+	if strings.TrimSpace(path) != "" {
+		return path
+	}
+	return fallback
 }

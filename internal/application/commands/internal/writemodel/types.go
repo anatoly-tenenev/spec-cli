@@ -11,6 +11,10 @@ import (
 
 type EntityTypeSpec = schemacapwrite.EntityWriteModel
 
+type MetaField = schemacapwrite.MetaField
+
+type RuleValue = schemacapwrite.RuleValue
+
 type PathPattern = schemacapwrite.PathPattern
 
 type PathPatternCase = schemacapwrite.PathPatternCase
