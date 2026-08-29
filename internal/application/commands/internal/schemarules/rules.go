@@ -239,3 +239,53 @@ func IsValueOfType(value any, typeName string) bool {
 		return false
 	}
 }
+
+// BuildContext exposes a candidate to schema expressions as plain maps: the
+// builtins, meta, and refs flattened to the shapes an expression addresses.
+// A ref field that exists but resolves to nothing is present and nil, so an
+// expression can tell "not set" from "set but unresolved".
+func BuildContext(candidate *writemodel.Candidate) map[string]any {
+	if candidate == nil {
+		return map[string]any{}
+	}
+
+	meta := map[string]any{}
+	for key, value := range candidate.Meta {
+		meta[key] = value
+	}
+
+	refs := map[string]any{}
+	for fieldName := range candidate.RefIDs {
+		refs[fieldName] = nil
+	}
+	for fieldName, resolvedRef := range candidate.Refs {
+		refs[fieldName] = map[string]any{
+			"id":      resolvedRef.ID,
+			"type":    resolvedRef.Type,
+			"slug":    resolvedRef.Slug,
+			"dirPath": resolvedRef.DirPath,
+		}
+	}
+	for fieldName, resolvedRefs := range candidate.RefArrays {
+		refItems := make([]any, 0, len(resolvedRefs))
+		for _, resolvedRef := range resolvedRefs {
+			refItems = append(refItems, map[string]any{
+				"id":      resolvedRef.ID,
+				"type":    resolvedRef.Type,
+				"slug":    resolvedRef.Slug,
+				"dirPath": resolvedRef.DirPath,
+			})
+		}
+		refs[fieldName] = refItems
+	}
+
+	return map[string]any{
+		"type":        candidate.Type,
+		"id":          candidate.ID,
+		"slug":        candidate.Slug,
+		"createdDate": candidate.CreatedDate,
+		"updatedDate": candidate.UpdatedDate,
+		"meta":        meta,
+		"refs":        refs,
+	}
+}

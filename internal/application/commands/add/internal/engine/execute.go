@@ -23,6 +23,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/markdown"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemarules"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -78,7 +79,7 @@ func Execute(
 	candidate.Refs = resolvedRefs
 	candidate.RefArrays = resolvedRefArrays
 
-	evaluationContext := buildEvaluationContext(candidate)
+	evaluationContext := schemarules.BuildContext(candidate)
 
 	pathRelPOSIX, pathIssues := pathcalc.Evaluate(typeSpec, candidate, evaluationContext)
 	if pathRelPOSIX != "" {
@@ -139,50 +140,4 @@ func Execute(
 			"issues": []any{},
 		},
 	}, nil
-}
-
-func buildEvaluationContext(candidate *model.Candidate) map[string]any {
-	if candidate == nil {
-		return map[string]any{}
-	}
-
-	meta := map[string]any{}
-	for key, value := range candidate.Meta {
-		meta[key] = value
-	}
-
-	refs := map[string]any{}
-	for fieldName := range candidate.RefIDs {
-		refs[fieldName] = nil
-	}
-	for fieldName, resolvedRef := range candidate.Refs {
-		refs[fieldName] = map[string]any{
-			"id":      resolvedRef.ID,
-			"type":    resolvedRef.Type,
-			"slug":    resolvedRef.Slug,
-			"dirPath": resolvedRef.DirPath,
-		}
-	}
-	for fieldName, resolvedRefs := range candidate.RefArrays {
-		refItems := make([]any, 0, len(resolvedRefs))
-		for _, resolvedRef := range resolvedRefs {
-			refItems = append(refItems, map[string]any{
-				"id":      resolvedRef.ID,
-				"type":    resolvedRef.Type,
-				"slug":    resolvedRef.Slug,
-				"dirPath": resolvedRef.DirPath,
-			})
-		}
-		refs[fieldName] = refItems
-	}
-
-	return map[string]any{
-		"type":        candidate.Type,
-		"id":          candidate.ID,
-		"slug":        candidate.Slug,
-		"createdDate": candidate.CreatedDate,
-		"updatedDate": candidate.UpdatedDate,
-		"meta":        meta,
-		"refs":        refs,
-	}
 }
