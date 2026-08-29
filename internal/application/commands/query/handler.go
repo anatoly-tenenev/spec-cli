@@ -21,7 +21,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 	"github.com/anatoly-tenenev/spec-cli/internal/output/querypayload"
 )
@@ -50,24 +49,24 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildPostCompileError(compileErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
 
 	readCapability := schemacapread.Build(compileResult.Schema)
 
 	plan, planErr := engine.BuildPlan(opts, readCapability)
 	if planErr != nil {
-		return buildPostCompileError(planErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(planErr, schemaPayload), nil
 	}
 
 	entities, workspaceErr := workspace.LoadEntities(workspacePath, readCapability, opts.TypeFilters)
 	if workspaceErr != nil {
-		return buildPostCompileError(workspaceErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(workspaceErr, schemaPayload), nil
 	}
 
 	queryResult, executeErr := engine.Execute(plan, entities)
 	if executeErr != nil {
-		return buildPostCompileError(executeErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(executeErr, schemaPayload), nil
 	}
 
 	return responses.CommandOutput{
@@ -94,19 +93,4 @@ func queryRootFields(roots []model.QueryRootField) []querypayload.RootField {
 		})
 	}
 	return payloadRoots
-}
-
-func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
-	jsonPayload := map[string]any{
-		"result_state": errormap.ResultStateForCode(appErr.Code),
-		"error":        outputpayload.BuildErrorPayload(appErr),
-	}
-	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
-		jsonPayload["schema"] = schemaPayload
-	}
-
-	return responses.CommandOutput{
-		JSON:     jsonPayload,
-		ExitCode: appErr.ExitCode,
-	}
 }

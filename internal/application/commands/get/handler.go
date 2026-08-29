@@ -20,7 +20,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
@@ -48,29 +47,29 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildPostCompileError(compileErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
 
 	readCapability := schemacapread.Build(compileResult.Schema)
 
 	selectorPlan, selectorErr := engine.BuildSelectorPlan(opts.Selectors, readCapability)
 	if selectorErr != nil {
-		return buildPostCompileError(selectorErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(selectorErr, schemaPayload), nil
 	}
 
 	located, locateErr := workspace.LocateByID(workspacePath, opts.ID)
 	if locateErr != nil {
-		return buildPostCompileError(locateErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(locateErr, schemaPayload), nil
 	}
 
 	target, targetErr := workspace.ReadTarget(located.TargetPath, located.TargetRaw, opts.ID)
 	if targetErr != nil {
-		return buildPostCompileError(targetErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(targetErr, schemaPayload), nil
 	}
 
 	entityView, buildErr := engine.BuildEntityView(target, readCapability, located.IdentityIndex, selectorPlan)
 	if buildErr != nil {
-		return buildPostCompileError(buildErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(buildErr, schemaPayload), nil
 	}
 
 	entityPayload := engine.ProjectEntity(entityView, selectorPlan.Tree, selectorPlan.NullIfMissingPaths)
@@ -85,19 +84,4 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 			"entity": entityPayload,
 		},
 	}, nil
-}
-
-func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
-	jsonPayload := map[string]any{
-		"result_state": errormap.ResultStateForCode(appErr.Code),
-		"error":        outputpayload.BuildErrorPayload(appErr),
-	}
-	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
-		jsonPayload["schema"] = schemaPayload
-	}
-
-	return responses.CommandOutput{
-		JSON:     jsonPayload,
-		ExitCode: appErr.ExitCode,
-	}
 }

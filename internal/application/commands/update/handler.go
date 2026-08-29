@@ -24,7 +24,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
@@ -62,34 +61,19 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 
 	if compileErr != nil {
-		return buildPostCompileError(compileErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
 	writeCapability := schemacapwrite.Build(compileResult.Schema)
 
 	snapshot, snapshotErr := workspace.BuildSnapshot(workspacePath, normalizedOpts.ID)
 	if snapshotErr != nil {
-		return buildPostCompileError(snapshotErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(snapshotErr, schemaPayload), nil
 	}
 
 	payload, executeErr := engine.Execute(normalizedOpts, writeCapability, snapshot, h.now)
 	if executeErr != nil {
-		return buildPostCompileError(executeErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(executeErr, schemaPayload), nil
 	}
 
 	return responses.CommandOutput{JSON: payload}, nil
-}
-
-func buildPostCompileError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
-	jsonPayload := map[string]any{
-		"result_state": errormap.ResultStateForCode(appErr.Code),
-		"error":        outputpayload.BuildErrorPayload(appErr),
-	}
-	if outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
-		jsonPayload["schema"] = schemaPayload
-	}
-
-	return responses.CommandOutput{
-		JSON:     jsonPayload,
-		ExitCode: appErr.ExitCode,
-	}
 }

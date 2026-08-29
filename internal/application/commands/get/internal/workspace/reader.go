@@ -30,7 +30,7 @@ type locatedCandidate struct {
 }
 
 func LocateByID(workspacePath string, targetID string) (model.LocateResult, *domainerrors.AppError) {
-	files, scanErr := scanMarkdownFiles(workspacePath)
+	files, scanErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return model.LocateResult{}, scanErr
 	}
@@ -136,18 +136,6 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		Sections:               sections,
 		DuplicateSectionLabels: duplicateLabels,
 	}, nil
-}
-
-func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
-	if walkErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeReadFailed,
-			"failed to scan workspace",
-			entitydoc.IOFailureDetails(walkErr),
-		)
-	}
-	return markdownFiles, nil
 }
 
 func extractIdentity(raw []byte) (model.EntityIdentity, bool) {

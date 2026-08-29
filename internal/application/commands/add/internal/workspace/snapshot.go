@@ -19,7 +19,7 @@ import (
 )
 
 func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityTypeSpec) (model.Snapshot, *domainerrors.AppError) {
-	files, scanErr := scanMarkdownFiles(workspacePath)
+	files, scanErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return model.Snapshot{}, scanErr
 	}
@@ -110,18 +110,6 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 	}
 
 	return snapshot, nil
-}
-
-func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
-	if walkErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeReadFailed,
-			"failed to scan workspace",
-			entitydoc.IOFailureDetails(walkErr),
-		)
-	}
-	return markdownFiles, nil
 }
 
 func parseIDSuffix(id string, prefix string) (int, bool) {

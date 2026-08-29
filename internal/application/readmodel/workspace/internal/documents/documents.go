@@ -33,18 +33,6 @@ type Entity struct {
 	RawContent             string
 }
 
-func ScanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
-	if walkErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeReadFailed,
-			"failed to scan workspace",
-			entitydoc.IOFailureDetails(walkErr),
-		)
-	}
-	return markdownFiles, nil
-}
-
 func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 	raw, err := os.ReadFile(path)
 	if err != nil {

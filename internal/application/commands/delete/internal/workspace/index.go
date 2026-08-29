@@ -19,7 +19,7 @@ import (
 )
 
 func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *domainerrors.AppError) {
-	files, scanErr := scanMarkdownFiles(workspacePath)
+	files, scanErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return model.Snapshot{}, scanErr
 	}
@@ -77,18 +77,6 @@ func FindTargetDocument(snapshot model.Snapshot, pathAbs string) (model.ParsedDo
 		}
 	}
 	return model.ParsedDocument{}, false
-}
-
-func scanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
-	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspacePath)
-	if walkErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeReadFailed,
-			"failed to scan workspace",
-			entitydoc.IOFailureDetails(walkErr),
-		)
-	}
-	return markdownFiles, nil
 }
 
 func normalizeMap(input map[string]any) map[string]any {

@@ -2,6 +2,7 @@ package entitydoc
 
 import (
 	"errors"
+	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,7 +13,12 @@ import (
 // ScanMarkdownFiles walks a workspace and returns its Markdown documents in a
 // stable order. The raw walk error is returned as-is; callers decide which
 // diagnostic code and message to report.
-func ScanMarkdownFiles(workspacePath string) ([]string, error) {
+// ScanMarkdownFiles lists the workspace documents in a stable order.
+//
+// Unlike the parsing functions it returns a domain error: every caller reported
+// a scan failure identically, so leaving the wrapping to them bought six copies
+// of the same three lines and no freedom anyone used.
+func ScanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) {
 	markdownFiles := make([]string, 0)
 	walkErr := filepath.WalkDir(workspacePath, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -27,7 +33,11 @@ func ScanMarkdownFiles(workspacePath string) ([]string, error) {
 		return nil
 	})
 	if walkErr != nil {
-		return nil, walkErr
+		return nil, domainerrors.New(
+			domainerrors.CodeReadFailed,
+			"failed to scan workspace",
+			IOFailureDetails(walkErr),
+		)
 	}
 
 	sort.Strings(markdownFiles)

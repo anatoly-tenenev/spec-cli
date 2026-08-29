@@ -6,6 +6,7 @@ package loading
 
 import (
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
@@ -21,7 +22,7 @@ func LoadEntities(
 	capability schemacapread.Capability,
 	typeFilters []string,
 ) ([]model.EntityView, *domainerrors.AppError) {
-	markdownFiles, scanErr := documents.ScanMarkdownFiles(workspacePath)
+	markdownFiles, scanErr := entitydoc.ScanMarkdownFiles(workspacePath)
 	if scanErr != nil {
 		return nil, scanErr
 	}

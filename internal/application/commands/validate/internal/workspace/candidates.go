@@ -16,13 +16,9 @@ import (
 )
 
 func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]model.WorkspaceCandidate, *domainerrors.AppError) {
-	markdownFiles, walkErr := entitydoc.ScanMarkdownFiles(workspace)
-	if walkErr != nil {
-		return nil, domainerrors.New(
-			domainerrors.CodeReadFailed,
-			"failed to scan workspace",
-			entitydoc.IOFailureDetails(walkErr),
-		)
+	markdownFiles, scanErr := entitydoc.ScanMarkdownFiles(workspace)
+	if scanErr != nil {
+		return nil, scanErr
 	}
 
 	if len(typeFilters) == 0 {
