@@ -11,7 +11,7 @@ RELEASE_TARGETS := \
 	windows:amd64:zip \
 	windows:arm64:zip
 
-.PHONY: fmt vet lint test build run release release-verify-version clean-dist release-build release-checksums
+.PHONY: fmt vet lint dupl test build run release release-verify-version clean-dist release-build release-checksums
 
 fmt:
 	go fmt ./...
@@ -25,6 +25,17 @@ lint:
 		exit 2; \
 	fi
 	golangci-lint run ./...
+
+# Reports copied code across the whole tree. This is deliberately not part of
+# `lint`: golangci-lint analyses one package at a time and therefore cannot see
+# a copy that lives in another subtree, which is the kind that actually drifts.
+# Reporting only - a finding is a question to answer, not a build failure.
+dupl:
+	@if ! command -v dupl >/dev/null 2>&1; then \
+		echo "dupl is required: go install github.com/mibk/dupl@latest" >&2; \
+		exit 2; \
+	fi
+	@find internal cmd -name '*.go' ! -name '*_test.go' | dupl -files -t 100 -plumbing
 
 test:
 	go test ./...
