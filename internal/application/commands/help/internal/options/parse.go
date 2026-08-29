@@ -10,6 +10,7 @@ package options
 
 import (
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,7 +49,7 @@ func Parse(args []string) (Parsed, *domainerrors.AppError) {
 		}
 
 		if strings.HasPrefix(token, "-") {
-			optionName, optionValue, hasValue := splitLongFlag(token)
+			optionName, optionValue, hasValue := cliflags.SplitLong(token)
 			switch optionName {
 			case optionShowSchemaProjection:
 				if _, exists := seenOptions[optionName]; exists {
@@ -88,11 +89,6 @@ func Parse(args []string) (Parsed, *domainerrors.AppError) {
 	}
 
 	return parsed, nil
-}
-
-func splitLongFlag(token string) (string, string, bool) {
-	optionName, optionValue, hasValue := strings.Cut(token, "=")
-	return optionName, optionValue, hasValue
 }
 
 func NormalizePaths(global requests.GlobalOptions) (Paths, *domainerrors.AppError) {

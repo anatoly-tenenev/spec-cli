@@ -12,6 +12,7 @@ package options
 
 import (
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
@@ -31,7 +32,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 
 	for idx := 0; idx < len(args); idx++ {
 		token := args[idx]
-		name, inlineValue, hasInlineValue := splitLongFlag(token)
+		name, inlineValue, hasInlineValue := cliflags.SplitLong(token)
 		if !strings.HasPrefix(name, "--") {
 			return model.Options{}, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
@@ -42,7 +43,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 
 		switch name {
 		case "--id":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -57,7 +58,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			opts.ID = value
 			idx = nextIdx
 		case "--set":
-			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -75,7 +76,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			})
 			idx = nextIdx
 		case "--set-file":
-			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -100,7 +101,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			})
 			idx = nextIdx
 		case "--unset":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -121,7 +122,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			})
 			idx = nextIdx
 		case "--content-file":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -136,19 +137,19 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			contentFile = trimmed
 			idx = nextIdx
 		case "--content-stdin":
-			parsed, err := parseBoolFlag(name, hasInlineValue, inlineValue)
+			parsed, err := cliflags.BoolWords(name, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
 			contentStdin = parsed
 		case "--clear-content":
-			parsed, err := parseBoolFlag(name, hasInlineValue, inlineValue)
+			parsed, err := cliflags.BoolWords(name, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
 			clearContent = parsed
 		case "--expect-revision":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -163,7 +164,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			opts.ExpectRevision = trimmed
 			idx = nextIdx
 		case "--dry-run":
-			parsed, err := parseBoolFlag(name, hasInlineValue, inlineValue)
+			parsed, err := cliflags.BoolWords(name, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -286,77 +287,4 @@ func hasSectionWrite(operations []model.WriteOperation) bool {
 		}
 	}
 	return false
-}
-
-func splitLongFlag(token string) (string, string, bool) {
-	parts := strings.SplitN(token, "=", 2)
-	if len(parts) == 1 {
-		return parts[0], "", false
-	}
-	return parts[0], parts[1], true
-}
-
-func valueWithFallback(args []string, currentIdx int, hasInlineValue bool, inlineValue string) (string, int, *domainerrors.AppError) {
-	if hasInlineValue {
-		if inlineValue == "" {
-			return "", currentIdx, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"option value cannot be empty",
-				nil,
-			)
-		}
-		return inlineValue, currentIdx, nil
-	}
-
-	nextIdx := currentIdx + 1
-	if nextIdx >= len(args) || strings.HasPrefix(args[nextIdx], "-") {
-		return "", currentIdx, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"option value is required",
-			nil,
-		)
-	}
-	return args[nextIdx], nextIdx, nil
-}
-
-func valueWithFallbackAllowDash(args []string, currentIdx int, hasInlineValue bool, inlineValue string) (string, int, *domainerrors.AppError) {
-	if hasInlineValue {
-		if inlineValue == "" {
-			return "", currentIdx, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"option value cannot be empty",
-				nil,
-			)
-		}
-		return inlineValue, currentIdx, nil
-	}
-
-	nextIdx := currentIdx + 1
-	if nextIdx >= len(args) {
-		return "", currentIdx, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"option value is required",
-			nil,
-		)
-	}
-	return args[nextIdx], nextIdx, nil
-}
-
-func parseBoolFlag(name string, hasInlineValue bool, inlineValue string) (bool, *domainerrors.AppError) {
-	if !hasInlineValue {
-		return true, nil
-	}
-
-	switch strings.ToLower(strings.TrimSpace(inlineValue)) {
-	case "true", "1", "yes", "y", "on":
-		return true, nil
-	case "false", "0", "no", "n", "off":
-		return false, nil
-	default:
-		return false, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			fmt.Sprintf("%s accepts boolean values only", name),
-			map[string]any{"value": inlineValue},
-		)
-	}
 }

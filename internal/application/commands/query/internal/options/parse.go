@@ -11,6 +11,7 @@ package options
 
 import (
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"strconv"
 	"strings"
 
@@ -39,7 +40,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 	for idx := 0; idx < len(args); idx++ {
 		token := args[idx]
 
-		name, inlineValue, hasInlineValue := splitLongFlag(token)
+		name, inlineValue, hasInlineValue := cliflags.SplitLong(token)
 		if !strings.HasPrefix(name, "--") {
 			return model.Options{}, domainerrors.New(
 				domainerrors.CodeInvalidArgs,
@@ -50,7 +51,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 
 		switch name {
 		case "--type":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -65,7 +66,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			opts.TypeFilters = append(opts.TypeFilters, value)
 			idx = nextIdx
 		case "--where":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -87,7 +88,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			opts.WhereExpr = value
 			idx = nextIdx
 		case "--select":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -102,7 +103,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			opts.Selects = append(opts.Selects, value)
 			idx = nextIdx
 		case "--sort":
-			value, nextIdx, err := valueWithFallback(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.Value(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -121,7 +122,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			}
 			idx = nextIdx
 		case "--limit":
-			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -147,7 +148,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			}
 			idx = nextIdx
 		case "--offset":
-			value, nextIdx, err := valueWithFallbackAllowDash(args, idx, hasInlineValue, inlineValue)
+			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
@@ -258,62 +259,6 @@ func parseSortTerm(raw string) (model.SortTerm, *domainerrors.AppError) {
 		Path:      path,
 		Direction: direction,
 	}, nil
-}
-
-func splitLongFlag(token string) (string, string, bool) {
-	parts := strings.SplitN(token, "=", 2)
-	if len(parts) == 1 {
-		return parts[0], "", false
-	}
-	return parts[0], parts[1], true
-}
-
-func valueWithFallback(args []string, currentIdx int, hasInlineValue bool, inlineValue string) (string, int, *domainerrors.AppError) {
-	if hasInlineValue {
-		if inlineValue == "" {
-			return "", currentIdx, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"option value cannot be empty",
-				nil,
-			)
-		}
-		return inlineValue, currentIdx, nil
-	}
-
-	nextIdx := currentIdx + 1
-	if nextIdx >= len(args) || strings.HasPrefix(args[nextIdx], "-") {
-		return "", currentIdx, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"option value is required",
-			nil,
-		)
-	}
-
-	return args[nextIdx], nextIdx, nil
-}
-
-func valueWithFallbackAllowDash(args []string, currentIdx int, hasInlineValue bool, inlineValue string) (string, int, *domainerrors.AppError) {
-	if hasInlineValue {
-		if inlineValue == "" {
-			return "", currentIdx, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"option value cannot be empty",
-				nil,
-			)
-		}
-		return inlineValue, currentIdx, nil
-	}
-
-	nextIdx := currentIdx + 1
-	if nextIdx >= len(args) {
-		return "", currentIdx, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"option value is required",
-			nil,
-		)
-	}
-
-	return args[nextIdx], nextIdx, nil
 }
 
 func parseNonNegativeInt(name string, raw string) (int, *domainerrors.AppError) {

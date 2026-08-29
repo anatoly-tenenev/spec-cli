@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
@@ -83,7 +83,7 @@ func parseGlobalOptions(args []string) (requests.GlobalOptions, string, []string
 			continue
 		}
 
-		name, value, hasValue := splitLongFlag(token)
+		name, value, hasValue := cliflags.SplitLong(token)
 		if !commandSelected {
 			if !strings.HasPrefix(name, "--") {
 				return opts, "", nil, domainerrors.New(
@@ -329,7 +329,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		v, next, err := cliflags.Value(args, currentIdx, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -339,7 +339,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		v, next, err := cliflags.Value(args, currentIdx, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -349,7 +349,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		v, next, err := cliflags.Value(args, currentIdx, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -369,7 +369,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		v, next, err := valueWithFallback(args, currentIdx, hasValue, value)
+		v, next, err := cliflags.Value(args, currentIdx, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -379,7 +379,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		parsed, err := parseBoolFlag(name, hasValue, value)
+		parsed, err := cliflags.Bool(name, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -389,7 +389,7 @@ func consumeGlobalOption(
 		if err := markGlobalOptionSeen(name, seen); err != nil {
 			return true, currentIdx, false, false, err
 		}
-		parsed, err := parseBoolFlag(name, hasValue, value)
+		parsed, err := cliflags.Bool(name, hasValue, value)
 		if err != nil {
 			return true, currentIdx, false, false, err
 		}
@@ -410,53 +410,4 @@ func markGlobalOptionSeen(name string, seen map[string]struct{}) *domainerrors.A
 	}
 	seen[name] = struct{}{}
 	return nil
-}
-
-func splitLongFlag(token string) (string, string, bool) {
-	parts := strings.SplitN(token, "=", 2)
-	if len(parts) == 1 {
-		return parts[0], "", false
-	}
-	return parts[0], parts[1], true
-}
-
-func valueWithFallback(args []string, currentIdx int, hasInlineValue bool, inlineValue string) (string, int, *domainerrors.AppError) {
-	if hasInlineValue {
-		if inlineValue == "" {
-			return "", currentIdx, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"option value cannot be empty",
-				nil,
-			)
-		}
-		return inlineValue, currentIdx, nil
-	}
-
-	nextIdx := currentIdx + 1
-	if nextIdx >= len(args) || strings.HasPrefix(args[nextIdx], "-") {
-		return "", currentIdx, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"option value is required",
-			nil,
-		)
-	}
-
-	return args[nextIdx], nextIdx, nil
-}
-
-func parseBoolFlag(name string, hasInlineValue bool, inlineValue string) (bool, *domainerrors.AppError) {
-	if !hasInlineValue {
-		return true, nil
-	}
-
-	parsed, err := strconv.ParseBool(inlineValue)
-	if err != nil {
-		return false, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			fmt.Sprintf("%s accepts boolean values only", name),
-			map[string]any{"value": inlineValue},
-		)
-	}
-
-	return parsed, nil
 }
