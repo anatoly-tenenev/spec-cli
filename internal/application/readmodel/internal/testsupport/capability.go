@@ -1,3 +1,7 @@
+// Package testsupport holds the one read capability the read-layer unit tests
+// plan against. It is shared so that planning, selection, filtering and
+// sorting tests all describe the same two entity types: a test that invented
+// its own schema would prove nothing about how those stages agree.
 package testsupport
 
 import schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"

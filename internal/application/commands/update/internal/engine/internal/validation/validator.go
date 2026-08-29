@@ -1,3 +1,11 @@
+// Package validation checks the whole updated entity, not just the fields the
+// patch touched: builtin formats, required fields including conditional ones,
+// field types and constraints, and uniqueness across the workspace. Checking
+// everything is what keeps an update from completing a document that was
+// already non-conforming into a state no one validated.
+//
+// Uniqueness ignores the document being updated, so an entity does not
+// collide with its own id or slug.
 package validation
 
 import (

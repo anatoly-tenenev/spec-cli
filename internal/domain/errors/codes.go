@@ -1,3 +1,7 @@
+// Package errors is the single source of truth for error codes and the exit
+// code each one maps to. Every failure anywhere in the application is
+// expressed as an AppError with a code from this list, so the CLI layer can
+// decide the process exit status without knowing which command failed.
 package errors
 
 type Code string

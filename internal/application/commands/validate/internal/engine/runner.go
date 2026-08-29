@@ -1,3 +1,16 @@
+// Package engine runs the validation pipeline: parse every candidate, check
+// each one against its entity type, then apply the checks that need the whole
+// workspace at once - uniqueness of ids and slugs, and reference targets.
+//
+// Checks do not stop at the first failure. A caller validates in order to
+// repair, so one run reports every issue it can rather than the earliest one;
+// --fail-fast is the explicit opt-out. Issues that mean the validator itself
+// could not do its job are marked ProfileError, which is what clears
+// validator_conformant in the response.
+//
+// runner.go is the pipeline entrypoint; the remaining files hold one family of
+// checks each - requirements, references, path patterns, the runtime
+// expression context, and issue accumulation.
 package engine
 
 import (

@@ -1,3 +1,8 @@
+// Package runner prepares a case's workspace and normalizes what comes back.
+// Responses carry values that differ between runs by nature - revision hashes,
+// temporary file names, absolute paths - so they are replaced with stable
+// placeholders before comparison; without that, expected output could not be
+// written down at all.
 package runner
 
 import (

@@ -1,3 +1,11 @@
+// Command spec-cli is the schema-aware CLI for working with specification
+// documents. This package is the process boundary and nothing more: it wires
+// stdout, stderr and the clock into the application and turns the returned
+// code into an exit status.
+//
+// SPEC_CLI_FIXED_NOW_UTC pins the clock. Commands stamp createdDate and
+// updatedDate from it, so without a fixed clock the documents the integration
+// suite writes could not be compared against expected output.
 package main
 
 import (

@@ -1,3 +1,8 @@
+// Package model holds get's internal types: the parsed options, the selector
+// plan, and the located document. The selector plan records not just the tree
+// to project but what reaching it requires - which reference fields and
+// sections must be resolved - so get resolves only what was actually asked
+// for.
 package model
 
 type Options struct {

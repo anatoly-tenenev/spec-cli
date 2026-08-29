@@ -1,3 +1,8 @@
+// Package options parses the validate command's arguments and resolves its
+// paths: which types to check, whether to stop at the first error, and whether
+// warnings count as errors.
+//
+// parse.go parses arguments; paths.go resolves workspace and schema paths.
 package options
 
 import (

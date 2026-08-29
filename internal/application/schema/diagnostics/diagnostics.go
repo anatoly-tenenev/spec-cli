@@ -1,3 +1,11 @@
+// Package diagnostics defines how a problem in the schema itself is reported:
+// its level, class, code and the path inside the schema that caused it. These
+// issues are separate from domain validation issues, which describe documents
+// rather than the schema, and they reach the response as the top-level schema
+// block.
+//
+// The error/warning split is what commands consult to decide whether a schema
+// is usable: warnings never make a schema invalid.
 package diagnostics
 
 type Level string

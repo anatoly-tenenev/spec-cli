@@ -1,3 +1,7 @@
+// Package pathcalc decides where an entity is stored: it picks the first
+// matching pathTemplate case and renders it against the entity's own values.
+// The result is confined to the workspace - a template that escapes upwards or
+// resolves to an absolute path is reported as an issue, not written to.
 package pathcalc
 
 import (

@@ -1,3 +1,10 @@
+// Package delete implements the delete command: remove one entity by id,
+// provided nothing still points at it. The workspace lock is taken before the
+// schema is compiled, so the snapshot the decision is made from is the same
+// state the removal applies to.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package delete
 
 import (

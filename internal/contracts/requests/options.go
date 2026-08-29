@@ -1,3 +1,7 @@
+// Package requests defines the input side of the CLI wire contract: the
+// command being invoked, the options shared by every command, and the output
+// format. These types are what the CLI layer produces and command handlers
+// consume; they carry no behavior.
 package requests
 
 type OutputFormat string

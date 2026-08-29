@@ -1,3 +1,11 @@
+// Package validation checks the entity add is about to create against the
+// schema: builtin formats, required fields including conditional ones, field
+// types and constraints, and the uniqueness of what it claims in the
+// workspace. It collects every issue rather than stopping at the first, so one
+// rejected add tells the caller everything that has to change.
+//
+// This runs before anything is written. It is the reason add cannot leave a
+// non-conforming workspace behind.
 package validation
 
 import (

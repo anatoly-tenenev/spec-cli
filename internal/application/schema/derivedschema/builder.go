@@ -1,3 +1,12 @@
+// Package derivedschema quarantines constraints that the schema declared but
+// that cannot hold: a const or enum literal whose type contradicts the field's
+// own type. The compiler already reports such a facet, so anything built on
+// top of the compiled schema takes the projected view from here and never
+// re-derives a second, derivative failure from the same defect.
+//
+// Templates count as non-static: a const or enum written as ${expr} has no
+// value until an entity is evaluated, so it is excluded from projections that
+// need literals.
 package derivedschema
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"

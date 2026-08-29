@@ -1,3 +1,7 @@
+// Package sections parses the content.sections block of one entity type: the
+// section names, their rendered titles and their requiredness. Declaring
+// content with an empty section set is an error rather than an entity without
+// sections, because it is always a mistake in the schema.
 package sections
 
 import (

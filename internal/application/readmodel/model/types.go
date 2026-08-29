@@ -1,3 +1,13 @@
+// Package model is the vocabulary the read layer is built from: the request
+// options, the plan compiled out of them, the per-entity view the workspace
+// loader produces, and the response shape. Keeping these types in one package
+// is what lets planning, execution and workspace loading stay independent of
+// each other.
+//
+// EntityView carries two projections of the same document - View is what may
+// be returned, WhereContext is what a filter may see - because the read
+// contract exposes references as resolved objects while filtering needs the
+// raw shape behind them.
 package model
 
 import (

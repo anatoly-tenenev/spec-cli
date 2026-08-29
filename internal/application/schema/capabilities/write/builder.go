@@ -1,3 +1,8 @@
+// Package write projects the compiled schema into what add and update are
+// allowed to do: the writable paths of an entity type, split by whether they
+// address a meta field, a reference or a section, plus the constraints each
+// field carries. Refusing an unknown --set path is a lookup here, so no write
+// command decides on its own what may be written.
 package write
 
 import (

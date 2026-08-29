@@ -1,3 +1,11 @@
+// Package engine applies an update to the located document: check the expected
+// revision, apply the patch, resolve references, recompute the path, validate,
+// and only then persist - moving the file if its schema-computed path changed.
+// Validation precedes the write, so a rejected update leaves the document
+// exactly as it was.
+//
+// Under --dry-run every step but the write still runs, so the reported result
+// is what a real run would produce.
 package engine
 
 import (

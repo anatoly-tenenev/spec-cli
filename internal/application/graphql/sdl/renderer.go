@@ -1,3 +1,11 @@
+// Package sdl renders a projection as GraphQL SDL. The same text is both what
+// graphql-help hands to a caller and what graphql-query validates against, so
+// the schema a caller writes queries for is by construction the schema they
+// are checked against.
+//
+// Conditional requiredness and array constraints cannot be expressed in
+// GraphQL types, so they are rendered as the @requiredWhen and
+// @arrayConstraints directives instead of being silently dropped.
 package sdl
 
 import (

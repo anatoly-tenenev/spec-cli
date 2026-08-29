@@ -1,3 +1,8 @@
+// Package projection renders the compiled schema as the JSON-Schema-shaped
+// specification projection help prints. It writes the JSON itself, field by
+// field, because encoding/json sorts object keys: the projection is read by
+// agents alongside the schema it describes, so declaration order has to
+// survive.
 package projection
 
 import (

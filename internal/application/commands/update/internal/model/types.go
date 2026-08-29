@@ -1,3 +1,11 @@
+// Package model holds update's internal types: the parsed options with their
+// patch operations, the body operation, and the workspace snapshot containing
+// both the target's matches and every other entity. The rest of the workspace
+// is needed because an update can change the values that decide uniqueness and
+// the document's own path.
+//
+// The schema-derived types are aliases of the write capability rather than
+// copies, so update cannot drift from what the schema declares writable.
 package model
 
 import (

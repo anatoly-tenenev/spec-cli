@@ -1,3 +1,11 @@
+// Package get implements the get command: return one entity addressed by id.
+// It shares the read capability with query but not the read pipeline, because
+// it answers a different question - a single named document, located
+// tolerantly enough that a broken target is reported as broken instead of as
+// not found.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package get
 
 import (

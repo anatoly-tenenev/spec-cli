@@ -1,3 +1,6 @@
+// Package errormap translates a domain error code into the result_state a
+// caller sees. It keeps that mapping out of the individual commands so the
+// same code cannot be reported as two different states.
 package errormap
 
 import (

@@ -1,3 +1,7 @@
+// Package model holds delete's internal types: the parsed options, the
+// workspace snapshot the decision is made from, and a blocking reference.
+// The snapshot keeps every document, not just the target, because deciding
+// whether the target may go requires knowing who points at it.
 package model
 
 type Options struct {

@@ -1,3 +1,7 @@
+// Package views narrows a parsed document to what the schema declares: only
+// known meta fields and known sections reach the entity view. Values are
+// normalized to JSON shapes here - dates to strings, every number to float64 -
+// so a filter compares against the same value the response would show.
 package views
 
 import (

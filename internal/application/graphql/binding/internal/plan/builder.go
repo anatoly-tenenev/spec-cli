@@ -1,3 +1,12 @@
+// Package plan validates a GraphQL query against the generated SDL and turns
+// it into root plans. It resolves the parts the read model cannot see for
+// itself: fragments and @skip/@include are expanded up front, repeated
+// selections of one response key are merged, and arguments become filters,
+// sorts and paging.
+//
+// Introspection and non-query operations are refused: the schema is derived
+// from a workspace's own schema file, and graphql-help is how a caller is
+// meant to discover it.
 package plan
 
 import (

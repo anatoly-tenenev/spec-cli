@@ -1,3 +1,10 @@
+// Package schema implements the schema command, whose only subcommand today is
+// check: compile the schema and return its diagnostics. It deliberately does
+// not scan the workspace, so a caller can ask whether the schema itself is
+// sound separately from whether documents conform to it.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package schema
 
 import (

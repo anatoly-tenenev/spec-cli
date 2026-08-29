@@ -1,3 +1,11 @@
+// Package model holds add's internal types: the parsed options, the requested
+// write operations, and the workspace snapshot a new entity is placed against.
+// The snapshot carries the indexes creation needs - ids, slugs per type, the
+// highest id suffix, existing paths - because each of those is a uniqueness
+// rule the new document has to satisfy.
+//
+// The schema-derived types are aliases of the write capability rather than
+// copies, so add cannot drift from what the schema declares writable.
 package model
 
 import (

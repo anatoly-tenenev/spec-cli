@@ -1,3 +1,10 @@
+// Package source reads a schema file and gets it as far as a YAML mapping:
+// unreadable, empty, unparsable, non-mapping and duplicate-key documents are
+// rejected here as diagnostics. Everything past that point is meaning, and
+// belongs to the compiler.
+//
+// Paths in messages are rewritten to the caller's display path, so a response
+// never leaks the absolute path the file was read from.
 package source
 
 import (

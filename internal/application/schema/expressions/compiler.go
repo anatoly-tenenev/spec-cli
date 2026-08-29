@@ -1,3 +1,15 @@
+// Package expressions is the JMESPath layer the schema standard is built on:
+// it compiles ${expr} interpolations and bare expressions against an entity's
+// context schema, and evaluates them against a concrete entity.
+//
+// Compilation is schema-aware on purpose. An expression that reads a field the
+// entity type does not declare, or compares incompatible types, is rejected
+// when the schema is compiled rather than when a document happens to hit it,
+// so a broken expression is a schema error and not a runtime surprise.
+//
+// The three roles live in separate files: compiler.go (compile and static
+// checks), evaluator.go (evaluation and truthiness), interpolation.go
+// (${expr} templates).
 package expressions
 
 import (

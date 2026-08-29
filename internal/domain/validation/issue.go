@@ -1,3 +1,7 @@
+// Package validation defines the typed vocabulary for reporting a problem
+// found in a document: the issue itself, its level, and the entity it belongs
+// to. Producers across commands build these so that one issue shape reaches
+// the response regardless of which check found it.
 package validation
 
 type IssueLevel string

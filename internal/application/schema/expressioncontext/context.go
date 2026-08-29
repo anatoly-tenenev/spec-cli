@@ -1,3 +1,12 @@
+// Package expressioncontext describes what an expression is allowed to see:
+// the JSON Schema of one entity type, built from its declared meta fields,
+// refs and builtins. That schema is what makes static checking of expressions
+// possible at all.
+//
+// It also answers the two questions guard analysis needs - whether a path is
+// guaranteed to exist by the schema, and which optional path an expression
+// would have to guard before reading it - so that conditional requiredness and
+// pathTemplate.when cannot depend on a value that may be absent.
 package expressioncontext
 
 import (

@@ -1,0 +1,15 @@
+version: "2"
+
+# Only the package-comment rule is enabled. The point of this config is to keep
+# the codebase map next to the code: every package states why it exists, and a
+# new package cannot be added without one.
+linters:
+  default: none
+  enable:
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+  exclusions:
+    generated: lax

@@ -1,3 +1,13 @@
+// Package engine decides what get returns: it validates the selectors against
+// the schema and projects the located document down to them.
+//
+// A selected leaf the schema knows about but the document lacks comes back as
+// null, while an aggregate selector such as meta or refs stays sparse. The
+// distinction is what lets a caller tell "the field is empty" from "the field
+// was not asked for".
+//
+// plan.go builds and applies the selector plan; entity.go builds the entity
+// view the plan is applied to.
 package engine
 
 import (

@@ -1,3 +1,12 @@
+// Package compile is the single entry point to the schema: every command that
+// needs a schema calls it instead of parsing the file itself. It returns the
+// compiled IR together with all diagnostics, and separately classifies the
+// failure into a domain error code, so a missing, unreadable, unparsable and
+// merely invalid schema stay distinguishable to the caller.
+//
+// A Compiler caches by path, and hands out deep copies of the cached result:
+// commands compile the same schema more than once per run, and a caller must
+// not be able to mutate what the next caller receives.
 package compile
 
 import (

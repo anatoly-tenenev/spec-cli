@@ -1,3 +1,11 @@
+// Package execution runs the bound root plans over loaded entities and shapes
+// the data object GraphQL expects: only the requested fields, under the
+// response keys the query chose, in the order it asked for them.
+//
+// Non-null fields are enforced after projection. A field the generated schema
+// declares as non-null but that the document does not carry is reported as an
+// invalid query result naming the entity, rather than returned as null against
+// the contract.
 package execution
 
 import (

@@ -1,3 +1,15 @@
+// Package help implements the help command: it renders the CLI's own
+// description, enriched with whatever the workspace schema makes available.
+// help is text-only - an explicit --format json is refused rather than
+// answered with a shape no one would parse.
+//
+// It is the one command that tolerates a broken schema: when the schema cannot
+// be loaded, help still describes the CLI and states why the schema-derived
+// parts are missing, because that is exactly the situation a caller runs help
+// in.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package help
 
 import (

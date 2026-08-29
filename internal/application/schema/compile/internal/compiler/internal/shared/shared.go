@@ -1,3 +1,11 @@
+// Package shared holds the YAML reading rules the schema compiler applies
+// everywhere: scalar and mapping accessors that report a typed diagnostic
+// instead of failing, rejection of keys the standard does not define, and the
+// value-spec parser used for both fields and array items.
+//
+// It is shared because field parsing, section parsing and the entity pass must
+// produce identical diagnostics for the same malformed node; a second copy of
+// these rules would show up as two codes for one mistake.
 package shared
 
 import (

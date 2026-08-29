@@ -1,3 +1,8 @@
+// Package options parses the delete command's arguments and resolves its
+// paths: the target id, the revision the caller expects to be deleting, and
+// whether to stop short of removing anything.
+//
+// parse.go parses arguments; paths.go resolves workspace and schema paths.
 package options
 
 import (

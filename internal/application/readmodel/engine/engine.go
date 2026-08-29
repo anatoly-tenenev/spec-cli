@@ -1,3 +1,9 @@
+// Package engine answers a read query in two steps that stay separate on
+// purpose: BuildPlan validates the request against the schema and produces a
+// plan, Execute runs that plan over already-loaded entities. Every reason to
+// reject a query is therefore decided before a single document is touched, and
+// query, get and graphql-query share one meaning for --select, --where and
+// --sort.
 package engine
 
 import (

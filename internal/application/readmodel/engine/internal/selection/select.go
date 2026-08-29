@@ -1,3 +1,11 @@
+// Package selection decides what a read command may ask for and cuts the
+// entity down to it. Selectors are checked against the active type set, so
+// asking for a field no selected type declares is an error rather than a
+// silently empty column.
+//
+// A selector is valid if any active type declares it: with several root types
+// in play, requiring every type to have the field would make cross-type
+// queries impossible.
 package selection
 
 import (

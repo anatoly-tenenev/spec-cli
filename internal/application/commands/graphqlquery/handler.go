@@ -1,3 +1,14 @@
+// Package graphqlquery implements the graphql-query command: read the query
+// document, compile the schema, project it onto GraphQL, bind the query, then
+// load the workspace and execute. The workspace is read only once the query is
+// known to be valid, so a malformed query costs no scan.
+//
+// The response carries the GraphQL data object under result_state, and errors
+// name the phase they came from, so a caller can tell an invalid query from an
+// unreadable workspace.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package graphqlquery
 
 import (

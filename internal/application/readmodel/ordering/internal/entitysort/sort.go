@@ -1,3 +1,10 @@
+// Package entitysort implements the comparison rules for sorting entities:
+// how mixed value types compare, and where an absent value lands. Absent
+// values sort last in the requested direction, so a document missing the sort
+// field never displaces documents that have it.
+//
+// The sort is stable and the caller always appends id as the final term, which
+// together is what makes paging over the same workspace repeatable.
 package entitysort
 
 import (

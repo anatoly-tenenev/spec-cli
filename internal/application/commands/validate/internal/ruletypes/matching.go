@@ -1,3 +1,7 @@
+// Package ruletypes answers whether a frontmatter value matches the type or
+// enum the schema declares for it. The type names are the schema's own, not
+// Go's, so the mapping from one to the other lives here instead of being
+// spelled out at each check.
 package ruletypes
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/values"

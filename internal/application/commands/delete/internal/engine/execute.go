@@ -1,3 +1,11 @@
+// Package engine decides whether the delete may proceed and carries it out:
+// locate the target, check the expected revision, then look for entities that
+// still reference it. An incoming reference blocks the delete and is named in
+// the response, because removing the document would leave the workspace
+// pointing at nothing.
+//
+// The same decisions run under --dry-run; only the removal is skipped, so what
+// a dry run reports is what a real run would do.
 package engine
 
 import (

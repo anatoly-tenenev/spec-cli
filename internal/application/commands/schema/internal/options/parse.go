@@ -1,3 +1,6 @@
+// Package options parses the schema command's subcommand and resolves the
+// schema path to an absolute one. An unknown subcommand and a stray option are
+// reported as different mistakes, because the fix differs.
 package options
 
 import (

@@ -1,3 +1,7 @@
+// Package loading is the read-side load pipeline: scan the workspace, parse
+// every document, index ids, resolve references, then project the views.
+// Whole-workspace steps come before the type filter is applied, because a
+// reference may point at an entity of a type the query did not ask for.
 package loading
 
 import (

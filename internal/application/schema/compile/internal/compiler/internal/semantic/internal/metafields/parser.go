@@ -1,3 +1,7 @@
+// Package metafields parses the meta.fields block of one entity type. Beyond
+// the value spec, it enforces what a field may be called: the name format, and
+// the refusal to redeclare a builtin such as id or slug, which would otherwise
+// shadow a value the tool itself maintains.
 package metafields
 
 import (

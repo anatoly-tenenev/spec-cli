@@ -1,3 +1,9 @@
+// Package workspace reads the existing workspace into the snapshot add places
+// a new entity against: which ids and slugs are taken, how far the id sequence
+// for each type has run, and which paths already exist.
+//
+// snapshot.go builds that snapshot; frontmatter.go and sections.go adapt the
+// shared entitydoc parsing to the shapes add works with.
 package workspace
 
 import (

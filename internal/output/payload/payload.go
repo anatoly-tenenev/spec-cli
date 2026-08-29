@@ -1,3 +1,7 @@
+// Package payload builds the response blocks shared by every command: the
+// error object and the top-level schema block. The schema block is attached
+// only for schema-related failures, so a runtime error never carries schema
+// diagnostics that did not cause it.
 package payload
 
 import (

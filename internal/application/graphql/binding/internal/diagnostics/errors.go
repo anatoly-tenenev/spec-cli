@@ -1,3 +1,8 @@
+// Package diagnostics builds the GraphQL-shaped error details: the phase the
+// failure belongs to and the position in the query text it points at. A caller
+// writing GraphQL needs to know where in its own document the problem is, and
+// that location only exists here, so every binding failure is constructed
+// through this package rather than as a bare domain error.
 package diagnostics
 
 import (

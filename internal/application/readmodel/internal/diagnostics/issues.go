@@ -1,3 +1,7 @@
+// Package diagnostics attaches validation issues to a read failure. A read
+// command fails with a domain error, but the caller still needs to know which
+// rule the document broke; this is where that issue block is built and merged
+// into the error details.
 package diagnostics
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/values"

@@ -1,3 +1,7 @@
+// Package commandbus routes a parsed request to the handler registered under
+// its command name. The registry is what keeps internal/cli free of any
+// knowledge about individual commands: adding a command means registering a
+// handler, not editing a dispatch switch.
 package commandbus
 
 import (

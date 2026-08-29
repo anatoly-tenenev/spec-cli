@@ -11,13 +11,20 @@ RELEASE_TARGETS := \
 	windows:amd64:zip \
 	windows:arm64:zip
 
-.PHONY: fmt vet test build run release release-verify-version clean-dist release-build release-checksums
+.PHONY: fmt vet lint test build run release release-verify-version clean-dist release-build release-checksums
 
 fmt:
 	go fmt ./...
 
 vet:
 	go vet ./...
+
+lint:
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint is required: https://golangci-lint.run/welcome/install/" >&2; \
+		exit 2; \
+	fi
+	golangci-lint run ./...
 
 test:
 	go test ./...

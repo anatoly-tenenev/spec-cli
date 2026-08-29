@@ -1,3 +1,13 @@
+// Package graphqlhelp implements the graphql-help command: it projects the
+// workspace schema onto GraphQL and prints either the discovery catalog or the
+// SDL itself. The SDL is the same text graphql-query validates against, so a
+// caller writing a query is reading the schema it will actually be checked by.
+//
+// Output is text only; an explicit --format json is refused. Unlike help, the
+// schema must compile - there is nothing to project without it.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package graphqlhelp
 
 import (

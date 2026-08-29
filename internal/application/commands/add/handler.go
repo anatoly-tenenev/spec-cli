@@ -1,3 +1,11 @@
+// Package add implements the add command: create a new entity from the values
+// given on the command line. Ordering is what makes it safe - the workspace
+// lock is taken first, then the schema is compiled and the workspace snapshot
+// read, so the id, slug and path the new document claims are decided against
+// state no concurrent run can change underneath it.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package add
 
 import (

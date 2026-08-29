@@ -1,3 +1,13 @@
+// Package options parses the add command's arguments into write operations and
+// resolves its paths. Two writes to the same path are refused rather than
+// resolved last-one-wins: the caller stated two values for one field, and
+// picking either would be a guess.
+//
+// Values are kept as raw text here; what they mean depends on the field's
+// declared type, which only the schema knows.
+//
+// parse.go parses arguments; paths.go resolves workspace, schema and file
+// paths.
 package options
 
 import (

@@ -1,3 +1,11 @@
+// Package markdown serializes the updated entity back to a document and
+// computes revisions. It computes two: one from the bytes about to be written,
+// and one from the bytes currently on disk - the second is what
+// --expect-revision is compared against, so the check reflects the file rather
+// than a re-serialization of it.
+//
+// Frontmatter keeps its builtins-first, then schema order layout, so an update
+// touching one field produces a one-field diff.
 package markdown
 
 import (

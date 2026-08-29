@@ -1,3 +1,8 @@
+// Package values holds the comparison and copying rules for the dynamic values
+// decoded out of YAML. Numbers arrive as several Go types and dates as
+// time.Time, so equality and output normalization have to be decided in one
+// place; commands, the read model and expression evaluation all share these
+// rules to keep the same document from comparing differently per layer.
 package values
 
 import (

@@ -1,3 +1,7 @@
+// Package binding connects a GraphQL query to the read model: Build turns the
+// query into root plans against the generated schema, Execute runs those plans
+// over loaded entities. The split matches the read engine's - everything a
+// query can be rejected for is decided before the workspace is touched.
 package binding
 
 import (

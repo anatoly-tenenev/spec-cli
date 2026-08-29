@@ -1,3 +1,7 @@
+// Package querypayload assembles the GraphQL-shaped success response used by
+// the read commands: ordered root fields under data, each with its own
+// totalCount and pageInfo. Root order is preserved from the request so output
+// is deterministic.
 package querypayload
 
 import (

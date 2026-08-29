@@ -1,3 +1,11 @@
+// Package documents turns a file on disk into the entity the read layer works
+// with, and checks only what reading itself needs: the builtin identity fields
+// and a computed revision. Conformance to the schema is not judged here -
+// reads must keep working on a non-conforming workspace, because repairing one
+// starts by reading it.
+//
+// Markdown parsing itself is not repeated here; it comes from
+// internal/application/entitydoc.
 package documents
 
 import (

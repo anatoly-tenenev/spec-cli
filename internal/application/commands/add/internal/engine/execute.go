@@ -1,3 +1,11 @@
+// Package engine builds the new entity and writes it: apply the requested
+// writes, assign the next id, resolve references, compute the path, validate,
+// and only then serialize to disk. Validation comes before the write because a
+// write command must not leave the workspace non-conforming - a rejected add
+// changes nothing.
+//
+// Under --dry-run everything up to the write still runs, so the response
+// reports what would have been created rather than a guess.
 package engine
 
 import (

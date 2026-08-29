@@ -1,3 +1,6 @@
+// Package buildinfo carries the binary's version. Version defaults to "dev"
+// and is replaced at build time through -ldflags, so release builds report a
+// real version without any source change.
 package buildinfo
 
 import (

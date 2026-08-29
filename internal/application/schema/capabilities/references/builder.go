@@ -1,3 +1,8 @@
+// Package references inverts the schema's reference declarations: for every
+// entity type it lists the fields that may point at it. delete needs that
+// direction to find what would be left dangling, and the schema only states
+// the forward one, so the index is built here once rather than rediscovered by
+// scanning every type.
 package references
 
 import (

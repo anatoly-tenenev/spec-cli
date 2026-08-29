@@ -1,3 +1,7 @@
+// Package catalog renders the discovery text graphql-help prints: which
+// entities exist, what each one carries, and the exact command that returns
+// the SDL for it. It is explicitly not a schema - the catalog tells a caller
+// where to look, and the SDL is what queries are written against.
 package catalog
 
 import (

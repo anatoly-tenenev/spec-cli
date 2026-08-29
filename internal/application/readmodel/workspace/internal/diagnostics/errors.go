@@ -1,3 +1,7 @@
+// Package diagnostics builds the read failures raised while loading a
+// workspace, each carrying the clause of the standard the document breaks.
+// Naming the clause is what turns "failed to read" into something the caller
+// can act on, and holding the references here keeps one wording per rule.
 package diagnostics
 
 import (

@@ -1,3 +1,8 @@
+// Package validate projects the compiled schema into the rule set validate
+// checks documents against: the frontmatter fields an entity type allows, the
+// requirements each field and section carries, and the path pattern the file
+// is expected to sit at. Conditional requirements stay as compiled
+// expressions, because they are only decidable against a concrete entity.
 package validate
 
 import (

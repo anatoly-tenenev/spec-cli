@@ -1,3 +1,11 @@
+// Package sorting validates the requested sort terms against the schema and
+// turns them into the effective order. A path whose type is not orderable, or
+// which resolves to different types across the active type set, is rejected
+// rather than compared by rendered text.
+//
+// Ascending id is always appended as the final term: without a total
+// tie-break, two entities with equal keys could come back in either order and
+// paging would not be repeatable.
 package sorting
 
 import (

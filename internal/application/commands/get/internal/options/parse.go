@@ -1,3 +1,8 @@
+// Package options parses the get command's arguments and resolves its paths.
+// Which selectors are valid is not decided here - that needs the schema, and
+// belongs to the selector plan.
+//
+// parse.go parses arguments; paths.go resolves workspace and schema paths.
 package options
 
 import (

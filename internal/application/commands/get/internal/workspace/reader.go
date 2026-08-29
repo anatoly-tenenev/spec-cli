@@ -1,3 +1,11 @@
+// Package workspace finds the document a get request names and reads it. The
+// id is extracted leniently while locating, so a document whose frontmatter is
+// broken is still recognised as the requested target and reported as broken
+// rather than missing - the difference matters, because repairing it starts
+// with reading it.
+//
+// Locating also indexes every entity's identity: resolving the target's
+// references needs to know what else exists.
 package workspace
 
 import (

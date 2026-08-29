@@ -1,3 +1,11 @@
+// Package execution runs a compiled plan over loaded entities: filter, sort,
+// page, project - in that order, per root field, so totalCount counts matches
+// rather than the returned page.
+//
+// A document that repeats a section label is refused only when the query
+// actually touches that section, through --where or --select. Skipping it
+// silently would drop a document the caller asked for; failing always would
+// break queries that never look at the ambiguous part.
 package execution
 
 import (

@@ -1,3 +1,13 @@
+// Package options parses the update command's arguments into patch operations
+// and resolves its paths. Two operations on one path are refused rather than
+// applied in sequence: a --set and an --unset of the same field state opposite
+// intentions, and picking either one silently would be a guess.
+//
+// Whole-body replacement is tracked separately from per-path writes, because
+// it and a section write cannot both describe the same body.
+//
+// parse.go parses arguments; paths.go resolves workspace, schema and file
+// paths.
 package options
 
 import (

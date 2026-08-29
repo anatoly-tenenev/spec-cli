@@ -1,3 +1,8 @@
+// Package planning compiles read options into a query plan: it resolves the
+// active type set, validates every selector, filter and sort term against the
+// schema, and expands per-root overrides of limit, offset and sort. Rejecting
+// an unknown name happens here rather than during execution, so an invalid
+// query costs no workspace read.
 package planning
 
 import (

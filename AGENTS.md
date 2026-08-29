@@ -82,11 +82,12 @@ The statements below decide cases the rules further down do not cover. If a rule
 - Prototype specification: `doc/001-base/SPEC_UTILITY_CLI_PROTOTYPE.md`
 - Local working specification: `spec/SPEC_STANDARD_RU_REVISED_V3.md` (the `spec/` directory is in `.gitignore`)
 - Documentation index (entry point): `doc/README.md`
-- Codebase index (agent map): `doc/CODEBASE_INDEX.md`
+- Codebase map: the package comments themselves; `go doc <package>` prints one, `go list ./internal/... | xargs -n1 go doc` prints all of them.
 
 ## Development Commands
 - Formatting: `make fmt`
 - Static checks: `make vet`
+- Package comments: `make lint`
 - Tests: `make test`
 - Build: `make build`
 
@@ -101,7 +102,7 @@ The statements below decide cases the rules further down do not cover. If a rule
 - Integration tests must not assume anything about the internal implementation of the utility (layers, engine reuse, order of internal calls).
 - Every meaningful contract behavior must have a direct integration case; indirect coverage via another scenario is not sufficient.
 - When adding/changing documentation in `doc/`, update `doc/README.md` in the same change.
-- When changing codebase structure/roles, keep `doc/CODEBASE_INDEX.md` up to date in the same change.
+- When a package's role changes, update its package comment in the same change.
 - Do not add interactive prompts by default.
 - Do not expose internal entity filesystem paths in API responses.
 
@@ -143,15 +144,6 @@ The statements below decide cases the rules further down do not cover. If a rule
 - If a new document is added, the agent must add it to the index with a short description of its purpose.
 - Use numbering like `NNN-*` only for stage/milestone documentation directories.
 - Put generally applicable documentation (indexes, maps, shared conventions) in the root of `doc/` without a numbered prefix.
-- When updating `doc/CODEBASE_INDEX.md`, every entry must be self-sufficient and include: entrypoint (file path + public function/method), responsibilities of the current level (2-5 concrete tasks), and subpackages with their roles (if any).
-- `doc/CODEBASE_INDEX.md` must not contain vague wording without explanation: `details moved out`, `etc.`, `internal logic`.
-- Acceptance criterion for an entry in `doc/CODEBASE_INDEX.md`: it must be clear where to go next in the code without extra clarification.
-- `doc/CODEBASE_INDEX.md` must be updated in the same change if at least one of these events happened:
-  - a file was added/removed/renamed under `cmd/**`, `internal/**`, or `tests/integration/**`;
-  - a directory entrypoint file or a public entrypoint-level function/method was changed;
-  - subpackage roles, CLI routing, or the set of supported commands changed.
-- It is forbidden to finish the task and write the final response without the doc-index self-check:
-  - check `git diff --name-status --cached` (or `git diff --name-status` if nothing is staged);
-  - if the changes trigger the conditions above, `doc/CODEBASE_INDEX.md` must be present in the diff;
-  - if there are documentation changes, also check whether `doc/README.md` remains up to date.
-- If the self-check shows that `doc/CODEBASE_INDEX.md` does not need an update, explicitly state in the final response why the triggers did not fire.
+- Every package under `internal/` must carry a package comment stating why the package exists and which boundary it holds, not restating its name.
+- The package comment moves with the package: it is written in the same change that creates the package and disappears with it.
+- The map of the codebase is the package comments read through `go doc`; there is no separate index file to keep in sync. `make lint` fails on a package without a comment.

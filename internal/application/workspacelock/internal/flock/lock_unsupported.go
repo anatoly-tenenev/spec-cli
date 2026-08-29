@@ -1,5 +1,9 @@
 //go:build !unix
 
+// Package flock isolates the platform-specific advisory file lock. The unix
+// build uses a non-blocking flock so a busy workspace reports a concurrency
+// conflict immediately; platforms without it report the lock as an unsupported
+// capability rather than silently running unlocked.
 package flock
 
 import domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"

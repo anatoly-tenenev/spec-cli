@@ -1,3 +1,10 @@
+// Package workspace collects the documents validate will check and parses them
+// the way validate needs. A document whose type cannot be read survives the
+// --type filter rather than being skipped: it may be exactly the broken
+// document the caller is looking for.
+//
+// candidates.go builds the candidate set; frontmatter.go parses a document,
+// normalizing values so a date is compared as the string the schema declares.
 package workspace
 
 import (

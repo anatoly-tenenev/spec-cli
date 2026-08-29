@@ -1,3 +1,13 @@
+// Package storage persists the updated document. Rewriting in place goes
+// through a temporary file and a rename, so an interrupted run never leaves a
+// half-written entity. When the schema-computed path changed, the new content
+// is staged first, the old file is moved aside to a backup, and only then
+// renamed into place; a failure at that point restores the backup, so the
+// entity is never left in two places or in none.
+//
+// SPEC_CLI_TEST_INJECT_WRITE_FAILURE makes the commit fail on purpose: the
+// integration suite is black-box and cannot make a real filesystem fail on
+// demand, and what update does after a failed write is part of the contract.
 package storage
 
 import (

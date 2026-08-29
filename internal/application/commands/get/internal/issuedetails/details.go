@@ -1,3 +1,7 @@
+// Package issuedetails attaches validation issues to get's read failures: the
+// command fails with a domain error, and this is the block that says which
+// rule the document broke. It mirrors what the shared read path builds in
+// readmodel/internal/diagnostics, because get does not go through that path.
 package issuedetails
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/values"

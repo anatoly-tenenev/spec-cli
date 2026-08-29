@@ -1,3 +1,7 @@
+// Package options parses the version command's arguments, which are none.
+// It exists so that an unexpected argument is refused rather than ignored: a
+// caller that passed something meant it, and silently dropping it would hide
+// the mistake.
 package options
 
 import (

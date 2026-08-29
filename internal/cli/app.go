@@ -1,3 +1,7 @@
+// Package cli is the process-level entrypoint: it parses global options,
+// dispatches the command through the command bus, writes the response, and
+// turns an error code into a process exit code. Command logic lives under
+// internal/application/commands; nothing here decides what a command means.
 package cli
 
 import (

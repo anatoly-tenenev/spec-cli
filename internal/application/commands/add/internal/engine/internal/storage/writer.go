@@ -1,3 +1,10 @@
+// Package storage writes the new document through a temporary file in the
+// target directory and renames it into place, so an interrupted run leaves
+// either no file or a complete one - never a half-written entity that the next
+// read would report as malformed.
+//
+// It also answers whether the computed target path is already taken, which is
+// what stops an add from silently overwriting an existing document.
 package storage
 
 import (

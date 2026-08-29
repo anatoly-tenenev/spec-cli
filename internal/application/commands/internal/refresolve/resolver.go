@@ -1,3 +1,7 @@
+// Package refresolve turns the entityRef ids in a candidate's frontmatter into
+// the entities they point at, for both scalar and array reference fields. A
+// duplicated id is reported as ambiguous rather than resolved to its first
+// match, so a write never silently binds a reference to the wrong entity.
 package refresolve
 
 import (

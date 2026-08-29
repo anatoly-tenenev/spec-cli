@@ -1,3 +1,8 @@
+// Package model is the vocabulary of the GraphQL layer: the projection that
+// maps a workspace schema onto GraphQL names, and the plan a bound query
+// becomes. Type names are computed once into the projection and reused by the
+// SDL renderer, the catalog and the binder, so all three cannot disagree about
+// what a type is called.
 package model
 
 import readmodel "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"

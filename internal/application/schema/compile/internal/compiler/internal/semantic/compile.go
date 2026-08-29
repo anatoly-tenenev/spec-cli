@@ -1,3 +1,13 @@
+// Package semantic turns a schema YAML document into the compiled IR and
+// reports what is wrong with it. It owns the parts that need the whole entity
+// in view: the type set that entityRef targets are checked against, the
+// per-entity expression engine, and pathTemplate - including the guard
+// analysis that rejects a case whose condition reads a field that may be
+// absent.
+//
+// Field and section parsing are delegated, because they only need one node at
+// a time. Compilation is deliberately not fail-fast: it collects every issue
+// it can so one run reports all schema defects.
 package semantic
 
 import (

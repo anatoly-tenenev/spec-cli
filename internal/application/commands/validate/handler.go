@@ -1,3 +1,11 @@
+// Package validate implements the validate command: it judges whether the
+// documents in a workspace conform to the schema and reports every issue it
+// finds. It is the only command whose purpose is that judgement - reads return
+// what is on disk, writes refuse to break conformance - so a non-conforming
+// workspace is normal input here, not a failure.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package validate
 
 import (

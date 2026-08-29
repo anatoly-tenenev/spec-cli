@@ -1,3 +1,14 @@
+// Package update implements the update command: change an existing entity in
+// place. It differs from add in what it must preserve - everything the caller
+// did not touch, including hand edits - and in offering optimistic
+// concurrency through --expect-revision, so a caller can refuse to overwrite a
+// document that moved since it was read.
+//
+// The workspace lock is taken before the target is read, so the revision the
+// decision is made against is the one the write applies to.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package update
 
 import (

@@ -1,3 +1,7 @@
+// Package helpglobal declares the global CLI options as help data. The
+// descriptions here are what a caller is told the options mean, so they are
+// kept next to each other rather than spread across the parser that reads
+// them.
 package helpglobal
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpmodel"

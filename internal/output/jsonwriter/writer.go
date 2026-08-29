@@ -1,3 +1,6 @@
+// Package jsonwriter encodes a response as a single JSON line. HTML escaping
+// is disabled so that expressions and paths appear literally in the output
+// rather than as \u escapes.
 package jsonwriter
 
 import (

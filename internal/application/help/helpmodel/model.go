@@ -1,3 +1,8 @@
+// Package helpmodel is the structured description of the CLI surface: each
+// command's syntax, options, rules and examples, held in a catalog that keeps
+// declaration order and rejects duplicate names. help renders from this data
+// rather than from prose, so the same description can be printed as text and
+// as JSON without the two drifting apart.
 package helpmodel
 
 import "fmt"

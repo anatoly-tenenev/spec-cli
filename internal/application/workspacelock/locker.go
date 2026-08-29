@@ -1,3 +1,7 @@
+// Package workspacelock serializes mutating commands against one workspace by
+// taking an exclusive lock on .spec-cli/workspace.lock. Every write command
+// takes it before reading the workspace, so a concurrent run fails loudly with
+// a conflict instead of interleaving reads and writes.
 package workspacelock
 
 import (

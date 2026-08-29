@@ -1,3 +1,11 @@
+// Package workspace reads the workspace for update and locates the target.
+// The target id is extracted leniently - by YAML, and failing that line by
+// line - so a document whose frontmatter no longer parses can still be
+// repaired, which is the case update exists to serve.
+//
+// snapshot.go builds the snapshot and locates the target; frontmatter.go and
+// sections.go adapt the shared entitydoc parsing to what update needs,
+// including the line ranges that let one section be rewritten in place.
 package workspace
 
 import (

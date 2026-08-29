@@ -1,3 +1,10 @@
+// Package version implements the version command: it reports the version the
+// binary was built with and nothing else. It touches neither the workspace nor
+// the schema, which is what makes it usable to check an installation before
+// there is anything to work on.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package version
 
 import (

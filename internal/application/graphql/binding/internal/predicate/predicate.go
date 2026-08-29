@@ -1,3 +1,9 @@
+// Package predicate turns a GraphQL where argument into a function that
+// accepts or rejects one entity. The where input is a nested object of
+// and/or/not and per-field operators, so filtering is interpreted here rather
+// than translated into the JMESPath expression the --where flag uses: the two
+// surfaces take different inputs and only share the entity context they run
+// against.
 package predicate
 
 import (

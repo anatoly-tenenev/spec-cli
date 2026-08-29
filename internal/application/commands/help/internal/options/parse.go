@@ -1,3 +1,11 @@
+// Package options parses the help command's arguments and resolves the paths
+// help reports. The resolved schema path is printed, so it is made absolute
+// and slash-normalized here rather than echoed as typed.
+//
+// SPEC_CLI_FIXED_PATH_ROOT re-anchors those paths onto a fixed root. Help
+// output is compared byte for byte by the integration suite, which runs in a
+// random temporary directory; without the anchor the absolute paths alone
+// would make every snapshot unstable.
 package options
 
 import (

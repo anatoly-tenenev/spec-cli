@@ -1,3 +1,7 @@
+// Package issues builds the instance-level validation issues reported by the
+// write commands. It fixes the fields those issues always share - error level,
+// InstanceError class, the entity taken from the candidate - so a caller only
+// supplies what actually differs between checks.
 package issues
 
 import (

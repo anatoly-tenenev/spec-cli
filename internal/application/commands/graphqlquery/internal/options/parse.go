@@ -1,3 +1,7 @@
+// Package options parses the graphql-query command's arguments and resolves
+// its paths. It enforces the exclusions the command cannot recover from later:
+// exactly one source for the query, at most one for the variables, and never
+// both of them reading stdin - the second reader would get nothing.
 package options
 
 import (

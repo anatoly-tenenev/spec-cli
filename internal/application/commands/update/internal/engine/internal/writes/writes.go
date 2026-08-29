@@ -1,3 +1,13 @@
+// Package writes applies the patch to the document's frontmatter and body.
+// Every path is checked against the schema's write contract first, so a path
+// the schema does not declare writable, or one the standard reserves, is
+// refused rather than written through.
+//
+// Section edits are made by line range: only the addressed section is
+// rewritten, and the rest of the body - including anything hand-written the
+// schema does not describe - is left byte for byte as it was. It also reports
+// whether the patch changed anything, which is what distinguishes a real
+// update from a no-op.
 package writes
 
 import (

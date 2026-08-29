@@ -1,3 +1,12 @@
+// Package options turns the query command's arguments into read-model options.
+// It applies the defaults a caller does not state - notably a limit, so an
+// unbounded query cannot be asked for by omission - and accepts the scoped
+// forms of --limit, --offset and --sort that address a single root type.
+//
+// Only the shape of the request is decided here. Whether a named field exists
+// is the read planner's answer, because that needs the schema.
+//
+// parse.go parses arguments; paths.go resolves workspace and schema paths.
 package options
 
 import (

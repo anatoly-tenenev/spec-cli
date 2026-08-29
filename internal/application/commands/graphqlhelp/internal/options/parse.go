@@ -1,3 +1,7 @@
+// Package options parses the graphql-help command's arguments and resolves
+// workspace and schema paths. --entity narrows the SDL, so it is refused
+// without --schema-only rather than silently ignored while the catalog is
+// printed in full.
 package options
 
 import (

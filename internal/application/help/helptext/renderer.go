@@ -1,3 +1,11 @@
+// Package helptext renders help as text: the CLI overview, the schema section,
+// and each command's syntax, options and examples. Examples are built from the
+// loaded schema where possible, so what help shows can be run against the
+// workspace at hand rather than against invented entity types.
+//
+// Without a usable schema the same commands are still described, with the
+// schema-derived options marked unavailable - guessing those values is exactly
+// what the degraded report tells the caller not to do.
 package helptext
 
 import (

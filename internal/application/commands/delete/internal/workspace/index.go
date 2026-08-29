@@ -1,3 +1,11 @@
+// Package workspace reads the whole workspace once into the snapshot delete
+// decides from: every parsed document, plus the files that match the target
+// id. The target is matched leniently, so a document with broken frontmatter
+// can still be deleted - otherwise the command would refuse to remove exactly
+// the documents most likely to need removing.
+//
+// Documents that fail to parse are skipped as reference sources: they cannot
+// be shown to point at the target, and delete does not guess.
 package workspace
 
 import (

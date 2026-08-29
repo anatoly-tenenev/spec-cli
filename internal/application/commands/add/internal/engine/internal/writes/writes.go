@@ -1,3 +1,11 @@
+// Package writes turns the requested --set operations into the frontmatter,
+// reference ids and section bodies of the new entity. Every path is looked up
+// in the schema's write contract first: a path the schema does not declare
+// writable, or one the standard reserves, is refused rather than written
+// through.
+//
+// Raw text is converted according to the field's declared type, so a value
+// reaches validation as the type the schema says it is.
 package writes
 
 import (

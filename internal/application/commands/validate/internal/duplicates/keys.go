@@ -1,3 +1,7 @@
+// Package duplicates reports which keys of a workspace-wide index were claimed
+// more than once - the ids, slugs and id suffixes that must be unique. The
+// result is sorted, because these become issues in a response that has to be
+// byte-stable.
 package duplicates
 
 import "sort"

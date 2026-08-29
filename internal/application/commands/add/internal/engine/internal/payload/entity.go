@@ -1,3 +1,7 @@
+// Package payload builds the entity object add returns. It reports the logical
+// model - meta, refs and sections - and never the path the document was
+// written to, because storage layout is not part of what a caller may depend
+// on.
 package payload
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"

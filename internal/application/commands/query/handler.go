@@ -1,3 +1,11 @@
+// Package query implements the query command: compile the schema, plan the
+// query against it, load the workspace, execute. Everything past the schema
+// compile is the shared read model, so query, get and graphql-query cannot
+// disagree about what a selector or a filter means; what this package owns is
+// the command's own surface - its flags and its response shape.
+//
+// handler.go is the command entrypoint; help.go declares how the command
+// describes itself to help.
 package query
 
 import (

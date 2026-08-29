@@ -1,3 +1,8 @@
+// Package projection maps a compiled workspace schema onto GraphQL: entity
+// types become root fields and object types, meta fields become typed fields,
+// enums become named enum types. Names that GraphQL cannot express, or that
+// would collide with a generated or reserved type, are refused here - a name
+// that survives projection is guaranteed to produce a loadable SDL.
 package projection
 
 import (

@@ -1,3 +1,7 @@
+// Package markdown serializes a new entity into the document that lands on
+// disk, and computes the revision from those exact bytes. Frontmatter is
+// emitted builtins first, then meta fields in schema order, so two runs
+// producing the same entity produce the same file and diffs stay readable.
 package markdown
 
 import (

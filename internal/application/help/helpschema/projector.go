@@ -1,3 +1,12 @@
+// Package helpschema loads the workspace schema for help and reports what
+// happened either way. help is the one command that must still answer when the
+// schema is missing or invalid - a caller consults it precisely to find out
+// why - so a failure becomes a degraded report naming the reason, the impact,
+// and the command to run next, instead of an error.
+//
+// When the schema does load, it projects the parts help offers: the entity
+// catalog, the read/write paths per command, and the specification
+// projection used to build schema-derived examples.
 package helpschema
 
 import (

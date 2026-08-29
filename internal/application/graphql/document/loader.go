@@ -1,3 +1,7 @@
+// Package document collects the GraphQL request itself: the query text and its
+// variables, given inline, as a file, or on stdin via "-". Failing to read the
+// input and failing to parse it are different errors on purpose - one is an
+// I/O problem, the other is an invalid query.
 package document
 
 import (

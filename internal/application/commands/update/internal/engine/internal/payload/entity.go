@@ -1,3 +1,6 @@
+// Package payload builds the entity object update returns. It reports the
+// logical model - meta and refs - and never the path the document lives at,
+// because storage layout is not part of what a caller may depend on.
 package payload
 
 import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"

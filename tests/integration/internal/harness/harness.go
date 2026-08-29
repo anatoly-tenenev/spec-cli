@@ -1,3 +1,11 @@
+// Package harness runs one integration case end to end: build the workspace it
+// describes, invoke the built binary, and assert the response and the
+// resulting workspace against the case's expected files. Test files hold only
+// the list of cases, so a new scenario is data rather than code.
+//
+// The CLI is executed as a subprocess, which is what keeps these tests
+// black-box: they observe args, stdout, stderr and exit code, and cannot reach
+// into the implementation.
 package harness
 
 import (

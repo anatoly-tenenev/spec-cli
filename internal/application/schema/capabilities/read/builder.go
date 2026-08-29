@@ -1,3 +1,13 @@
+// Package read projects the compiled schema into what the read side needs to
+// know: which meta fields, reference fields and sections an entity type has,
+// and what each field's type admits. query, get and the GraphQL layer resolve
+// selectors, filters and sorts against this view instead of the full IR, which
+// is why a read command can answer "unknown field" without knowing how schemas
+// are written.
+//
+// Reference fields are split out of meta fields deliberately: the read
+// contract addresses them as refs.<field>, and meta.<field> is not a valid
+// name for a reference.
 package read
 
 import (

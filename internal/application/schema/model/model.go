@@ -1,3 +1,10 @@
+// Package model is the compiled schema IR: one in-memory shape that every
+// consumer of a schema reads. Nothing here parses or validates - the compiler
+// produces these types and the capability builders project them - so the IR
+// stays the only agreed vocabulary between schema authoring and the commands.
+//
+// Declaration order is kept next to every map (EntityOrder, MetaFieldOrder,
+// SectionOrder) because responses must not depend on map iteration order.
 package model
 
 import schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"

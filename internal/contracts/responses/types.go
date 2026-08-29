@@ -1,3 +1,6 @@
+// Package responses defines the output side of the CLI wire contract: the
+// envelope every command returns and the result states a caller may observe.
+// Changing anything here changes what integrations parse.
 package responses
 
 type ResultState string
