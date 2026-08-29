@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/yamlvalues"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writeops"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -43,7 +43,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 	for _, op := range opts.Operations {
 		writeSpec, exists := typeSpec.AllowWritePaths[op.Path]
 		if !exists {
-			if isForbiddenWritePath(op.Path) {
+			if writeops.IsForbiddenWritePath(op.Path) {
 				return Applied{}, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,
 					fmt.Sprintf("write path '%s' is forbidden by write contract", op.Path),
@@ -67,7 +67,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 			}
 		}
 
-		value, valueErr := resolveOperationValue(op, writeSpec, typeSpec)
+		value, valueErr := writeops.ResolveValue(op, writeSpec, typeSpec)
 		if valueErr != nil {
 			return Applied{}, valueErr
 		}
@@ -180,176 +180,6 @@ func BuildBody(typeSpec model.EntityTypeSpec, applied Applied) string {
 		parts = append(parts, heading+"\n"+body)
 	}
 	return strings.Join(parts, "\n\n")
-}
-
-func resolveOperationValue(
-	op model.WriteOperation,
-	writeSpec model.WritePathSpec,
-	typeSpec model.EntityTypeSpec,
-) (any, *domainerrors.AppError) {
-	if op.Kind == model.WriteOperationSetFile {
-		raw, err := os.ReadFile(op.RawValue)
-		if err != nil {
-			return nil, domainerrors.New(
-				domainerrors.CodeWriteFailed,
-				"failed to read --set-file source",
-				map[string]any{"path": op.Path, "reason": err.Error()},
-			)
-		}
-		return string(raw), nil
-	}
-
-	switch writeSpec.Kind {
-	case model.WritePathMeta:
-		field := typeSpec.MetaFields[writeSpec.FieldName]
-		if field.IsEntityRef {
-			value := strings.TrimSpace(op.RawValue)
-			if value == "" {
-				return nil, domainerrors.New(
-					domainerrors.CodeWriteContractViolation,
-					fmt.Sprintf("path '%s' requires non-empty target entity id", op.Path),
-					map[string]any{"path": op.Path},
-				)
-			}
-			return value, nil
-		}
-		parsed, parseErr := yamlvalues.ParseYAMLValue(op.RawValue)
-		if parseErr != nil {
-			return nil, domainerrors.New(
-				domainerrors.CodeWriteContractViolation,
-				fmt.Sprintf("failed to parse value for path '%s'", op.Path),
-				map[string]any{"path": op.Path, "reason": parseErr.Error()},
-			)
-		}
-		if !isTypeCompatible(field, parsed) {
-			return nil, domainerrors.New(
-				domainerrors.CodeWriteContractViolation,
-				fmt.Sprintf("value for path '%s' does not match schema type '%s'", op.Path, field.Type),
-				map[string]any{
-					"path":          op.Path,
-					"expected_type": field.Type,
-					"actual_type":   describeValueType(parsed),
-				},
-			)
-		}
-		return values.NormalizeValue(parsed), nil
-	case model.WritePathRef:
-		field := typeSpec.MetaFields[writeSpec.FieldName]
-		if field.IsEntityRefArray {
-			parsed, parseErr := yamlvalues.ParseYAMLValue(op.RawValue)
-			if parseErr != nil {
-				return nil, domainerrors.New(
-					domainerrors.CodeWriteContractViolation,
-					fmt.Sprintf("failed to parse value for path '%s'", op.Path),
-					map[string]any{"path": op.Path, "reason": parseErr.Error()},
-				)
-			}
-			items, ok := parsed.([]any)
-			if !ok {
-				return nil, domainerrors.New(
-					domainerrors.CodeWriteContractViolation,
-					fmt.Sprintf("value for path '%s' must be array of entity ids", op.Path),
-					map[string]any{"path": op.Path, "expected_type": "array", "actual_type": describeValueType(parsed)},
-				)
-			}
-			result := make([]any, 0, len(items))
-			for idx, item := range items {
-				itemText, ok := item.(string)
-				if !ok || strings.TrimSpace(itemText) == "" {
-					return nil, domainerrors.New(
-						domainerrors.CodeWriteContractViolation,
-						fmt.Sprintf("value for path '%s' must contain non-empty string entity ids", op.Path),
-						map[string]any{"path": op.Path, "index": idx},
-					)
-				}
-				result = append(result, strings.TrimSpace(itemText))
-			}
-			return result, nil
-		}
-		value := strings.TrimSpace(op.RawValue)
-		if value == "" {
-			return nil, domainerrors.New(
-				domainerrors.CodeWriteContractViolation,
-				fmt.Sprintf("path '%s' requires non-empty target entity id", op.Path),
-				map[string]any{"path": op.Path},
-			)
-		}
-		return value, nil
-	case model.WritePathSection:
-		return op.RawValue, nil
-	default:
-		return nil, domainerrors.New(
-			domainerrors.CodeInternalError,
-			"unsupported write-path kind",
-			map[string]any{"kind": writeSpec.Kind},
-		)
-	}
-}
-
-func isTypeCompatible(field model.MetaField, rawValue any) bool {
-	value := values.NormalizeValue(rawValue)
-
-	switch field.Type {
-	case "string":
-		_, ok := value.(string)
-		return ok
-	case "integer":
-		number, ok := values.NumberToFloat64(value)
-		return ok && number == float64(int(number))
-	case "number":
-		_, ok := values.NumberToFloat64(value)
-		return ok
-	case "boolean":
-		_, ok := value.(bool)
-		return ok
-	case "array":
-		_, ok := value.([]any)
-		return ok
-	case "entityRef":
-		text, ok := value.(string)
-		return ok && strings.TrimSpace(text) != ""
-	default:
-		return true
-	}
-}
-
-func describeValueType(rawValue any) string {
-	value := values.NormalizeValue(rawValue)
-
-	switch typed := value.(type) {
-	case nil:
-		return "null"
-	case string:
-		return "string"
-	case bool:
-		return "boolean"
-	case []any:
-		return "array"
-	default:
-		if _, ok := values.NumberToFloat64(typed); ok {
-			return "number"
-		}
-		return fmt.Sprintf("%T", value)
-	}
-}
-
-func isForbiddenWritePath(path string) bool {
-	if path == "type" || path == "id" || path == "slug" || path == "createdDate" || path == "updatedDate" {
-		return true
-	}
-	if path == "content" || path == "content.raw" || path == "content.sections" {
-		return true
-	}
-	if strings.HasPrefix(path, "refs.") {
-		parts := strings.Split(path, ".")
-		if len(parts) >= 3 {
-			switch parts[2] {
-			case "id", "type", "slug":
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func extractRefIDArray(items []any) []string {

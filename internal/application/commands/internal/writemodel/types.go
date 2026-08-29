@@ -9,11 +9,38 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 )
 
+type WriteOperationKind string
+
+const (
+	WriteOperationSet     WriteOperationKind = "set"
+	WriteOperationSetFile WriteOperationKind = "set-file"
+	WriteOperationUnset   WriteOperationKind = "unset"
+)
+
+// WriteOperation is one --set/--set-file/--unset the caller asked for, still
+// carrying the raw text: what a value means depends on the write path it
+// targets, which is only known once the schema is consulted.
+type WriteOperation struct {
+	Kind     WriteOperationKind
+	Path     string
+	RawValue string
+}
+
 type EntityTypeSpec = schemacapwrite.EntityWriteModel
 
 type MetaField = schemacapwrite.MetaField
 
 type RuleValue = schemacapwrite.RuleValue
+
+type WritePathKind = schemacapwrite.WritePathKind
+
+const (
+	WritePathMeta    WritePathKind = schemacapwrite.WritePathMeta
+	WritePathRef     WritePathKind = schemacapwrite.WritePathRef
+	WritePathSection WritePathKind = schemacapwrite.WritePathSection
+)
+
+type WritePathSpec = schemacapwrite.WritePathSpec
 
 type PathPattern = schemacapwrite.PathPattern
 

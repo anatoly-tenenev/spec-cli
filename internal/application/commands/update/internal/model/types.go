@@ -23,20 +23,6 @@ type Options struct {
 	DryRun         bool
 }
 
-type WriteOperationKind string
-
-const (
-	WriteOperationSet     WriteOperationKind = "set"
-	WriteOperationSetFile WriteOperationKind = "set-file"
-	WriteOperationUnset   WriteOperationKind = "unset"
-)
-
-type WriteOperation struct {
-	Kind     WriteOperationKind
-	Path     string
-	RawValue string
-}
-
 type BodyOperationKind string
 
 const (
@@ -48,6 +34,16 @@ const (
 
 type WriteCapability = schemacapwrite.Capability
 type EntityTypeSpec = schemacapwrite.EntityWriteModel
+
+type WriteOperationKind = writemodel.WriteOperationKind
+
+const (
+	WriteOperationSet     = writemodel.WriteOperationSet
+	WriteOperationSetFile = writemodel.WriteOperationSetFile
+	WriteOperationUnset   = writemodel.WriteOperationUnset
+)
+
+type WriteOperation = writemodel.WriteOperation
 
 type WritePathKind = schemacapwrite.WritePathKind
 
