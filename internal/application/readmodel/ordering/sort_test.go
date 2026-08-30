@@ -1,4 +1,4 @@
-package entitysort
+package ordering
 
 import (
 	"testing"

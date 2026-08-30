@@ -1,11 +1,14 @@
-// Package entitysort implements the comparison rules for sorting entities:
-// how mixed value types compare, and where an absent value lands. Absent
-// values sort last in the requested direction, so a document missing the sort
-// field never displaces documents that have it.
+// Package ordering puts entities in order for the read layer, and owns the
+// comparison rules that decide it: how mixed value types compare, and where an
+// absent value lands. Absent values sort last in the requested direction, so a
+// document missing the sort field never displaces documents that have it.
 //
 // The sort is stable and the caller always appends id as the final term, which
 // together is what makes paging over the same workspace repeatable.
-package entitysort
+//
+// It is a level of its own because sorting is used both while executing a plan
+// and by callers that already hold entities.
+package ordering
 
 import (
 	"fmt"
