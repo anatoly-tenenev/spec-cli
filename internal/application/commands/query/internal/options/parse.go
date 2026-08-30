@@ -11,11 +11,11 @@ package options
 
 import (
 	"fmt"
-	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"strconv"
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -126,25 +126,8 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			if err != nil {
 				return model.Options{}, err
 			}
-			scope, intValue, scoped, splitErr := splitScopedValue("--limit", value)
-			if splitErr != nil {
-				return model.Options{}, splitErr
-			}
-			parsed, parseErr := parseNonNegativeInt("--limit", intValue)
-			if parseErr != nil {
-				return model.Options{}, parseErr
-			}
-			if scoped {
-				if _, exists := opts.ScopedLimits[scope]; exists {
-					return model.Options{}, domainerrors.New(
-						domainerrors.CodeInvalidArgs,
-						fmt.Sprintf("duplicate scoped --limit for entity type: %s", scope),
-						map[string]any{"entity_type": scope},
-					)
-				}
-				opts.ScopedLimits[scope] = parsed
-			} else {
-				opts.Limit = parsed
+			if applyErr := applyPagingValue("--limit", value, &opts.Limit, opts.ScopedLimits); applyErr != nil {
+				return model.Options{}, applyErr
 			}
 			idx = nextIdx
 		case "--offset":
@@ -152,25 +135,8 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			if err != nil {
 				return model.Options{}, err
 			}
-			scope, intValue, scoped, splitErr := splitScopedValue("--offset", value)
-			if splitErr != nil {
-				return model.Options{}, splitErr
-			}
-			parsed, parseErr := parseNonNegativeInt("--offset", intValue)
-			if parseErr != nil {
-				return model.Options{}, parseErr
-			}
-			if scoped {
-				if _, exists := opts.ScopedOffsets[scope]; exists {
-					return model.Options{}, domainerrors.New(
-						domainerrors.CodeInvalidArgs,
-						fmt.Sprintf("duplicate scoped --offset for entity type: %s", scope),
-						map[string]any{"entity_type": scope},
-					)
-				}
-				opts.ScopedOffsets[scope] = parsed
-			} else {
-				opts.Offset = parsed
+			if applyErr := applyPagingValue("--offset", value, &opts.Offset, opts.ScopedOffsets); applyErr != nil {
+				return model.Options{}, applyErr
 			}
 			idx = nextIdx
 		default:
@@ -183,6 +149,46 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 	}
 
 	return opts, nil
+}
+
+// applyPagingValue applies one --limit/--offset argument, in either its plain
+// or its scoped form. The two options are parsed and refused by the same rules,
+// so a value one of them accepts cannot be one the other rejects; only the
+// destination differs.
+//
+// A scoped value stated twice for the same entity type is refused rather than
+// resolved last-one-wins: the caller named two bounds for one type, and picking
+// either would be a guess.
+func applyPagingValue(
+	name string,
+	raw string,
+	target *int,
+	scoped map[string]int,
+) *domainerrors.AppError {
+	scope, rawValue, isScoped, splitErr := splitScopedValue(name, raw)
+	if splitErr != nil {
+		return splitErr
+	}
+
+	parsed, parseErr := parseNonNegativeInt(name, rawValue)
+	if parseErr != nil {
+		return parseErr
+	}
+
+	if !isScoped {
+		*target = parsed
+		return nil
+	}
+
+	if _, exists := scoped[scope]; exists {
+		return domainerrors.New(
+			domainerrors.CodeInvalidArgs,
+			fmt.Sprintf("duplicate scoped %s for entity type: %s", name, scope),
+			map[string]any{"entity_type": scope},
+		)
+	}
+	scoped[scope] = parsed
+	return nil
 }
 
 func splitScopedValue(name string, raw string) (string, string, bool, *domainerrors.AppError) {
