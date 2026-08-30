@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/shared"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/shared"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 	"gopkg.in/yaml.v3"

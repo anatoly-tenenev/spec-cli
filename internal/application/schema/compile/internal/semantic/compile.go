@@ -17,9 +17,9 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
-	semanticmetafields "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/metafields"
-	semanticsections "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/sections"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/shared"
+	semanticmetafields "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/metafields"
+	semanticsections "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/sections"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/shared"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressioncontext"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
