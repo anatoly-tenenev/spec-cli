@@ -110,11 +110,11 @@ The statements below decide cases the rules further down do not cover. If a rule
 
 ### Directory Structure
 - A directory level must earn its existence. An entrypoint that only forwards calls to a single subpackage and holds no logic of its own is a redundant level: raise that subpackage into its place. A level is justified when its entrypoint orchestrates two or more subpackages, or does something beyond forwarding.
-- A package that is one file with one importer is a file, not a package. Create a subpackage when a file reaches the line limit, or when the subpackage has more than one importer.
+- A package that is one file with one importer is a file, not a package: merge it into its caller. This does not apply where the package exists for a reason its size does not show: a command role the standard below requires, or a path an external tool addresses directly - the linker sets `internal/buildinfo.Version` by package path, so merging that one breaks release builds.
 - At most one `internal/` in a package path. Every `internal/` is a wall behind which code cannot be reused; a second wall guarantees a copy instead of reuse.
 - A "role" is what an external caller asks for by name. If two files in a directory root are only ever used together and by the same callers, they are one role, not two. Check this by grepping imports, not by taste.
-- Only role entrypoints belong in a directory root; details move into subpackages with domain-specific names. Name a package after its subject, not after its role in the dependency graph: `common`, `support`, `util` and `helpers` are forbidden. For commands the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
-- A `.go` file is limited to 600 lines. When it exceeds the limit, move logic into a subpackage, not into a sibling file in the same root.
+- A directory root holds the entrypoints of its roles. Details live in the same package, in files named after what they hold; a subpackage is for a detail that has its own callers, not for a detail that got long. Name a package after its subject, not after its role in the dependency graph: `common`, `support`, `util` and `helpers` are forbidden. For commands the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
+- A `.go` file is limited to 600 lines. When it exceeds the limit, split it into another file in the same package. Reach for a subpackage only when the split part has more than one importer: in Go a file split costs nothing, a package split adds a visibility wall.
 
 ### Shared Code
 - A copy is a deferred divergence. When copying code, immediately decide one of two things: extract it into a shared place, or record in a comment why the copies must differ. There is no third state - "identical for now, we will sort it out later" always resolves into divergence.
