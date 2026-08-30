@@ -103,8 +103,8 @@ func Build(compiled model.CompiledSchema) Capability {
 	for _, typeName := range typeNames {
 		entity := compiled.Entities[typeName]
 
-		metaOrder := filteredOrder(entity.MetaFieldOrder, collections.SortedMapKeys(entity.MetaFields), entity.MetaFields)
-		sectionOrder := filteredOrder(entity.SectionOrder, collections.SortedMapKeys(entity.Sections), entity.Sections)
+		metaOrder := collections.OrderedKeys(entity.MetaFieldOrder, entity.MetaFields)
+		sectionOrder := collections.OrderedKeys(entity.SectionOrder, entity.Sections)
 
 		metaFields := make(map[string]MetaField, len(entity.MetaFields))
 		for fieldName, field := range entity.MetaFields {
@@ -258,30 +258,4 @@ func buildPathCase(pathCase model.PathTemplateCase) PathPatternCase {
 	}
 
 	return result
-}
-
-func filteredOrder[T any](preferred []string, fallback []string, values map[string]T) []string {
-	if len(preferred) == 0 {
-		return append([]string(nil), fallback...)
-	}
-
-	order := make([]string, 0, len(values))
-	seen := map[string]struct{}{}
-	for _, value := range preferred {
-		if _, exists := values[value]; !exists {
-			continue
-		}
-		if _, exists := seen[value]; exists {
-			continue
-		}
-		seen[value] = struct{}{}
-		order = append(order, value)
-	}
-	for _, value := range fallback {
-		if _, exists := seen[value]; exists {
-			continue
-		}
-		order = append(order, value)
-	}
-	return order
 }

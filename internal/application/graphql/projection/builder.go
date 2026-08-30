@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	gqlmodel "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/model"
 	readcap "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	schemamodel "github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
@@ -356,15 +357,15 @@ func pascalCase(value string) string {
 }
 
 func orderedMetaFields(entity schemamodel.EntityType, cap readcap.EntityReadModel) []string {
-	return orderedFieldNames(entity.MetaFieldOrder, cap.MetaFields)
+	return collections.OrderedKeys(entity.MetaFieldOrder, cap.MetaFields)
 }
 
 func orderedRefFields(entity schemamodel.EntityType, cap readcap.EntityReadModel) []string {
-	return orderedFieldNames(entity.MetaFieldOrder, cap.RefFields)
+	return collections.OrderedKeys(entity.MetaFieldOrder, cap.RefFields)
 }
 
 func orderedSections(entity schemamodel.EntityType) []string {
-	return orderedFieldNames(entity.SectionOrder, entity.Sections)
+	return collections.OrderedKeys(entity.SectionOrder, entity.Sections)
 }
 
 func orderedFieldNames[T any](declared []string, values map[string]T) []string {

@@ -18,3 +18,40 @@ func SortedMapKeys[T any](input map[string]T) []string {
 	sort.Strings(keys)
 	return keys
 }
+
+// OrderedKeys walks a map in the order its keys were declared, then appends
+// whatever the declaration left out, sorted.
+//
+// The schema keeps a declaration order next to every map, and it is the order
+// a caller sees: the fields of an entity in a write response, in the GraphQL
+// projection, and in the help rendering are the same fields in the same
+// sequence. Names the declaration mentions but the map does not are dropped,
+// and a name mentioned twice appears once, so a stale or careless schema
+// cannot bend the output.
+func OrderedKeys[T any](declared []string, values map[string]T) []string {
+	seen := make(map[string]struct{}, len(values))
+	ordered := make([]string, 0, len(values))
+	for _, key := range declared {
+		if _, exists := values[key]; !exists {
+			continue
+		}
+		if _, duplicate := seen[key]; duplicate {
+			continue
+		}
+		seen[key] = struct{}{}
+		ordered = append(ordered, key)
+	}
+	if len(ordered) == len(values) {
+		return ordered
+	}
+
+	remaining := make([]string, 0, len(values)-len(ordered))
+	for key := range values {
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		remaining = append(remaining, key)
+	}
+	sort.Strings(remaining)
+	return append(ordered, remaining...)
+}

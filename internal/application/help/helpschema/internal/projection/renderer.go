@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 )
 
@@ -108,7 +109,7 @@ func buildContentProjection(entity model.EntityType) *orderedJSONObject {
 	sections := newOrderedJSONObject()
 	sections.add("type", "object")
 	sectionProperties := newOrderedJSONObject()
-	for _, sectionName := range orderedSectionNames(entity) {
+	for _, sectionName := range collections.OrderedKeys(entity.SectionOrder, entity.Sections) {
 		sectionProperties.add(sectionName, buildSectionProjection(entity.Sections[sectionName]))
 	}
 	sections.add("properties", sectionProperties)
@@ -360,7 +361,7 @@ func splitEntityFields(entity model.EntityType) ([]fieldProjection, []fieldProje
 	scalarRefFields := []fieldProjection{}
 	arrayRefFields := []fieldProjection{}
 
-	for _, fieldName := range orderedMetaFieldNames(entity) {
+	for _, fieldName := range collections.OrderedKeys(entity.MetaFieldOrder, entity.MetaFields) {
 		field := entity.MetaFields[fieldName]
 		entry := fieldProjection{Name: fieldName, Field: field}
 		if isReferenceField(field) {
@@ -412,54 +413,4 @@ func sortedCompiledEntityNames(compiled model.CompiledSchema) []string {
 	}
 	sort.Strings(names)
 	return names
-}
-
-func orderedMetaFieldNames(entity model.EntityType) []string {
-	order := make([]string, 0, len(entity.MetaFields))
-	seen := make(map[string]struct{}, len(entity.MetaFields))
-	for _, fieldName := range entity.MetaFieldOrder {
-		if _, exists := entity.MetaFields[fieldName]; !exists {
-			continue
-		}
-		if _, exists := seen[fieldName]; exists {
-			continue
-		}
-		order = append(order, fieldName)
-		seen[fieldName] = struct{}{}
-	}
-	remaining := make([]string, 0, len(entity.MetaFields)-len(order))
-	for fieldName := range entity.MetaFields {
-		if _, exists := seen[fieldName]; exists {
-			continue
-		}
-		remaining = append(remaining, fieldName)
-	}
-	sort.Strings(remaining)
-	order = append(order, remaining...)
-	return order
-}
-
-func orderedSectionNames(entity model.EntityType) []string {
-	order := make([]string, 0, len(entity.Sections))
-	seen := make(map[string]struct{}, len(entity.Sections))
-	for _, sectionName := range entity.SectionOrder {
-		if _, exists := entity.Sections[sectionName]; !exists {
-			continue
-		}
-		if _, exists := seen[sectionName]; exists {
-			continue
-		}
-		order = append(order, sectionName)
-		seen[sectionName] = struct{}{}
-	}
-	remaining := make([]string, 0, len(entity.Sections)-len(order))
-	for sectionName := range entity.Sections {
-		if _, exists := seen[sectionName]; exists {
-			continue
-		}
-		remaining = append(remaining, sectionName)
-	}
-	sort.Strings(remaining)
-	order = append(order, remaining...)
-	return order
 }
