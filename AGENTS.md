@@ -106,24 +106,24 @@ The statements below decide cases the rules further down do not cover. If a rule
 - Do not add interactive prompts by default.
 - Do not expose internal entity filesystem paths in API responses.
 
-## Code Structure Rules (entrypoint-first, strict)
-- For any application-logic directory, the invariant is: one directory = one abstraction level.
-- Only entrypoint files for that directory level are allowed in the directory root.
-- An entry point contains orchestration and the package's public API; implementation details must not live there.
-- Any detailed implementation must be moved into subpackages with domain-specific names.
-- Detail files next to the entrypoint in the directory root are forbidden.
-- If a directory root has multiple `.go` files, each of them must be an entrypoint for a separate top-level role; otherwise move the file into a subpackage.
-- For command use cases, the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
-- For complex commands, place details under `internal/application/commands/<command>/internal/...` using domain-specific package names (`options`, `schema`, `workspace`, `engine`, etc.).
-- Do not use `common`, `support`, `util`, or `helpers` as universal packages; name a package after its subject, not after its role in the dependency graph.
-- Create a new directory with non-trivial logic only together with a clear entrypoint file and an explicit directory role.
-- `.go` files are limited to `600` lines; when the limit is exceeded, split the file while preserving the entrypoint-first rules.
-- If a `.go` file exceeds `600` lines, move detailed logic into subpackages under `internal/<domain_role>/...`; splitting into several detail files in the same root directory is forbidden.
-- The intermediate step "first split the file in the root, then move it into subpackages" is not allowed: move directly to the target structure with the entrypoint in the root and details in subpackages.
-- Review criterion: within 5 seconds it must be clear which file is the directory entrypoint and where the details live.
-- Finishing a task without an entrypoint-first self-check is forbidden: before the final response, check every modified directory and ensure there are no detail files next to an entrypoint in its root.
-- If a modified directory still contains more than one `.go` file, the final message must explicitly list their roles (the entrypoint of each top-level role) and confirm that details were moved to subpackages.
-- Any structural refactoring must be done directly in the target structure; temporary violations of entrypoint-first within a commit/change are not allowed.
+## Code Structure and Shared Code
+
+### Directory Structure
+- A directory level must earn its existence. An entrypoint that only forwards calls to a single subpackage and holds no logic of its own is a redundant level: raise that subpackage into its place. A level is justified when its entrypoint orchestrates two or more subpackages, or does something beyond forwarding.
+- A package that is one file with one importer is a file, not a package. Create a subpackage when a file reaches the line limit, or when the subpackage has more than one importer.
+- At most one `internal/` in a package path. Every `internal/` is a wall behind which code cannot be reused; a second wall guarantees a copy instead of reuse.
+- A "role" is what an external caller asks for by name. If two files in a directory root are only ever used together and by the same callers, they are one role, not two. Check this by grepping imports, not by taste.
+- Only role entrypoints belong in a directory root; details move into subpackages with domain-specific names. Name a package after its subject, not after its role in the dependency graph: `common`, `support`, `util` and `helpers` are forbidden. For commands the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
+- A `.go` file is limited to 600 lines. When it exceeds the limit, move logic into a subpackage, not into a sibling file in the same root.
+
+### Shared Code
+- A copy is a deferred divergence. When copying code, immediately decide one of two things: extract it into a shared place, or record in a comment why the copies must differ. There is no third state - "identical for now, we will sort it out later" always resolves into divergence.
+- One question, one place that answers it. Structural sameness is not grounds for extraction: before extracting, write down which question the code answers and confirm it is the same question. If the copies have a reason to change apart, keep them apart and record the reason.
+- Resolve divergences between copies before extracting, not after, and confirm the decision by running the code, not by reasoning about it.
+- Extract at the layer of the question, not at the layer of the consumer. If a shared place serves two consumers out of six, the extraction was made too high.
+- When decomposition and deduplication conflict, deduplication wins: one shared package beats two private ones answering the same question.
+- Where shared code goes: needed by two commands - `internal/application/commands/internal/<role>`; needed by commands together with `readmodel` or `schema` - a package directly under `internal/application/`; needed by `internal/cli` as well - one level above. A shared place must already exist and be the obvious destination, rather than being invented each time. The package comment answers why this is one thing and not two.
+- Measure duplication mechanically (`make dupl`), not by eye: copies live in different subtrees and each looks reasonable on its own.
 
 ## Command Implementation Standard (default)
 - `handler.go` must remain a thin orchestration layer: parse options -> load inputs/schema -> run use case -> build the `json/ndjson` response.
