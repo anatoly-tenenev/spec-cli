@@ -12,6 +12,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -36,7 +37,7 @@ func BuildCandidateSet(workspace string, typeFilters map[string]struct{}) ([]mod
 			return nil, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 

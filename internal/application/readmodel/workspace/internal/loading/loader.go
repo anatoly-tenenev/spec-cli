@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
@@ -40,7 +41,7 @@ func LoadEntities(
 		if _, known := capability.EntityTypes[entity.Type]; known {
 			continue
 		}
-		return nil, diagnostics.NewReadError(
+		return nil, readissues.NewReadError(
 			"failed to determine entity type",
 			fmt.Sprintf("entity type '%s' is not declared in schema.entity", entity.Type),
 			diagnostics.TypeStandardRef,

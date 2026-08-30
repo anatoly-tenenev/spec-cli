@@ -3,11 +3,9 @@ package engine
 import (
 	"fmt"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/duplicates"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
@@ -122,27 +120,4 @@ func validateDateField(issues *[]domainvalidation.Issue, entity *model.CheckedEn
 			Field:       fmt.Sprintf("frontmatter.%s", field),
 		})
 	}
-}
-
-func parseIDSuffix(id string, prefix string) (int, bool) {
-	expectedPrefix := prefix + "-"
-	if !strings.HasPrefix(id, expectedPrefix) {
-		return 0, false
-	}
-
-	rawSuffix := strings.TrimPrefix(id, expectedPrefix)
-	if rawSuffix == "" {
-		return 0, false
-	}
-	for _, ch := range rawSuffix {
-		if ch < '0' || ch > '9' {
-			return 0, false
-		}
-	}
-
-	suffix, err := strconv.Atoi(rawSuffix)
-	if err != nil || suffix < 0 {
-		return 0, false
-	}
-	return suffix, true
 }

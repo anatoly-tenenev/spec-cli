@@ -2,8 +2,8 @@
 // against a concrete candidate: whether a field or section is required here,
 // and whether a value matches the declared type and constraints.
 //
-// add and update ask the same schema the same questions, so a document one of
-// them accepts must be accepted by the other.
+// add, update and validate ask the same schema the same questions, so a
+// document a write command accepts must be one validate calls conforming.
 package schemarules
 
 import (
@@ -13,10 +13,15 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/rulevalues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
 
+// EvaluateRequired answers whether a field or section is required for this
+// candidate. An unconditional requirement is its literal; a conditional one is
+// whatever its expression evaluates to here, and an expression that fails to
+// evaluate is reported rather than treated as either answer.
 func EvaluateRequired(
 	literal bool,
 	expression *schemaexpressions.CompiledExpression,
@@ -31,36 +36,6 @@ func EvaluateRequired(
 		return false, evalErr
 	}
 	return schemaexpressions.IsTruthy(value), nil
-}
-
-func resolveRuleValues(values []writemodel.RuleValue, context map[string]any) ([]any, *schemaexpressions.EvalError) {
-	if len(values) == 0 {
-		return nil, nil
-	}
-
-	resolved := make([]any, 0, len(values))
-	for _, value := range values {
-		resolvedValue, resolveErr := resolveRuleValue(value, context)
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		resolved = append(resolved, resolvedValue)
-	}
-
-	return resolved, nil
-}
-
-func resolveRuleValue(value writemodel.RuleValue, context map[string]any) (any, *schemaexpressions.EvalError) {
-	if value.Template == nil {
-		return value.Literal, nil
-	}
-
-	rendered, renderErr := schemaexpressions.RenderTemplate(value.Template, context)
-	if renderErr != nil {
-		return nil, renderErr
-	}
-
-	return rendered, nil
 }
 
 func Check(
@@ -162,7 +137,7 @@ func Check(
 	}
 
 	if len(fieldSpec.Enum) > 0 {
-		resolvedEnum, enumResolveErr := resolveRuleValues(fieldSpec.Enum, evaluationContext)
+		resolvedEnum, enumResolveErr := rulevalues.ResolveAll(fieldSpec.Enum, evaluationContext)
 		if enumResolveErr != nil {
 			issuesList = append(issuesList, issues.New(
 				"meta.required_enum_interpolation_failed",
@@ -192,7 +167,7 @@ func Check(
 	}
 
 	if fieldSpec.HasConst {
-		resolvedConst, constResolveErr := resolveRuleValue(fieldSpec.Const, evaluationContext)
+		resolvedConst, constResolveErr := rulevalues.Resolve(fieldSpec.Const, evaluationContext)
 		if constResolveErr != nil {
 			issuesList = append(issuesList, issues.New(
 				"meta.required_const_interpolation_failed",

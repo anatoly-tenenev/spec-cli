@@ -49,18 +49,23 @@ func ShouldIncludeSchemaForError(code domainerrors.Code) bool {
 	}
 }
 
-// BuildErrorOutput assembles the whole response for a command that failed after
-// its schema compiled: the error object, the schema block when the failure was
-// schema-related, and the exit code the error carries.
+// BuildErrorOutput assembles the whole response for a command that failed
+// after its schema compiled: the error object, the schema block when the
+// failure was schema-related, and the exit code the error carries.
 //
 // Every command that compiles a schema needs exactly this, so the shape of a
 // failed response does not depend on which command produced it.
+//
+// A schema-related failure that happened before there was a schema to report -
+// the graphql commands can fail that way - carries no schema block at all,
+// rather than a null one. An absent block says the schema never got that far;
+// a null one would claim there is a schema and it is nothing.
 func BuildErrorOutput(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
 	jsonPayload := map[string]any{
 		"result_state": errormap.ResultStateForCode(appErr.Code),
 		"error":        BuildErrorPayload(appErr),
 	}
-	if ShouldIncludeSchemaForError(appErr.Code) {
+	if schemaPayload != nil && ShouldIncludeSchemaForError(appErr.Code) {
 		jsonPayload["schema"] = schemaPayload
 	}
 

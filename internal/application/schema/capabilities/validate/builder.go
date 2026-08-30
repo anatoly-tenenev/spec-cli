@@ -6,10 +6,10 @@
 package validate
 
 import (
-	"sort"
-
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/rulevalues"
 )
 
 type Capability struct {
@@ -55,10 +55,9 @@ type RequiredSectionRule struct {
 	TitlePath    string
 }
 
-type RuleValue struct {
-	Literal  any
-	Template *schemaexpressions.CompiledTemplate
-}
+// RuleValue is the shared literal-or-template, aliased so that a const or
+// enum validate judges is the same value the write side offers.
+type RuleValue = rulevalues.RuleValue
 
 type PathPatternRule struct {
 	Cases []PathPatternCase
@@ -74,7 +73,7 @@ type PathPatternCase struct {
 }
 
 func Build(compiled model.CompiledSchema) Capability {
-	typeNames := sortedEntityNames(compiled)
+	typeNames := collections.SortedMapKeys(compiled.Entities)
 	capability := Capability{
 		EntityOrder: typeNames,
 		EntityTypes: make(map[string]EntityValidationModel, len(typeNames)),
@@ -82,8 +81,8 @@ func Build(compiled model.CompiledSchema) Capability {
 
 	for _, typeName := range typeNames {
 		entity := compiled.Entities[typeName]
-		fieldNames := sortedMetaFieldNames(entity.MetaFields)
-		sectionNames := sortedSectionNames(entity.Sections)
+		fieldNames := collections.SortedMapKeys(entity.MetaFields)
+		sectionNames := collections.SortedMapKeys(entity.Sections)
 
 		requiredFields := make([]RequiredFieldRule, 0, len(fieldNames))
 		for _, fieldName := range fieldNames {
@@ -120,7 +119,7 @@ func Build(compiled model.CompiledSchema) Capability {
 func buildFieldRule(field model.MetaField) RequiredFieldRule {
 	rule := RequiredFieldRule{
 		Name:         field.Name,
-		Type:         kindToRuleType(field.Value.Kind),
+		Type:         field.Value.Kind.TypeName(),
 		Required:     field.Required.Always,
 		RequiredExpr: field.Required.Expr,
 		RequiredPath: field.Required.Path,
@@ -133,18 +132,13 @@ func buildFieldRule(field model.MetaField) RequiredFieldRule {
 
 	if field.Value.Const != nil {
 		rule.HasValue = true
-		rule.Value = RuleValue{Literal: field.Value.Const.Value, Template: field.Value.Const.Template}
+		rule.Value = rulevalues.FromLiteral(*field.Value.Const)
 	}
-	if len(field.Value.Enum) > 0 {
-		rule.Enum = make([]RuleValue, 0, len(field.Value.Enum))
-		for _, enumValue := range field.Value.Enum {
-			rule.Enum = append(rule.Enum, RuleValue{Literal: enumValue.Value, Template: enumValue.Template})
-		}
-	}
+	rule.Enum = rulevalues.FromLiterals(field.Value.Enum)
 
 	if field.Value.Items != nil {
 		rule.HasItemType = true
-		rule.ItemType = kindToRuleType(field.Value.Items.Kind)
+		rule.ItemType = field.Value.Items.Kind.TypeName()
 		if field.Value.Items.Ref != nil {
 			rule.ItemRefTypes = append([]string(nil), field.Value.Items.Ref.AllowedTypes...)
 		}
@@ -191,50 +185,4 @@ func buildPathCase(pathCase model.PathTemplateCase) PathPatternCase {
 	}
 
 	return rule
-}
-
-func kindToRuleType(kind model.ValueKind) string {
-	switch kind {
-	case model.ValueKindString:
-		return "string"
-	case model.ValueKindNumber:
-		return "number"
-	case model.ValueKindInteger:
-		return "integer"
-	case model.ValueKindBoolean:
-		return "boolean"
-	case model.ValueKindArray:
-		return "array"
-	case model.ValueKindEntityRef:
-		return "entityRef"
-	default:
-		return "unknown"
-	}
-}
-
-func sortedEntityNames(compiled model.CompiledSchema) []string {
-	names := make([]string, 0, len(compiled.Entities))
-	for typeName := range compiled.Entities {
-		names = append(names, typeName)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedMetaFieldNames(fields map[string]model.MetaField) []string {
-	names := make([]string, 0, len(fields))
-	for name := range fields {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedSectionNames(sections map[string]model.Section) []string {
-	names := make([]string, 0, len(sections))
-	for name := range sections {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }

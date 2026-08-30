@@ -14,6 +14,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -37,7 +38,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			return model.Snapshot{}, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 
@@ -63,7 +64,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			Type:        document.Type,
 			ID:          document.ID,
 			Revision:    document.Revision,
-			Frontmatter: normalizeMap(document.Frontmatter),
+			Frontmatter: values.NormalizeMap(document.Frontmatter),
 		})
 	}
 
@@ -77,12 +78,4 @@ func FindTargetDocument(snapshot model.Snapshot, pathAbs string) (model.ParsedDo
 		}
 	}
 	return model.ParsedDocument{}, false
-}
-
-func normalizeMap(input map[string]any) map[string]any {
-	normalized := make(map[string]any, len(input))
-	for key, value := range input {
-		normalized[key] = values.NormalizeValue(value)
-	}
-	return normalized
 }

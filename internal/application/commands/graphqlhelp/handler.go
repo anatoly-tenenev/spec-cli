@@ -12,9 +12,9 @@ package graphqlhelp
 
 import (
 	"context"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlhelp/internal/options"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/catalog"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/projection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/sdl"
@@ -23,7 +23,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
@@ -49,12 +48,12 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	}
 	compileResult, compileErr := h.newCompiler().Compile(schemaPath, request.Global.SchemaPath)
 	if compileErr != nil {
-		return buildError(compileErr, outputpayload.BuildSchemaPayload(compileResult)), nil
+		return outputpayload.BuildErrorOutput(compileErr, outputpayload.BuildSchemaPayload(compileResult)), nil
 	}
 	readCapability := readcap.Build(compileResult.Schema)
 	proj, projectionErr := projection.Build(compileResult.Schema, readCapability)
 	if projectionErr != nil {
-		return buildError(projectionErr, nil), nil
+		return outputpayload.BuildErrorOutput(projectionErr, nil), nil
 	}
 	for _, entity := range opts.Entities {
 		if _, exists := proj.Entities[entity]; !exists {
@@ -65,15 +64,4 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{Text: sdl.Render(proj, opts.Entities)}, nil
 	}
 	return responses.CommandOutput{Text: catalog.Render(proj)}, nil
-}
-
-func buildError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
-	payload := map[string]any{
-		"result_state": errormap.ResultStateForCode(appErr.Code),
-		"error":        outputpayload.BuildErrorPayload(appErr),
-	}
-	if schemaPayload != nil && outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
-		payload["schema"] = schemaPayload
-	}
-	return responses.CommandOutput{JSON: payload, ExitCode: appErr.ExitCode}
 }

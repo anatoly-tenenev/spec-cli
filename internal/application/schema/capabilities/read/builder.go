@@ -13,6 +13,7 @@ package read
 import (
 	"sort"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/derivedschema"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 )
@@ -66,7 +67,7 @@ type Section struct {
 
 func Build(compiled model.CompiledSchema) Capability {
 	typeNames := entityOrder(compiled)
-	allTypes := sortedNames(compiled.Entities)
+	allTypes := collections.SortedMapKeys(compiled.Entities)
 	capability := Capability{
 		EntityTypes: make(map[string]EntityReadModel, len(typeNames)),
 		EntityOrder: append([]string(nil), typeNames...),
@@ -78,7 +79,7 @@ func Build(compiled model.CompiledSchema) Capability {
 		refFields := make(map[string]RefField)
 		sections := make(map[string]Section, len(entity.Sections))
 
-		for _, fieldName := range sortedNames(entity.MetaFields) {
+		for _, fieldName := range collections.SortedMapKeys(entity.MetaFields) {
 			field := entity.MetaFields[fieldName]
 			refField, isRef := buildRefField(field, allTypes)
 			if isRef {
@@ -97,7 +98,7 @@ func Build(compiled model.CompiledSchema) Capability {
 			}
 		}
 
-		for _, sectionName := range sortedNames(entity.Sections) {
+		for _, sectionName := range collections.SortedMapKeys(entity.Sections) {
 			sections[sectionName] = Section{
 				Required: entity.Sections[sectionName].Required.Always,
 			}
@@ -129,7 +130,7 @@ func entityOrder(compiled model.CompiledSchema) []string {
 	if len(ordered) == len(compiled.Entities) {
 		return ordered
 	}
-	for _, typeName := range sortedNames(compiled.Entities) {
+	for _, typeName := range collections.SortedMapKeys(compiled.Entities) {
 		if _, exists := seen[typeName]; exists {
 			continue
 		}
@@ -214,13 +215,4 @@ func dedupeSorted(values []string) []string {
 		}
 	}
 	return result
-}
-
-func sortedNames[T any](values map[string]T) []string {
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }

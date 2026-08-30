@@ -1,13 +1,13 @@
 package entitydoc
 
 import (
-	"errors"
-	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
+	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
 // ScanMarkdownFiles walks a workspace and returns its Markdown documents in a
@@ -36,35 +36,10 @@ func ScanMarkdownFiles(workspacePath string) ([]string, *domainerrors.AppError) 
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to scan workspace",
-			IOFailureDetails(walkErr),
+			iofailure.Details(walkErr),
 		)
 	}
 
 	sort.Strings(markdownFiles)
 	return markdownFiles, nil
-}
-
-// IOFailureDetails describes a filesystem error twice: `reason` is a stable
-// value a caller can branch on, `detail` is the original message with the path
-// for a human to read. The raw text differs per platform, so it must not be the
-// field consumers key off.
-func IOFailureDetails(err error) map[string]any {
-	return map[string]any{
-		"reason": ClassifyIOReason(err),
-		"detail": err.Error(),
-	}
-}
-
-// ClassifyIOReason maps a filesystem error onto a small, stable vocabulary.
-// It compares the kernel error number rather than the message, so the result is
-// the same on every platform while err.Error() is not.
-func ClassifyIOReason(err error) string {
-	switch {
-	case errors.Is(err, os.ErrPermission):
-		return "permission denied"
-	case errors.Is(err, os.ErrNotExist):
-		return "not found"
-	default:
-		return "i/o error"
-	}
 }

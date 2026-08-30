@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemarules"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/ruletypes"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
-	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/rulevalues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -21,7 +22,7 @@ func validateRequiredFields(
 	context map[string]any,
 ) {
 	for _, rule := range typeSpec.RequiredFields {
-		required, requiredErr := evaluateRequiredConstraint(rule.Required, rule.RequiredExpr, context)
+		required, requiredErr := schemarules.EvaluateRequired(rule.Required, rule.RequiredExpr, context)
 		if requiredErr != nil {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_expression_evaluation_failed",
@@ -78,7 +79,7 @@ func validateRequiredFields(
 			validateArrayField(issues, entity, rule, arrayValue, idIndex)
 		}
 
-		resolvedEnum, enumResolveErr := resolveRuleValues(rule.Enum, context)
+		resolvedEnum, enumResolveErr := rulevalues.ResolveAll(rule.Enum, context)
 		if enumResolveErr != nil {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "meta.required_enum_interpolation_failed",
@@ -103,7 +104,7 @@ func validateRequiredFields(
 		}
 
 		if rule.HasValue {
-			resolvedConst, constResolveErr := resolveRuleValue(rule.Value, context)
+			resolvedConst, constResolveErr := rulevalues.Resolve(rule.Value, context)
 			if constResolveErr != nil {
 				addIssue(issues, entity, domainvalidation.Issue{
 					Code:        "meta.required_const_interpolation_failed",
@@ -243,7 +244,7 @@ func validateRequiredSections(
 	}
 
 	for _, sectionRule := range typeSpec.RequiredSections {
-		required, requiredErr := evaluateRequiredConstraint(sectionRule.Required, sectionRule.RequiredExpr, context)
+		required, requiredErr := schemarules.EvaluateRequired(sectionRule.Required, sectionRule.RequiredExpr, context)
 		if requiredErr != nil {
 			addIssue(issues, entity, domainvalidation.Issue{
 				Code:        "content.required_expression_evaluation_failed",
@@ -283,51 +284,4 @@ func validateRequiredSections(
 			Field:       fmt.Sprintf("content.sections.%s", sectionRule.Name),
 		})
 	}
-}
-
-func evaluateRequiredConstraint(
-	literal bool,
-	expression *schemaexpressions.CompiledExpression,
-	context map[string]any,
-) (bool, *schemaexpressions.EvalError) {
-	if expression == nil {
-		return literal, nil
-	}
-
-	value, evalErr := schemaexpressions.Evaluate(expression, context)
-	if evalErr != nil {
-		return false, evalErr
-	}
-
-	return schemaexpressions.IsTruthy(value), nil
-}
-
-func resolveRuleValues(values []schemacapvalidate.RuleValue, context map[string]any) ([]any, *schemaexpressions.EvalError) {
-	if len(values) == 0 {
-		return nil, nil
-	}
-
-	resolved := make([]any, 0, len(values))
-	for _, value := range values {
-		resolvedValue, resolveErr := resolveRuleValue(value, context)
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		resolved = append(resolved, resolvedValue)
-	}
-
-	return resolved, nil
-}
-
-func resolveRuleValue(value schemacapvalidate.RuleValue, context map[string]any) (any, *schemaexpressions.EvalError) {
-	if value.Template == nil {
-		return value.Literal, nil
-	}
-
-	rendered, renderErr := schemaexpressions.RenderTemplate(value.Template, context)
-	if renderErr != nil {
-		return nil, renderErr
-	}
-
-	return rendered, nil
 }

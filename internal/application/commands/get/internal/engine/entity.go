@@ -3,10 +3,10 @@ package engine
 import (
 	"fmt"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/issuedetails"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -26,7 +26,7 @@ func BuildEntityView(
 ) (map[string]any, *domainerrors.AppError) {
 	entityType, exists := readCapability.EntityTypes[target.Type]
 	if !exists {
-		return nil, newReadError(
+		return nil, readissues.NewReadError(
 			"failed to determine entity type",
 			fmt.Sprintf("entity type '%s' is not declared in schema.entity", target.Type),
 			getEntityTypeStandardRef,
@@ -206,7 +206,7 @@ func validateRequestedSections(duplicates map[string]int, plan model.SelectorPla
 
 	if plan.RequiresAllSections {
 		for _, label := range collections.SortedMapKeys(duplicates) {
-			return newReadError(
+			return readissues.NewReadError(
 				"failed to compute requested content sections",
 				fmt.Sprintf("section label '%s' is duplicated", label),
 				getEntitySectionsStandardRef,
@@ -219,7 +219,7 @@ func validateRequestedSections(duplicates map[string]int, plan model.SelectorPla
 		if duplicates[section] <= 1 {
 			continue
 		}
-		return newReadError(
+		return readissues.NewReadError(
 			"failed to compute requested content sections",
 			fmt.Sprintf("section label '%s' is duplicated", section),
 			getEntitySectionsStandardRef,
@@ -239,15 +239,10 @@ func sectionsToAnyMap(sections map[string]string) map[string]any {
 }
 
 func invalidRefReadError(refField string) *domainerrors.AppError {
-	return newReadError(
+	return readissues.NewReadError(
 		"failed to compute requested refs field",
 		fmt.Sprintf("requested refs field '%s' has invalid value in frontmatter", refField),
 		getEntityRefStandardRef,
 		map[string]any{"field": refField},
 	)
-}
-
-func newReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
-	issue := issuedetails.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
-	return domainerrors.New(domainerrors.CodeReadFailed, message, issuedetails.WithValidationIssues(details, issue))
 }

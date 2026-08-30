@@ -16,7 +16,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writeops"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -121,7 +121,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 			return Applied{}, domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read --content-file",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 		applied.WholeBody = string(raw)

@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 
 	jmespath "github.com/anatoly-tenenev/go-jmespath"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/selectors"
 )
 
 type SortDirection string
@@ -90,10 +91,8 @@ type RootPlan struct {
 	EffectiveSort []SortTerm
 }
 
-type SelectNode struct {
-	Terminal bool
-	Children map[string]*SelectNode
-}
+// SelectNode is the shared selector tree; see internal/application/selectors.
+type SelectNode = selectors.Node
 
 type PageInfo struct {
 	Mode          string

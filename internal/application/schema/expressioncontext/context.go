@@ -18,6 +18,24 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
+// BuiltinMetaFields lists the frontmatter keys an expression addresses at the
+// top level rather than under meta.
+func BuiltinMetaFields() []string {
+	return []string{
+		reservedkeys.BuiltinType,
+		reservedkeys.BuiltinID,
+		reservedkeys.BuiltinSlug,
+		reservedkeys.BuiltinCreatedDate,
+		reservedkeys.BuiltinUpdatedDate,
+	}
+}
+
+// IsBuiltinMetaField reports whether a declared field name is one of the
+// builtins. The set has to be the same one the runtime context is built from:
+// an expression is checked against the schema described here and evaluated
+// against a concrete entity elsewhere, so a name counted as a meta field in
+// one place and a builtin in the other would pass the check and then read
+// nothing.
 func IsBuiltinMetaField(fieldName string) bool {
 	switch fieldName {
 	case reservedkeys.BuiltinType,

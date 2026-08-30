@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -21,7 +21,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to create parent directories for target path",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 
@@ -30,7 +30,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to create temporary file",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 	tempPath := tempFile.Name()
@@ -43,7 +43,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to write temporary file",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 	if err := tempFile.Sync(); err != nil {
@@ -51,14 +51,14 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to flush temporary file",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 	if err := tempFile.Close(); err != nil {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to close temporary file",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 
@@ -66,7 +66,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 		return domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to atomically write target file",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/selectors"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -70,7 +71,7 @@ func validateSortPath(path string, capability schemacapread.Capability, activeTy
 
 	parts := strings.Split(path, ".")
 	if len(parts) == 2 && parts[0] == "meta" {
-		if hasRefFieldAcrossActiveSet(parts[1], capability, activeTypeSet) {
+		if selectors.HasRefField(parts[1], capability, activeTypeSet) {
 			return domainerrors.New(
 				domainerrors.CodeInvalidArgs,
 				fmt.Sprintf("sort field '%s' is forbidden for entityRef field; use refs.%s", path, parts[1]),
@@ -105,16 +106,6 @@ func validateSortPath(path string, capability schemacapread.Capability, activeTy
 		fmt.Sprintf("invalid filter-namespace sort field '%s'", path),
 		nil,
 	)
-}
-
-func hasRefFieldAcrossActiveSet(refField string, capability schemacapread.Capability, activeTypeSet []string) bool {
-	for _, typeName := range activeTypeSet {
-		entityType := capability.EntityTypes[typeName]
-		if _, exists := entityType.RefFields[refField]; exists {
-			return true
-		}
-	}
-	return false
 }
 
 func gatherMetaSortKinds(

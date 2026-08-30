@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	semanticmetafields "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/metafields"
 	semanticsections "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/semantic/internal/sections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile/internal/compiler/internal/shared"
@@ -188,14 +189,14 @@ func compileEntityExpressions(entity *model.EntityType, engine *schemaexpression
 		return
 	}
 
-	for _, fieldName := range sortedMetaFieldNames(entity.MetaFields) {
+	for _, fieldName := range collections.SortedMapKeys(entity.MetaFields) {
 		field := entity.MetaFields[fieldName]
 		field.Required = compileRequirement(field.Required, engine, issues)
 		field.Value = compileValueInterpolations(field.Value, engine, field.SchemaPath+".schema", issues)
 		entity.MetaFields[fieldName] = field
 	}
 
-	for _, sectionName := range sortedSectionNames(entity.Sections) {
+	for _, sectionName := range collections.SortedMapKeys(entity.Sections) {
 		section := entity.Sections[sectionName]
 		section.Required = compileRequirement(section.Required, engine, issues)
 		entity.Sections[sectionName] = section
@@ -527,24 +528,6 @@ func unconditionalCaseIndexes(cases []model.PathTemplateCase) []int {
 		}
 	}
 	return indexes
-}
-
-func sortedMetaFieldNames(fields map[string]model.MetaField) []string {
-	names := make([]string, 0, len(fields))
-	for name := range fields {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedSectionNames(sections map[string]model.Section) []string {
-	names := make([]string, 0, len(sections))
-	for name := range sections {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }
 
 func normalizedExpressionCode(compileErr *schemaexpressions.CompileError, fallback string) string {

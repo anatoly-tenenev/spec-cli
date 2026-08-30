@@ -8,6 +8,7 @@ package references
 import (
 	"sort"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
 )
 
@@ -32,7 +33,7 @@ func Build(compiled model.CompiledSchema) Capability {
 		InboundByTargetType: map[string][]InboundSlot{},
 		SlotsBySourceType:   map[string][]SourceSlot{},
 	}
-	allTypes := sortedTypeNames(compiled)
+	allTypes := collections.SortedMapKeys(compiled.Entities)
 
 	for _, sourceType := range allTypes {
 		entity := compiled.Entities[sourceType]
@@ -96,13 +97,4 @@ func normalizedAllowedTypes(types []string, allTypes []string) []string {
 	result := append([]string(nil), types...)
 	sort.Strings(result)
 	return result
-}
-
-func sortedTypeNames(compiled model.CompiledSchema) []string {
-	names := make([]string, 0, len(compiled.Entities))
-	for typeName := range compiled.Entities {
-		names = append(names, typeName)
-	}
-	sort.Strings(names)
-	return names
 }

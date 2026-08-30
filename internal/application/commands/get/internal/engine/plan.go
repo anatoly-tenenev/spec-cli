@@ -15,9 +15,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/collections"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/selectors"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -43,30 +44,22 @@ var builtinSelectors = []string{
 	"content.sections",
 }
 
-var refLeafSelectors = map[string]struct{}{
-	"id":       {},
-	"resolved": {},
-	"type":     {},
-	"slug":     {},
-	"reason":   {},
-}
-
 func BuildSelectorPlan(rawSelectors []string, readCapability schemacapread.Capability) (model.SelectorPlan, *domainerrors.AppError) {
-	selectors := rawSelectors
-	if len(selectors) == 0 {
-		selectors = append([]string(nil), defaultSelectors...)
+	requested := rawSelectors
+	if len(requested) == 0 {
+		requested = append([]string(nil), defaultSelectors...)
 	}
 
 	activeTypeSet := collections.SortedMapKeys(readCapability.EntityTypes)
 	allowedSelectors := buildAllowedSelectors(readCapability, activeTypeSet)
 
-	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
-	for _, selector := range selectors {
+	root := selectors.NewTree()
+	for _, selector := range requested {
 		normalized := strings.TrimSpace(selector)
 		if err := validateSelector(normalized, allowedSelectors, readCapability, activeTypeSet); err != nil {
 			return model.SelectorPlan{}, err
 		}
-		insertSelector(root, strings.Split(normalized, "."))
+		selectors.Insert(root, strings.Split(normalized, "."))
 	}
 
 	effectiveSelectors := collectTerminalSelectors(root)
@@ -158,11 +151,11 @@ func validateSelector(
 		return nil
 	}
 
-	if _, ok := refLeafSelectors[parts[2]]; !ok {
+	if !selectors.IsRefLeaf(parts[2]) {
 		return nil
 	}
 
-	compatible, exists := refLeafCompatibility(parts[1], readCapability, activeTypeSet)
+	compatible, exists := selectors.RefLeafCompatibility(parts[1], readCapability, activeTypeSet)
 	if !exists {
 		return domainerrors.New(
 			domainerrors.CodeInvalidArgs,
@@ -200,7 +193,7 @@ func buildAllowedSelectors(
 			if refSpec.Cardinality == schemacapread.RefCardinalityArray {
 				continue
 			}
-			for leaf := range refLeafSelectors {
+			for _, leaf := range selectors.RefLeafNames() {
 				allowedSelectors["refs."+field+"."+leaf] = struct{}{}
 			}
 		}
@@ -212,58 +205,15 @@ func buildAllowedSelectors(
 	return allowedSelectors
 }
 
-func refLeafCompatibility(
-	refField string,
-	readCapability schemacapread.Capability,
-	activeTypeSet []string,
-) (compatible bool, exists bool) {
-	hasScalar := false
-	for _, typeName := range activeTypeSet {
-		entityType := readCapability.EntityTypes[typeName]
-		refSpec, present := entityType.RefFields[refField]
-		if !present {
-			continue
-		}
-		exists = true
-		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
-			return false, true
-		}
-		hasScalar = true
-	}
-	return hasScalar, exists
-}
-
-func insertSelector(root *model.SelectNode, parts []string) {
-	current := root
-	for idx, part := range parts {
-		if current.Terminal {
-			return
-		}
-
-		child, exists := current.Children[part]
-		if !exists {
-			child = &model.SelectNode{Children: map[string]*model.SelectNode{}}
-			current.Children[part] = child
-		}
-
-		if idx == len(parts)-1 {
-			child.Terminal = true
-			child.Children = map[string]*model.SelectNode{}
-			return
-		}
-		current = child
-	}
-}
-
 func collectTerminalSelectors(root *model.SelectNode) []string {
 	if root == nil {
 		return nil
 	}
 
-	selectors := make([]string, 0)
-	collectSelectors(root, "", &selectors)
-	sort.Strings(selectors)
-	return selectors
+	paths := make([]string, 0)
+	collectSelectors(root, "", &paths)
+	sort.Strings(paths)
+	return paths
 }
 
 func collectSelectors(node *model.SelectNode, path string, out *[]string) {

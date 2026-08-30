@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/ordered"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
@@ -135,7 +136,7 @@ func toWhereRefObject(ref entityrefs.Ref) map[string]any {
 }
 
 func invalidRefReadError(refField string) *domainerrors.AppError {
-	return diagnostics.NewReadError(
+	return readissues.NewReadError(
 		"failed to compute refs",
 		fmt.Sprintf("refs field '%s' has invalid value in frontmatter", refField),
 		diagnostics.RefsStandardRef,

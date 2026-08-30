@@ -8,8 +8,10 @@ package write
 import (
 	"sort"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/rulevalues"
 )
 
 type Capability struct {
@@ -76,10 +78,9 @@ type SectionSpec struct {
 	RequiredPath string
 }
 
-type RuleValue struct {
-	Literal  any
-	Template *schemaexpressions.CompiledTemplate
-}
+// RuleValue is the shared literal-or-template, aliased so that a const or
+// enum the write side offers is the same value the validate side judges.
+type RuleValue = rulevalues.RuleValue
 
 type PathPattern struct {
 	Cases []PathPatternCase
@@ -96,14 +97,14 @@ type PathPatternCase struct {
 }
 
 func Build(compiled model.CompiledSchema) Capability {
-	typeNames := sortedEntityNames(compiled)
+	typeNames := collections.SortedMapKeys(compiled.Entities)
 	capability := Capability{EntityTypes: make(map[string]EntityWriteModel, len(typeNames))}
 
 	for _, typeName := range typeNames {
 		entity := compiled.Entities[typeName]
 
-		metaOrder := filteredOrder(entity.MetaFieldOrder, sortedMetaFieldNames(entity.MetaFields), entity.MetaFields)
-		sectionOrder := filteredOrder(entity.SectionOrder, sortedSectionNames(entity.Sections), entity.Sections)
+		metaOrder := filteredOrder(entity.MetaFieldOrder, collections.SortedMapKeys(entity.MetaFields), entity.MetaFields)
+		sectionOrder := filteredOrder(entity.SectionOrder, collections.SortedMapKeys(entity.Sections), entity.Sections)
 
 		metaFields := make(map[string]MetaField, len(entity.MetaFields))
 		for fieldName, field := range entity.MetaFields {
@@ -186,7 +187,7 @@ func dedupeSorted(values []string) []string {
 func buildMetaField(field model.MetaField) MetaField {
 	result := MetaField{
 		Name:         field.Name,
-		Type:         kindToTypeName(field.Value.Kind),
+		Type:         field.Value.Kind.TypeName(),
 		Format:       field.Value.Format,
 		Required:     field.Required.Always,
 		RequiredExpr: field.Required.Expr,
@@ -196,21 +197,10 @@ func buildMetaField(field model.MetaField) MetaField {
 
 	if field.Value.Const != nil {
 		result.HasConst = true
-		result.Const = RuleValue{
-			Literal:  field.Value.Const.Value,
-			Template: field.Value.Const.Template,
-		}
+		result.Const = rulevalues.FromLiteral(*field.Value.Const)
 	}
 
-	if len(field.Value.Enum) > 0 {
-		result.Enum = make([]RuleValue, 0, len(field.Value.Enum))
-		for _, enumValue := range field.Value.Enum {
-			result.Enum = append(result.Enum, RuleValue{
-				Literal:  enumValue.Value,
-				Template: enumValue.Template,
-			})
-		}
-	}
+	result.Enum = rulevalues.FromLiterals(field.Value.Enum)
 
 	if field.Value.Ref != nil {
 		result.IsEntityRef = field.Value.Ref.Cardinality == model.RefCardinalityScalar
@@ -219,7 +209,7 @@ func buildMetaField(field model.MetaField) MetaField {
 
 	if field.Value.Kind == model.ValueKindArray && field.Value.Items != nil {
 		result.HasItems = true
-		result.ItemType = kindToTypeName(field.Value.Items.Kind)
+		result.ItemType = field.Value.Items.Kind.TypeName()
 		if field.Value.Items.Ref != nil {
 			result.IsEntityRefArray = true
 			result.ItemRefTypes = append([]string(nil), field.Value.Items.Ref.AllowedTypes...)
@@ -268,52 +258,6 @@ func buildPathCase(pathCase model.PathTemplateCase) PathPatternCase {
 	}
 
 	return result
-}
-
-func kindToTypeName(kind model.ValueKind) string {
-	switch kind {
-	case model.ValueKindString:
-		return "string"
-	case model.ValueKindNumber:
-		return "number"
-	case model.ValueKindInteger:
-		return "integer"
-	case model.ValueKindBoolean:
-		return "boolean"
-	case model.ValueKindArray:
-		return "array"
-	case model.ValueKindEntityRef:
-		return "entityRef"
-	default:
-		return "unknown"
-	}
-}
-
-func sortedEntityNames(compiled model.CompiledSchema) []string {
-	names := make([]string, 0, len(compiled.Entities))
-	for typeName := range compiled.Entities {
-		names = append(names, typeName)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedMetaFieldNames(fields map[string]model.MetaField) []string {
-	names := make([]string, 0, len(fields))
-	for fieldName := range fields {
-		names = append(names, fieldName)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedSectionNames(sections map[string]model.Section) []string {
-	names := make([]string, 0, len(sections))
-	for sectionName := range sections {
-		names = append(names, sectionName)
-	}
-	sort.Strings(names)
-	return names
 }
 
 func filteredOrder[T any](preferred []string, fallback []string, values map[string]T) []string {

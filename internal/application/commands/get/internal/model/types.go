@@ -5,17 +5,18 @@
 // for.
 package model
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
+import (
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/selectors"
+)
 
 type Options struct {
 	ID        string
 	Selectors []string
 }
 
-type SelectNode struct {
-	Terminal bool
-	Children map[string]*SelectNode
-}
+// SelectNode is the shared selector tree; see internal/application/selectors.
+type SelectNode = selectors.Node
 
 type SelectorPlan struct {
 	Tree                 *SelectNode

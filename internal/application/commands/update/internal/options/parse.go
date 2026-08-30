@@ -12,10 +12,11 @@ package options
 
 import (
 	"fmt"
-	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writeargs"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/cliflags"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -57,45 +58,30 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 			}
 			opts.ID = value
 			idx = nextIdx
-		case "--set":
+		case "--set", "--set-file":
 			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
 			if err != nil {
 				return model.Options{}, err
 			}
-			op, parseErr := parsePathValue(value)
+
+			// The two options differ only in what the value is - a value to
+			// write, or the file to read it from - and are registered alike.
+			kind := model.WriteOperationSet
+			parse := writeargs.ParsePathValue
+			if name == "--set-file" {
+				kind = model.WriteOperationSetFile
+				parse = writeargs.ParseSetFile
+			}
+
+			op, parseErr := parse(value)
 			if parseErr != nil {
 				return model.Options{}, parseErr
 			}
-			if duplicateErr := registerWritePath(seenPaths, op.Path, model.WriteOperationSet); duplicateErr != nil {
+			if duplicateErr := registerWritePath(seenPaths, op.Path, kind); duplicateErr != nil {
 				return model.Options{}, duplicateErr
 			}
 			opts.Operations = append(opts.Operations, model.WriteOperation{
-				Kind:     model.WriteOperationSet,
-				Path:     op.Path,
-				RawValue: op.Value,
-			})
-			idx = nextIdx
-		case "--set-file":
-			value, nextIdx, err := cliflags.ValueAllowDash(args, idx, hasInlineValue, inlineValue)
-			if err != nil {
-				return model.Options{}, err
-			}
-			op, parseErr := parsePathValue(value)
-			if parseErr != nil {
-				return model.Options{}, parseErr
-			}
-			if strings.TrimSpace(op.Value) == "" {
-				return model.Options{}, domainerrors.New(
-					domainerrors.CodeInvalidArgs,
-					"--set-file requires non-empty file path",
-					nil,
-				)
-			}
-			if duplicateErr := registerWritePath(seenPaths, op.Path, model.WriteOperationSetFile); duplicateErr != nil {
-				return model.Options{}, duplicateErr
-			}
-			opts.Operations = append(opts.Operations, model.WriteOperation{
-				Kind:     model.WriteOperationSetFile,
+				Kind:     kind,
 				Path:     op.Path,
 				RawValue: op.Value,
 			})
@@ -216,7 +202,7 @@ func Parse(args []string) (model.Options, *domainerrors.AppError) {
 		)
 	}
 
-	if opts.BodyOperation != model.BodyOperationNone && hasSectionWrite(opts.Operations) {
+	if opts.BodyOperation != model.BodyOperationNone && writeargs.HasSectionWrite(opts.Operations) {
 		return model.Options{}, domainerrors.New(
 			domainerrors.CodeInvalidArgs,
 			"whole-body input cannot be combined with content.sections.* patch operations",
@@ -250,41 +236,4 @@ func registerWritePath(
 
 	seen[path] = kind
 	return nil
-}
-
-type pathValue struct {
-	Path  string
-	Value string
-}
-
-func parsePathValue(raw string) (pathValue, *domainerrors.AppError) {
-	eqIdx := strings.Index(raw, "=")
-	if eqIdx <= 0 {
-		return pathValue{}, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"write operation must match <path=value>",
-			map[string]any{"value": raw},
-		)
-	}
-
-	path := strings.TrimSpace(raw[:eqIdx])
-	value := raw[eqIdx+1:]
-	if path == "" {
-		return pathValue{}, domainerrors.New(
-			domainerrors.CodeInvalidArgs,
-			"write path cannot be empty",
-			nil,
-		)
-	}
-
-	return pathValue{Path: path, Value: value}, nil
-}
-
-func hasSectionWrite(operations []model.WriteOperation) bool {
-	for _, op := range operations {
-		if strings.HasPrefix(op.Path, "content.sections.") {
-			return true
-		}
-	}
-	return false
 }

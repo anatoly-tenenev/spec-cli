@@ -13,6 +13,8 @@ import (
 	"os"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -39,13 +41,13 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, domainerrors.New(
 			domainerrors.CodeReadFailed,
 			"failed to read workspace document",
-			entitydoc.IOFailureDetails(err),
+			iofailure.Details(err),
 		)
 	}
 
 	document, parseErr := entitydoc.ParseDocument(raw)
 	if parseErr != nil {
-		return nil, diagnostics.NewReadError(
+		return nil, readissues.NewReadError(
 			"failed to parse workspace document",
 			parseErr.Error(),
 			diagnostics.FrontmatterStandardRef,
@@ -56,7 +58,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 	// The built-in fields are required for reading: without them the document
 	// cannot be identified, so it is reported rather than silently skipped.
 	if document.Type == "" {
-		return nil, diagnostics.NewReadError(
+		return nil, readissues.NewReadError(
 			"failed to determine entity type",
 			requiredBuiltinFieldMessage("type"),
 			diagnostics.TypeStandardRef,
@@ -64,7 +66,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		)
 	}
 	if document.ID == "" {
-		return nil, diagnostics.NewReadError(
+		return nil, readissues.NewReadError(
 			"failed to determine entity id",
 			requiredBuiltinFieldMessage("id"),
 			diagnostics.IDStandardRef,
@@ -72,7 +74,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		)
 	}
 	if document.Slug == "" {
-		return nil, diagnostics.NewReadError(
+		return nil, readissues.NewReadError(
 			"failed to determine entity slug",
 			requiredBuiltinFieldMessage("slug"),
 			diagnostics.SlugStandardRef,

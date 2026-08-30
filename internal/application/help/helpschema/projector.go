@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/collections"
 	helpprojection "github.com/anatoly-tenenev/spec-cli/internal/application/help/helpschema/internal/projection"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	schemacapreferences "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/references"
@@ -165,7 +166,7 @@ func buildCatalog(
 	readCapability schemacapread.Capability,
 	writeCapability schemacapwrite.Capability,
 ) Catalog {
-	typeNames := sortedEntityTypeNames(writeCapability.EntityTypes)
+	typeNames := collections.SortedMapKeys(writeCapability.EntityTypes)
 	entities := make([]EntityTypeModel, 0, len(typeNames))
 	byType := make(map[string]EntityTypeModel, len(typeNames))
 
@@ -176,7 +177,7 @@ func buildCatalog(
 			continue
 		}
 
-		metaFieldNames := sortedMetaFieldNames(readModel.MetaFields)
+		metaFieldNames := collections.SortedMapKeys(readModel.MetaFields)
 		metaFields := make([]MetaFieldModel, 0, len(metaFieldNames))
 		for _, fieldName := range metaFieldNames {
 			field := readModel.MetaFields[fieldName]
@@ -189,7 +190,7 @@ func buildCatalog(
 			})
 		}
 
-		refFieldNames := sortedRefFieldNames(readModel.RefFields)
+		refFieldNames := collections.SortedMapKeys(readModel.RefFields)
 		scalarRefs := make([]RefFieldModel, 0, len(refFieldNames))
 		arrayRefs := make([]RefFieldModel, 0, len(refFieldNames))
 		for _, fieldName := range refFieldNames {
@@ -236,33 +237,6 @@ func buildCatalog(
 
 func renderSpecificationProjection(compiled model.CompiledSchema) (string, error) {
 	return helpprojection.Render(compiled)
-}
-
-func sortedEntityTypeNames(values map[string]schemacapwrite.EntityWriteModel) []string {
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedMetaFieldNames(values map[string]schemacapread.MetaField) []string {
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func sortedRefFieldNames(values map[string]schemacapread.RefField) []string {
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
 }
 
 func degradedReport(resolvedPath string, appErr *domainerrors.AppError) Report {

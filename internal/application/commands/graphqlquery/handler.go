@@ -24,7 +24,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
-	"github.com/anatoly-tenenev/spec-cli/internal/output/errormap"
 	outputpayload "github.com/anatoly-tenenev/spec-cli/internal/output/payload"
 )
 
@@ -52,29 +51,29 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		VariablesFile: paths.VariablesFile,
 	})
 	if loadErr != nil {
-		return buildError(loadErr, nil), nil
+		return outputpayload.BuildErrorOutput(loadErr, nil), nil
 	}
 	compileResult, compileErr := h.newCompiler().Compile(paths.SchemaPath, request.Global.SchemaPath)
 	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
 	if compileErr != nil {
-		return buildError(compileErr, schemaPayload), nil
+		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
 	readCapability := readcap.Build(compileResult.Schema)
 	proj, projectionErr := projection.Build(compileResult.Schema, readCapability)
 	if projectionErr != nil {
-		return buildError(projectionErr, nil), nil
+		return outputpayload.BuildErrorOutput(projectionErr, nil), nil
 	}
 	rootPlans, bindErr := binding.Build(proj, loaded.Query, loaded.Variables, opts.OperationName)
 	if bindErr != nil {
-		return buildError(bindErr, nil), nil
+		return outputpayload.BuildErrorOutput(bindErr, nil), nil
 	}
 	entities, workspaceErr := readworkspace.LoadEntities(paths.WorkspacePath, readCapability, nil)
 	if workspaceErr != nil {
-		return buildError(workspaceErr, nil), nil
+		return outputpayload.BuildErrorOutput(workspaceErr, nil), nil
 	}
 	data, executeErr := binding.Execute(rootPlans, entities)
 	if executeErr != nil {
-		return buildError(executeErr, nil), nil
+		return outputpayload.BuildErrorOutput(executeErr, nil), nil
 	}
 	return responses.CommandOutput{
 		JSON: map[string]any{
@@ -82,15 +81,4 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 			"data":         data,
 		},
 	}, nil
-}
-
-func buildError(appErr *domainerrors.AppError, schemaPayload map[string]any) responses.CommandOutput {
-	payload := map[string]any{
-		"result_state": errormap.ResultStateForCode(appErr.Code),
-		"error":        outputpayload.BuildErrorPayload(appErr),
-	}
-	if schemaPayload != nil && outputpayload.ShouldIncludeSchemaForError(appErr.Code) {
-		payload["schema"] = schemaPayload
-	}
-	return responses.CommandOutput{JSON: payload, ExitCode: appErr.ExitCode}
 }

@@ -74,6 +74,20 @@ const (
 	ValueKindEntityRef ValueKind = "entityRef"
 )
 
+// TypeName is the name a kind is reported under. The write and validate
+// capabilities both describe the same field to a caller - one as what may be
+// written, the other as what is demanded - so a field the two name differently
+// would let add accept a value validate then rejects for its type. A kind the
+// IR does not know is named once, here, rather than in each projection.
+func (kind ValueKind) TypeName() string {
+	switch kind {
+	case ValueKindString, ValueKindNumber, ValueKindInteger, ValueKindBoolean, ValueKindArray, ValueKindEntityRef:
+		return string(kind)
+	default:
+		return string(ValueKindUnknown)
+	}
+}
+
 type ValueSpec struct {
 	Kind        ValueKind
 	Format      string

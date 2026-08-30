@@ -11,9 +11,10 @@ package workspace
 import (
 	"os"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/issuedetails"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/get/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -44,7 +45,7 @@ func LocateByID(workspacePath string, targetID string) (model.LocateResult, *dom
 			return model.LocateResult{}, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 
@@ -84,7 +85,7 @@ func LocateByID(workspacePath string, targetID string) (model.LocateResult, *dom
 func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget, *domainerrors.AppError) {
 	document, parseErr := entitydoc.ParseDocument(raw)
 	if parseErr != nil {
-		return model.ParsedTarget{}, newReadError(
+		return model.ParsedTarget{}, readissues.NewReadError(
 			"failed to parse target frontmatter",
 			parseErr.Error(),
 			getWorkspaceFrontmatterStandardRef,
@@ -95,7 +96,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 	// A missing slug is tolerated: get reports the target it was asked for, and
 	// only type and id are needed to identify it.
 	if document.Type == "" {
-		return model.ParsedTarget{}, newReadError(
+		return model.ParsedTarget{}, readissues.NewReadError(
 			"failed to determine entity type",
 			"built-in field 'type' is required",
 			getWorkspaceTypeStandardRef,
@@ -104,7 +105,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 	}
 
 	if document.ID == "" {
-		return model.ParsedTarget{}, newReadError(
+		return model.ParsedTarget{}, readissues.NewReadError(
 			"failed to determine entity id",
 			"built-in field 'id' is required",
 			getWorkspaceIDStandardRef,
@@ -113,7 +114,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 	}
 
 	if document.ID != requestedID {
-		return model.ParsedTarget{}, newReadError(
+		return model.ParsedTarget{}, readissues.NewReadError(
 			"failed to read target entity",
 			"target document id does not match requested --id",
 			getWorkspaceIDStandardRef,
@@ -132,7 +133,7 @@ func ReadTarget(path string, raw []byte, requestedID string) (model.ParsedTarget
 		UpdatedDate:            document.UpdatedDate,
 		Revision:               document.Revision,
 		RawBody:                document.Body,
-		Frontmatter:            normalizeMap(document.Frontmatter),
+		Frontmatter:            values.NormalizeMap(document.Frontmatter),
 		Sections:               sections,
 		DuplicateSectionLabels: duplicateLabels,
 	}, nil
@@ -160,14 +161,6 @@ func extractIdentity(raw []byte) (model.EntityIdentity, bool) {
 	return model.EntityIdentity{Type: typeName, ID: id, Slug: slug}, true
 }
 
-func normalizeMap(input map[string]any) map[string]any {
-	normalized := make(map[string]any, len(input))
-	for key, value := range input {
-		normalized[key] = values.NormalizeValue(value)
-	}
-	return normalized
-}
-
 // extractSections returns unambiguous sections plus a count per repeated label.
 func extractSections(body string) (map[string]string, map[string]int) {
 	layout := entitydoc.BuildSectionLayout(body)
@@ -187,9 +180,4 @@ func extractSections(body string) (map[string]string, map[string]int) {
 		sections[item.Label] = layout.Body(item)
 	}
 	return sections, duplicates
-}
-
-func newReadError(message string, issueMessage string, standardRef string, details map[string]any) *domainerrors.AppError {
-	issue := issuedetails.ValidationIssue("error", "InstanceError", issueMessage, standardRef)
-	return domainerrors.New(domainerrors.CodeReadFailed, message, issuedetails.WithValidationIssues(details, issue))
 }

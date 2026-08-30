@@ -9,8 +9,6 @@
 package engine
 
 import (
-	"fmt"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"path/filepath"
 	"time"
 
@@ -19,11 +17,13 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/validation"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/engine/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/entityids"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/markdown"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/pathcalc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemarules"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -45,7 +45,7 @@ func Execute(
 	}
 	today := now().UTC().Format("2006-01-02")
 	nextSuffix := snapshot.MaxSuffixByType[opts.EntityType] + 1
-	candidateID := fmt.Sprintf("%s-%d", typeSpec.IDPrefix, nextSuffix)
+	candidateID := entityids.Format(typeSpec.IDPrefix, nextSuffix)
 
 	frontmatter := map[string]any{
 		"type":        opts.EntityType,

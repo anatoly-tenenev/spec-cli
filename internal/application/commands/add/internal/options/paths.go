@@ -1,10 +1,9 @@
 package options
 
 import (
-	"path/filepath"
-
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writeargs"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -14,48 +13,19 @@ func NormalizePaths(global requests.GlobalOptions, opts model.Options) (string, 
 	if pathErr != nil {
 		return "", "", model.Options{}, pathErr
 	}
+
 	normalized := opts
 	if normalized.ContentFile != "" {
-		if global.RequireAbsolutePaths && !filepath.IsAbs(normalized.ContentFile) {
-			return "", "", model.Options{}, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"--content-file must be absolute when --require-absolute-paths is enabled",
-				nil,
-			)
-		}
-		contentPath, pathErr := filepath.Abs(normalized.ContentFile)
-		if pathErr != nil {
-			return "", "", model.Options{}, domainerrors.New(
-				domainerrors.CodeInvalidArgs,
-				"failed to resolve --content-file path",
-				map[string]any{"reason": pathErr.Error()},
-			)
+		contentPath, contentErr := writeargs.NormalizeContentFile(global, normalized.ContentFile)
+		if contentErr != nil {
+			return "", "", model.Options{}, contentErr
 		}
 		normalized.ContentFile = contentPath
 	}
 
-	normalizedOps := make([]model.WriteOperation, 0, len(opts.Operations))
-	for _, op := range opts.Operations {
-		nextOp := op
-		if op.Kind == model.WriteOperationSetFile {
-			if global.RequireAbsolutePaths && !filepath.IsAbs(op.RawValue) {
-				return "", "", model.Options{}, domainerrors.New(
-					domainerrors.CodeInvalidArgs,
-					"--set-file path must be absolute when --require-absolute-paths is enabled",
-					map[string]any{"path": op.Path},
-				)
-			}
-			absolutePath, pathErr := filepath.Abs(op.RawValue)
-			if pathErr != nil {
-				return "", "", model.Options{}, domainerrors.New(
-					domainerrors.CodeInvalidArgs,
-					"failed to resolve --set-file path",
-					map[string]any{"path": op.Path, "reason": pathErr.Error()},
-				)
-			}
-			nextOp.RawValue = absolutePath
-		}
-		normalizedOps = append(normalizedOps, nextOp)
+	normalizedOps, opsErr := writeargs.NormalizeOperationPaths(global, opts.Operations)
+	if opsErr != nil {
+		return "", "", model.Options{}, opsErr
 	}
 	normalized.Operations = normalizedOps
 

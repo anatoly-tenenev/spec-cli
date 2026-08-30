@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -32,7 +33,7 @@ func AcquireExclusive(lockPath string) (*Lock, *domainerrors.AppError) {
 		return nil, domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to access workspace for lock acquisition",
-			map[string]any{"reason": classifyIOReason(workspaceErr)},
+			map[string]any{"reason": iofailure.Reason(workspaceErr)},
 		)
 	}
 	if !workspaceInfo.IsDir() {
@@ -47,7 +48,7 @@ func AcquireExclusive(lockPath string) (*Lock, *domainerrors.AppError) {
 		return nil, domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to prepare workspace lock directory",
-			map[string]any{"reason": classifyIOReason(err)},
+			map[string]any{"reason": iofailure.Reason(err)},
 		)
 	}
 
@@ -56,7 +57,7 @@ func AcquireExclusive(lockPath string) (*Lock, *domainerrors.AppError) {
 		return nil, domainerrors.New(
 			domainerrors.CodeWriteFailed,
 			"failed to open workspace lock file",
-			map[string]any{"reason": classifyIOReason(err)},
+			map[string]any{"reason": iofailure.Reason(err)},
 		)
 	}
 
@@ -95,15 +96,4 @@ func isLockBusy(err error) bool {
 
 func isCapabilityUnsupported(err error) bool {
 	return errors.Is(err, syscall.ENOTSUP) || errors.Is(err, syscall.ENOSYS)
-}
-
-func classifyIOReason(err error) string {
-	switch {
-	case errors.Is(err, os.ErrPermission):
-		return "permission denied"
-	case errors.Is(err, os.ErrNotExist):
-		return "not found"
-	default:
-		return "i/o error"
-	}
 }

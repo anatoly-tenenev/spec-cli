@@ -22,7 +22,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writeops"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -257,7 +257,7 @@ func preflight(
 			return nil, "", domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read --content-file",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 		bodyValue = string(raw)

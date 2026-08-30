@@ -89,6 +89,18 @@ func LiteralEqual(left any, right any) bool {
 	}
 }
 
+// NormalizeMap normalizes every entry of a decoded frontmatter map, and always
+// returns a map even when handed none. Read commands parse the same documents
+// with the same YAML decoder, so a date or a nested value one of them reports
+// as a string cannot be a time.Time for another.
+func NormalizeMap(input map[string]any) map[string]any {
+	normalized := make(map[string]any, len(input))
+	for key, value := range input {
+		normalized[key] = NormalizeValue(value)
+	}
+	return normalized
+}
+
 func NormalizeValue(value any) any {
 	switch typed := value.(type) {
 	case time.Time:

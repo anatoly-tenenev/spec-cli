@@ -20,9 +20,11 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/entityids"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
@@ -150,7 +152,7 @@ func RunValidation(
 		} else {
 			ids[candidate.ID] = append(ids[candidate.ID], checkedIndex)
 			if candidate.TypeKnown {
-				suffix, hasSuffix := parseIDSuffix(candidate.ID, candidate.TypeSpec.IDPrefix)
+				suffix, hasSuffix := entityids.ParseSuffix(candidate.ID, candidate.TypeSpec.IDPrefix)
 				if !hasSuffix {
 					addIssue(&run.Issues, &entity, domainvalidation.Issue{
 						Code:        "builtin.id_format_invalid",
@@ -276,7 +278,7 @@ func parseCandidates(
 			return nil, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 

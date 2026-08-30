@@ -15,6 +15,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/selectors"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -32,16 +33,8 @@ var builtinSelectors = map[string]struct{}{
 	"content.sections": {},
 }
 
-var refLeafSelectors = map[string]struct{}{
-	"id":       {},
-	"resolved": {},
-	"type":     {},
-	"slug":     {},
-	"reason":   {},
-}
-
 func BuildTree(selects []string, capability schemacapread.Capability, activeTypeSet []string) (*model.SelectNode, *domainerrors.AppError) {
-	root := &model.SelectNode{Children: map[string]*model.SelectNode{}}
+	root := selectors.NewTree()
 	for _, selector := range selects {
 		normalized := strings.TrimSpace(selector)
 		if normalized == "" {
@@ -54,7 +47,7 @@ func BuildTree(selects []string, capability schemacapread.Capability, activeType
 		if err := validateSelector(normalized, capability, activeTypeSet); err != nil {
 			return nil, err
 		}
-		insertSelector(root, strings.Split(normalized, "."))
+		selectors.Insert(root, strings.Split(normalized, "."))
 	}
 	return root, nil
 }
@@ -92,7 +85,7 @@ func validateSelector(selector string, capability schemacapread.Capability, acti
 	}
 
 	if len(parts) == 2 && parts[0] == "refs" {
-		if hasRefFieldAcrossActiveSet(parts[1], capability, activeTypeSet) {
+		if selectors.HasRefField(parts[1], capability, activeTypeSet) {
 			return nil
 		}
 		return domainerrors.New(
@@ -105,14 +98,14 @@ func validateSelector(selector string, capability schemacapread.Capability, acti
 	if len(parts) == 3 && parts[0] == "refs" {
 		refField := parts[1]
 		leaf := parts[2]
-		if _, ok := refLeafSelectors[leaf]; !ok {
+		if !selectors.IsRefLeaf(leaf) {
 			return domainerrors.New(
 				domainerrors.CodeInvalidArgs,
 				fmt.Sprintf("unknown projection-namespace selector '%s'", selector),
 				nil,
 			)
 		}
-		compat, exists := refLeafCompatibility(refField, capability, activeTypeSet)
+		compat, exists := selectors.RefLeafCompatibility(refField, capability, activeTypeSet)
 		if !exists {
 			return domainerrors.New(
 				domainerrors.CodeInvalidArgs,
@@ -150,55 +143,6 @@ func validateSelector(selector string, capability schemacapread.Capability, acti
 		fmt.Sprintf("unknown projection-namespace selector '%s'", selector),
 		nil,
 	)
-}
-
-func hasRefFieldAcrossActiveSet(refField string, capability schemacapread.Capability, activeTypeSet []string) bool {
-	for _, typeName := range activeTypeSet {
-		entityType := capability.EntityTypes[typeName]
-		if _, exists := entityType.RefFields[refField]; exists {
-			return true
-		}
-	}
-	return false
-}
-
-func refLeafCompatibility(refField string, capability schemacapread.Capability, activeTypeSet []string) (compatible bool, exists bool) {
-	hasScalar := false
-	for _, typeName := range activeTypeSet {
-		entityType := capability.EntityTypes[typeName]
-		refSpec, present := entityType.RefFields[refField]
-		if !present {
-			continue
-		}
-		exists = true
-		if refSpec.Cardinality == schemacapread.RefCardinalityArray {
-			return false, true
-		}
-		hasScalar = true
-	}
-	return hasScalar, exists
-}
-
-func insertSelector(root *model.SelectNode, parts []string) {
-	current := root
-	for idx, part := range parts {
-		if current.Terminal {
-			return
-		}
-
-		child, exists := current.Children[part]
-		if !exists {
-			child = &model.SelectNode{Children: map[string]*model.SelectNode{}}
-			current.Children[part] = child
-		}
-
-		if idx == len(parts)-1 {
-			child.Terminal = true
-			child.Children = map[string]*model.SelectNode{}
-			return
-		}
-		current = child
-	}
 }
 
 func ProjectEntity(entity map[string]any, tree *model.SelectNode) map[string]any {

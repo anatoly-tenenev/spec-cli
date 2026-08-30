@@ -4,8 +4,8 @@
 // repaired, which is the case update exists to serve.
 //
 // snapshot.go builds the snapshot and locates the target; frontmatter.go and
-// sections.go adapt the shared entitydoc parsing to what update needs,
-// including the line ranges that let one section be rewritten in place.
+// sections.go adapt the shared entitydoc parsing to what update needs -
+// notably the line ranges that let one section be rewritten in place.
 package workspace
 
 import (
@@ -18,6 +18,7 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -48,7 +49,7 @@ func BuildSnapshot(workspacePath string, targetID string) (model.Snapshot, *doma
 			return model.Snapshot{}, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 

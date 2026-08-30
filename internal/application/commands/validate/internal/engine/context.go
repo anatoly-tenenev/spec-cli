@@ -4,6 +4,7 @@ import (
 	"time"
 
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressioncontext"
 	"github.com/anatoly-tenenev/spec-cli/internal/domain/reservedkeys"
 )
 
@@ -23,14 +24,7 @@ func buildRuntimeEvaluationContext(
 	refs := make(map[string]any)
 	topLevel := map[string]any{}
 
-	builtinKeys := []string{
-		reservedkeys.BuiltinType,
-		reservedkeys.BuiltinID,
-		reservedkeys.BuiltinSlug,
-		reservedkeys.BuiltinCreatedDate,
-		reservedkeys.BuiltinUpdatedDate,
-	}
-	for _, key := range builtinKeys {
+	for _, key := range expressioncontext.BuiltinMetaFields() {
 		value, exists := frontmatter[key]
 		if !exists {
 			topLevel[key] = nil
@@ -40,7 +34,7 @@ func buildRuntimeEvaluationContext(
 	}
 
 	for _, fieldRule := range typeSpec.RequiredFields {
-		if expressionContextBuiltinField(fieldRule.Name) {
+		if expressioncontext.IsBuiltinMetaField(fieldRule.Name) {
 			continue
 		}
 
@@ -68,19 +62,6 @@ func buildRuntimeEvaluationContext(
 	topLevel["meta"] = meta
 	topLevel["refs"] = refs
 	return topLevel
-}
-
-func expressionContextBuiltinField(fieldName string) bool {
-	switch fieldName {
-	case reservedkeys.BuiltinType,
-		reservedkeys.BuiltinID,
-		reservedkeys.BuiltinSlug,
-		reservedkeys.BuiltinCreatedDate,
-		reservedkeys.BuiltinUpdatedDate:
-		return true
-	default:
-		return false
-	}
 }
 
 func normalizeContextValue(value any) any {

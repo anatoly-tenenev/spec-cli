@@ -2,19 +2,20 @@
 // a new entity against: which ids and slugs are taken, how far the id sequence
 // for each type has run, and which paths already exist.
 //
-// snapshot.go builds that snapshot; frontmatter.go and sections.go adapt the
-// shared entitydoc parsing to the shapes add works with.
+// Documents are read through the shared entitydoc parsing, so add sees the
+// same frontmatter and sections every other command does.
 package workspace
 
 import (
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/entityids"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/writemodel"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -41,7 +42,7 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 			return model.Snapshot{}, domainerrors.New(
 				domainerrors.CodeReadFailed,
 				"failed to read workspace document",
-				entitydoc.IOFailureDetails(err),
+				iofailure.Details(err),
 			)
 		}
 
@@ -94,7 +95,7 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 		if !knownType {
 			continue
 		}
-		suffix, ok := parseIDSuffix(id, typeSpec.IDPrefix)
+		suffix, ok := entityids.ParseSuffix(id, typeSpec.IDPrefix)
 		if !ok {
 			continue
 		}
@@ -110,27 +111,4 @@ func BuildSnapshot(workspacePath string, entityTypes map[string]model.EntityType
 	}
 
 	return snapshot, nil
-}
-
-func parseIDSuffix(id string, prefix string) (int, bool) {
-	expectedPrefix := prefix + "-"
-	if !strings.HasPrefix(id, expectedPrefix) {
-		return 0, false
-	}
-
-	rawSuffix := strings.TrimPrefix(id, expectedPrefix)
-	if rawSuffix == "" {
-		return 0, false
-	}
-	for _, ch := range rawSuffix {
-		if ch < '0' || ch > '9' {
-			return 0, false
-		}
-	}
-
-	value := 0
-	for _, ch := range rawSuffix {
-		value = value*10 + int(ch-'0')
-	}
-	return value, true
 }
