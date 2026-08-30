@@ -7,8 +7,55 @@ package values
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 )
+
+// IsTruthy answers whether a dynamic value counts as true. The rule is
+// JMESPath's, not ours: false, an empty list, an empty object, an empty string
+// and null are falsy, everything else is truthy.
+//
+// A schema expression and a query filter both ask it of the same document, so
+// an empty array cannot be "has tags" for one and "no tags" for the other.
+// Neither layer owns the answer - the JMESPath specification does - which is
+// why it lives here rather than in either of them.
+//
+// The body mirrors the unexported isFalse of go-jmespath. Once the fork exports
+// it, this becomes one line delegating to the library and the copy is gone.
+func IsTruthy(value any) bool {
+	return !isFalse(value)
+}
+
+func isFalse(value any) bool {
+	switch typed := value.(type) {
+	case bool:
+		return !typed
+	case []any:
+		return len(typed) == 0
+	case map[string]any:
+		return len(typed) == 0
+	case string:
+		return len(typed) == 0
+	case nil:
+		return true
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case reflect.Struct:
+		// A struct is never falsy, even when every field holds a zero value.
+		return false
+	case reflect.Slice, reflect.Map:
+		return rv.Len() == 0
+	case reflect.Ptr:
+		if rv.IsNil() {
+			return true
+		}
+		return isFalse(rv.Elem().Interface())
+	}
+
+	return false
+}
 
 func DeepCopy(value any) any {
 	switch typed := value.(type) {

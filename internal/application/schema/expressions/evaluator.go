@@ -2,8 +2,9 @@ package expressions
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
+
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 )
 
 type EvalError struct {
@@ -33,8 +34,12 @@ func Evaluate(expression *CompiledExpression, context any) (any, *EvalError) {
 	return value, nil
 }
 
+// IsTruthy is the shared JMESPath truthiness rule; see
+// internal/application/values. It stays part of this package's surface because
+// callers ask the expression layer whether an expression held, not what
+// JMESPath thinks of a value.
 func IsTruthy(value any) bool {
-	return !isFalse(value)
+	return values.IsTruthy(value)
 }
 
 func StringifyInterpolationValue(value any) (string, *EvalError) {
@@ -78,34 +83,4 @@ func StringifyInterpolationValue(value any) (string, *EvalError) {
 			Message: fmt.Sprintf("interpolation result has unsupported type %T", value),
 		}
 	}
-}
-
-func isFalse(value any) bool {
-	switch typed := value.(type) {
-	case bool:
-		return !typed
-	case []any:
-		return len(typed) == 0
-	case map[string]any:
-		return len(typed) == 0
-	case string:
-		return len(typed) == 0
-	case nil:
-		return true
-	}
-
-	rv := reflect.ValueOf(value)
-	switch rv.Kind() {
-	case reflect.Struct:
-		return false
-	case reflect.Slice, reflect.Map:
-		return rv.Len() == 0
-	case reflect.Ptr:
-		if rv.IsNil() {
-			return true
-		}
-		return isFalse(rv.Elem().Interface())
-	}
-
-	return false
 }

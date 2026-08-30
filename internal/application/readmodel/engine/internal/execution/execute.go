@@ -10,11 +10,11 @@ package execution
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/ordering"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
@@ -41,7 +41,7 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 						map[string]any{"reason": whereErr.Error()},
 					)
 				}
-				if !isTruthy(whereValue) {
+				if !values.IsTruthy(whereValue) {
 					continue
 				}
 			}
@@ -136,38 +136,4 @@ func sortTermsToStrings(terms []model.SortTerm) []string {
 		serialized = append(serialized, term.Path+":"+string(term.Direction))
 	}
 	return serialized
-}
-
-func isTruthy(value any) bool {
-	return !isFalse(value)
-}
-
-func isFalse(value any) bool {
-	switch typed := value.(type) {
-	case bool:
-		return !typed
-	case []any:
-		return len(typed) == 0
-	case map[string]any:
-		return len(typed) == 0
-	case string:
-		return len(typed) == 0
-	case nil:
-		return true
-	}
-
-	rv := reflect.ValueOf(value)
-	switch rv.Kind() {
-	case reflect.Struct:
-		return false
-	case reflect.Slice, reflect.Map:
-		return rv.Len() == 0
-	case reflect.Ptr:
-		if rv.IsNil() {
-			return true
-		}
-		return isFalse(rv.Elem().Interface())
-	}
-
-	return false
 }
