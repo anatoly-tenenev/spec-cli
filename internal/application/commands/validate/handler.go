@@ -14,11 +14,11 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
 	"sort"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemaload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/engine"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/validate/internal/workspace"
 	schemacapvalidate "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/validate"
-	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -28,11 +28,11 @@ import (
 )
 
 type Handler struct {
-	newCompiler func() *schemacompile.Compiler
+	schema schemaload.Loader
 }
 
 func NewHandler() *Handler {
-	return &Handler{newCompiler: schemacompile.NewCompiler}
+	return &Handler{schema: schemaload.NewLoader()}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -46,9 +46,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 		return responses.CommandOutput{}, pathErr
 	}
 
-	compiler := h.newCompiler()
-	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
-	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
+	compileResult, schemaPayload, compileErr := h.schema.Compile(schemaPath, request.Global.SchemaPath)
 
 	if compileErr != nil {
 		return buildCompileErrorWithSchema(compileErr, schemaPayload), nil

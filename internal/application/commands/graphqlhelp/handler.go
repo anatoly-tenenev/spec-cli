@@ -15,11 +15,11 @@ import (
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlhelp/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/optionpaths"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemaload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/catalog"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/projection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/sdl"
 	readcap "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
-	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -27,11 +27,11 @@ import (
 )
 
 type Handler struct {
-	newCompiler func() *schemacompile.Compiler
+	schema schemaload.Loader
 }
 
 func NewHandler() *Handler {
-	return &Handler{newCompiler: schemacompile.NewCompiler}
+	return &Handler{schema: schemaload.NewLoader()}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -46,9 +46,9 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	if pathErr != nil {
 		return responses.CommandOutput{}, pathErr
 	}
-	compileResult, compileErr := h.newCompiler().Compile(schemaPath, request.Global.SchemaPath)
+	compileResult, schemaPayload, compileErr := h.schema.Compile(schemaPath, request.Global.SchemaPath)
 	if compileErr != nil {
-		return outputpayload.BuildErrorOutput(compileErr, outputpayload.BuildSchemaPayload(compileResult)), nil
+		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
 	readCapability := readcap.Build(compileResult.Schema)
 	proj, projectionErr := projection.Build(compileResult.Schema, readCapability)

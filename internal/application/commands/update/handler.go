@@ -15,11 +15,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemaload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/engine"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/options"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
 	schemacapwrite "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/write"
-	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/workspacelock"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
@@ -28,15 +28,15 @@ import (
 )
 
 type Handler struct {
-	now         func() time.Time
-	newCompiler func() *schemacompile.Compiler
+	now    func() time.Time
+	schema schemaload.Loader
 }
 
 func NewHandler(now func() time.Time) *Handler {
 	if now == nil {
 		now = time.Now
 	}
-	return &Handler{now: now, newCompiler: schemacompile.NewCompiler}
+	return &Handler{now: now, schema: schemaload.NewLoader()}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -56,9 +56,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	}
 	defer lockGuard.Release()
 
-	compiler := h.newCompiler()
-	compileResult, compileErr := compiler.Compile(schemaPath, request.Global.SchemaPath)
-	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
+	compileResult, schemaPayload, compileErr := h.schema.Compile(schemaPath, request.Global.SchemaPath)
 
 	if compileErr != nil {
 		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil

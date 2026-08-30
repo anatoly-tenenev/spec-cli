@@ -15,12 +15,12 @@ import (
 	"context"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/graphqlquery/internal/options"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemaload"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/binding"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/document"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/projection"
 	readworkspace "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace"
 	readcap "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
-	schemacompile "github.com/anatoly-tenenev/spec-cli/internal/application/schema/compile"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/requests"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -28,11 +28,11 @@ import (
 )
 
 type Handler struct {
-	newCompiler func() *schemacompile.Compiler
+	schema schemaload.Loader
 }
 
 func NewHandler() *Handler {
-	return &Handler{newCompiler: schemacompile.NewCompiler}
+	return &Handler{schema: schemaload.NewLoader()}
 }
 
 func (h *Handler) Handle(_ context.Context, request requests.Command) (responses.CommandOutput, *domainerrors.AppError) {
@@ -53,8 +53,7 @@ func (h *Handler) Handle(_ context.Context, request requests.Command) (responses
 	if loadErr != nil {
 		return outputpayload.BuildErrorOutput(loadErr, nil), nil
 	}
-	compileResult, compileErr := h.newCompiler().Compile(paths.SchemaPath, request.Global.SchemaPath)
-	schemaPayload := outputpayload.BuildSchemaPayload(compileResult)
+	compileResult, schemaPayload, compileErr := h.schema.Compile(paths.SchemaPath, request.Global.SchemaPath)
 	if compileErr != nil {
 		return outputpayload.BuildErrorOutput(compileErr, schemaPayload), nil
 	}
