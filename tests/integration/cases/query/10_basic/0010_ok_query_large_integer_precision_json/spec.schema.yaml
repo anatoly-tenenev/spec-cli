@@ -1,0 +1,10 @@
+version: "0.0.7"
+entity:
+  service:
+    idPrefix: SVC
+    pathTemplate: "services/${slug}.md"
+    meta:
+      fields:
+        ticket:
+          schema:
+            type: integer

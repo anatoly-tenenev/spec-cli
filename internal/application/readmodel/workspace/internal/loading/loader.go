@@ -65,7 +65,7 @@ func LoadEntities(
 
 		entityType := capability.EntityTypes[entity.Type]
 		metaPublic := views.BuildMetadata(entity.Frontmatter, entityType.MetaFields)
-		metaWhere := views.BuildMetadata(entity.Frontmatter, entityType.MetaFields)
+		metaWhere := views.BuildWhereMetadata(entity.Frontmatter, entityType.MetaFields)
 		refsPublic, refsWhere, refsErr := references.Resolve(entity.Frontmatter, entityType.RefFields, idIndex)
 		if refsErr != nil {
 			return nil, refsErr

@@ -1,0 +1,15 @@
+{
+  "id": "query_10_0010_ok_query_large_integer_precision_json",
+  "description": "query returns an integer beyond 2^53 exactly as written, not rounded to the nearest float64",
+  "command": "query",
+  "args": ["--workspace","${WORKSPACE}","--schema","${SCHEMA}","query","--format","json","--type","service","--select","meta.ticket"],
+  "expect": {
+    "exit_code": 0,
+    "response_file": "response.json"
+  },
+  "workspace": {
+    "input_dir": "workspace.in",
+    "output_dir": "workspace.out",
+    "assert_output": false
+  }
+}

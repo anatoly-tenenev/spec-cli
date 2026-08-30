@@ -472,9 +472,18 @@ func isInternalWorkspaceLockFile(relativePath string) bool {
 	return relativePath == ".spec-cli/workspace.lock"
 }
 
+// parseJSON decodes a response for comparison with numbers kept as text.
+//
+// The default decoding turns every number into a float64, which silently makes
+// 9007199254740993 and 9007199254740992 the same value - so an assertion about
+// an integer the response must carry exactly could not fail. Keeping them as
+// json.Number compares the digits that were actually written.
 func parseJSON(raw []byte) (any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+
 	var value any
-	if err := json.Unmarshal(raw, &value); err != nil {
+	if err := decoder.Decode(&value); err != nil {
 		return nil, err
 	}
 	return value, nil
