@@ -1,12 +1,12 @@
-// Package payload builds the entity object add returns. It reports the logical
-// model - meta, refs and sections - and never the path the document was
-// written to, because storage layout is not part of what a caller may depend
-// on.
-package payload
+// payload.go builds the entity object update returns. It reports the logical
+// model - meta and refs - and never the path the document lives at, because
+// storage layout is not part of what a caller may depend on.
 
-import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+package engine
 
-func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[string]any {
+import "github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
+
+func buildEntityPayload(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[string]any {
 	refsPayload := map[string]any{}
 	for _, fieldName := range typeSpec.MetaFieldOrder {
 		field := typeSpec.MetaFields[fieldName]
@@ -28,11 +28,6 @@ func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[
 			}
 			refsPayload[fieldName] = itemsPayload
 		}
-	}
-
-	sectionsPayload := map[string]any{}
-	for name, value := range candidate.Sections {
-		sectionsPayload[name] = value
 	}
 
 	metaPayload := map[string]any{}
@@ -57,9 +52,5 @@ func BuildEntity(typeSpec model.EntityTypeSpec, candidate *model.Candidate) map[
 		"updatedDate": candidate.UpdatedDate,
 		"meta":        metaPayload,
 		"refs":        refsPayload,
-		"content": map[string]any{
-			"raw":      candidate.Body,
-			"sections": sectionsPayload,
-		},
 	}
 }

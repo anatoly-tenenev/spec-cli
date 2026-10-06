@@ -1,12 +1,10 @@
-// Package references resolves the entityRef fields of a document against the
-// rest of the workspace. A reference that cannot be resolved is returned as an
+// references.go resolves the entityRef fields of a document against the rest of
+// the workspace. A reference that cannot be resolved is returned as an
 // unresolved object naming why - missing, ambiguous or type_mismatch - instead
 // of failing the read: the tool reports what the workspace says rather than
-// refusing to show a document that points at a gap.
-//
-// It produces two shapes of the same reference: the public one a response may
-// contain, and the one a --where expression filters on.
-package references
+// refusing to speak about it.
+
+package workspace
 
 import (
 	"fmt"
@@ -32,7 +30,7 @@ func BuildIDIndex(entities []documents.Entity) map[string][]entityrefs.Identity 
 	return idIndex
 }
 
-func Resolve(
+func resolveReferences(
 	frontmatter map[string]any,
 	refFields map[string]schemacapread.RefField,
 	idIndex map[string][]entityrefs.Identity,

@@ -1,11 +1,8 @@
-// Package storage removes the target file and classifies why a removal failed,
-// so the response says whether it was permissions, a missing file, or the
-// filesystem.
-//
-// SPEC_CLI_TEST_INJECT_DELETE_FAILURE makes the removal fail on purpose. The
-// integration suite is black-box and cannot make a real filesystem fail on
-// demand, and the behaviour after a failed delete is part of the contract.
-package storage
+// storage.go removes the target file and classifies why a removal failed, so
+// the response says whether it was permissions, a missing file, or something
+// else.
+
+package engine
 
 import (
 	"os"
@@ -17,7 +14,7 @@ import (
 const deleteFailureInjectEnv = "SPEC_CLI_TEST_INJECT_DELETE_FAILURE"
 const deleteFailureInjectModeBeforeCommit = "before_remove_commit"
 
-func Delete(path string) *domainerrors.AppError {
+func deleteDocument(path string) *domainerrors.AppError {
 	if shouldInjectDeleteFailure() {
 		return injectedDeleteFailureError("injected delete failure before remove commit")
 	}

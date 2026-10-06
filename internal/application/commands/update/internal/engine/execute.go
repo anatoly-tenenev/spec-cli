@@ -6,6 +6,10 @@
 //
 // Under --dry-run every step but the write still runs, so the reported result
 // is what a real run would produce.
+//
+// execute.go orchestrates the run; writes.go applies the patch, validation.go
+// judges the result, storage.go persists it, and payload.go shapes what comes
+// back.
 package engine
 
 import (
@@ -19,11 +23,7 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/refresolve"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/schemarules"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/payload"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/storage"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/validation"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/workspace"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
 	"github.com/anatoly-tenenev/spec-cli/internal/contracts/responses"
@@ -98,7 +98,7 @@ func Execute(
 		}
 	}
 
-	applied, applyErr := writes.Apply(opts, typeSpec, frontmatter, body)
+	applied, applyErr := applyWrites(opts, typeSpec, frontmatter, body)
 	if applyErr != nil {
 		return nil, applyErr
 	}
@@ -125,7 +125,7 @@ func Execute(
 		candidate.PathAbs = filepath.Join(snapshot.WorkspacePath, filepath.FromSlash(pathRelPOSIX))
 	}
 
-	validationIssues := validation.Validate(
+	validationIssues := validateCandidate(
 		typeSpec,
 		candidate,
 		snapshot,
@@ -135,7 +135,7 @@ func Execute(
 		evaluationContext,
 	)
 	if len(validationIssues) > 0 {
-		return nil, validation.AsAppError(validationIssues)
+		return nil, validationFailedError(validationIssues)
 	}
 
 	originalRelPOSIX, relErr := filepath.Rel(snapshot.WorkspacePath, targetMatch.PathAbs)
@@ -150,13 +150,13 @@ func Execute(
 
 	if !applied.UserChanged {
 		if candidate.PathRelPOSIX != originalRelPOSIX {
-			return nil, validation.AsAppError([]domainvalidation.Issue{
+			return nil, validationFailedError([]domainvalidation.Issue{
 				pathMismatchIssue(candidate),
 			})
 		}
 
 		candidate.Revision = currentRevision
-		entityPayload := payload.BuildEntity(typeSpec, candidate)
+		entityPayload := buildEntityPayload(typeSpec, candidate)
 		return map[string]any{
 			"result_state": responses.ResultStateValid,
 			"dry_run":      opts.DryRun,
@@ -172,7 +172,7 @@ func Execute(
 	}
 
 	if candidate.PathAbs == "" {
-		return nil, validation.AsAppError([]domainvalidation.Issue{
+		return nil, validationFailedError([]domainvalidation.Issue{
 			{
 				Code:        "instance.pathTemplate.no_matching_case",
 				Level:       domainvalidation.LevelError,
@@ -185,7 +185,7 @@ func Execute(
 		})
 	}
 
-	if storage.IsPathConflict(candidate.PathAbs, snapshot.ExistingPaths, targetMatch.PathAbs) {
+	if isPathConflict(candidate.PathAbs, snapshot.ExistingPaths, targetMatch.PathAbs) {
 		return nil, domainerrors.New(
 			domainerrors.CodePathConflict,
 			"canonical entity path already exists",
@@ -205,12 +205,12 @@ func Execute(
 	candidate.Revision = entitydoc.Revision(serialized)
 
 	if !opts.DryRun {
-		if writeErr := storage.Persist(targetMatch.PathAbs, candidate.PathAbs, serialized); writeErr != nil {
+		if writeErr := persist(targetMatch.PathAbs, candidate.PathAbs, serialized); writeErr != nil {
 			return nil, writeErr
 		}
 	}
 
-	entityPayload := payload.BuildEntity(typeSpec, candidate)
+	entityPayload := buildEntityPayload(typeSpec, candidate)
 	return map[string]any{
 		"result_state": responses.ResultStateValid,
 		"dry_run":      opts.DryRun,

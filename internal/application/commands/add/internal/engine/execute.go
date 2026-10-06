@@ -6,6 +6,10 @@
 //
 // Under --dry-run everything up to the write still runs, so the response
 // reports what would have been created rather than a guess.
+//
+// execute.go orchestrates the run; writes.go turns --set into values,
+// validation.go judges the result, storage.go puts it on disk, and payload.go
+// shapes what comes back.
 package engine
 
 import (
@@ -13,10 +17,6 @@ import (
 	"time"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/payload"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/storage"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/validation"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/writes"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/entityids"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/issues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/internal/markdown"
@@ -35,7 +35,7 @@ func Execute(
 	snapshot model.Snapshot,
 	now func() time.Time,
 ) (map[string]any, *domainerrors.AppError) {
-	appliedWrites, writesErr := writes.Apply(opts, typeSpec)
+	appliedWrites, writesErr := applyWrites(opts, typeSpec)
 	if writesErr != nil {
 		return nil, writesErr
 	}
@@ -70,7 +70,7 @@ func Execute(
 		RefIDArrays:  appliedWrites.RefIDArrays,
 		Refs:         map[string]model.ResolvedRef{},
 		RefArrays:    map[string][]model.ResolvedRef{},
-		Body:         writes.BuildBody(typeSpec, appliedWrites),
+		Body:         buildBody(typeSpec, appliedWrites),
 		Sections:     map[string]string{},
 		PathRelPOSIX: "",
 	}
@@ -85,7 +85,7 @@ func Execute(
 	if pathRelPOSIX != "" {
 		candidate.PathRelPOSIX = pathRelPOSIX
 		candidate.PathAbs = filepath.Join(snapshot.WorkspacePath, filepath.FromSlash(pathRelPOSIX))
-		if storage.IsPathConflict(candidate.PathAbs, snapshot.ExistingPaths) {
+		if isPathConflict(candidate.PathAbs, snapshot.ExistingPaths) {
 			return nil, domainerrors.New(
 				domainerrors.CodePathConflict,
 				"canonical entity path already exists",
@@ -94,9 +94,9 @@ func Execute(
 		}
 	}
 
-	validationIssues := validation.Validate(typeSpec, candidate, snapshot, pathIssues, refIssues, evaluationContext)
+	validationIssues := validateCandidate(typeSpec, candidate, snapshot, pathIssues, refIssues, evaluationContext)
 	if len(validationIssues) > 0 {
-		return nil, validation.AsAppError(validationIssues)
+		return nil, validationFailedError(validationIssues)
 	}
 
 	serialized, serializeErr := markdown.Serialize(candidate, typeSpec)
@@ -112,7 +112,7 @@ func Execute(
 
 	if !opts.DryRun {
 		if candidate.PathAbs == "" {
-			return nil, validation.AsAppError([]domainvalidation.Issue{
+			return nil, validationFailedError([]domainvalidation.Issue{
 				issues.New(
 					"instance.pathTemplate.no_matching_case",
 					"pathTemplate has no matching case for created entity",
@@ -122,13 +122,13 @@ func Execute(
 				),
 			})
 		}
-		writeErr := storage.WriteAtomically(candidate.PathAbs, candidate.Serialized)
+		writeErr := writeAtomically(candidate.PathAbs, candidate.Serialized)
 		if writeErr != nil {
 			return nil, writeErr
 		}
 	}
 
-	entityPayload := payload.BuildEntity(typeSpec, candidate)
+	entityPayload := buildEntityPayload(typeSpec, candidate)
 
 	return map[string]any{
 		"result_state": responses.ResultStateValid,

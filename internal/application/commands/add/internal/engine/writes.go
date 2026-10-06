@@ -1,12 +1,11 @@
-// Package writes turns the requested --set operations into the frontmatter,
+// writes.go turns the requested --set operations into the frontmatter,
 // reference ids and section bodies of the new entity. Every path is looked up
 // in the schema's write contract first: a path the schema does not declare
 // writable, or one the standard reserves, is refused rather than written
-// through.
-//
-// Raw text is converted according to the field's declared type, so a value
-// reaches validation as the type the schema says it is.
-package writes
+// through. Raw text is converted according to the field's declared type, so a
+// value reaches validation as the type the schema says it is.
+
+package engine
 
 import (
 	"fmt"
@@ -21,7 +20,7 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-type Applied struct {
+type writeResult struct {
 	FrontmatterValues map[string]any
 	MetaPayload       map[string]any
 	RefIDs            map[string]string
@@ -31,8 +30,8 @@ type Applied struct {
 	WholeBodyProvided bool
 }
 
-func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domainerrors.AppError) {
-	applied := Applied{
+func applyWrites(opts model.Options, typeSpec model.EntityTypeSpec) (writeResult, *domainerrors.AppError) {
+	applied := writeResult{
 		FrontmatterValues: map[string]any{},
 		MetaPayload:       map[string]any{},
 		RefIDs:            map[string]string{},
@@ -44,13 +43,13 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 		writeSpec, exists := typeSpec.AllowWritePaths[op.Path]
 		if !exists {
 			if writeops.IsForbiddenWritePath(op.Path) {
-				return Applied{}, domainerrors.New(
+				return writeResult{}, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,
 					fmt.Sprintf("write path '%s' is forbidden by write contract", op.Path),
 					map[string]any{"path": op.Path},
 				)
 			}
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
 				fmt.Sprintf("write path '%s' is not allowed", op.Path),
 				map[string]any{"path": op.Path},
@@ -59,7 +58,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 
 		if op.Kind == model.WriteOperationSetFile {
 			if _, ok := typeSpec.AllowSetFilePaths[op.Path]; !ok {
-				return Applied{}, domainerrors.New(
+				return writeResult{}, domainerrors.New(
 					domainerrors.CodeWriteContractViolation,
 					fmt.Sprintf("--set-file is not allowed for path '%s'", op.Path),
 					map[string]any{"path": op.Path},
@@ -69,7 +68,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 
 		value, valueErr := writeops.ResolveValue(op, writeSpec, typeSpec)
 		if valueErr != nil {
-			return Applied{}, valueErr
+			return writeResult{}, valueErr
 		}
 
 		switch writeSpec.Kind {
@@ -100,7 +99,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 		case model.WritePathSection:
 			applied.SectionBodies[writeSpec.FieldName] = value.(string)
 		default:
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeInternalError,
 				"unsupported write-path kind",
 				map[string]any{"kind": writeSpec.Kind},
@@ -110,7 +109,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 
 	if opts.ContentFile != "" {
 		if !typeSpec.HasContent {
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
 				"whole-body input is not allowed for entity type without content",
 				nil,
@@ -118,7 +117,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 		}
 		raw, err := os.ReadFile(opts.ContentFile)
 		if err != nil {
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read --content-file",
 				iofailure.Details(err),
@@ -130,7 +129,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 
 	if opts.ContentStdin {
 		if !typeSpec.HasContent {
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeWriteContractViolation,
 				"whole-body input is not allowed for entity type without content",
 				nil,
@@ -138,7 +137,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 		}
 		raw, err := io.ReadAll(os.Stdin)
 		if err != nil {
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeWriteFailed,
 				"failed to read --content-stdin",
 				map[string]any{"reason": err.Error()},
@@ -151,7 +150,7 @@ func Apply(opts model.Options, typeSpec model.EntityTypeSpec) (Applied, *domaine
 	return applied, nil
 }
 
-func BuildBody(typeSpec model.EntityTypeSpec, applied Applied) string {
+func buildBody(typeSpec model.EntityTypeSpec, applied writeResult) string {
 	if applied.WholeBodyProvided {
 		return applied.WholeBody
 	}

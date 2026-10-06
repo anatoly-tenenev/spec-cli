@@ -1,14 +1,10 @@
-// Package writes applies the patch to the document's frontmatter and body.
-// Every path is checked against the schema's write contract first, so a path
-// the schema does not declare writable, or one the standard reserves, is
-// refused rather than written through.
-//
-// Section edits are made by line range: only the addressed section is
-// rewritten, and the rest of the body - including anything hand-written the
-// schema does not describe - is left byte for byte as it was. It also reports
-// whether the patch changed anything, which is what distinguishes a real
-// update from a no-op.
-package writes
+// writes.go applies the patch to the document's frontmatter and body. Every
+// path is checked against the schema's write contract first, so a path the
+// schema does not declare writable, or one the standard reserves, is refused
+// rather than written through. Section edits are surgical: the file keeps
+// everything the patch did not name, including hand edits.
+
+package engine
 
 import (
 	"crypto/sha256"
@@ -27,7 +23,7 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-type Applied struct {
+type writeResult struct {
 	Frontmatter map[string]any
 	Body        string
 	UserChanged bool
@@ -41,15 +37,15 @@ type preparedOperation struct {
 	Value any
 }
 
-func Apply(
+func applyWrites(
 	opts model.Options,
 	typeSpec model.EntityTypeSpec,
 	frontmatter map[string]any,
 	body string,
-) (Applied, *domainerrors.AppError) {
+) (writeResult, *domainerrors.AppError) {
 	prepared, bodyValue, preflightErr := preflight(opts, typeSpec)
 	if preflightErr != nil {
-		return Applied{}, preflightErr
+		return writeResult{}, preflightErr
 	}
 
 	nextFrontmatter := cloneMap(frontmatter)
@@ -149,7 +145,7 @@ func Apply(
 				})
 			}
 		default:
-			return Applied{}, domainerrors.New(
+			return writeResult{}, domainerrors.New(
 				domainerrors.CodeInternalError,
 				"unsupported write-path kind",
 				map[string]any{"kind": op.Spec.Kind},
@@ -181,7 +177,7 @@ func Apply(
 		}
 	}
 
-	return Applied{
+	return writeResult{
 		Frontmatter: nextFrontmatter,
 		Body:        nextBody,
 		UserChanged: userChanged,

@@ -1,9 +1,9 @@
-package filtering
+package engine
 
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/execution"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/filtering"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/testsupport"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
@@ -12,7 +12,7 @@ import (
 
 func TestCompileWhereExpression_Valid(t *testing.T) {
 	index := testsupport.NewCapability()
-	compiled, err := Compile("meta.status == 'active'", index, []string{"feature", "service"})
+	compiled, err := filtering.Compile("meta.status == 'active'", index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected compile error: %v", err)
 	}
@@ -23,7 +23,7 @@ func TestCompileWhereExpression_Valid(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := Compile("keys(content)", index, []string{"feature", "service"})
+	_, err := filtering.Compile("keys(content)", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -34,7 +34,7 @@ func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
 
 func TestCompileWhereExpression_AllowsContentRaw(t *testing.T) {
 	index := testsupport.NewCapability()
-	compiled, err := Compile("contains(content.raw || '', 'x')", index, []string{"feature", "service"})
+	compiled, err := filtering.Compile("contains(content.raw || '', 'x')", index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected compile error: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestCompileWhereExpression_AllowsContentRaw(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsUnknownContentPath(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := Compile("content.unknown == 'x'", index, []string{"feature", "service"})
+	_, err := filtering.Compile("content.unknown == 'x'", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -56,7 +56,7 @@ func TestCompileWhereExpression_RejectsUnknownContentPath(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsMetaEntityRef(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := Compile("meta.owner == 'SVC-1'", index, []string{"feature"})
+	_, err := filtering.Compile("meta.owner == 'SVC-1'", index, []string{"feature"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -71,7 +71,7 @@ func TestExecute_WhereContentRaw(t *testing.T) {
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := Compile("contains(content.raw || '', 'backoff')", index, []string{"feature"})
+	wherePlan, whereErr := filtering.Compile("contains(content.raw || '', 'backoff')", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}
@@ -104,7 +104,7 @@ func TestExecute_WhereContentRaw(t *testing.T) {
 		},
 	}
 
-	result, execErr := execution.Execute(plan, entities)
+	result, execErr := Execute(plan, entities)
 	if execErr != nil {
 		t.Fatalf("unexpected execute error: %v", execErr)
 	}
@@ -119,7 +119,7 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := Compile("meta.tags", index, []string{"feature"})
+	wherePlan, whereErr := filtering.Compile("meta.tags", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}
@@ -152,7 +152,7 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 		},
 	}
 
-	result, execErr := execution.Execute(plan, entities)
+	result, execErr := Execute(plan, entities)
 	if execErr != nil {
 		t.Fatalf("unexpected execute error: %v", execErr)
 	}
@@ -167,7 +167,7 @@ func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := Compile("length(meta.tags) > `0`", index, []string{"feature"})
+	wherePlan, whereErr := filtering.Compile("length(meta.tags) > `0`", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}
@@ -192,20 +192,11 @@ func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
 		},
 	}
 
-	_, execErr := execution.Execute(plan, entities)
+	_, execErr := Execute(plan, entities)
 	if execErr == nil {
 		t.Fatal("expected runtime error")
 	}
 	if execErr.Code != domainerrors.CodeReadFailed {
 		t.Fatalf("unexpected error code: %s", execErr.Code)
-	}
-}
-
-func newTestRootPlan(entityType string, limit int, offset int, sort []model.SortTerm) model.RootPlan {
-	return model.RootPlan{
-		EntityType:    entityType,
-		Limit:         limit,
-		Offset:        offset,
-		EffectiveSort: sort,
 	}
 }

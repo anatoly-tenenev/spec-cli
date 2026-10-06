@@ -1,9 +1,12 @@
-// Package planning compiles read options into a query plan: it resolves the
-// active type set, validates every selector, filter and sort term against the
-// schema, and expands per-root overrides of limit, offset and sort. Rejecting
-// an unknown name happens here rather than during execution, so an invalid
-// query costs no workspace read.
-package planning
+// Package engine answers a read query in two steps that stay separate on
+// purpose: BuildPlan validates the request against the schema and produces a
+// plan, Execute runs that plan over already-loaded entities. Every reason to
+// reject a query is therefore decided before a single document is touched, and
+// query, get and graphql-query share one meaning for --select, --where and
+// --sort.
+//
+// planner.go builds the plan; execute.go runs it.
+package engine
 
 import (
 	"fmt"

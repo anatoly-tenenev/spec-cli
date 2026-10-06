@@ -1,5 +1,5 @@
-// Package views narrows a parsed document to what the schema declares: only
-// known meta fields and known sections reach the entity view.
+// views.go narrows a parsed document to what the schema declares: only known
+// meta fields and known sections reach the entity view.
 //
 // It builds two projections of the same fields, because they answer to
 // different authorities. What a filter sees follows JMESPath: every number is a
@@ -11,7 +11,8 @@
 // The two therefore disagree about integers beyond 2^53, and deliberately so:
 // filtering on such a value is approximate in JMESPath no matter what we do,
 // while returning it is not allowed to be.
-package views
+
+package workspace
 
 import (
 	"time"
@@ -24,17 +25,17 @@ import (
 // BuildMetadata projects the meta fields the response returns. Values keep the
 // type the document gave them, so the number a read command returns is the
 // number the document holds - the same answer get gives for the same field.
-func BuildMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {
-	return buildMetadata(frontmatter, knownMeta, values.NormalizeValue)
+func buildMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {
+	return projectMetadata(frontmatter, knownMeta, values.NormalizeValue)
 }
 
 // BuildWhereMetadata projects the meta fields a filter is evaluated against,
 // with every number widened to float64 as JMESPath requires.
-func BuildWhereMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {
-	return buildMetadata(frontmatter, knownMeta, normalizeForFilter)
+func buildWhereMetadata(frontmatter map[string]any, knownMeta map[string]schemacapread.MetaField) map[string]any {
+	return projectMetadata(frontmatter, knownMeta, normalizeForFilter)
 }
 
-func buildMetadata(
+func projectMetadata(
 	frontmatter map[string]any,
 	knownMeta map[string]schemacapread.MetaField,
 	normalize func(any) any,
@@ -50,7 +51,7 @@ func buildMetadata(
 	return meta
 }
 
-func BuildWhereSections(parsedSections map[string]string, knownSections map[string]schemacapread.Section) map[string]any {
+func buildWhereSections(parsedSections map[string]string, knownSections map[string]schemacapread.Section) map[string]any {
 	sections := map[string]any{}
 	for _, sectionName := range ordered.MapKeys(knownSections) {
 		sectionValue, exists := parsedSections[sectionName]
@@ -87,7 +88,7 @@ func normalizeForFilter(value any) any {
 	}
 }
 
-func SectionsToAnyMap(sections map[string]string) map[string]any {
+func sectionsToAnyMap(sections map[string]string) map[string]any {
 	mapped := make(map[string]any, len(sections))
 	for name, value := range sections {
 		mapped[name] = value

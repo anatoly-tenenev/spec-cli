@@ -1,14 +1,9 @@
-// Package storage persists the updated document. Rewriting in place goes
-// through a temporary file and a rename, so an interrupted run never leaves a
-// half-written entity. When the schema-computed path changed, the new content
-// is staged first, the old file is moved aside to a backup, and only then
-// renamed into place; a failure at that point restores the backup, so the
-// entity is never left in two places or in none.
-//
-// SPEC_CLI_TEST_INJECT_WRITE_FAILURE makes the commit fail on purpose: the
-// integration suite is black-box and cannot make a real filesystem fail on
-// demand, and what update does after a failed write is part of the contract.
-package storage
+// storage.go persists the updated document. Rewriting in place goes through a
+// temporary file and a rename, so an interrupted run never leaves a
+// half-written document; a document whose schema-computed path changed is
+// moved rather than duplicated.
+
+package engine
 
 import (
 	"os"
@@ -22,19 +17,19 @@ import (
 const writeFailureInjectEnv = "SPEC_CLI_TEST_INJECT_WRITE_FAILURE"
 const writeFailureInjectModeAfterValidateBeforeCommit = "after_validate_before_commit"
 
-func Persist(sourcePath string, targetPath string, payload []byte) *domainerrors.AppError {
+func persist(sourcePath string, targetPath string, payload []byte) *domainerrors.AppError {
 	cleanSource := filepath.Clean(sourcePath)
 	cleanTarget := filepath.Clean(targetPath)
 	if cleanSource == cleanTarget {
 		if shouldInjectWriteFailure() {
 			return injectedWriteFailureError("injected write failure before atomic write commit", nil)
 		}
-		return WriteAtomically(cleanTarget, payload)
+		return writeAtomically(cleanTarget, payload)
 	}
-	return WriteWithMove(cleanSource, cleanTarget, payload)
+	return writeWithMove(cleanSource, cleanTarget, payload)
 }
 
-func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
+func writeAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 	parentDir := filepath.Dir(targetPath)
 	if err := os.MkdirAll(parentDir, 0o755); err != nil {
 		return domainerrors.New(
@@ -63,7 +58,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 	return nil
 }
 
-func WriteWithMove(sourcePath string, targetPath string, payload []byte) *domainerrors.AppError {
+func writeWithMove(sourcePath string, targetPath string, payload []byte) *domainerrors.AppError {
 	targetParent := filepath.Dir(targetPath)
 	if err := os.MkdirAll(targetParent, 0o755); err != nil {
 		return domainerrors.New(
@@ -137,7 +132,7 @@ func WriteWithMove(sourcePath string, targetPath string, payload []byte) *domain
 	return nil
 }
 
-func IsPathConflict(targetPath string, existingPaths map[string]struct{}, ignorePath string) bool {
+func isPathConflict(targetPath string, existingPaths map[string]struct{}, ignorePath string) bool {
 	if targetPath == "" {
 		return false
 	}

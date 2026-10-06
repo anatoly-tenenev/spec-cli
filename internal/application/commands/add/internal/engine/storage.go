@@ -1,11 +1,11 @@
-// Package storage writes the new document through a temporary file in the
-// target directory and renames it into place, so an interrupted run leaves
-// either no file or a complete one - never a half-written entity that the next
-// read would report as malformed.
-//
-// It also answers whether the computed target path is already taken, which is
-// what stops an add from silently overwriting an existing document.
-package storage
+// storage.go writes the new document through a temporary file in the target
+// directory and renames it into place, so an interrupted run leaves either no
+// file or a complete one - never a half-written entity that the next read
+// would report as malformed. It also answers whether the computed target path
+// is already taken, which is what stops an add from silently overwriting an
+// existing document.
+
+package engine
 
 import (
 	"os"
@@ -15,7 +15,7 @@ import (
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
+func writeAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 	parentDir := filepath.Dir(targetPath)
 	if err := os.MkdirAll(parentDir, 0o755); err != nil {
 		return domainerrors.New(
@@ -73,7 +73,7 @@ func WriteAtomically(targetPath string, payload []byte) *domainerrors.AppError {
 	return nil
 }
 
-func IsPathConflict(targetPath string, existingPaths map[string]struct{}) bool {
+func isPathConflict(targetPath string, existingPaths map[string]struct{}) bool {
 	if targetPath == "" {
 		return false
 	}

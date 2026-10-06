@@ -1,9 +1,9 @@
-package validation
+package engine
 
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/add/internal/model"
+	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/update/internal/model"
 	schemaexpressions "github.com/anatoly-tenenev/spec-cli/internal/application/schema/expressions"
 	domainvalidation "github.com/anatoly-tenenev/spec-cli/internal/domain/validation"
 )
@@ -51,10 +51,11 @@ func TestValidateUsesCompilerOwnedRequiredPaths(t *testing.T) {
 		Body: "## Summary {#summary}\nBody",
 	}
 
-	issues := Validate(
+	issues := validateCandidate(
 		typeSpec,
 		candidate,
 		model.Snapshot{},
+		"",
 		nil,
 		nil,
 		map[string]any{
@@ -99,13 +100,19 @@ func compileExpression(t *testing.T, source string) *schemaexpressions.CompiledE
 	return expression
 }
 
-func issueCodes(issues []domainvalidation.Issue) []string {
+type issueCheck struct {
+	Code  string
+	Field string
+}
+
+func issueChecks(issues []domainvalidation.Issue) []issueCheck {
 	if len(issues) == 0 {
 		return nil
 	}
-	codes := make([]string, 0, len(issues))
+
+	checks := make([]issueCheck, 0, len(issues))
 	for _, issue := range issues {
-		codes = append(codes, issue.Code)
+		checks = append(checks, issueCheck{Code: issue.Code, Field: issue.Field})
 	}
-	return codes
+	return checks
 }

@@ -5,6 +5,9 @@
 //
 // Whole-workspace steps come before the type filter is applied, because a
 // reference may point at an entity of a type the query did not ask for.
+//
+// loader.go runs the pipeline; views.go narrows a document to what the schema
+// declares, references.go resolves its entityRef fields.
 package workspace
 
 import (
@@ -15,8 +18,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/references"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/views"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -52,7 +53,7 @@ func LoadEntities(
 		)
 	}
 
-	idIndex := references.BuildIDIndex(allEntities)
+	idIndex := BuildIDIndex(allEntities)
 	allowedTypes := make(map[string]struct{}, len(typeFilters))
 	for _, typeName := range typeFilters {
 		allowedTypes[typeName] = struct{}{}
@@ -67,9 +68,9 @@ func LoadEntities(
 		}
 
 		entityType := capability.EntityTypes[entity.Type]
-		metaPublic := views.BuildMetadata(entity.Frontmatter, entityType.MetaFields)
-		metaWhere := views.BuildWhereMetadata(entity.Frontmatter, entityType.MetaFields)
-		refsPublic, refsWhere, refsErr := references.Resolve(entity.Frontmatter, entityType.RefFields, idIndex)
+		metaPublic := buildMetadata(entity.Frontmatter, entityType.MetaFields)
+		metaWhere := buildWhereMetadata(entity.Frontmatter, entityType.MetaFields)
+		refsPublic, refsWhere, refsErr := resolveReferences(entity.Frontmatter, entityType.RefFields, idIndex)
 		if refsErr != nil {
 			return nil, refsErr
 		}
@@ -85,7 +86,7 @@ func LoadEntities(
 			"refs":        refsPublic,
 			"content": map[string]any{
 				"raw":      entity.RawContent,
-				"sections": views.SectionsToAnyMap(entity.Sections),
+				"sections": sectionsToAnyMap(entity.Sections),
 			},
 		}
 
@@ -100,7 +101,7 @@ func LoadEntities(
 			"refs":        refsWhere,
 			"content": map[string]any{
 				"raw":      entity.RawContent,
-				"sections": views.BuildWhereSections(entity.Sections, entityType.Sections),
+				"sections": buildWhereSections(entity.Sections, entityType.Sections),
 			},
 		}
 

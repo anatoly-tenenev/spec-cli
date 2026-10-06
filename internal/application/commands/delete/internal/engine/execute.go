@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/storage"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/commands/delete/internal/workspace"
 	schemacapreferences "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/references"
 	schemamodel "github.com/anatoly-tenenev/spec-cli/internal/application/schema/model"
@@ -52,7 +51,7 @@ func Execute(
 	}
 
 	if !opts.DryRun {
-		if deleteErr := storage.Delete(target.PathAbs); deleteErr != nil {
+		if deleteErr := deleteDocument(target.PathAbs); deleteErr != nil {
 			return nil, deleteErr
 		}
 	}

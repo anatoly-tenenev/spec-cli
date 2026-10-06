@@ -1,13 +1,10 @@
-// Package plan validates a GraphQL query against the generated SDL and turns
-// it into root plans. It resolves the parts the read model cannot see for
-// itself: fragments and @skip/@include are expanded up front, repeated
-// selections of one response key are merged, and arguments become filters,
-// sorts and paging.
+// Package binding connects a GraphQL query to the read model: Build turns the
+// query into root plans against the generated schema, Execute runs those plans
+// over loaded entities. The split matches the read engine's - everything a
+// query can be rejected for is decided before the workspace is touched.
 //
-// Introspection and non-query operations are refused: the schema is derived
-// from a workspace's own schema file, and graphql-help is how a caller is
-// meant to discover it.
-package plan
+// builder.go turns the query into root plans; execution.go runs them.
+package binding
 
 import (
 	bindingdiagnostics "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/binding/internal/diagnostics"
