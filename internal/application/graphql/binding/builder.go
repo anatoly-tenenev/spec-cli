@@ -3,12 +3,11 @@
 // over loaded entities. The split matches the read engine's - everything a
 // query can be rejected for is decided before the workspace is touched.
 //
-// builder.go turns the query into root plans; execution.go runs them.
+// builder.go turns the query into root plans, with predicate.go for the where
+// argument; execution.go runs them. errors.go builds every binding failure.
 package binding
 
 import (
-	bindingdiagnostics "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/binding/internal/diagnostics"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/binding/internal/predicate"
 	gqlmodel "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/graphql/sdl"
 	readmodel "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
@@ -27,14 +26,14 @@ func Build(proj *gqlmodel.Projection, query string, variables map[string]any, op
 	}
 	doc, validationErrs := gqlparser.LoadQueryWithRules(schema, query, rules.NewDefaultRules())
 	if len(validationErrs) > 0 {
-		return nil, bindingdiagnostics.InvalidQuery("invalid GraphQL query", "validation", validationErrs)
+		return nil, invalidQuery("invalid GraphQL query", "validation", validationErrs)
 	}
 	operation, err := selectOperation(doc, operationName)
 	if err != nil {
 		return nil, err
 	}
 	if operation.Operation != ast.Query {
-		return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "only GraphQL query operations are supported", bindingdiagnostics.GraphQLDetails("binding", operation.Position))
+		return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "only GraphQL query operations are supported", graphqlDetails("binding", operation.Position))
 	}
 	expandedSelections := expandSelectionSet(operation.SelectionSet, doc.Fragments, variables)
 	if err := checkDirectives(expandedSelections); err != nil {
@@ -48,11 +47,11 @@ func Build(proj *gqlmodel.Projection, query string, variables map[string]any, op
 			continue
 		}
 		if field.Name == "__schema" || field.Name == "__type" {
-			return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "GraphQL introspection is not supported", bindingdiagnostics.GraphQLDetails("binding", field.Position))
+			return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "GraphQL introspection is not supported", graphqlDetails("binding", field.Position))
 		}
 		entity, exists := proj.Entities[field.Name]
 		if !exists {
-			return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "unknown GraphQL root field", bindingdiagnostics.GraphQLDetails("binding", field.Position))
+			return nil, domainerrors.New(domainerrors.CodeInvalidQuery, "unknown GraphQL root field", graphqlDetails("binding", field.Position))
 		}
 		if !includeByDirectives(field.Directives, variables) {
 			continue
@@ -96,16 +95,16 @@ func bindRoot(entity gqlmodel.Entity, field *ast.Field, args map[string]any, var
 	limit := intArg(args, "limit", 100)
 	offset := intArg(args, "offset", 0)
 	if limit < 0 || offset < 0 {
-		return gqlmodel.RootPlan{}, domainerrors.New(domainerrors.CodeInvalidQuery, "limit and offset must be non-negative", bindingdiagnostics.GraphQLDetails("binding", field.Position))
+		return gqlmodel.RootPlan{}, domainerrors.New(domainerrors.CodeInvalidQuery, "limit and offset must be non-negative", graphqlDetails("binding", field.Position))
 	}
 	if limit > maxLimit {
-		return gqlmodel.RootPlan{}, domainerrors.New(domainerrors.CodeInvalidQuery, "limit must not exceed 1000", bindingdiagnostics.GraphQLDetails("binding", field.Position))
+		return gqlmodel.RootPlan{}, domainerrors.New(domainerrors.CodeInvalidQuery, "limit must not exceed 1000", graphqlDetails("binding", field.Position))
 	}
 	sortTerms, sortErr := bindSort(entity, args["sort"])
 	if sortErr != nil {
 		return gqlmodel.RootPlan{}, sortErr
 	}
-	resultPredicate := predicate.Build(args["where"])
+	resultPredicate := buildPredicate(args["where"])
 	selection, selectionErr := bindResultSelection(field.SelectionSet, variables)
 	if selectionErr != nil {
 		return gqlmodel.RootPlan{}, selectionErr
@@ -142,7 +141,7 @@ func bindResultSelection(selections ast.SelectionSet, variables map[string]any) 
 			field.SelectionSet = expandSelectionSet(field.SelectionSet, nil, variables)
 			result.PageInfo = mergeSelectionNode(result.PageInfo, bindSelectionNode(field.SelectionSet, variables))
 		default:
-			return gqlmodel.ResultSelection{}, domainerrors.New(domainerrors.CodeInvalidQuery, "unsupported root result selection", bindingdiagnostics.GraphQLDetails("binding", field.Position))
+			return gqlmodel.ResultSelection{}, domainerrors.New(domainerrors.CodeInvalidQuery, "unsupported root result selection", graphqlDetails("binding", field.Position))
 		}
 	}
 	return result, nil
@@ -292,7 +291,7 @@ func checkDirectives(selections ast.SelectionSet) *domainerrors.AppError {
 		case *ast.Field:
 			for _, directive := range typed.Directives {
 				if directive.Name != "include" && directive.Name != "skip" {
-					return domainerrors.New(domainerrors.CodeInvalidQuery, "unsupported GraphQL directive", bindingdiagnostics.GraphQLDetails("binding", directive.Position))
+					return domainerrors.New(domainerrors.CodeInvalidQuery, "unsupported GraphQL directive", graphqlDetails("binding", directive.Position))
 				}
 			}
 			if err := checkDirectives(typed.SelectionSet); err != nil {

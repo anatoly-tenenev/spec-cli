@@ -12,7 +12,6 @@ package engine
 import (
 	"fmt"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/ordering"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/values"
@@ -61,7 +60,7 @@ func Execute(plan model.QueryPlan, entities []model.EntityView) (model.QueryResp
 			if label, ambiguous := ambiguousSection(entity, plan.SelectSections); ambiguous {
 				return model.QueryResponse{}, duplicateSectionError(entity, label, "--select")
 			}
-			items = append(items, selection.ProjectEntity(entity.View, plan.SelectTree))
+			items = append(items, projectEntity(entity.View, plan.SelectTree))
 		}
 
 		hasMore := matchedCount > rootPlan.Offset+returned

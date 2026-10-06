@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/testsupport"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -41,7 +40,7 @@ func TestBuildPlan_ExplicitSelectDoesNotAddType(t *testing.T) {
 		t.Fatalf("unexpected plan error: %v", err)
 	}
 
-	projected := selection.ProjectEntity(map[string]any{"type": "feature", "id": "FEAT-1", "slug": "retry-window"}, plan.SelectTree)
+	projected := projectEntity(map[string]any{"type": "feature", "id": "FEAT-1", "slug": "retry-window"}, plan.SelectTree)
 	expected := map[string]any{"id": "FEAT-1"}
 	if !reflect.DeepEqual(projected, expected) {
 		t.Fatalf("explicit select must not add type:\nexpected=%#v\nactual=%#v", expected, projected)

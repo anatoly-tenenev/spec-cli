@@ -1,4 +1,4 @@
-package selection
+package engine
 
 import (
 	"reflect"
@@ -9,7 +9,7 @@ import (
 
 func TestBuildSelectTree_RejectsUnknownSelector(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := BuildTree([]string{"meta.unknown"}, index, []string{"feature", "service"})
+	_, err := buildSelectTree([]string{"meta.unknown"}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -17,7 +17,7 @@ func TestBuildSelectTree_RejectsUnknownSelector(t *testing.T) {
 
 func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := BuildTree([]string{"type", "id", "refs.owner", "content.sections.summary"}, index, []string{"feature", "service"})
+	tree, err := buildSelectTree([]string{"type", "id", "refs.owner", "content.sections.summary"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 		},
 	}
 
-	projected := ProjectEntity(entity, tree)
+	projected := projectEntity(entity, tree)
 	expected := map[string]any{
 		"type": "feature",
 		"id":   "FEAT-1",
@@ -52,13 +52,13 @@ func TestProjectEntity_ObjectSelectorAndMissingSection(t *testing.T) {
 
 func TestProjectEntity_OverlappingSelectorsMerged(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := BuildTree([]string{"meta.status", "meta.score"}, index, []string{"feature", "service"})
+	tree, err := buildSelectTree([]string{"meta.status", "meta.score"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	entity := map[string]any{"meta": map[string]any{"status": "active", "score": 9.5}}
-	projected := ProjectEntity(entity, tree)
+	projected := projectEntity(entity, tree)
 
 	expected := map[string]any{"meta": map[string]any{"status": "active", "score": 9.5}}
 	if !reflect.DeepEqual(projected, expected) {

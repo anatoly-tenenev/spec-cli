@@ -6,8 +6,9 @@
 // Whole-workspace steps come before the type filter is applied, because a
 // reference may point at an entity of a type the query did not ask for.
 //
-// loader.go runs the pipeline; views.go narrows a document to what the schema
-// declares, references.go resolves its entityRef fields.
+// loader.go runs the pipeline; documents.go parses one file, views.go narrows
+// a document to what the schema declares, references.go resolves its entityRef
+// fields. standardrefs.go names the clauses of the standard a failure cites.
 package workspace
 
 import (
@@ -16,8 +17,6 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
@@ -32,9 +31,9 @@ func LoadEntities(
 		return nil, scanErr
 	}
 
-	allEntities := make([]documents.Entity, 0, len(markdownFiles))
+	allEntities := make([]parsedDocument, 0, len(markdownFiles))
 	for _, path := range markdownFiles {
-		parsed, parseErr := documents.ParseEntityFile(path)
+		parsed, parseErr := parseDocument(path)
 		if parseErr != nil {
 			return nil, parseErr
 		}
@@ -48,12 +47,12 @@ func LoadEntities(
 		return nil, readissues.NewReadError(
 			"failed to determine entity type",
 			fmt.Sprintf("entity type '%s' is not declared in schema.entity", entity.Type),
-			diagnostics.TypeStandardRef,
+			typeStandardRef,
 			nil,
 		)
 	}
 
-	idIndex := BuildIDIndex(allEntities)
+	idIndex := buildIDIndex(allEntities)
 	allowedTypes := make(map[string]struct{}, len(typeFilters))
 	for _, typeName := range typeFilters {
 		allowedTypes[typeName] = struct{}{}

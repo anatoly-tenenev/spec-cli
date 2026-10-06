@@ -5,7 +5,8 @@
 // query, get and graphql-query share one meaning for --select, --where and
 // --sort.
 //
-// planner.go builds the plan; execute.go runs it.
+// planner.go builds the plan from select.go, where.go and sort.go; execute.go
+// runs it.
 package engine
 
 import (
@@ -13,9 +14,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/filtering"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/sorting"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -40,14 +38,14 @@ func BuildPlan(opts model.Options, capability schemacapread.Capability) (model.Q
 		selects = append([]string(nil), defaultSelects...)
 	}
 
-	selectTree, selectErr := selection.BuildTree(selects, capability, activeTypeSet)
+	selectTree, selectErr := buildSelectTree(selects, capability, activeTypeSet)
 	if selectErr != nil {
 		return model.QueryPlan{}, selectErr
 	}
 
 	var wherePlan *model.WherePlan
 	if opts.WhereExpr != "" {
-		compiled, compileErr := filtering.Compile(opts.WhereExpr, capability, activeTypeSet)
+		compiled, compileErr := compileWhere(opts.WhereExpr, capability, activeTypeSet)
 		if compileErr != nil {
 			return model.QueryPlan{}, compileErr
 		}
@@ -166,7 +164,7 @@ func buildRootPlans(
 			sortValidationTypeSet = []string{entityType}
 		}
 
-		effectiveSort, sortErr := sorting.BuildEffective(sortInput, capability, sortValidationTypeSet)
+		effectiveSort, sortErr := buildEffectiveSort(sortInput, capability, sortValidationTypeSet)
 		if sortErr != nil {
 			return nil, sortErr
 		}

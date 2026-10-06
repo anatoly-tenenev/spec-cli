@@ -1,4 +1,4 @@
-// Package selection decides what a read command may ask for and cuts the
+// select.go decides what a read command may ask for and cuts the
 // entity down to it. Selectors are checked against the active type set, so
 // asking for a field no selected type declares is an error rather than a
 // silently empty column.
@@ -6,7 +6,8 @@
 // A selector is valid if any active type declares it: with several root types
 // in play, requiring every type to have the field would make cross-type
 // queries impossible.
-package selection
+
+package engine
 
 import (
 	"fmt"
@@ -33,7 +34,7 @@ var builtinSelectors = map[string]struct{}{
 	"content.sections": {},
 }
 
-func BuildTree(selects []string, capability schemacapread.Capability, activeTypeSet []string) (*model.SelectNode, *domainerrors.AppError) {
+func buildSelectTree(selects []string, capability schemacapread.Capability, activeTypeSet []string) (*model.SelectNode, *domainerrors.AppError) {
 	root := selectors.NewTree()
 	for _, selector := range selects {
 		normalized := strings.TrimSpace(selector)
@@ -145,7 +146,7 @@ func validateSelector(selector string, capability schemacapread.Capability, acti
 	)
 }
 
-func ProjectEntity(entity map[string]any, tree *model.SelectNode) map[string]any {
+func projectEntity(entity map[string]any, tree *model.SelectNode) map[string]any {
 	projected := projectMap(entity, tree)
 	if projected == nil {
 		return map[string]any{}

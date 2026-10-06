@@ -1,10 +1,11 @@
-// Package predicate turns a GraphQL where argument into a function that
+// predicate.go turns a GraphQL where argument into a function that
 // accepts or rejects one entity. The where input is a nested object of
 // and/or/not and per-field operators, so filtering is interpreted here rather
 // than translated into the JMESPath expression the --where flag uses: the two
 // surfaces take different inputs and only share the entity context they run
 // against.
-package predicate
+
+package binding
 
 import (
 	"fmt"
@@ -14,7 +15,7 @@ import (
 	readmodel "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 )
 
-func Build(raw any) gqlmodel.Predicate {
+func buildPredicate(raw any) gqlmodel.Predicate {
 	if raw == nil {
 		return nil
 	}

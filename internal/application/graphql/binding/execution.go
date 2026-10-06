@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strings"
 
-	bindingdiagnostics "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/binding/internal/diagnostics"
 	gqlmodel "github.com/anatoly-tenenev/spec-cli/internal/application/graphql/model"
 	readmodel "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/ordering"
@@ -130,7 +129,7 @@ func projectMap(source map[string]any, selection *gqlmodel.SelectionNode) map[st
 func enforceNonNull(projected map[string]any, entity readmodel.EntityView, paths []string) *domainerrors.AppError {
 	for _, path := range paths {
 		if valueMissingAtPath(projected, strings.Split(path, ".")) {
-			return bindingdiagnostics.InvalidResult("selected non-null field is missing", path, entity)
+			return invalidResult("selected non-null field is missing", path, entity)
 		}
 	}
 	return nil

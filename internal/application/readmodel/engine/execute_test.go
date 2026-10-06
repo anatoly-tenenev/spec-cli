@@ -4,14 +4,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/testsupport"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 )
 
 func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"type", "id"}, index, []string{"feature", "service"})
+	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)
 	}
@@ -48,7 +47,7 @@ func TestExecute_DeterministicAcrossInputOrder(t *testing.T) {
 
 func TestExecute_PaginationBoundaries(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"type", "id"}, index, []string{"feature", "service"})
+	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)
 	}
@@ -86,7 +85,7 @@ func TestExecute_PaginationBoundaries(t *testing.T) {
 
 func TestExecute_IncludesNoMatchRootField(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"type", "id"}, index, []string{"service", "feature"})
+	tree, err := buildSelectTree([]string{"type", "id"}, index, []string{"service", "feature"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)
 	}
@@ -117,7 +116,7 @@ func TestExecute_IncludesNoMatchRootField(t *testing.T) {
 
 func TestExecute_UsesIndependentRootPlans(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"id"}, index, []string{"feature", "service"})
+	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected select error: %v", err)
 	}

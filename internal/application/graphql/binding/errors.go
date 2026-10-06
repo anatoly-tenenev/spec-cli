@@ -1,9 +1,10 @@
-// Package diagnostics builds the GraphQL-shaped error details: the phase the
+// errors.go builds the GraphQL-shaped error details: the phase the
 // failure belongs to and the position in the query text it points at. A caller
 // writing GraphQL needs to know where in its own document the problem is, and
 // that location only exists here, so every binding failure is constructed
-// through this package rather than as a bare domain error.
-package diagnostics
+// through this file rather than as a bare domain error.
+
+package binding
 
 import (
 	readmodel "github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
@@ -12,7 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-func GraphQLDetails(phase string, pos *ast.Position) map[string]any {
+func graphqlDetails(phase string, pos *ast.Position) map[string]any {
 	graphql := map[string]any{"phase": phase}
 	if pos != nil {
 		graphql["locations"] = []map[string]any{{"line": pos.Line, "column": pos.Column}}
@@ -20,7 +21,7 @@ func GraphQLDetails(phase string, pos *ast.Position) map[string]any {
 	return map[string]any{"graphql": graphql}
 }
 
-func InvalidResult(message string, field string, entity readmodel.EntityView) *domainerrors.AppError {
+func invalidResult(message string, field string, entity readmodel.EntityView) *domainerrors.AppError {
 	return domainerrors.New(
 		domainerrors.CodeInvalidQueryResult,
 		message,
@@ -36,7 +37,7 @@ func InvalidResult(message string, field string, entity readmodel.EntityView) *d
 	)
 }
 
-func InvalidQuery(message string, phase string, errs gqlerror.List) *domainerrors.AppError {
+func invalidQuery(message string, phase string, errs gqlerror.List) *domainerrors.AppError {
 	details := map[string]any{"graphql": map[string]any{"phase": phase}}
 	if len(errs) > 0 && len(errs[0].Locations) > 0 {
 		locations := make([]map[string]any, 0, len(errs[0].Locations))

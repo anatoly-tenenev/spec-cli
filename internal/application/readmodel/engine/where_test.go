@@ -3,8 +3,6 @@ package engine
 import (
 	"testing"
 
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/filtering"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/engine/internal/selection"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/testsupport"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/model"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
@@ -12,7 +10,7 @@ import (
 
 func TestCompileWhereExpression_Valid(t *testing.T) {
 	index := testsupport.NewCapability()
-	compiled, err := filtering.Compile("meta.status == 'active'", index, []string{"feature", "service"})
+	compiled, err := compileWhere("meta.status == 'active'", index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected compile error: %v", err)
 	}
@@ -23,7 +21,7 @@ func TestCompileWhereExpression_Valid(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := filtering.Compile("keys(content)", index, []string{"feature", "service"})
+	_, err := compileWhere("keys(content)", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -34,7 +32,7 @@ func TestCompileWhereExpression_RejectsContentRoot(t *testing.T) {
 
 func TestCompileWhereExpression_AllowsContentRaw(t *testing.T) {
 	index := testsupport.NewCapability()
-	compiled, err := filtering.Compile("contains(content.raw || '', 'x')", index, []string{"feature", "service"})
+	compiled, err := compileWhere("contains(content.raw || '', 'x')", index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected compile error: %v", err)
 	}
@@ -45,7 +43,7 @@ func TestCompileWhereExpression_AllowsContentRaw(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsUnknownContentPath(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := filtering.Compile("content.unknown == 'x'", index, []string{"feature", "service"})
+	_, err := compileWhere("content.unknown == 'x'", index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -56,7 +54,7 @@ func TestCompileWhereExpression_RejectsUnknownContentPath(t *testing.T) {
 
 func TestCompileWhereExpression_RejectsMetaEntityRef(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := filtering.Compile("meta.owner == 'SVC-1'", index, []string{"feature"})
+	_, err := compileWhere("meta.owner == 'SVC-1'", index, []string{"feature"})
 	if err == nil {
 		t.Fatal("expected compile error")
 	}
@@ -67,11 +65,11 @@ func TestCompileWhereExpression_RejectsMetaEntityRef(t *testing.T) {
 
 func TestExecute_WhereContentRaw(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"id"}, index, []string{"feature"})
+	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := filtering.Compile("contains(content.raw || '', 'backoff')", index, []string{"feature"})
+	wherePlan, whereErr := compileWhere("contains(content.raw || '', 'backoff')", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}
@@ -115,11 +113,11 @@ func TestExecute_WhereContentRaw(t *testing.T) {
 
 func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"id"}, index, []string{"feature"})
+	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := filtering.Compile("meta.tags", index, []string{"feature"})
+	wherePlan, whereErr := compileWhere("meta.tags", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}
@@ -163,11 +161,11 @@ func TestExecute_WhereTruthinessJMESPath(t *testing.T) {
 
 func TestExecute_WhereRuntimeErrorMappedToReadFailed(t *testing.T) {
 	index := testsupport.NewCapability()
-	tree, err := selection.BuildTree([]string{"id"}, index, []string{"feature"})
+	tree, err := buildSelectTree([]string{"id"}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("select build error: %v", err)
 	}
-	wherePlan, whereErr := filtering.Compile("length(meta.tags) > `0`", index, []string{"feature"})
+	wherePlan, whereErr := compileWhere("length(meta.tags) > `0`", index, []string{"feature"})
 	if whereErr != nil {
 		t.Fatalf("where compile error: %v", whereErr)
 	}

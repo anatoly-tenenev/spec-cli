@@ -1,4 +1,4 @@
-// Package sorting validates the requested sort terms against the schema and
+// sort.go validates the requested sort terms against the schema and
 // turns them into the effective order. A path whose type is not orderable, or
 // which resolves to different types across the active type set, is rejected
 // rather than compared by rendered text.
@@ -6,7 +6,8 @@
 // Ascending id is always appended as the final term: without a total
 // tie-break, two entities with equal keys could come back in either order and
 // paging would not be repeatable.
-package sorting
+
+package engine
 
 import (
 	"fmt"
@@ -32,7 +33,7 @@ var builtinSortKinds = map[string]schemacapread.FieldKind{
 	"content.raw": schemacapread.FieldKindString,
 }
 
-func BuildEffective(
+func buildEffectiveSort(
 	requested []model.SortTerm,
 	capability schemacapread.Capability,
 	activeTypeSet []string,

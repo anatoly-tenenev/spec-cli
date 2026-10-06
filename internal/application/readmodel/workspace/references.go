@@ -12,13 +12,11 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entityrefs"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/internal/ordered"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/documents"
 	schemacapread "github.com/anatoly-tenenev/spec-cli/internal/application/schema/capabilities/read"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-func BuildIDIndex(entities []documents.Entity) map[string][]entityrefs.Identity {
+func buildIDIndex(entities []parsedDocument) map[string][]entityrefs.Identity {
 	idIndex := map[string][]entityrefs.Identity{}
 	for _, entity := range entities {
 		idIndex[entity.ID] = append(idIndex[entity.ID], entityrefs.Identity{
@@ -137,7 +135,7 @@ func invalidRefReadError(refField string) *domainerrors.AppError {
 	return readissues.NewReadError(
 		"failed to compute refs",
 		fmt.Sprintf("refs field '%s' has invalid value in frontmatter", refField),
-		diagnostics.RefsStandardRef,
+		refsStandardRef,
 		map[string]any{"field": refField},
 	)
 }

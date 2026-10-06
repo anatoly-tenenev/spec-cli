@@ -1,4 +1,4 @@
-// Package documents turns a file on disk into the entity the read layer works
+// documents.go turns a file on disk into the entity the read layer works
 // with, and checks only what reading itself needs: the builtin identity fields
 // and a computed revision. Conformance to the schema is not judged here -
 // reads must keep working on a non-conforming workspace, because repairing one
@@ -6,7 +6,8 @@
 //
 // Markdown parsing itself is not repeated here; it comes from
 // internal/application/entitydoc.
-package documents
+
+package workspace
 
 import (
 	"fmt"
@@ -15,11 +16,10 @@ import (
 	"github.com/anatoly-tenenev/spec-cli/internal/application/entitydoc"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/iofailure"
 	"github.com/anatoly-tenenev/spec-cli/internal/application/readissues"
-	"github.com/anatoly-tenenev/spec-cli/internal/application/readmodel/workspace/internal/diagnostics"
 	domainerrors "github.com/anatoly-tenenev/spec-cli/internal/domain/errors"
 )
 
-type Entity struct {
+type parsedDocument struct {
 	Type        string
 	ID          string
 	Slug        string
@@ -35,7 +35,7 @@ type Entity struct {
 	RawContent             string
 }
 
-func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
+func parseDocument(path string) (*parsedDocument, *domainerrors.AppError) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, domainerrors.New(
@@ -50,7 +50,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, readissues.NewReadError(
 			"failed to parse workspace document",
 			parseErr.Error(),
-			diagnostics.FrontmatterStandardRef,
+			frontmatterStandardRef,
 			nil,
 		)
 	}
@@ -61,7 +61,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, readissues.NewReadError(
 			"failed to determine entity type",
 			requiredBuiltinFieldMessage("type"),
-			diagnostics.TypeStandardRef,
+			typeStandardRef,
 			nil,
 		)
 	}
@@ -69,7 +69,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, readissues.NewReadError(
 			"failed to determine entity id",
 			requiredBuiltinFieldMessage("id"),
-			diagnostics.IDStandardRef,
+			idStandardRef,
 			nil,
 		)
 	}
@@ -77,7 +77,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		return nil, readissues.NewReadError(
 			"failed to determine entity slug",
 			requiredBuiltinFieldMessage("slug"),
-			diagnostics.SlugStandardRef,
+			slugStandardRef,
 			nil,
 		)
 	}
@@ -88,7 +88,7 @@ func ParseEntityFile(path string) (*Entity, *domainerrors.AppError) {
 		sections[label] = section.Body
 	}
 
-	return &Entity{
+	return &parsedDocument{
 		Type:                   document.Type,
 		ID:                     document.ID,
 		Slug:                   document.Slug,

@@ -1,4 +1,4 @@
-package sorting
+package engine
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	index := testsupport.NewCapability()
 
-	terms, err := BuildEffective(nil, index, []string{"feature", "service"})
+	terms, err := buildEffectiveSort(nil, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -21,7 +21,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 	}
 
 	custom := []model.SortTerm{{Path: "updatedDate", Direction: model.SortDirectionDesc}}
-	effective, err := BuildEffective(custom, index, []string{"feature", "service"})
+	effective, err := buildEffectiveSort(custom, index, []string{"feature", "service"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestBuildEffectiveSort_DefaultAndTail(t *testing.T) {
 
 func TestBuildEffectiveSort_InvalidField(t *testing.T) {
 	index := testsupport.NewCapability()
-	_, err := BuildEffective([]model.SortTerm{{Path: "meta", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -59,7 +59,7 @@ func TestBuildEffectiveSort_RejectsMetaEntityRefAcrossActiveSet(t *testing.T) {
 		},
 	}
 
-	_, err := BuildEffective([]model.SortTerm{{Path: "meta.owner", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "meta.owner", Direction: model.SortDirectionAsc}}, index, []string{"feature", "service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -71,7 +71,7 @@ func TestBuildEffectiveSort_RejectsMetaEntityRefAcrossActiveSet(t *testing.T) {
 func TestBuildEffectiveSort_SingletonValidationAllowsTypeLocalRefSort(t *testing.T) {
 	index := testsupport.NewCapability()
 
-	effective, err := BuildEffective([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"feature"})
+	effective, err := buildEffectiveSort([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"feature"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestBuildEffectiveSort_SingletonValidationAllowsTypeLocalRefSort(t *testing
 func TestBuildEffectiveSort_SingletonValidationRejectsInvalidTypeLocalPath(t *testing.T) {
 	index := testsupport.NewCapability()
 
-	_, err := BuildEffective([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"service"})
+	_, err := buildEffectiveSort([]model.SortTerm{{Path: "refs.owner.id", Direction: model.SortDirectionAsc}}, index, []string{"service"})
 	if err == nil {
 		t.Fatal("expected error")
 	}

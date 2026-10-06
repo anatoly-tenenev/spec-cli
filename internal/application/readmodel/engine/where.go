@@ -1,4 +1,4 @@
-// Package filtering compiles --where into a schema-aware JMESPath query: it
+// where.go compiles --where into a schema-aware JMESPath query: it
 // builds the JSON Schema of what a filter may see from the active type set, so
 // an unknown field or a comparison against the wrong type is rejected as an
 // invalid query instead of quietly matching nothing.
@@ -7,7 +7,8 @@
 // addressed as refs.<field>, never meta.<field> - and to record which sections
 // the filter touches, which is how an ambiguous section only breaks the
 // queries that read it.
-package filtering
+
+package engine
 
 import (
 	"fmt"
@@ -30,7 +31,7 @@ const (
 
 var unresolvedReasons = []any{"missing", "ambiguous", "type_mismatch"}
 
-func Compile(
+func compileWhere(
 	raw string,
 	capability schemacapread.Capability,
 	activeTypeSet []string,
