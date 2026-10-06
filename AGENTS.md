@@ -109,12 +109,9 @@ The statements below decide cases the rules further down do not cover. If a rule
 ## Code Structure and Shared Code
 
 ### Directory Structure
-- A directory level must earn its existence. An entrypoint that only forwards calls to a single subpackage and holds no logic of its own is a redundant level: raise that subpackage into its place. A level is justified when its entrypoint orchestrates two or more subpackages, or does something beyond forwarding.
-- A package that is one file with one importer is a file, not a package: merge it into its caller. This does not apply where the package exists for a reason its size does not show: a command role the standard below requires, or a path an external tool addresses directly - the linker sets `internal/buildinfo.Version` by package path, so merging that one breaks release builds.
-- At most one `internal/` in a package path. Every `internal/` is a wall behind which code cannot be reused; a second wall guarantees a copy instead of reuse.
-- A "role" is what an external caller asks for by name. If two files in a directory root are only ever used together and by the same callers, they are one role, not two. Check this by grepping imports, not by taste.
-- A directory root holds the entrypoints of its roles. Details live in the same package, in files named after what they hold; a subpackage is for a detail that has its own callers, not for a detail that got long. Name a package after its subject, not after its role in the dependency graph: `common`, `support`, `util` and `helpers` are forbidden. For commands the entrypoint is fixed: `internal/application/commands/<command>/handler.go`.
-- A `.go` file is limited to 600 lines. When it exceeds the limit, split it into another file in the same package. Reach for a subpackage only when the split part has more than one importer: in Go a file split costs nothing, a package split adds a visibility wall.
+- At most one `internal/` in a package path, not counting the module's top-level `internal/`. Every `internal/` is a wall behind which code cannot be reused; a second wall guarantees a copy instead of reuse.
+- Name a package after its subject, not after its role in the dependency graph: `common`, `support`, `util` and `helpers` are forbidden.
+- A `.go` file is limited to 600 lines. When it exceeds the limit, split it into another file in the same package, named after what it holds. Reach for a subpackage only when the split part has more than one importer: in Go a file split costs nothing, a package split adds a visibility wall.
 
 ### Shared Code
 - A copy is a deferred divergence. When copying code, immediately decide one of two things: extract it into a shared place, or record in a comment why the copies must differ. There is no third state - "identical for now, we will sort it out later" always resolves into divergence.
@@ -126,15 +123,9 @@ The statements below decide cases the rules further down do not cover. If a rule
 - Measure duplication mechanically (`make dupl`), not by eye: copies live in different subtrees and each looks reasonable on its own.
 
 ## Command Implementation Standard (default)
-- `handler.go` must remain a thin orchestration layer: parse options -> load inputs/schema -> run use case -> build the `json/ndjson` response.
-- For `validate`, use the current structure as the baseline:
-  - `internal/model` - internal command types.
-  - `internal/options` - command option parsing and path normalization.
-  - `internal/workspace` - candidate scan and frontmatter/content parsing.
-  - `internal/engine` - main validation pipeline and issue aggregation.
-  - `internal/ruletypes` - matching a value against a declared rule type or enum.
-  - `internal/duplicates` - finding duplicated keys in an index.
-- Before creating a subpackage, check whether a package with that name already exists under another command. Identical names across commands are a signal to look for shared logic, not a template to copy.
+- The entrypoint is fixed: `internal/application/commands/<command>/handler.go`. It must remain a thin orchestration layer: parse options -> load inputs/schema -> run use case -> build the `json/ndjson` response.
+- A command keeps its details in subpackages under its own `internal/`, created as the command needs them: `options` - argument parsing, `model` - command types, `workspace` - reading the workspace, `engine` - the use case. Commands use the same names for the same roles, so the same thing is found in the same place.
+- The same subpackage name under two commands means the same role, not shared code. Before writing logic into one, check whether its namesake under another command already has it: if so, it belongs in a shared package, not in a second copy.
 - Logic shared by two or more commands belongs in `internal/application/commands/internal/<role>`. Logic shared with `readmodel` or `schema` belongs in a package directly under `internal/application/` (see `entitydoc`, `values`). Copying is allowed only with a written reason why the copies must differ.
 - Do not change business logic, error codes, or issue codes without an explicit task to change behavior.
 - After any command changes, run at least `make vet` and `make test`.
